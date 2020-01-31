@@ -5,8 +5,8 @@ import re
 import copy
 import json
 from ast import literal_eval
-from _element_graph import ElementGraph
-from _rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+from cython_utils._element_graph import ElementGraph
+from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
 from collections import deque, Counter
 import cython
 import time

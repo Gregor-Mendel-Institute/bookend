@@ -3808,6 +3808,7 @@ static const char __pyx_k_RuntimeError[] = "RuntimeError";
 static const char __pyx_k_add_endpoint[] = "add_endpoint";
 static const char __pyx_k_array_length[] = "array_length";
 static const char __pyx_k_bp_typeorder[] = "bp_typeorder";
+static const char __pyx_k_cython_utils[] = "cython_utils";
 static const char __pyx_k_genome_fasta[] = "genome_fasta";
 static const char __pyx_k_gff_defaults[] = "gff_defaults";
 static const char __pyx_k_gtf_defaults[] = "gtf_defaults";
@@ -4121,6 +4122,7 @@ static PyObject *__pyx_n_s_counter;
 static PyObject *__pyx_n_s_coverage;
 static PyObject *__pyx_n_u_coverage;
 static PyObject *__pyx_n_s_current;
+static PyObject *__pyx_n_s_cython_utils;
 static PyObject *__pyx_n_s_dataset;
 static PyObject *__pyx_n_s_deepcopy;
 static PyObject *__pyx_n_s_delete;
@@ -78047,6 +78049,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_coverage, __pyx_k_coverage, sizeof(__pyx_k_coverage), 0, 0, 1, 1},
   {&__pyx_n_u_coverage, __pyx_k_coverage, sizeof(__pyx_k_coverage), 0, 1, 0, 1},
   {&__pyx_n_s_current, __pyx_k_current, sizeof(__pyx_k_current), 0, 0, 1, 1},
+  {&__pyx_n_s_cython_utils, __pyx_k_cython_utils, sizeof(__pyx_k_cython_utils), 0, 0, 1, 1},
   {&__pyx_n_s_dataset, __pyx_k_dataset, sizeof(__pyx_k_dataset), 0, 0, 1, 1},
   {&__pyx_n_s_deepcopy, __pyx_k_deepcopy, sizeof(__pyx_k_deepcopy), 0, 0, 1, 1},
   {&__pyx_n_s_delete, __pyx_k_delete, sizeof(__pyx_k_delete), 0, 0, 1, 1},
@@ -79478,7 +79481,7 @@ if (!__Pyx_RefNanny) {
  * import numpy as np
  * cimport numpy as np
  * import json             # <<<<<<<<<<<<<<
- * import _fasta_utils as fu
+ * from cython_utils import _fasta_utils as fu
  * from collections import namedtuple, Counter
  */
   __pyx_t_1 = __Pyx_Import(__pyx_n_s_json, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
@@ -79489,63 +79492,72 @@ if (!__Pyx_RefNanny) {
   /* "_rnaseq_utils.pyx":8
  * cimport numpy as np
  * import json
- * import _fasta_utils as fu             # <<<<<<<<<<<<<<
+ * from cython_utils import _fasta_utils as fu             # <<<<<<<<<<<<<<
  * from collections import namedtuple, Counter
  * from ast import literal_eval
  */
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_fasta_utils, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_n_s_fasta_utils);
+  __Pyx_GIVEREF(__pyx_n_s_fasta_utils);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_fasta_utils);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_cython_utils, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fu, __pyx_t_1) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "_rnaseq_utils.pyx":9
  * import json
- * import _fasta_utils as fu
+ * from cython_utils import _fasta_utils as fu
  * from collections import namedtuple, Counter             # <<<<<<<<<<<<<<
  * from ast import literal_eval
  * import copy
  */
-  __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_n_s_namedtuple);
   __Pyx_GIVEREF(__pyx_n_s_namedtuple);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_namedtuple);
+  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_namedtuple);
   __Pyx_INCREF(__pyx_n_s_Counter);
   __Pyx_GIVEREF(__pyx_n_s_Counter);
-  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_s_Counter);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_collections, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_namedtuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
+  PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_Counter);
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_collections, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_namedtuple, __pyx_t_1) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Counter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Counter, __pyx_t_1) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_namedtuple); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_namedtuple, __pyx_t_2) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_Counter); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Counter, __pyx_t_2) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":10
- * import _fasta_utils as fu
+ * from cython_utils import _fasta_utils as fu
  * from collections import namedtuple, Counter
  * from ast import literal_eval             # <<<<<<<<<<<<<<
  * import copy
  * ctypedef unsigned char uint8
  */
-  __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_s_literal_eval);
   __Pyx_GIVEREF(__pyx_n_s_literal_eval);
-  PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_literal_eval);
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_ast, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_literal_eval); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_literal_eval);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_ast, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_literal_eval, __pyx_t_2) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_literal_eval); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_literal_eval, __pyx_t_1) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "_rnaseq_utils.pyx":11
  * from collections import namedtuple, Counter
@@ -79554,10 +79566,10 @@ if (!__Pyx_RefNanny) {
  * ctypedef unsigned char uint8
  * ctypedef np.float32_t float32
  */
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_copy, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_copy, __pyx_t_1) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_copy, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_copy, __pyx_t_2) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "_rnaseq_utils.pyx":21
  * ##############################################################################################################
@@ -79566,9 +79578,9 @@ if (!__Pyx_RefNanny) {
  *     's_tag':False,
  *     'e_tag':False,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_source, __pyx_kp_u__8) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_source, __pyx_kp_u__8) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
 
   /* "_rnaseq_utils.pyx":22
  * config_defaults = {
@@ -79577,7 +79589,7 @@ if (!__Pyx_RefNanny) {
  *     'e_tag':False,
  *     'capped':False,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_s_tag, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_s_tag, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
 
   /* "_rnaseq_utils.pyx":23
  *     'source':'',
@@ -79586,7 +79598,7 @@ if (!__Pyx_RefNanny) {
  *     'capped':False,
  *     'stranded':False,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_e_tag, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_e_tag, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
 
   /* "_rnaseq_utils.pyx":24
  *     's_tag':False,
@@ -79595,7 +79607,7 @@ if (!__Pyx_RefNanny) {
  *     'stranded':False,
  *     'start_seq':'ACGGG',
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_capped, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_capped, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
 
   /* "_rnaseq_utils.pyx":25
  *     'e_tag':False,
@@ -79604,14 +79616,14 @@ if (!__Pyx_RefNanny) {
  *     'start_seq':'ACGGG',
  *     'end_seq':'RRRRRRRRRRRRRRR',
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_stranded, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_start_seq, __pyx_n_u_ACGGG) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_end_seq, __pyx_n_u_RRRRRRRRRRRRRRR) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_minlen, __pyx_int_20) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_mismatch_rate, __pyx_float_0_2) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_sj_shift, __pyx_int_2) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_config_defaults, __pyx_t_1) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_stranded, Py_False) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_start_seq, __pyx_n_u_ACGGG) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_end_seq, __pyx_n_u_RRRRRRRRRRRRRRR) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_minlen, __pyx_int_20) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_mismatch_rate, __pyx_float_0_2) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_sj_shift, __pyx_int_2) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_config_defaults, __pyx_t_2) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "_rnaseq_utils.pyx":44
  *     cdef readonly array.array start_array, end_array
@@ -79620,11 +79632,11 @@ if (!__Pyx_RefNanny) {
  *         """Container for RNAseqMapping objects. Stores a reference dictionary for all
  *         chromosome names and sample names. Contains methods for parsing
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_config_defaults); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_k_ = __pyx_t_1;
-  __Pyx_GIVEREF(__pyx_t_1);
-  __pyx_t_1 = 0;
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_config_defaults); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_k_ = __pyx_t_2;
+  __Pyx_GIVEREF(__pyx_t_2);
+  __pyx_t_2 = 0;
 
   /* "_rnaseq_utils.pyx":176
  * ##############################################################################################################
@@ -79633,13 +79645,13 @@ if (!__Pyx_RefNanny) {
  * cdef class RNAseqMapping:
  *     cdef public int chrom, source, strand
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_namedtuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__67, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_namedtuple); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ELdata, __pyx_t_2) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__67, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_ELdata, __pyx_t_1) < 0) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":529
  * 
@@ -79648,15 +79660,15 @@ if (!__Pyx_RefNanny) {
  *     'C':'0,212,145',
  *     'S':'28,117,188',
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 529, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_U, __pyx_kp_u_128_130_133) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_C_2, __pyx_kp_u_0_212_145) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_S_2, __pyx_kp_u_28_117_188) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_E, __pyx_kp_u_190_30_45) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_SE, __pyx_kp_u_109_74_116) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bed_colors, __pyx_t_2) < 0) __PYX_ERR(0, 528, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_U, __pyx_kp_u_128_130_133) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_C_2, __pyx_kp_u_0_212_145) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_S_2, __pyx_kp_u_28_117_188) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_E, __pyx_kp_u_190_30_45) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_SE, __pyx_kp_u_109_74_116) < 0) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bed_colors, __pyx_t_1) < 0) __PYX_ERR(0, 528, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":536
  * }
@@ -79665,10 +79677,10 @@ if (!__Pyx_RefNanny) {
  *     """Breaks an array into a collections of (start,end) INCLUSIVE doubles
  *     that define the coordinates of all contiguous blocks in the array"""
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_1array_to_blocks, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 536, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_array_to_blocks, __pyx_t_2) < 0) __PYX_ERR(0, 536, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_1array_to_blocks, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 536, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_array_to_blocks, __pyx_t_1) < 0) __PYX_ERR(0, 536, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":783
  * ##############################################################################################################
@@ -79677,24 +79689,24 @@ if (!__Pyx_RefNanny) {
  *     'parent_key_transcript':'transcript_id',
  *     'parent_key_gene':'gene_id',
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 783, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 783, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 783, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PySet_Add(__pyx_t_1, __pyx_n_u_transcript) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_types, __pyx_t_1) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_key_transcript, __pyx_n_u_transcript_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 786, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PySet_Add(__pyx_t_1, __pyx_n_u_exon) < 0) __PYX_ERR(0, 786, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_types, __pyx_t_1) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_key_transcript, __pyx_n_u_transcript_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gtf_defaults, __pyx_t_2) < 0) __PYX_ERR(0, 782, __pyx_L1_error)
+  if (PySet_Add(__pyx_t_2, __pyx_n_u_transcript) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_types, __pyx_t_2) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_key_transcript, __pyx_n_u_transcript_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 786, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PySet_Add(__pyx_t_2, __pyx_n_u_exon) < 0) __PYX_ERR(0, 786, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_types, __pyx_t_2) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_key_transcript, __pyx_n_u_transcript_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 783, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gtf_defaults, __pyx_t_1) < 0) __PYX_ERR(0, 782, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":791
  * }
@@ -79703,25 +79715,25 @@ if (!__Pyx_RefNanny) {
  *     'parent_key_transcript':'ID',
  *     'parent_key_gene':'Parent',
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 791, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 791, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 791, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 791, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PySet_Add(__pyx_t_1, __pyx_n_u_mRNA) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  if (PySet_Add(__pyx_t_1, __pyx_n_u_transcript) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_types, __pyx_t_1) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_key_transcript, __pyx_n_u_ID) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_parent_key_gene, __pyx_n_u_Parent) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 794, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PySet_Add(__pyx_t_1, __pyx_n_u_exon) < 0) __PYX_ERR(0, 794, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_types, __pyx_t_1) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_key_transcript, __pyx_n_u_Parent) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_child_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gff_defaults, __pyx_t_2) < 0) __PYX_ERR(0, 790, __pyx_L1_error)
+  if (PySet_Add(__pyx_t_2, __pyx_n_u_mRNA) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  if (PySet_Add(__pyx_t_2, __pyx_n_u_transcript) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_types, __pyx_t_2) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_key_transcript, __pyx_n_u_ID) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_parent_key_gene, __pyx_n_u_Parent) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 794, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PySet_Add(__pyx_t_2, __pyx_n_u_exon) < 0) __PYX_ERR(0, 794, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_types, __pyx_t_2) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_key_transcript, __pyx_n_u_Parent) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_child_key_gene, __pyx_n_u_gene_id) < 0) __PYX_ERR(0, 791, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gff_defaults, __pyx_t_1) < 0) __PYX_ERR(0, 790, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":926
  *     return coverage
@@ -79730,10 +79742,10 @@ if (!__Pyx_RefNanny) {
  *     """Takes a list of reads and cuts it at the first span of
  *     > max_gap nucleotides at a coverage < minimum_proportion * max_cov
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_24split_chunk, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 926, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_split_chunk, __pyx_t_2) < 0) __PYX_ERR(0, 926, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_24split_chunk, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 926, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_split_chunk, __pyx_t_1) < 0) __PYX_ERR(0, 926, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":1059
  * 
@@ -79742,10 +79754,10 @@ if (!__Pyx_RefNanny) {
  *     """Creates a generator object to yield the elements
  *     in an MD:Z tag from the SAM format. The elements are either
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_27parse_MD_string, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1059, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_MD_string, __pyx_t_2) < 0) __PYX_ERR(0, 1059, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_27parse_MD_string, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1059, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_MD_string, __pyx_t_1) < 0) __PYX_ERR(0, 1059, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":1472
  * 
@@ -79754,10 +79766,10 @@ if (!__Pyx_RefNanny) {
  *     """Yields a contiguous chunk of reads from the input file
  *     separated on either side by a gaps > max_gap"""
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_32read_generator, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1472, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_read_generator, __pyx_t_2) < 0) __PYX_ERR(0, 1472, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_32read_generator, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1472, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_read_generator, __pyx_t_1) < 0) __PYX_ERR(0, 1472, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":1971
  * 
@@ -79766,15 +79778,15 @@ if (!__Pyx_RefNanny) {
  * cdef class BranchPoint:
  *     """Represents a reference point for a Start, End, Donor, or Acceptor site."""
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1971, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_N, __pyx_int_neg_1) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_E, __pyx_int_0) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_A, __pyx_int_1) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_D, __pyx_int_2) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_S_2, __pyx_int_3) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bp_typeorder, __pyx_t_2) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1971, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_N, __pyx_int_neg_1) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_E, __pyx_int_0) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_A, __pyx_int_1) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_D, __pyx_int_2) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_S_2, __pyx_int_3) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bp_typeorder, __pyx_t_1) < 0) __PYX_ERR(0, 1971, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":2062
  *     cdef readonly int n
@@ -79783,11 +79795,11 @@ if (!__Pyx_RefNanny) {
  *         self.n = len(array)
  *         self.ordered_array = sorted([(v,i) for i,v in enumerate(array)])
  */
-  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2062, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_k__40 = __pyx_t_2;
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2062, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__40 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":2146
  *         return self.get_insert_pos((item, self.n + 1), init)
@@ -79796,26 +79808,26 @@ if (!__Pyx_RefNanny) {
  *     """Returns True if no gap longer than maxgap in the array falls below the threshold"""
  *     cdef Py_ssize_t i, l
  */
-  __pyx_t_2 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2146, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_k__41 = __pyx_t_2;
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2146, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_k__41 = __pyx_t_2;
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2146, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__41 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2146, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_k__41 = __pyx_t_1;
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_RNAseqDataset(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_37__pyx_unpickle_RNAseqDataset, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_RNAseqDataset, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_37__pyx_unpickle_RNAseqDataset, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_RNAseqDataset, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_RNAseqDataset__set_state(<RNAseqDataset> __pyx_result, __pyx_state)
@@ -79824,20 +79836,20 @@ if (!__Pyx_RefNanny) {
  *     __pyx_result.capped = __pyx_state[0]; __pyx_result.chrom_array = __pyx_state[1]; __pyx_result.chrom_dict = __pyx_state[2]; __pyx_result.chrom_index = __pyx_state[3]; __pyx_result.chrom_lengths = __pyx_state[4]; __pyx_result.config = __pyx_state[5]; __pyx_result.e_tag = __pyx_state[6]; __pyx_result.end_array = __pyx_state[7]; __pyx_result.end_seq = __pyx_state[8]; __pyx_result.genome = __pyx_state[9]; __pyx_result.ignore_ends = __pyx_state[10]; __pyx_result.minlen = __pyx_state[11]; __pyx_result.mismatch_rate = __pyx_state[12]; __pyx_result.read_list = __pyx_state[13]; __pyx_result.s_tag = __pyx_state[14]; __pyx_result.sj_shift = __pyx_state[15]; __pyx_result.source_array = __pyx_state[16]; __pyx_result.source_dict = __pyx_state[17]; __pyx_result.source_index = __pyx_state[18]; __pyx_result.start_array = __pyx_state[19]; __pyx_result.start_seq = __pyx_state[20]; __pyx_result.stranded = __pyx_state[21]
  *     if len(__pyx_state) > 22 and hasattr(__pyx_result, '__dict__'):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_39__pyx_unpickle_RNAseqMapping, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_RNAseqMapping, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_39__pyx_unpickle_RNAseqMapping, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_RNAseqMapping, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_AnnotationObject(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_41__pyx_unpickle_AnnotationObject, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_AnnotationObject, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_41__pyx_unpickle_AnnotationObject, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_AnnotationObject, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_AnnotationObject__set_state(<AnnotationObject> __pyx_result, __pyx_state)
@@ -79846,20 +79858,20 @@ if (!__Pyx_RefNanny) {
  *     __pyx_result.anno_type = __pyx_state[0]; __pyx_result.attributes = __pyx_state[1]; __pyx_result.chrom = __pyx_state[2]; __pyx_result.fields = __pyx_state[3]; __pyx_result.format = __pyx_state[4]; __pyx_result.gene_id = __pyx_state[5]; __pyx_result.keep = __pyx_state[6]; __pyx_result.parent = __pyx_state[7]; __pyx_result.source = __pyx_state[8]; __pyx_result.span = __pyx_state[9]; __pyx_result.strand = __pyx_state[10]; __pyx_result.transcript_id = __pyx_state[11]
  *     if len(__pyx_state) > 12 and hasattr(__pyx_result, '__dict__'):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_43__pyx_unpickle_BranchpointArray, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_BranchpointArray, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_43__pyx_unpickle_BranchpointArray, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_BranchpointArray, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_BranchPoint(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_45__pyx_unpickle_BranchPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_BranchPoint, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_45__pyx_unpickle_BranchPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_BranchPoint, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_BranchPoint__set_state(<BranchPoint> __pyx_result, __pyx_state)
@@ -79868,20 +79880,20 @@ if (!__Pyx_RefNanny) {
  *     __pyx_result.branchtype = __pyx_state[0]; __pyx_result.comparator = __pyx_state[1]; __pyx_result.index = __pyx_state[2]; __pyx_result.left = __pyx_state[3]; __pyx_result.pos = __pyx_state[4]; __pyx_result.right = __pyx_state[5]; __pyx_result.strand = __pyx_state[6]; __pyx_result.weight = __pyx_state[7]
  *     if len(__pyx_state) > 8 and hasattr(__pyx_result, '__dict__'):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_47__pyx_unpickle_StartPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_StartPoint, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_47__pyx_unpickle_StartPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_StartPoint, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_EndPoint(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_49__pyx_unpickle_EndPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_EndPoint, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_49__pyx_unpickle_EndPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_EndPoint, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_EndPoint__set_state(<EndPoint> __pyx_result, __pyx_state)
@@ -79890,20 +79902,20 @@ if (!__Pyx_RefNanny) {
  *     __pyx_result.branchtype = __pyx_state[0]; __pyx_result.comparator = __pyx_state[1]; __pyx_result.extend = __pyx_state[2]; __pyx_result.index = __pyx_state[3]; __pyx_result.left = __pyx_state[4]; __pyx_result.pos = __pyx_state[5]; __pyx_result.right = __pyx_state[6]; __pyx_result.span = __pyx_state[7]; __pyx_result.strand = __pyx_state[8]; __pyx_result.weight = __pyx_state[9]
  *     if len(__pyx_state) > 10 and hasattr(__pyx_result, '__dict__'):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_51__pyx_unpickle_DonorPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_DonorPoint, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_51__pyx_unpickle_DonorPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_DonorPoint, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_AcceptorPoint(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_53__pyx_unpickle_AcceptorPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_AcceptorPoint, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_53__pyx_unpickle_AcceptorPoint, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_AcceptorPoint, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_AcceptorPoint__set_state(<AcceptorPoint> __pyx_result, __pyx_state)
@@ -79912,20 +79924,20 @@ if (!__Pyx_RefNanny) {
  *     __pyx_result.branchtype = __pyx_state[0]; __pyx_result.comparator = __pyx_state[1]; __pyx_result.index = __pyx_state[2]; __pyx_result.left = __pyx_state[3]; __pyx_result.pos = __pyx_state[4]; __pyx_result.right = __pyx_state[5]; __pyx_result.strand = __pyx_state[6]; __pyx_result.weight = __pyx_state[7]
  *     if len(__pyx_state) > 8 and hasattr(__pyx_result, '__dict__'):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_55__pyx_unpickle_OrderedArray, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_OrderedArray, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_55__pyx_unpickle_OrderedArray, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_OrderedArray, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "_rnaseq_utils.pyx":1
  * #cython: language_level=3             # <<<<<<<<<<<<<<
  * cimport cython
  * import array
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "View.MemoryView":209
  *         info.obj = self
@@ -79934,10 +79946,10 @@ if (!__Pyx_RefNanny) {
  * 
  *     def __dealloc__(array self):
  */
-  __pyx_t_2 = __pyx_capsule_create(((void *)(&__pyx_array_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 209, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_array_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_2) < 0) __PYX_ERR(1, 209, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_array_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_array_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 209, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_array_type);
 
   /* "View.MemoryView":286
@@ -79947,12 +79959,12 @@ if (!__Pyx_RefNanny) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__92, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 286, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__92, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 286, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(generic);
-  __Pyx_DECREF_SET(generic, __pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_DECREF_SET(generic, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":287
  * 
@@ -79961,12 +79973,12 @@ if (!__Pyx_RefNanny) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__93, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__93, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 287, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(strided);
-  __Pyx_DECREF_SET(strided, __pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_DECREF_SET(strided, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":288
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -79975,12 +79987,12 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__94, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 288, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__94, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 288, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect);
-  __Pyx_DECREF_SET(indirect, __pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_DECREF_SET(indirect, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":291
  * 
@@ -79989,12 +80001,12 @@ if (!__Pyx_RefNanny) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__95, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 291, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__95, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 291, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(contiguous);
-  __Pyx_DECREF_SET(contiguous, __pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_DECREF_SET(contiguous, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":292
  * 
@@ -80003,12 +80015,12 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__96, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 292, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__96, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 292, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(indirect_contiguous);
-  __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_2);
-  __pyx_t_2 = 0;
+  __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "View.MemoryView":316
  * 
@@ -80043,10 +80055,10 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 545, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_memoryview_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_2) < 0) __PYX_ERR(1, 545, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 545, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_memoryview_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 545, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_memoryview_type);
 
   /* "View.MemoryView":991
@@ -80056,10 +80068,10 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 991, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_memoryviewslice_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_2) < 0) __PYX_ERR(1, 991, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = __pyx_capsule_create(((void *)(&__pyx_memoryview_getbuffer)), ((char *)"getbuffer(obj, view, flags)")); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 991, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_memoryviewslice_type->tp_dict, __pyx_n_s_pyx_getbuffer, __pyx_t_1) < 0) __PYX_ERR(1, 991, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_memoryviewslice_type);
 
   /* "(tree fragment)":1
@@ -80067,10 +80079,10 @@ if (!__Pyx_RefNanny) {
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_15View_dot_MemoryView_1__pyx_unpickle_Enum, NULL, __pyx_n_s_View_MemoryView); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Enum, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_15View_dot_MemoryView_1__pyx_unpickle_Enum, NULL, __pyx_n_s_View_MemoryView); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Enum, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":11
  *         __pyx_unpickle_Enum__set_state(<Enum> __pyx_result, __pyx_state)

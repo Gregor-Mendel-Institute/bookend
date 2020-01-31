@@ -4,7 +4,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import copy
-from networkx import DiGraph
+#from networkx import DiGraph
 from collections import deque
 
 inf = float('Inf')

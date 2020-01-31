@@ -5,7 +5,7 @@ from cpython cimport array
 import numpy as np
 cimport numpy as np
 import json
-import _fasta_utils as fu
+from cython_utils import _fasta_utils as fu
 from collections import namedtuple, Counter
 from ast import literal_eval
 import copy

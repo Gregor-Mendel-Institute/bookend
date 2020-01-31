@@ -2786,12 +2786,10 @@ static const char __pyx_k_parent_index[] = "parent_index";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
 static const char __pyx_k_read_weights[] = "read_weights";
 static const char __pyx_k_remove_paths[] = "remove_paths";
-static const char __pyx_k_rnaseq_utils[] = "_rnaseq_utils";
 static const char __pyx_k_strand_array[] = "strand_array";
 static const char __pyx_k_stringsource[] = "stringsource";
 static const char __pyx_k_RNAseqMapping[] = "RNAseqMapping";
 static const char __pyx_k_array_to_mask[] = "array_to_mask";
-static const char __pyx_k_element_graph[] = "_element_graph";
 static const char __pyx_k_intron_filter[] = "intron_filter";
 static const char __pyx_k_list_of_reads[] = "list_of_reads";
 static const char __pyx_k_mean_coverage[] = "mean_coverage";
@@ -2841,6 +2839,8 @@ static const char __pyx_k_reassign_reads_to_paths[] = "reassign_reads_to_paths";
 static const char __pyx_k_Cannot_index_with_type_s[] = "Cannot index with type '%s'";
 static const char __pyx_k_Invalid_shape_in_axis_d_d[] = "Invalid shape in axis %d: %d.";
 static const char __pyx_k_add_transcript_attributes[] = "add_transcript_attributes";
+static const char __pyx_k_cython_utils__rnaseq_utils[] = "cython_utils._rnaseq_utils";
+static const char __pyx_k_cython_utils__element_graph[] = "cython_utils._element_graph";
 static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
@@ -2980,6 +2980,8 @@ static PyObject *__pyx_n_s_copy;
 static PyObject *__pyx_n_s_count;
 static PyObject *__pyx_n_u_cov;
 static PyObject *__pyx_n_s_coverage;
+static PyObject *__pyx_n_s_cython_utils__element_graph;
+static PyObject *__pyx_n_s_cython_utils__rnaseq_utils;
 static PyObject *__pyx_n_s_denoise;
 static PyObject *__pyx_n_s_depth;
 static PyObject *__pyx_n_s_deque;
@@ -2989,7 +2991,6 @@ static PyObject *__pyx_n_s_dtype;
 static PyObject *__pyx_n_s_dtype_is_object;
 static PyObject *__pyx_n_s_e_tag;
 static PyObject *__pyx_n_s_element;
-static PyObject *__pyx_n_s_element_graph;
 static PyObject *__pyx_n_s_elements;
 static PyObject *__pyx_n_s_encode;
 static PyObject *__pyx_n_s_end_extend;
@@ -3100,7 +3101,6 @@ static PyObject *__pyx_n_s_reduce_membership;
 static PyObject *__pyx_n_s_remove_paths;
 static PyObject *__pyx_n_s_return_inverse;
 static PyObject *__pyx_n_s_right;
-static PyObject *__pyx_n_s_rnaseq_utils;
 static PyObject *__pyx_n_s_round;
 static PyObject *__pyx_n_s_s_tag;
 static PyObject *__pyx_n_s_setstate;
@@ -49820,6 +49820,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_count, __pyx_k_count, sizeof(__pyx_k_count), 0, 0, 1, 1},
   {&__pyx_n_u_cov, __pyx_k_cov, sizeof(__pyx_k_cov), 0, 1, 0, 1},
   {&__pyx_n_s_coverage, __pyx_k_coverage, sizeof(__pyx_k_coverage), 0, 0, 1, 1},
+  {&__pyx_n_s_cython_utils__element_graph, __pyx_k_cython_utils__element_graph, sizeof(__pyx_k_cython_utils__element_graph), 0, 0, 1, 1},
+  {&__pyx_n_s_cython_utils__rnaseq_utils, __pyx_k_cython_utils__rnaseq_utils, sizeof(__pyx_k_cython_utils__rnaseq_utils), 0, 0, 1, 1},
   {&__pyx_n_s_denoise, __pyx_k_denoise, sizeof(__pyx_k_denoise), 0, 0, 1, 1},
   {&__pyx_n_s_depth, __pyx_k_depth, sizeof(__pyx_k_depth), 0, 0, 1, 1},
   {&__pyx_n_s_deque, __pyx_k_deque, sizeof(__pyx_k_deque), 0, 0, 1, 1},
@@ -49829,7 +49831,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_dtype_is_object, __pyx_k_dtype_is_object, sizeof(__pyx_k_dtype_is_object), 0, 0, 1, 1},
   {&__pyx_n_s_e_tag, __pyx_k_e_tag, sizeof(__pyx_k_e_tag), 0, 0, 1, 1},
   {&__pyx_n_s_element, __pyx_k_element, sizeof(__pyx_k_element), 0, 0, 1, 1},
-  {&__pyx_n_s_element_graph, __pyx_k_element_graph, sizeof(__pyx_k_element_graph), 0, 0, 1, 1},
   {&__pyx_n_s_elements, __pyx_k_elements, sizeof(__pyx_k_elements), 0, 0, 1, 1},
   {&__pyx_n_s_encode, __pyx_k_encode, sizeof(__pyx_k_encode), 0, 0, 1, 1},
   {&__pyx_n_s_end_extend, __pyx_k_end_extend, sizeof(__pyx_k_end_extend), 0, 0, 1, 1},
@@ -49940,7 +49941,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_remove_paths, __pyx_k_remove_paths, sizeof(__pyx_k_remove_paths), 0, 0, 1, 1},
   {&__pyx_n_s_return_inverse, __pyx_k_return_inverse, sizeof(__pyx_k_return_inverse), 0, 0, 1, 1},
   {&__pyx_n_s_right, __pyx_k_right, sizeof(__pyx_k_right), 0, 0, 1, 1},
-  {&__pyx_n_s_rnaseq_utils, __pyx_k_rnaseq_utils, sizeof(__pyx_k_rnaseq_utils), 0, 0, 1, 1},
   {&__pyx_n_s_round, __pyx_k_round, sizeof(__pyx_k_round), 0, 0, 1, 1},
   {&__pyx_n_s_s_tag, __pyx_k_s_tag, sizeof(__pyx_k_s_tag), 0, 0, 1, 1},
   {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
@@ -50898,7 +50898,7 @@ if (!__Pyx_RefNanny) {
  * import copy
  * import json             # <<<<<<<<<<<<<<
  * from ast import literal_eval
- * from _element_graph import ElementGraph
+ * from cython_utils._element_graph import ElementGraph
  */
   __pyx_t_1 = __Pyx_Import(__pyx_n_s_json, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -50909,8 +50909,8 @@ if (!__Pyx_RefNanny) {
  * import copy
  * import json
  * from ast import literal_eval             # <<<<<<<<<<<<<<
- * from _element_graph import ElementGraph
- * from _rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+ * from cython_utils._element_graph import ElementGraph
+ * from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
  */
   __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -50929,8 +50929,8 @@ if (!__Pyx_RefNanny) {
   /* "_assembly_utils.pyx":8
  * import json
  * from ast import literal_eval
- * from _element_graph import ElementGraph             # <<<<<<<<<<<<<<
- * from _rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+ * from cython_utils._element_graph import ElementGraph             # <<<<<<<<<<<<<<
+ * from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
  * from collections import deque, Counter
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
@@ -50938,7 +50938,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_INCREF(__pyx_n_s_ElementGraph);
   __Pyx_GIVEREF(__pyx_n_s_ElementGraph);
   PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_ElementGraph);
-  __pyx_t_1 = __Pyx_Import(__pyx_n_s_element_graph, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_cython_utils__element_graph, __pyx_t_2, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_1, __pyx_n_s_ElementGraph); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
@@ -50949,8 +50949,8 @@ if (!__Pyx_RefNanny) {
 
   /* "_assembly_utils.pyx":9
  * from ast import literal_eval
- * from _element_graph import ElementGraph
- * from _rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads             # <<<<<<<<<<<<<<
+ * from cython_utils._element_graph import ElementGraph
+ * from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads             # <<<<<<<<<<<<<<
  * from collections import deque, Counter
  * import cython
  */
@@ -50968,7 +50968,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_INCREF(__pyx_n_s_range_of_reads);
   __Pyx_GIVEREF(__pyx_n_s_range_of_reads);
   PyList_SET_ITEM(__pyx_t_1, 3, __pyx_n_s_range_of_reads);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_rnaseq_utils, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_cython_utils__rnaseq_utils, __pyx_t_1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_BranchpointArray); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
@@ -50990,8 +50990,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "_assembly_utils.pyx":10
- * from _element_graph import ElementGraph
- * from _rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+ * from cython_utils._element_graph import ElementGraph
+ * from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
  * from collections import deque, Counter             # <<<<<<<<<<<<<<
  * import cython
  * import time
