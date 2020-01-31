@@ -1,9 +1,8 @@
 import re
 import sys
 import argparse
-import _fasta_utils as fu
 from collections import Counter
-#import __end_label_old as el
+from cython_utils import _fasta_utils as fu
 if sys.version_info >= (3,0):
     izip = zip
 else:

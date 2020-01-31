@@ -2,9 +2,9 @@ import os
 import re
 import sys
 import argparse
-import _fasta_utils as fu
-import _rnaseq_utils as ru
-from _pq import IndexMinPQ
+from cython_utils import _fasta_utils as fu
+from cython_utils import _rnaseq_utils as ru
+from cython_utils._pq import IndexMinPQ
 
 ###################
 # INPUT ARGUMENTS #

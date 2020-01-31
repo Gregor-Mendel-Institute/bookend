@@ -3,9 +3,9 @@ import sys
 import argparse
 import time
 import pysam
-import _fasta_utils as fu
-import _rnaseq_utils as ru
-import _assembly_utils as au
+from cython_utils import _fasta_utils as fu
+from cython_utils import _rnaseq_utils as ru
+from cython_utils import _assembly_utils as au
 if sys.version_info >= (3,0):
     izip = zip
 else:

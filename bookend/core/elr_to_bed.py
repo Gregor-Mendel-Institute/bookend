@@ -1,6 +1,6 @@
 import sys
 import argparse
-import _rnaseq_utils as ru
+from cython_utils import _rnaseq_utils as ru
 from argparse import RawTextHelpFormatter
 
 def output_lines(lines, output):
