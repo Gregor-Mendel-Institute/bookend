@@ -34,7 +34,7 @@ cdef class RNAseqDataset:
     cdef public list read_list, chrom_array, source_array, chrom_lengths
     cdef public int chrom_index, source_index
     cdef public dict chrom_dict, source_dict
-    cdef readonly dict config, genome
+    cdef readonly dict config, genome, label_tally
     cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
     cdef readonly str start_seq, end_seq
     cdef readonly int minlen, sj_shift
@@ -45,6 +45,7 @@ cdef class RNAseqDataset:
         """Container for RNAseqMapping objects. Stores a reference dictionary for all
         chromosome names and sample names. Contains methods for parsing
         a variety of files into a collection of read objects."""
+        self.label_tally = {'S':Counter(), 's':Counter(), 'E':Counter(), 'e':Counter()}
         self.read_list = []
         self.config = config
         self.s_tag = self.config['s_tag']
@@ -131,10 +132,25 @@ cdef class RNAseqDataset:
     
     cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
         cdef list new_read_list
+        cdef RNAseqMapping read
         if type(bam_lines) is not list:
             bam_lines = [bam_lines]
         
         new_read_list = generate_read_from_bam(self, bam_lines, ignore_ends, secondary)
+        if len(new_read_list) > 0:
+            read = new_read_list[0]
+            if read.s_len > 0:
+                if read.s_tag:
+                    self.label_tally['S'][read.s_len] += 1
+                else:
+                    self.label_tally['s'][read.s_len] += 1
+            
+            if read.e_len > 0:
+                if read.e_tag:
+                    self.label_tally['E'][read.e_len] += 1
+                else:
+                    self.label_tally['e'][read.e_len] += 1
+        
         self.read_list += new_read_list
     
     cpdef add_read_from_GTF(self, gtf_lines, bint ignore_ends=False):
@@ -175,7 +191,7 @@ cdef class RNAseqDataset:
 ##############################################################################################################
 ELdata = namedtuple('ELdata', 'chrom source strand ranges splice s_tag e_tag capped weight')
 cdef class RNAseqMapping:
-    cdef public int chrom, source, strand
+    cdef public int chrom, source, strand, s_len, e_len
     cdef public list ranges, splice
     cdef public bint s_tag, e_tag, capped, complete
     cdef public dict attributes
@@ -185,6 +201,7 @@ cdef class RNAseqMapping:
         """Initializes a Read Object given a tuple of input data.
         Requires a chromosome, strand, source, weight, a sorted tuple of
         exon ranges and an array of booleans indicating which gaps between exons are splice junctions."""
+        self.s_len = self.e_len = 0
         self.chrom, self.source = int(input_data.chrom), int(input_data.source)
         self.strand = input_data.strand
         self.ranges = input_data.ranges
@@ -365,7 +382,7 @@ cdef class RNAseqMapping:
         self.span = (self.left(), self.right())
         return True
     
-    def get_node_labels(self):
+    def get_node_labels(self, record_artifacts=False):
         """Returns a string with one label for each edge of each range in self.ranges."""
         if self.strand == 1:
             gapchar = 'DA'
@@ -375,12 +392,18 @@ cdef class RNAseqMapping:
                 else:
                     startchar = 'S'
             else:
-                startchar = '.'
+                if record_artifacts and self.s_len > 0:
+                    startchar = 's'
+                else:
+                    startchar = '.'
             
             if self.e_tag:
                 endchar = 'E'
             else:
-                endchar = '.'
+                if record_artifacts and self.e_len > 0:
+                    endchar = 'e'
+                else:
+                    endchar = '.'
         elif self.strand == -1:
             gapchar = 'AD'
             if self.s_tag:
@@ -389,19 +412,31 @@ cdef class RNAseqMapping:
                 else:
                     endchar = 'S'
             else:
-                endchar = '.'
+                if record_artifacts and self.s_len > 0:
+                    endchar = 's'
+                else:
+                    endchar = '.'
             
             if self.e_tag:
                 startchar = 'E'
             else:
-                startchar = '.'
+                if record_artifacts and self.e_len > 0:
+                    startchar = 'e'
+                else:
+                    startchar = '.'
         else:
             gapchar = '..'
             startchar = endchar = '.'
+            if record_artifacts:
+                if self.s_len > 0:
+                    startchar = 's'
+                
+                if self.e_len > 0:
+                    endchar = 'e'
         
         return(''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar]))
     
-    def write_as_elr(self, as_string=True):
+    def write_as_elr(self, as_string=True, record_artifacts=False):
         """Returns a string that represents the ReadObject
         in the end-labeled read (ELR) format"""
         elr_strand = '.'
@@ -412,7 +447,7 @@ cdef class RNAseqMapping:
         
         block_ends = flatten(self.ranges)
         lengths = [block_ends[i]-block_ends[i-1] for i in range(1,len(block_ends))]
-        labels = self.get_node_labels()
+        labels = self.get_node_labels(record_artifacts)
         EL_CIGAR = ''.join([str(a)+str(b) for a,b in zip(labels,lengths+[''])])
         read_len = self.right() - self.left()
         elr_line = [self.chrom, self.left(), read_len, elr_strand, EL_CIGAR, self.source, round(self.weight,2)]
@@ -421,10 +456,10 @@ cdef class RNAseqMapping:
         else:
             return elr_line
      
-    def write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight'):
+    def write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
-        labels = self.get_node_labels()
+        labels = self.get_node_labels(record_artifacts)
         bed_strand = '.'
         if self.strand == 1:
             bed_strand = '+'
@@ -1201,7 +1236,7 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
 cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
     """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset"""
     cdef:
-        int s_len, e_len, Nmap, counter, input_len, map_number, mate, strand
+        int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand
         int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos
         str ID, chrom, js, seq, trimmed_nuc
         (bint, bint, int, int) ID_tags = (False, False, 0, 0)
@@ -1211,6 +1246,7 @@ cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint i
         (int, int) g
         array.array flankmatch
     
+    s_tag_len = e_tag_len = 0
     stranded = stranded_method = False
     if dataset.stranded: # The read is strand-specific
         stranded_method = True # The method to generate the read is inherently stranded
@@ -1233,13 +1269,15 @@ cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint i
             if not ignore_ends:
                 ID_tags = parse_tag(ID)
             
-            if ID_tags[2] > 0:
-                if ID_tags[2] < s_len:
-                    s_len = ID_tags[2]
+            s_tag_len = ID_tags[2]
+            e_tag_len = ID_tags[3]
+            if s_tag_len > 0:
+                if s_tag_len < s_len:
+                    s_len = s_tag_len
             
-            if ID_tags[3] > 0:
-                if ID_tags[3] < e_len:
-                    e_len = ID_tags[3]
+            if e_tag_len > 0:
+                if e_tag_len < e_len:
+                    e_len = e_tag_len
         
         s_tag = dataset.s_tag or ID_tags[0]
         e_tag = dataset.e_tag or ID_tags[1]
@@ -1460,7 +1498,8 @@ cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint i
         # Generate a ReadObject with the parsed attributes above
         read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
         current_mapping = RNAseqMapping(read_data)
-        
+        current_mapping.e_len = e_tag_len
+        current_mapping.s_len = s_tag_len
         if map_number not in mappings:
             mappings[map_number] = current_mapping
         else:
@@ -1529,7 +1568,8 @@ cdef class BranchpointArray:
     cdef readonly float weight, threshold, cap_percent, minimum_proportion
     cdef readonly np.ndarray depth
     cdef public OrderedArray bp_plus, bp_minus
-    def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0):
+    cdef readonly bint infer_starts, infer_ends
+    def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0, bint infer_starts=False, bint infer_ends=False):
         """Makes a collection of positions in the locus that act as dividing
         points for all nodes of the graph. Every donor (D) and acceptor (A) 
         site are retained as-is, but start (S) and end (E) are collapsed into
@@ -1547,6 +1587,7 @@ cdef class BranchpointArray:
         cdef dict lookup, end_counts
         cdef set donor_sites, acceptor_sites
         cdef bint first_element, s_added
+        cdef tuple branchpoints
         
         Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict = Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter()
         self.J_plus = {}
@@ -1560,6 +1601,8 @@ cdef class BranchpointArray:
         self.cap_percent = cap_percent
         self.leftmost = leftmost
         self.rightmost = rightmost
+        self.infer_starts = infer_starts
+        self.infer_ends = infer_ends
         length = self.rightmost-self.leftmost
         self.depth = calculate_coverage(list(reads), self.leftmost, self.rightmost)
         self.weight = np.sum(self.depth)
@@ -1667,6 +1710,9 @@ cdef class BranchpointArray:
                 end_counts['S'] += bp.weight
             elif bp.branchtype == 'E':
                 end_counts['E'] += bp.weight
+            elif bp.branchtype in ['D','A']:
+                if bp.weight > end_counts[bp.branchtype]:
+                    end_counts[bp.branchtype] = bp.weight
 
         merged_plus = []
         first_element = True
@@ -1687,7 +1733,10 @@ cdef class BranchpointArray:
                 end_counts['S'] += bp.weight
             elif bp.branchtype == 'E':
                 end_counts['E'] += bp.weight
-
+            elif bp.branchtype in ['D','A']:
+                if bp.weight > end_counts[bp.branchtype]:
+                    end_counts[bp.branchtype] = bp.weight
+        
         merged_minus = []
         for  bp in self.bp_minus:
             if bp.weight >= self.minimum_proportion * end_counts[bp.branchtype]:
@@ -1778,7 +1827,7 @@ cdef class BranchpointArray:
                 gap_branchpoints.append(BranchPoint('N', 0, r, 0))
 
 
-        self.branchpoints = tuple(sorted(merged_plus + merged_minus))
+        branchpoints = tuple(sorted(merged_plus + merged_minus))
         # Evaluate whether terminal branchpoints must be added.
         # If no boundary Start/Endpoint exists, add a nonspecified one at leftmost/rightmost
         passes_threshold = np.where(self.depth >= threshold_depth)[0]
@@ -1789,12 +1838,12 @@ cdef class BranchpointArray:
             lbp = BranchPoint('N', 0, self.leftmost, 0)
             rbp = BranchPoint('N', 0, self.rightmost, 0)
         
-        if len(self.branchpoints) == 0:
-            self.branchpoints = tuple([lbp, rbp])
+        if len(branchpoints) == 0:
+            branchpoints = tuple([lbp, rbp])
         else:
             # Extend left border if S>/E< doesn't contain
-            lterm = self.branchpoints[0]
-            rterm = self.branchpoints[-1]
+            lterm = branchpoints[0]
+            rterm = branchpoints[-1]
             add_lbp = True
             add_rbp = True
             if (lterm.branchtype == 'S' and lterm.strand == 1) or (lterm.branchtype == 'E' and lterm.strand == -1):
@@ -1808,12 +1857,15 @@ cdef class BranchpointArray:
             
             if add_lbp or add_rbp:
                 if add_lbp and add_rbp:
-                    self.branchpoints = tuple([lbp] + list(self.branchpoints) + [rbp])
+                    branchpoints = tuple([lbp] + list(branchpoints) + [rbp])
                 elif add_lbp:
-                    self.branchpoints = tuple([lbp] + list(self.branchpoints))
+                    branchpoints = tuple([lbp] + list(branchpoints))
                 else:
-                    self.branchpoints = tuple(list(self.branchpoints) + [rbp])
-    
+                    branchpoints = tuple(list(branchpoints) + [rbp])
+
+        # Update 'N' branchpoints with their best inference
+        self.branchpoints = self.infer_unknown_branchpoints(branchpoints)
+
         # Add an index for each branchpoint so a unique lookup can be used
         for i,bp in enumerate(self.branchpoints):
             bp.index = i
@@ -1942,6 +1994,18 @@ cdef class BranchpointArray:
             if force:
                 array.add(BP)
     
+    cpdef tuple infer_unknown_branchpoints(self, tuple branchpoints):
+        """Tries to use adjacent branchpoint features to infer the identity
+        of gaps marked by 'N' (unknown) branchpoints. Returns a modified
+        branchpoint tuple."""
+        cdef tuple adjusted_branchpoints = branchpoints
+        # If no inference is allowed, return with no changes
+        if not self.infer_starts and not self.infer_ends:
+            return adjusted_branchpoints
+        
+        # Iterate over branchpoints to identify where an inference is needed
+        return adjusted_branchpoints
+
     cpdef void remove_branchpoint(self, str strand, int index):
         """Remove the BranchPoint at index in the strand bp dict.
         If the neighboring branchpoints are the same type and within range of each other,
@@ -2142,6 +2206,36 @@ cdef class OrderedArray:
     def probe(self, item, init=None):
         """Return the insert position of an item if it were to be added to the array"""
         return self.get_insert_pos((item, self.n + 1), init)
+
+cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
+    """Returns two positions in the array that represent
+      [0] the sharpest increase and 
+      [1] the sharpest decrease
+    in the float values in the array.
+    """
+    cdef Py_ssize_t i, j, l
+    cdef float vi, vj, delta, max_delta, min_delta
+    cdef (int, int) top_positions = (0, 0)
+    cdef float [:] ARRAY = array
+    if offset < 1:
+        offset = 1
+    
+    l = array.shape[0]
+    max_delta = min_delta = 0
+    for i in range(1, l):
+        j = i - 1
+        vi = ARRAY[i]
+        vj = ARRAY[j]
+        delta = (vi - vj)/(vi + offset)
+        if delta > max_delta: # A gap begins or extends
+            max_delta = delta
+            top_positions[0] = i
+        elif delta < min_delta: # Not in a gap
+            min_delta = delta
+            top_positions[1] = i-1
+    
+    return top_positions
+
 
 cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):
     """Returns True if no gap longer than maxgap in the array falls below the threshold"""

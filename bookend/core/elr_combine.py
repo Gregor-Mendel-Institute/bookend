@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import argparse
+import resource
 from cython_utils import _fasta_utils as fu
 from cython_utils import _rnaseq_utils as ru
 from cython_utils._pq import IndexMinPQ
@@ -32,6 +33,9 @@ def get_header(file):
     header = {'chrom':{}, 'source':{}}
     file.seek(0)
     line = file.readline().rstrip()
+    if len(line) == 0:
+        return header, line
+    
     while line[0] == '#':
         header_line = line.split(' ')
         num, char = header_line[-2:]
@@ -63,6 +67,12 @@ def sortable_tuple_to_read(sortable_tuple):
     l[3] = strand_reverse_values[l[3]]    
     l[6] = -l[6]
     return '\t'.join([str(i) for i in l])
+
+def combine_elr_files(list_of_files):
+    """Sets up a minimum priority queue of sorted files
+    and interleaves them in order."""
+    pass
+    
 
 ####################
 # PARSE INPUT FILE #
@@ -102,11 +112,15 @@ if __name__ == '__main__':
     dataset = ru.RNAseqDataset(chrom_array=merged_chroms, source_array=merged_sources)
     # Initialize the priority queue with one ELR read object from each file
     PQ = IndexMinPQ(number_of_files)
-    for index, line in enumerate(current_lines):
-        item = read_to_sortable_tuple(line, index)
-        PQ.insert(index, item)
-    
     finished_files = 0
+    for index, line in enumerate(current_lines):
+        if line: # Populate the queue with the first line
+            item = read_to_sortable_tuple(line, index)
+            PQ.insert(index, item)
+        else: # The file was empty
+            files[index].close()
+            finished_files += 1
+    
     for h in dataset.dump_header():
         print(h)
     

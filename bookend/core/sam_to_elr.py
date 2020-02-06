@@ -66,6 +66,14 @@ parser.add_argument(
     default='RRRRRRRRRRRRRRR', type=str
 )
 parser.add_argument(
+    "--record_artifacts", dest='RECORD_ARTIFACTS', default=False, action='store_true',
+    help="Reports artifact-masked S/E labels as lowercase s/e."
+)
+parser.add_argument(
+    "--split", dest='SPLIT', default=False, action='store_true',
+    help="Separate reads into different files by their multimapping number."
+)
+parser.add_argument(
     "--mismatch_rate", dest='MM',
     help="Mismatch tolerance of S label matches",
     default=0.20, type=float
@@ -88,8 +96,10 @@ if args.START or args.END or args.CAPPED:
     args.STRANDED = True
 
 output_file = 'stdout'
-if args.OUTPUT != 'stdout':
-    output_file = open(args.OUTPUT, 'w')
+output_dict = {}
+if not args.SPLIT:
+    if args.OUTPUT != 'stdout':
+        output_file = open(args.OUTPUT, 'w')
 
 if args.HEADER is None:
     header_file = output_file
@@ -135,18 +145,18 @@ def output_lines(lines, output):
             output.write('{}\n'.format(o))
 
 
-def write_read(mapping_list, chrom_array, source_array, output, minlen=args.MINLEN, bed=args.BED_OUT):
+def write_read(mapping_list, chrom_array, source_array, output, minlen=args.MINLEN, bed=args.BED_OUT, record_artifacts=args.RECORD_ARTIFACTS):
     nmap = len(mapping_list)
     for i,mapping in enumerate(mapping_list):
         match_length = mapping.get_length()
         if match_length >= minlen:
             if bed:
-                out_fields = mapping.write_as_bed(chrom_array, source_array, as_string=False)
+                out_fields = mapping.write_as_bed(chrom_array, source_array, as_string=False, record_artifacts=record_artifacts)
                 out_fields[6] = nmap
                 out_fields[7] = i+1
                 out_string = '\t'.join([str(f) for f in out_fields])
             else:
-                out_string = mapping.write_as_elr()
+                out_string = mapping.write_as_elr(record_artifacts=record_artifacts)
             
             output_lines([out_string], output)
 
@@ -201,13 +211,48 @@ if __name__ == '__main__':
             #    sys.exit(1)
                 
             dataset.add_read_from_BAM(current_lines, ignore_ends=args.NO_ENDS, secondary=args.SECONDARY)
+            if args.SPLIT: # Separate reads by their number of mappings to the genome
+                mm_num = len(dataset.read_list)
+                if mm_num not in output_dict.keys():
+                    # Start a new file when a new multimapping number is found
+                    output_dict[mm_num] = open('{}.mm{}.elr'.format(args.SOURCE, mm_num), 'w')
+                    # Add the header to all output files
+                    output_lines(dataset.dump_header(), output_dict[mm_num])
+
+                output_file = output_dict[mm_num]
+            
             write_read(dataset.read_list, dataset.chrom_array, dataset.source_array, output_file)
             # sys.exit(0)
             dataset.read_list = []
             current_lines = [line]
             current_ID = ID
-
+    
     dataset.add_read_from_BAM(current_lines, ignore_ends=args.NO_ENDS, secondary=args.SECONDARY)
+    if args.SPLIT: # Separate reads by their number of mappings to the genome
+        mm_num = len(dataset.read_list)
+        if mm_num not in output_dict.keys():
+            output_dict[mm_num] = open('{}.mm{}.elr'.format(args.SOURCE, mm_num), 'w')
+            output_lines(dataset.dump_header(), output_dict[mm_num])
+        
+        output_file = output_dict[mm_num]
+    
     write_read(dataset.read_list, dataset.chrom_array, dataset.source_array, output_file)
     if args.OUTPUT != 'stdout':
         output_file.close()
+
+    if args.RECORD_ARTIFACTS:
+        max_len = max([
+            max(dataset.label_tally['S']),
+            max(dataset.label_tally['s']), 
+            max(dataset.label_tally['E']), 
+            max(dataset.label_tally['e'])
+        ])
+        print('len\tS\ts\tE\te')
+        for i in range(max_len+1):
+            print('{}\t{}\t{}\t{}\t{}'.format(
+                i,
+                dataset.label_tally['S'][i],
+                dataset.label_tally['s'][i],
+                dataset.label_tally['E'][i],
+                dataset.label_tally['e'][i]
+            ))
