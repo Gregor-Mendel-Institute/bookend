@@ -18,13 +18,13 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-S', '--start', dest='START',
     help="Template switching primer, marks the RNA 5' terminus.",
-    type=str, default='AAGCAGTGGTATCAACGCAGAGTACGGG'
+    type=str, default='AAGCAGTGGTATCAACGCAGAGTACATGGG'
 )
 parser.add_argument(
     '-E', '--end', dest='END',
     help="Reverse transcription primer, marks (reverse complement of) the RNA 3' terminus.",
-    # type=str, default='AAGCAGTGGTATCAACGCAGAGTACTTTTTTTTTTTTTTTTTTTTTT+'
-    type=str, default='TTTTTTTTTTTTTTTTTTTT+'
+    type=str, default='AAGCAGTGGTATCAACGCAGAGTACTTTTTTTTTTTTTTTTTTTTTT+'
+    #type=str, default='TTTTTTTTTTTTTTTTTTTT+'
 )
 parser.add_argument(
     '--strand', dest='STRAND',
@@ -49,12 +49,12 @@ parser.add_argument(
 parser.add_argument(
     '--min_start', dest='MIN_START',
     help="Minimum number of nucleotides that must match to the start adapter sequence.",
-    type=int, default=5
+    type=int, default=7
 )
 parser.add_argument(
     '--min_end', dest='MIN_END',
     help="Minimum number of nucleotides that must match to the end adapter sequence.",
-    type=int, default=8
+    type=int, default=9
 )
 parser.add_argument(
     '--suppress_untrimmed', dest='SUPPRESS_UNTRIMMED',
@@ -69,7 +69,7 @@ parser.add_argument(
 parser.add_argument(
     '--minlen', dest='MINLEN',
     help="Minimum sequence length to keep.",
-    type=int, default=18
+    type=int, default=16
 )
 parser.add_argument(
     '--mismatch_rate', dest='MM_RATE',
