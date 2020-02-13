@@ -5,7 +5,8 @@ from cpython cimport array
 import numpy as np
 cimport numpy as np
 import json
-from cython_utils import _fasta_utils as fu
+import bookend.core.cython_utils._fasta_utils as fu
+# from cython_utils import _fasta_utils as fu
 from collections import namedtuple, Counter
 from ast import literal_eval
 import copy
@@ -1736,7 +1737,7 @@ cdef class BranchpointArray:
             elif bp.branchtype in ['D','A']:
                 if bp.weight > end_counts[bp.branchtype]:
                     end_counts[bp.branchtype] = bp.weight
-        
+
         merged_minus = []
         for  bp in self.bp_minus:
             if bp.weight >= self.minimum_proportion * end_counts[bp.branchtype]:
@@ -1999,11 +2000,13 @@ cdef class BranchpointArray:
         of gaps marked by 'N' (unknown) branchpoints. Returns a modified
         branchpoint tuple."""
         cdef tuple adjusted_branchpoints = branchpoints
+        cdef BranchPoint FDP, FDM, LAP, LAM
         # If no inference is allowed, return with no changes
         if not self.infer_starts and not self.infer_ends:
             return adjusted_branchpoints
         
         # Iterate over branchpoints to identify where an inference is needed
+        
         return adjusted_branchpoints
 
     cpdef void remove_branchpoint(self, str strand, int index):

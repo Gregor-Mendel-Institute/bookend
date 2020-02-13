@@ -5,22 +5,22 @@ import re
 import copy
 import json
 from ast import literal_eval
-from cython_utils._element_graph import ElementGraph
-from cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+from bookend.core.cython_utils._element_graph import ElementGraph
+from bookend.core.cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
 from collections import deque, Counter
 import cython
 import time
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
-    cdef public bint naive
+    cdef public bint naive, infer_starts, infer_ends
     cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_percent, novelty_ratio, mean_read_length, intron_filter
     cdef public dict adj, bp_lookup
     cdef public list transcripts
     cdef public object BP, graph
     cdef public np.ndarray read_lengths, frag_len, frag_by_pos, strand_array, weight_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False):
         self.transcripts = []
         self.bp_lookup = {}
         self.chunk_number = chunk_number
@@ -31,6 +31,8 @@ cdef class Locus:
         self.chrom = chrom
         self.novelty_ratio = novelty_ratio
         self.cap_percent = cap_percent
+        self.infer_starts = infer_starts
+        self.infer_ends = infer_ends
         self.leftmost, self.rightmost = range_of_reads(list_of_reads)
         self.reads = tuple(list_of_reads) # Cannot be mutated
         self.read_lengths = np.array([r.get_length() for r in self.reads])
@@ -50,7 +52,7 @@ cdef class Locus:
         return self.rightmost - self.leftmost
     
     cpdef generate_branchpoints(self):
-        self.BP = BranchpointArray(self.leftmost, self.rightmost, self.reads, self.extend, self.end_extend, self.minimum_proportion, self.cap_percent, self.min_overhang)
+        self.BP = BranchpointArray(self.leftmost, self.rightmost, self.reads, self.extend, self.end_extend, self.minimum_proportion, self.cap_percent, self.min_overhang, self.infer_starts, self.infer_ends)
 
 
     cpdef build_membership_matrix(self):

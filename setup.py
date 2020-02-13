@@ -1,11 +1,13 @@
 import setuptools
+from distutils.core import setup
+from distutils.extension import Extension
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="bookend-maschon0", # Replace with your own username
-    version="0.0.1",
+    version="0.0.5",
     author="Michael A. Schon",
     author_email="michael.schon@gmi.oeaw.ac.at",
     description="End-guided transcript assembler for short and long RNA-seq reads.",
@@ -19,7 +21,17 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     keywords='transcriptome assembler bioinformatics rna sequencing',
-    install_requires=['cython', 'numpy'],
+    install_requires=['cython', 'numpy', 'pysam'],
+    scripts=['bin/sort-elr', 'bin/collapse-elr', 'bin/gff3-to-bed'],
+    entry_points={
+        'console_scripts': ['bookend = bookend.bookend:main'],
+    },
+    ext_modules = [
+        Extension("bookend.core.cython_utils._assembly_utils", ["bookend/core/cython_utils/_assembly_utils.c"]),
+        Extension("bookend.core.cython_utils._element_graph", ["bookend/core/cython_utils/_element_graph.c"]),
+        Extension("bookend.core.cython_utils._fasta_utils", ["bookend/core/cython_utils/_fasta_utils.c"]),
+        Extension("bookend.core.cython_utils._pq", ["bookend/core/cython_utils/_pq.c"]),
+        Extension("bookend.core.cython_utils._rnaseq_utils", ["bookend/core/cython_utils/_rnaseq_utils.c"]),
+    ],
     python_requires='>=3.6',
 )
-
