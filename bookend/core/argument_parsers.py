@@ -2,11 +2,10 @@ import argparse
 from bookend.core.assemble import Assembler
 from bookend.core.fastq_end_label import EndLabeler
 from bookend.core.bam_to_elr import BAMtoELRconverter
+from bookend.core.fasta_index import Indexer
 # from core.bed_to_elr import BEDtoELRconverter
 # from core.elr_to_bed import ELRtoBEDconverter
 # from core.elr_combine import ELRcombiner
-# from core.fasta_index import FASTAindexer
-# from core.fasta_softbridges import FASTAsoftbridger
 # from core.sam_sj_out import SAMtoSJconverter
 # from core.sj_merge import SJmerger
 # from core.sj_to_bed import SJtoBEDconverter
@@ -235,31 +234,12 @@ end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FAS
 end_label_parser.set_defaults(object=EndLabeler)
 
 ### fasta_index.py ###
-# parser.add_argument(
-#     'FASTA', type=str,
-#     help="Path to FASTA file."
-# )
-# parser.add_argument(
-#     '-S','--split', dest='SPLIT_ON', type=str,
-#     help="Character string to split header name from description.",
-#     default=' '
-# )
-
-# ### fasta_softbridges.py ###
-# parser.add_argument(
-#     "-F", "--fasta", dest='FASTA',
-#     help="Genome FASTA file",
-#     default=None, type=str, required=True
-# )
-# parser.add_argument(
-#     "-O", "--output", dest='OUTPUT', type=str, default='stdout',
-#     help="Filepath to write BED12 file."
-# )
-# parser.add_argument(
-#     "--maxlen", dest='MAXLEN',
-#     help="Maximum tolerated length for a bridge over a softmasked region.",
-#     default=1000, type=int
-# )
+fasta_index_parser = subparsers.add_parser('index-fasta',help="Generates index files for the reference genome FASTA file.")
+fasta_index_parser.add_argument('FASTA', type=str,help="Path to FASTA file.")
+fasta_index_parser.add_argument('-S','--split', dest='SPLIT_ON', type=str, help="Character string to split header name from description.",default=' ')
+fasta_index_parser.add_argument("--bridge_min", dest='MINLEN',help="Minimum tolerated length for a bridge over a softmasked region.", default=100, type=int)
+fasta_index_parser.add_argument("--bridge_max", dest='MAXLEN',help="Maximum tolerated length for a bridge over a softmasked region.", default=500, type=int)
+fasta_index_parser.set_defaults(object=Indexer)
 
 ### gtf_merge.py ###
 # merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation GTF/GFF3 files to one consensus")

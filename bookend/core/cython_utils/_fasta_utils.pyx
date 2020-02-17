@@ -846,39 +846,113 @@ def terminal_trim(
     return (trim1, qtrm1, trim2, qtrm2, label)
 
 # Importing a FASTA file as a genome object
-cpdef dict import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True):
+cpdef import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True, bint indexed=False):
     """Reads FASTA file to a dict."""
-    cdef str rawline, line, chromname, chromstring, firstchar
-    cdef int linelen
-    cdef list current_lines = []
-    cdef dict genome = {}
+    cdef:
+        str rawline, line, chromname, chromstring, firstchar, index
+        long linelen, start_position, trimmed_length, untrimmed_length
+        list current_lines = []
+        dict genome = {}
+        bint length_mismatch
+    
     chromname = 'none'
     chromstring = ''
+    trimmed_length = untrimmed_length = start_position = 0
+    length_mismatch = False
+    if indexed:
+        index = open(genome_FASTA+'.fai','r').read()
+    else:
+        index = ''
+    
     genome_file = open(genome_FASTA)
-    for rawline in genome_file:
+    rawline = genome_file.readline()
+    while rawline:
         line = rawline.rstrip()
-        firstchar = line[0]
         linelen = len(line)
         if linelen == 0:
+            rawline = genome_file.readline()
             continue
         
+        firstchar = line[0]
         if firstchar == '>':
             if chromname != 'none':
                 chromstring = ''.join(current_lines)
                 genome[chromname] = chromstring
+                if not indexed:
+                    index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
             
             chromname = line[1:].split(split_on)[0]
+            start_position = genome_file.tell()
+            trimmed_length = 0
+            length_mismatch = False
+            chromstring = ''
             current_lines = []
+            rawline = genome_file.readline()
             continue
+        elif not indexed:
+            if length_mismatch:
+                print("Indexing error: [{}] line length mismatch. Indexing ignored.".format(genome_file.tell()))
+                indexed = True
+            
+            if trimmed_length == 0:
+                trimmed_length = len(line)
+                untrimmed_length = len(rawline)
+            elif trimmed_length != len(line):
+                length_mismatch = True
         
         if not keep_case:
             line = line.upper()
         
         current_lines.append(line)
-    
+        rawline = genome_file.readline()
+
     chromstring = ''.join(current_lines)
     genome[chromname] = chromstring
-    return genome
+    if not indexed:
+        index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
+    
+    genome_file.close()
+    return genome, index
+
+
+def generate_softbridges(dict genome_dict, int minlen, int maxlen):
+    """From a genome dict, yields one BED12 line for each start/stop
+    of a softmasked region of the FASTA file, demarcated by lowercase letters.
+    """
+    cdef:
+        bint soft_toggle
+        str chromname, chromstring, c, out_string
+        int current_pos, start_pos, end_pos, sb_length
+        bint lowercase
+        Py_ssize_t i
+    
+    soft_toggle = False
+    current_pos = start_pos = end_pos = sb_length = 0
+    for chromname in sorted(list(genome_dict.keys())):
+        soft_toggle = False
+        current_pos = 0
+        start_pos = 0
+        end_pos = 0
+        chromstring = genome_dict[chromname]
+        for i in range(len(chromstring)):
+            c = chromstring[i]
+            lowercase = c.islower()
+            if lowercase:
+                if not soft_toggle: # Start a softbridge
+                    soft_toggle = True
+                    start_pos = current_pos
+            elif soft_toggle: # End a softbridge
+                soft_toggle = False
+                end_pos = current_pos
+                sb_length = end_pos - start_pos
+                if sb_length >= minlen and sb_length <= maxlen:
+                    out_string = '{}\t{}\t{}\t.\t0.01\t.\t0\t0\t204,204,180\t1\t{}\t0\t0.01\tsoftbridge\t..\n'.format(
+                        chromname, start_pos, end_pos, sb_length
+                    )
+                    yield out_string
+            
+            current_pos += 1
+
 
 def number_chromosomes(genome):
     """Returns a sorted index of chromosome starting positions in a genome."""    
