@@ -1,10 +1,11 @@
 import argparse
+from argparse import RawTextHelpFormatter
 from bookend.core.assemble import Assembler
 from bookend.core.fastq_end_label import EndLabeler
 from bookend.core.bam_to_elr import BAMtoELRconverter
 from bookend.core.fasta_index import Indexer
-# from core.bed_to_elr import BEDtoELRconverter
-# from core.elr_to_bed import ELRtoBEDconverter
+from bookend.core.bed_to_elr import BEDtoELRconverter
+from bookend.core.elr_to_bed import ELRtoBEDconverter
 # from core.elr_combine import ELRcombiner
 # from core.sam_sj_out import SAMtoSJconverter
 # from core.sj_merge import SJmerger
@@ -51,9 +52,44 @@ Subcommands (use -h/--help for more info):
 
 
 desc = 'Functions for end-guided assembly of RNA-seq data.'
-main_parser = argparse.ArgumentParser(description=desc)
+main_parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
 main_parser.set_defaults(object=Helper)
 subparsers = main_parser.add_subparsers(title='subcommands',description='Choose a command to run',help='Supported subcommands:')
+
+ELRdesc = """
+Converts file to a 'end labeled read' (ELR) format.
+ELR contains a two-component header: #C (chromosome) and #S (source).
+Each line is a read or read stack with six columns:
+    chromosome  position  strand  ELCIGAR  sample  weight
+
+    chromosome: Chromosome number, as indexed by the #C header
+    position: 0-indexed position in chromosome
+    strand: Inferred RNA strand; +, -, or . (unknown)
+    ELCIGAR: String describing the mapped read (full description below)
+    sample: Sample number, as indexed by the #S header
+    weight: Read count (allows partial counts for multimappers)
+"""
+
+ELRepilog = """
+ELCIGAR strings are Character|Number strings and one trailing character
+([CN]xC), where C is a label and N is a numeric length on the genome.
+Each C labels an end or gap in the alignment as one of the following:
+    S: start
+    s: start (low confidence)
+    C: start (capped)
+    E: end (polyA tail)
+    e: end (low confidence)
+    D: splice junction donor
+    A: splice junction acceptor
+    .: unspecified gap or end
+
+For example, a 50bp paired-end read of a 185-nt fragment would be
+    .50.85.50.
+A full 3-exon transcript could be described as:
+    S256D800A128D800A512E
+where the 3 exons are 256, 128, and 512 nucleotides,
+and the 2 introns are both 800 nucleotides.
+"""
 
 ### assemble.py ###
 assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)")
@@ -79,7 +115,7 @@ assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepat
 assemble_parser.set_defaults(object=Assembler)
 
 ### bam_to_elr.py ###
-bam_to_elr_parser = subparsers.add_parser('make-elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.")
+bam_to_elr_parser = subparsers.add_parser('make-elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
 bam_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, help="Filepath to write end-labeled file.")
 bam_to_elr_parser.add_argument("--source", dest='SOURCE', default=None, type=str, help="Name the source of BAM/SAM reads.")
 bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file")
@@ -102,117 +138,29 @@ bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/
 bam_to_elr_parser.set_defaults(object=BAMtoELRconverter)
 
 ### bed_to_elr.py ###
-# desc = (
-#     "Converts BED files to a 'end labeled read' (ELR) format.\n"
-#     "ELR contains a two-component header: #G (genome) and #N (names of samples).\n"
-#     "Each line is a read or read stack with six columns:\n"
-#     "  chromosome  position  strand  ELCIGAR  sample  weight\n"
-#     "\n"
-#     "  chromosome: Chromosome number, as indexed by the #G header\n"
-#     "  position: 0-indexed position in chromosome\n"
-#     "  strand: Inferred RNA strand; +, -, or . (unknown)\n"
-#     "  ELCIGAR: String describing the mapped read (full description below)\n"
-#     "  sample: Sample number, as indexed by the #N header\n"
-#     "  weight: Read count (allows partial counts for multimappers)\n"
-# )
-
-# epilog = (
-#     "ELCIGAR strings are Character|Number strings and one trailing character\n"
-#     "([CN]xC), where C is a label and N is a numeric length on the genome.\n"
-#     "Each C labels an end or gap in the alignment as one of the following:\n"
-#     "  S: start\n"
-#     "  s: start (low confidence)\n"
-#     "  C: start (capped)\n"
-#     "  E: end (polyA tail)\n"
-#     "  e: end (low confidence)\n"
-#     "  D: splice junction donor\n"
-#     "  A: splice junction acceptor\n"
-#     "  .: unspecified gap or end\n"
-#     "\n"
-#     "For example, a paired-end 50 read of a 185-nt fragment would be\n"
-#     "  x50x85x50x\n"
-#     "A full 3-exon transcript could be described as:\n"
-#     "  S256D800A128D800A512E\n"
-#     "where the 3 exons are 256, 128, and 512 nucleotides,\n"
-#     "and the 2 introns are both 800 nucleotides.\n"
-#     "\n"
-# )
-
-# # initilize argumentparser to read in commands
-# parser = argparse.ArgumentParser(
-#     description=desc,
-#     epilog=epilog,
-#     formatter_class=RawTextHelpFormatter
-# )
-# parser.add_argument(
-#     "--source", dest='SOURCE',
-#     help="Source of BED lines.",
-#     default=None, type=str
-# )
-# parser.add_argument(
-#     "-j", dest='JUNCTIONS', default=False, action='store_true',
-#     help="Gaps in the reads are splice junctions."
-# )
-# parser.add_argument(
-#     "-s", dest='START', default=False, action='store_true',
-#     help="Read 5' ends are transcript start sites."
-# )
-# parser.add_argument(
-#     "-c", dest='CAPPED', default=False, action='store_true',
-#     help="5' end data is capped."
-# )
-# parser.add_argument(
-#     "-e", dest='END', default=False, action='store_true',
-#     help="Read 3' ends are transcript end sites."
-# )
-# parser.add_argument(
-#     "--bed", dest='BED_OUT', default=False, action='store_true',
-#     help="Output a 15-column end labeled BED file."
-# )
-# parser.add_argument(
-#     "-O", "--output", dest='OUTPUT', type=str, default='stdout',
-#     help="Filepath to write ELR file."
-# )
-# parser.add_argument(
-#     "--header", dest='HEADER', type=str, default='stdout',
-#     help="Filepath to write ELR header."
-# )
-# parser.add_argument(
-#     "FILENAME", nargs='?'
-# )
+bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+bed_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, required=True, help="Filepath to write ELR file.")
+bed_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
+bed_to_elr_parser.add_argument("--source", dest='SOURCE', help="Source of BED lines.", default=None, type=str)
+bed_to_elr_parser.add_argument("-j", dest='JUNCTIONS', default=False, action='store_true', help="Gaps in the reads are all splice junctions.")
+bed_to_elr_parser.add_argument("-s", dest='START', default=False, action='store_true', help="All read 5' ends are transcript start sites.")
+bed_to_elr_parser.add_argument("-c", dest='CAPPED', default=False, action='store_true', help="All 5' ends are capped.")
+bed_to_elr_parser.add_argument("-e", dest='END', default=False, action='store_true', help="All read 3' ends are transcript end sites.")
+bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
+bed_to_elr_parser.set_defaults(object=BEDtoELRconverter)
 
 ### elr_combine.py ###
-# parser = argparse.ArgumentParser()
-# parser.add_argument(
-#     dest='INPUT',
-#     help="Input sorted ELR file(s).",
-#     type=str,
-#     nargs='+'
-# )
+
+# parser.add_argument(dest='INPUT', help="Input sorted ELR file.", type=str, nargs='+')
 
 # args = parser.parse_args()
 
 ### elr_to_bed.py ###
-# desc = (
-#     "Converts 'end labeled read' (ELR) files to BED.\n"
-#     "Three additional columns are added to the traditional 12-column format:\n"
-#     "\n"
-#     "  weight: Read count (allows partial counts for multimappers)\n"
-#     "  sample: Source of the ELR entry\n"
-#     "  end label: String describing the ends of each block as a start, end, junction, or none\n"
-# )
-# # initilize argumentparser to read in commands
-# parser = argparse.ArgumentParser(
-#     description=desc,
-#     formatter_class=RawTextHelpFormatter
-# )
-# parser.add_argument(
-#     "-O", "--output", dest='OUTPUT', type=str, default='stdout',
-#     help="Filepath to write ELR file."
-# )
-# parser.add_argument(
-#     "FILENAME", nargs='?'
-# )
+elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)
+elr_to_bed_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
+elr_to_bed_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
+elr_to_bed_parser.add_argument("INPUT", help='Input ELR file')
+elr_to_bed_parser.set_defaults(object=ELRtoBEDconverter)
 
 ### fastq_end_label.py ###    
 end_label_parser = subparsers.add_parser('label',help="Trims and labels RNA 5' and 3' ends in a FASTQ file")

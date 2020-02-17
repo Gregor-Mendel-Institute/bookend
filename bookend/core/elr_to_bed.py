@@ -1,79 +1,94 @@
 import sys
-import argparse
-from cython_utils import _rnaseq_utils as ru
-from argparse import RawTextHelpFormatter
+import os
+import bookend.core.cython_utils._rnaseq_utils as ru
+if __name__ == '__main__':
+    sys.path.append('../../bookend')
+    from argument_parsers import bed_to_elr_parser as parser
 
-def output_lines(lines, output):
-    """Takes a list of bed lines and writes
-    them to the output stream.
-    """
-    if output == 'stdout':
-        for output_string in lines:
-            print(output_string)
-    else:
-        for output_string in lines:
-            o = output_string.rstrip()
-            output.write('{}\n'.format(o))
-
-if __name__ == "__main__":
-    ###################
-    # INPUT ARGUMENTS #
-    ###################
-    desc = (
-        "Converts 'end labeled read' (ELR) files to BED.\n"
-        "Three additional columns are added to the traditional 12-column format:\n"
-        "\n"
-        "  weight: Read count (allows partial counts for multimappers)\n"
-        "  sample: Source of the ELR entry\n"
-        "  end label: String describing the ends of each block as a start, end, junction, or none\n"
-    )
-    # initilize argumentparser to read in commands
-    parser = argparse.ArgumentParser(
-        description=desc,
-        formatter_class=RawTextHelpFormatter
-    )
-    parser.add_argument(
-        "-O", "--output", dest='OUTPUT', type=str, default='stdout',
-        help="Filepath to write ELR file."
-    )
-    parser.add_argument(
-        "FILENAME", nargs='?'
-    )
-    args = parser.parse_args()
-    
-    s={'+':'plus','-':'minus','.':'ns'}
-    if args.FILENAME:
-        if args.FILENAME.split('.')[-1].lower() not in ['elr']:
-            print("\nERROR: input file must be ELR format.")
-            parser.print_help()
-            sys.exit(1)
-        input_file = open(args.FILENAME)
-    elif not sys.stdin.isatty():
-        input_file = sys.stdin
-    else:
-        print("\nERROR: requires ELR file as input.")
-        parser.print_help()
-        sys.exit(1)
-
-    output_file = 'stdout'
-    if args.OUTPUT != 'stdout':
-        output_file = open(args.OUTPUT, 'w')
-    
-    #TODO: Allow dataset to be initialized with a separate header file
-    dataset = ru.RNAseqDataset()
-    
-    for elr_line in input_file:
-        if elr_line[0] == '#':
-            header_line = elr_line.rstrip().split(' ')
-            if header_line[0] == '#S':
-                dataset.add_source(header_line[-1])
-            if header_line[0] == '#C':
-                dataset.add_chrom(header_line[-1])
-            
-            output_lines([elr_line.rstrip()], output_file)
-            continue
+class ELRtoBEDconverter:
+    def __init__(self, args):
+        """Converts each line of BED-formatted input to ELR"""
+        self.input = args['INPUT']
+        self.output = args['OUTPUT']
+        self.header = args['HEADER']
+        if self.output == 'stdout':
+            self.output_file = 'stdout'
+        else:
+            self.output_file = open(self.output, 'w')
         
-        dataset.add_read_from_ELR(elr_line)
-        while len(dataset.read_list) > 0:
-            bed_line = dataset.pop_read('bed')
-            output_lines([bed_line], output_file)
+        if self.header is None:
+            self.header_file = self.output_file
+        else:
+            self.header_file = open(self.header, 'w')
+               
+        self.linecount = 0
+        self.readcount = 0
+        self.dataset = ru.RNAseqDataset()
+
+    def process_input(self):
+        """Yield a BED line from each line of a ELR input."""
+        elr_in = open(self.input, 'r')
+        for elr_line in elr_in:
+            if elr_line[0] == '#':
+                header_line = elr_line.rstrip().split(' ')
+                if header_line[0] == '#S':
+                    self.dataset.add_source(header_line[-1])
+                if header_line[0] == '#C':
+                    self.dataset.add_chrom(header_line[-1])
+
+                self.output_line(elr_line.rstrip(), self.header_file)
+                continue
+
+            self.dataset.add_read_from_ELR(elr_line)
+            self.linecount += 1
+            self.readcount += self.dataset.read_list[-1].weight
+            while len(self.dataset.read_list) > 0:
+                bed_line = self.dataset.pop_read('bed')
+                self.output_line(bed_line, self.output_file)
+            
+            current_source_index = self.dataset.source_index
+            current_chrom_index = self.dataset.chrom_index
+        
+        if self.output != 'stdout':
+            self.output_file.close()
+        
+        if self.header_file != self.output_file and self.header_file != 'stdout':
+            self.header_file.close()
+
+    def output_line(self, line, output_file):
+        """Takes a list of bed lines and writes
+        them to the output stream.
+        """
+        if output_file == 'stdout':
+            print(line)
+        else:
+            output_file.write('{}\n'.format(line.rstrip()))
+    
+    def run(self):
+        print(self.display_options())
+        if not self.input.split('.')[-1].lower() in ['elr']:
+            print("ERROR: input must be in the ELR format (.elr)")
+            return 1
+        
+        self.process_input()
+        print(self.display_summary())
+        return 0
+    
+    def display_options(self):
+        """Returns a string describing all input args"""
+        options_string = "\n/| bookend elr-to-bed |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string += "  Input file:    {}\n".format(self.input)
+        options_string += "  Output file:   {}\n".format(self.output)
+        options_string += "  Header output: {}\n".format(self.header)
+        return options_string
+    
+    def display_summary(self):
+        summary_string = ''
+        summary_string += 'Processed {} lines ({} total reads).\n'.format(self.linecount, round(self.readcount,2))
+        return summary_string
+    
+
+if __name__ == '__main__':
+    args = vars(parser.parse_args())
+    obj = BEDtoELRconverter(args)
+    sys.exit(obj.run())
