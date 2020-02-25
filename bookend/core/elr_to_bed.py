@@ -41,8 +41,8 @@ class ELRtoBEDconverter:
 
             self.dataset.add_read_from_ELR(elr_line)
             self.linecount += 1
-            self.readcount += self.dataset.read_list[-1].weight
             while len(self.dataset.read_list) > 0:
+                self.readcount += self.dataset.read_list[-1].weight
                 bed_line = self.dataset.pop_read('bed')
                 self.output_line(bed_line, self.output_file)
             

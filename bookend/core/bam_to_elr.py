@@ -26,7 +26,8 @@ class BAMtoELRconverter:
         self.split = args['SPLIT']
         self.mismatch_rate = args['MM_RATE']
         self.sj_shift = args['SJ_SHIFT']
-        self.minlen = args['MINLEN']
+        self.minlen_strict = args['MINLEN_STRICT']
+        self.minlen_loose = args['MINLEN_LOOSE']
         self.input = args['INPUT']
         
         if self.start or self.end or self.capped:
@@ -61,7 +62,8 @@ class BAMtoELRconverter:
             'stranded':self.stranded,
             'start_seq':self.start_seq,
             'end_seq':self.end_seq,
-            'minlen':self.minlen,
+            'minlen_strict':self.minlen_strict,
+            'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
             'sj_shift':self.sj_shift
         }
@@ -80,17 +82,13 @@ class BAMtoELRconverter:
         if self.source is None:
             self.source = self.bam_in.header['PG'][0]['ID']
         
-        if not self.genome:
-            self.dataset = ru.RNAseqDataset(
-                    chrom_array=self.bam_in.header.references, 
-                    chrom_lengths=list(self.bam_in.header.lengths), 
-                    source_array=[self.source],
-                    config=self.config_dict)
-        else:
-            self.dataset = ru.RNAseqDataset(
-                    source_array=[self.source], 
-                    genome_fasta=self.genome,
-                    config=self.config_dict)
+        self.dataset = ru.RNAseqDataset(
+            chrom_array=self.bam_in.header.references, 
+            chrom_lengths=list(self.bam_in.header.lengths),
+            source_array=[self.source],
+            config=self.config_dict,
+            genome_fasta=self.genome
+        )
         
         self.generator = self.generate_bam_entries()
     
@@ -119,26 +117,10 @@ class BAMtoELRconverter:
             for output_string in lines:
                 print(output_string)
         else:
-            for output_string in lines:
-                o = output_string.rstrip()
-                output.write('{}\n'.format(o))
+            output.write('\n'.join(lines)+'\n')
 
     def write_reads(self, output):
-        nmap = len(self.dataset.read_list)
-        out_strings = []
-        for i,mapping in enumerate(self.dataset.read_list):
-            match_length = mapping.get_length()
-            if match_length >= self.minlen:
-                if self.bed_out:
-                    out_fields = mapping.write_as_bed(self.dataset.chrom_array, self.dataset.source_array, as_string=False, record_artifacts=self.record_artifacts)
-                    out_fields[6] = nmap
-                    out_fields[7] = i+1
-                    out_string = '\t'.join([str(f) for f in out_fields])
-                else:
-                    out_string = mapping.write_as_elr(record_artifacts=self.record_artifacts)
-                
-                out_strings.append(out_string)
-        
+        out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list]
         self.output_lines(out_strings, output)
 
     def process_entry(self, bam_lines):
@@ -156,12 +138,14 @@ class BAMtoELRconverter:
         else:
             output_file = self.output_file
         
-        self.write_reads(output_file)
+        if len(self.dataset.read_list) > 0:
+            self.write_reads(output_file)
     
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend make-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input file:                         {}\n".format(self.input)
+        options_string += "  Reference genome file:              {}\n".format(self.genome)
         options_string += "  Output file (-o):                   {}\n".format(self.output)
         options_string += "  *** Experiment parameters ***\n"
         options_string += "  Reads start at RNA 5' ends (-s):    {}\n".format(self.start)
@@ -174,7 +158,8 @@ class BAMtoELRconverter:
         options_string += "  *** Filters ***\n"
         options_string += "  --record_artifacts:                 {}\n".format(self.record_artifacts)
         options_string += "  --mismatch_rate:                    {}\n".format(self.mismatch_rate)
-        options_string += "  Aligned length min (--minlen):      {}\n".format(self.minlen)
+        options_string += "  Perfect alignment minlen (--minlen_strict): {}\n".format(self.minlen_strict)
+        options_string += "  Relaxed alignment minlen (--minlen_loose):  {}\n".format(self.minlen_loose)
         options_string += "  Secondary alignments (--secondary): {}\n".format(self.secondary)
         return options_string
     
@@ -195,6 +180,13 @@ class BAMtoELRconverter:
                     self.dataset.label_tally['E'][i],
                     self.dataset.label_tally['e'][i]
                 )
+            
+            summary += 'Total\t{}\t{}\t{}\t{}\n'.format(
+                sum(self.dataset.label_tally['S'].values()),
+                sum(self.dataset.label_tally['s'].values()),
+                sum(self.dataset.label_tally['E'].values()),
+                sum(self.dataset.label_tally['e'].values())
+            )
         else:
             summary = 'len\tS\tE\n'
             max_len = max([
@@ -207,13 +199,20 @@ class BAMtoELRconverter:
                     self.dataset.label_tally['S'][i],
                     self.dataset.label_tally['E'][i]
                 )
+            
+            summary += 'Total\t{}\t{}\n'.format(
+                sum(self.dataset.label_tally['S'].values()),
+                sum(self.dataset.label_tally['E'].values())
+            )
+            
         
         return summary
     
     def run(self):
         """Executes end labeling on all reads."""
         print(self.display_options())
-        for entry in self.bam_in:
+        self.output_lines(self.dataset.dump_header(),self.output_file)
+        for entry in self.generator:
             self.process_entry(entry)
         
         if self.output_file != 'stdout':
@@ -230,4 +229,13 @@ if __name__ == '__main__':
     from argument_parsers import bam_to_elr_parser as parser
     args = vars(parser.parse_args())
     obj = BAMtoELRconverter(args)
-    sys.exit(obj.run())
+    # sys.exit(obj.run())
+
+    # TESTING #
+    import cProfile
+    import pstats
+    profile = cProfile.Profile()
+    profile.runcall(obj.run)
+    ps = pstats.Stats(profile)
+    ps.print_stats()
+

@@ -133,7 +133,8 @@ bam_to_elr_parser.add_argument("--record_artifacts", dest='RECORD_ARTIFACTS', de
 bam_to_elr_parser.add_argument("--split", dest='SPLIT', default=False, action='store_true', help="Separate reads into different files by their multimapping number.")
 bam_to_elr_parser.add_argument("--mismatch_rate", dest='MM_RATE', default=0.20, type=float, help="Mismatch tolerance of S label matches")
 bam_to_elr_parser.add_argument("--sj_shift", dest='SJ_SHIFT', default=2, type=int, help="Shift up to this many bases to find a canonical splice junction")
-bam_to_elr_parser.add_argument("--minlen", dest='MINLEN', default=20, type=int, help="Minimum number of nucleotides for an aligned read.")
+bam_to_elr_parser.add_argument("--minlen_strict", dest='MINLEN_STRICT', default=16, type=int, help="Keep reads down to this length only if perfectly aligned.")
+bam_to_elr_parser.add_argument("--minlen_loose", dest='MINLEN_LOOSE', default=25, type=int, help="Keep reads down to this length if they passed alignment parameters.")
 bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/SAM file")
 bam_to_elr_parser.set_defaults(object=BAMtoELRconverter)
 
@@ -202,24 +203,11 @@ fasta_index_parser.set_defaults(object=Indexer)
 # merge_parser.set_defaults(object=AnnotationMerger)
 
 ### sam_sj_out.py ###
-# parser.add_argument(
-#     "-F", "--fasta", dest='FASTA',
-#     help="Genome FASTA file",
-#     default=None, type=str, required=True
-# )
-# parser.add_argument(
-#     "--format", dest='FORMAT',
-#     help="Output file format",
-#     default='star', type=str, choices=['bed','star']
-# )
-# parser.add_argument(
-#     "--filter", dest='FILTER',
-#     help="Remove noncanonical splice junctions from the output",
-#     default=False, action='store_true'
-# )
-# parser.add_argument(
-#     "FILENAME", nargs='?'
-# )
+sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.")
+sam_sj_parser.add_argument("-F", "--fasta", dest='FASTA', help="Genome FASTA file", default=None, type=str, required=True)
+sam_sj_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
+sam_sj_parser.add_argument("--filter", dest='FILTER', help="Remove noncanonical splice junctions from the output", default=False, action='store_true')
+sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
 
 ### sj_merge.py ###
 

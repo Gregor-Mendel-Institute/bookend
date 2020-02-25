@@ -26,7 +26,8 @@ config_defaults = {
     'stranded':False,
     'start_seq':'ACGGG',
     'end_seq':'RRRRRRRRRRRRRRR',
-    'minlen':20,
+    'minlen_strict':20,
+    'minlen_loose':25,
     'mismatch_rate':0.2,
     'sj_shift':2
 }
@@ -38,7 +39,7 @@ cdef class RNAseqDataset:
     cdef readonly dict config, genome, label_tally
     cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
     cdef readonly str start_seq, end_seq
-    cdef readonly int minlen, sj_shift
+    cdef readonly int minlen, minlen_strict, minlen_loose, sj_shift
     cdef readonly float mismatch_rate
     cdef readonly array.array start_array, end_array
 
@@ -55,13 +56,15 @@ cdef class RNAseqDataset:
         self.stranded = self.config['stranded']
         self.start_seq = self.config['start_seq']
         self.end_seq = self.config['end_seq']
-        self.minlen = self.config['minlen']
+        self.minlen_strict = self.config['minlen_strict']
+        self.minlen_loose = self.config['minlen_loose']
+        self.minlen = self.minlen_strict
         self.mismatch_rate = self.config['mismatch_rate']
         self.sj_shift = self.config['sj_shift']
         self.start_array = fu.nuc_to_int(self.start_seq)
         self.end_array = fu.nuc_to_int(self.end_seq)
         if genome_fasta is not None:
-            self.genome = fu.import_genome(genome_fasta)
+            self.genome, index = fu.import_genome(genome_fasta)
             self.chrom_array = sorted(self.genome.keys())
             self.chrom_index = len(self.chrom_array)
             self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
@@ -134,10 +137,12 @@ cdef class RNAseqDataset:
     cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
         cdef list new_read_list
         cdef RNAseqMapping read
+        cdef BAMobject BAM
         if type(bam_lines) is not list:
             bam_lines = [bam_lines]
         
-        new_read_list = generate_read_from_bam(self, bam_lines, ignore_ends, secondary)
+        BAM = BAMobject(self, bam_lines, ignore_ends, secondary)
+        new_read_list = BAM.generate_read()
         if len(new_read_list) > 0:
             read = new_read_list[0]
             if read.s_len > 0:
@@ -440,6 +445,8 @@ cdef class RNAseqMapping:
     def write_as_elr(self, as_string=True, record_artifacts=False):
         """Returns a string that represents the ReadObject
         in the end-labeled read (ELR) format"""
+        cdef str elr_strand, labels
+        cdef list block_ends, elr_line
         elr_strand = '.'
         if self.strand == 1:
             elr_strand = '+'
@@ -1203,6 +1210,33 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
     
     return ranges, gaps, head, tail
 
+
+cdef bint is_homopolymer(str string, float threshold=0.8):
+    """Returns whether a single character composes > threshold
+    of a string."""
+    cdef str n
+    cdef int count_n, total_count, string_length, thresh_length
+    
+    string = string.upper()
+    string_length = len(string)
+    thresh_length = int(round(string_length * threshold))
+    if string_length == 0:
+        return True
+    
+    total_count = 0
+    for n in ['A','T','G','C']:
+        count_n = string.count(n)
+        if count_n >= thresh_length:
+            return True
+        else:
+            total_count += count_n
+            if total_count > string_length - thresh_length:
+                # Enough subthreshold nucleotides were found
+                return False
+    
+    return False
+
+
 cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
     """Updates readtype based on a tag present in the ID string"""
     cdef int e_len, s_len
@@ -1234,279 +1268,357 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
     
     return s_tag, e_tag, s_len, e_len
 
-cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
-    """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset"""
-    cdef:
-        int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand
-        int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos
-        str ID, chrom, js, seq, trimmed_nuc
-        (bint, bint, int, int) ID_tags = (False, False, 0, 0)
-        dict mappings
-        list splice, gaps, ranges, introns
-        bint is_upstream_side, is_downstream_side, stranded, stranded_method
-        (int, int) g
-        array.array flankmatch
+cdef class BAMobject:
+    cdef readonly RNAseqDataset dataset
+    cdef readonly list input_lines
+    cdef readonly bint ignore_ends, secondary
+    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
+        """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
+        Quality control of end labels:
+        1) An improperly mapped 5'/3' end of a read should be stripped of its tag
+        2) Upstream untemplated Gs on a 5' end are evidence for a cap structure (requires genome)
+        3) End labels that match the genome-templated sequence are false positive trims (requires genome)
+        4) False positive oligo-dT priming can occur at genome-templated purine-rich sites (requires genome)
+        5) False positive template-switching can occur at matching RNA sites of 3+ nucleotides (requires genome)
+        """
+        self.dataset = dataset
+        self.input_lines = input_lines
+        self.ignore_ends = ignore_ends
+        self.secondary = secondary
     
-    s_tag_len = e_tag_len = 0
-    stranded = stranded_method = False
-    if dataset.stranded: # The read is strand-specific
-        stranded_method = True # The method to generate the read is inherently stranded
-    
-    input_len = len(input_lines)
-    mappings = {} # Make an empty array of length to store each mapping
-    s_len = len(dataset.start_array)
-    e_len = len(dataset.end_array)
-    Nmap = 0
-    map_number = 0
-    counter = 1
-    ID = 'none'
-    seq = ''
-    cdef float weight = float(1)/input_len
-    capped = dataset.capped
-    for line in input_lines: # Each line must be a pysam.AlignedSegment
-        if ID == 'none':
-            ID_tags = (False, False, 0, 0)
-            ID = line.query_name
-            if not ignore_ends:
-                ID_tags = parse_tag(ID)
-            
-            s_tag_len = ID_tags[2]
-            e_tag_len = ID_tags[3]
-            if s_tag_len > 0:
-                if s_tag_len < s_len:
-                    s_len = s_tag_len
-            
-            if e_tag_len > 0:
-                if e_tag_len < e_len:
-                    e_len = e_tag_len
+    cdef list generate_read(self):
+        cdef:
+            int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
+            int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors
+            float weight
+            str ID, chrom, js, seq, aligned_seq, trimmed_nuc
+            (bint, bint, int, int) ID_tags = (False, False, 0, 0)
+            dict mappings
+            list splice, gaps, ranges, introns
+            bint stranded, stranded_method, fiveprime, threeprime, junction_exists
+            (int, int) g
+            array.array flankmatch
         
-        s_tag = dataset.s_tag or ID_tags[0]
-        e_tag = dataset.e_tag or ID_tags[1]
-        if s_tag or e_tag:
-            stranded = True
+        s_tag_len = e_tag_len = 0
+        stranded = stranded_method = False
+        if self.dataset.stranded: # The read is strand-specific
+            stranded_method = True # The method to generate the read is inherently stranded
         
-        if Nmap == 0: # Update the mapping number with attribute NH:i
-            if line.has_tag('NH'):
-                Nmap = line.get_tag('NH')
-        
-        if line.has_tag('HI'): # Get which of Nmap mappings this line belongs to
-            map_number = line.get_tag('HI') - 1
-        else:
-            map_number = counter - 1 
-        
-        if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
-            counter += 1
-            continue
-        
-        if line.is_secondary and not secondary: # Unless secondary alignments are allowed, skip these too
-            counter += 1
-            continue
+        capped = self.dataset.capped
+        input_len = len(self.input_lines)
+        weight = float(1)/input_len
+        mappings = {} # Make an empty dict to store each mapping object
+        s_len = len(self.dataset.start_array)
+        e_len = len(self.dataset.end_array)
+        Nmap = self.get_mapping_number()
+        map_number = 0
+        counter = 0
+        seq = ''
+        if input_len == 0:
+            return []
 
-        if seq == '':
-            seq = line.query_sequence
+        ID = self.input_lines[0].query_name
+        if not self.ignore_ends:
+            ID_tags = parse_tag(ID)
         
-        # Determine the RNA strand
+        s_tag_len = ID_tags[2]
+        e_tag_len = ID_tags[3]
+        if s_tag_len > 0:
+            if s_tag_len < s_len:
+                s_len = s_tag_len
+        
+        if e_tag_len > 0:
+            if e_tag_len < e_len:
+                e_len = e_tag_len
+        
+        for i in range(input_len): 
+            s_tag = self.dataset.s_tag or ID_tags[0]
+            e_tag = self.dataset.e_tag or ID_tags[1]
+            if s_tag or e_tag or stranded_method:
+                stranded = True
+            
+            line = self.input_lines[i] # Each line must be a pysam.AlignedSegment
+            if self.should_skip(line): # Line must pass filters
+                continue
+            
+            mate, strand = self.determine_strand(line, stranded)
+            if mate == 1:
+                counter += 1
+            
+            try:
+                map_number = line.get_tag('HI') - 1
+            except KeyError:
+                map_number = counter
+            
+            if seq == '':
+                seq = line.query_sequence
+            
+            pos = line.reference_start
+            chrom_id = line.reference_id
+            try:
+                chrom = line.header.get_reference_name(chrom_id)
+            except:
+                chrom = line.reference_name
+            
+            # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
+            try:
+                errors = line.get_tag('NM')
+            except KeyError:
+                errors = 0
+            
+            try:
+                mdstring = line.get_tag('MD')
+            except KeyError:
+                mdstring = ''
+            
+            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring)
+            number_of_blocks = len(ranges)
+            if number_of_blocks == 0: # No exons of passing quality were found
+                continue
+            elif number_of_blocks == 1:
+                alignment_strand = 0
+                splice = []
+            else:
+                alignment_strand = self.get_alignment_strand(line)
+                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand) # Check which gaps between exon blocks are present in intron blocks
+            
+            if tail == 0:
+                aligned_seq = seq[head:]
+            else:
+                aligned_seq = seq[head:-tail]
+            
+            if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
+                continue
+            
+            match_length = len(aligned_seq) - errors
+            if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
+                if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
+                    continue
+            
+            
+            # EVALUATE SOFTCLIPPED NUCLEOTIDES
+            fiveprime = mate == 1
+            threeprime = (mate == 1 and not line.is_paired) or mate == 2
+            s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
+            # Check for uuG's (5') or terminal mismatches (3')
+            if self.dataset.genome:
+                start_pos = 0
+                end_pos = 0
+                if strand == 1:
+                    start_pos = ranges[0][0]
+                    end_pos = ranges[-1][-1]-1
+                elif strand == -1:
+                    start_pos = ranges[-1][-1]-1
+                    end_pos = ranges[0][0]
+                
+                if s_tag and fiveprime:
+                    if head > 0 or tail > 0:
+                        capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
+                    
+                    if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence
+                        s_tag = capped = False
+                
+                if e_tag and threeprime:
+                    if head > 0 or tail > 0:
+                        self.restore_terminal_mismatches(strand, head, tail, ranges)
+                    
+                    if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+                        e_tag = False
+            
+            # Reconcile strand information given by start, end, and splice
+            junction_exists = sum(splice) > 0
+            if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
+                if strand != alignment_strand: # Splice disagrees with end tags; remove tags
+                    strand = alignment_strand
+                    s_tag = e_tag = capped = False
+            
+            if not stranded_method and not s_tag and not e_tag and not junction_exists:
+                strand = 0 # No strand information can be found
+            
+            # Generate a ReadObject with the parsed attributes above
+            read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
+            current_mapping = RNAseqMapping(read_data)
+            current_mapping.e_len = e_tag_len
+            current_mapping.s_len = s_tag_len
+            if map_number not in mappings:
+                mappings[map_number] = current_mapping
+            else:
+                mappings[map_number].merge(current_mapping) # merge two mate-pair ReadObjects together
+        
+        return list(mappings.values())
+
+    cdef int get_mapping_number(self):  
+        """Given a list of pysam objects, determine
+        how many locations in the genome the read (pair) mapped."""
+        cdef int Nmap = 0
+        cdef int num_lines = len(self.input_lines)
+        if num_lines > 0: # Process the line(s)
+            if num_lines == 1:
+                Nmap = 1
+            else: # More than one line, could be multimapper and/or paired
+                line = self.input_lines[0]
+                try:
+                    Nmap = line.get_tag('NH')
+                except KeyError:
+                    if line.is_paired:
+                        Nmap = int(num_lines*0.5)
+                    else:
+                        Nmap = num_lines
+        
+        return Nmap
+    
+    cdef (int, int) determine_strand(self, line, bint stranded):
+        """Determine the RNA strand of a pysam object"""
+        cdef int mate, strand
         mate = 1
         strand = 0
         if line.is_paired:
-            if not line.is_proper_pair:
-                continue
-            
-            if line.is_read1:
-                mate = 1
-                if Nmap < counter:
-                    Nmap = counter
-                
-                counter += 1
-                if stranded:
-                    if line.is_reverse:
-                        strand = -1
-                    else:
-                        strand = 1
-            else:
-                mate = 2
-                if stranded:
-                    if line.is_reverse:
-                        strand = 1
-                    else:
-                        strand = -1
-        else:
-            mate = 1
-            if Nmap < counter:
-                Nmap = counter
-            
-            counter += 1
-            if stranded:
-                if line.is_reverse:
-                    strand = -1
-                else:
-                    strand = 1
-
-        pos = line.reference_start
-        chrom_id = line.reference_id
-        try:
-            chrom = line.header.get_reference_name(chrom_id)
-        except:
-            chrom = line.reference_name
+            mate = 1 if line.is_read1 else 2
         
-        # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
-        mdstring = line.get_tag('MD') if line.has_tag('MD') else ''
-        ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, error_rate=dataset.mismatch_rate)
-        if len(ranges) == 0: # No exons of passing quality were found
-            continue
+        if mate == 1: # If stranded, sense w.r.t. RNA
+            if stranded:
+                strand = -1 if line.is_reverse else 1
+        else:
+            if stranded:
+                strand = 1 if line.is_reverse else -1
+        
+        return mate, strand
+    
+    cdef bint should_skip(self, line):
+        """The read should not be processed."""
+        if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
+            return True
+        elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
+            return True
+        elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads
+            return True
+        
+        return False
 
-        # Check which gaps between exon blocks are present in intron blocks
-        gaps = [(a,b) for a,b in zip([r for l,r in ranges[:-1]],[l for l,r in ranges[1:]])] # List of all gaps in ranges
-        gap_len = len(gaps)
+    cdef bint fails_stringent_filters(self, int Nmap, int match_length, int head, int tail, int errors):
+        """Reads below the 'minlen_loose' length should be treated
+        more stringently: no allowed softclipping, multimapping, or mismatches.
+        Absolutely require the length to be longer than minlen_strict."""
+        if head > 0 or tail > 0 or errors > 0 or Nmap > 1 or match_length < self.dataset.minlen_strict:
+            return True
+        
+        return False
+
+    cdef int get_alignment_strand(self, line):
+        """Returns 1(+), -1(-), or 0(.) if one of the BAM
+        splice tags (XS, ts) contains strand information."""
+        cdef str js
+        cdef alignment_strand = 0
+        try:
+            js = line.get_tag('XS')
+        except KeyError:
+            try:
+                js = line.get_tag('ts')
+            except KeyError:
+                js = '.'
+        
+        if js == '+':
+            alignment_strand = 1
+        elif js == '-':
+            alignment_strand = -1
+        
+        return alignment_strand
+
+    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand):
+        """Returns a list of booleans denoting whether each gap
+        between ranges is a splice junction or not."""
+        cdef list splice
+        cdef Py_ssize_t i, range_len, gap_len
+        cdef junction_strand
+        cdef str js = '.'
+        range_len = len(ranges)
+        gap_len = range_len - 1
+        gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges
         splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction
-        junction_strand = 0
         for i in range(gap_len):
-            junction_strand = 0
             g = gaps[i]
             if g in introns:
                 splice[i] = True
-                if junction_strand == 0: # Try to resolve a nonstranded read with splice junctions
-                    if line.has_tag('XS'):
-                        js = line.get_tag('XS')
-                        if js == '+':
-                            junction_strand = 1
-                        elif js == '-':
-                            junction_strand = -1
-                    else:
-                        if dataset.genome:
-                            junction_strand = get_junction_strand(dataset.genome, chrom, g[0], g[1])
-                            # if junction_strand == 0: # Did not find a valid splice junction
-                            #     j0, j1, s = shift_junction(genome, chrom, g[0], g[1], sj_shift)
-                            #     if j0 == -1 or j1 == -1:
-                            #         splice[i] = False
-                            #     else:
-                            #         # If shift_junction() found a shift, update the appropriate edge in ranges
-                            #         junction_strand = s
-                            #         if j0 != g[0]:
-                            #             ranges[i][1] = j0
-                            #         if j1 != g[1]:
-                            #             ranges[i+1][0] = j1
-            
-                if junction_strand == 0:
-                    splice[i] = False
+                if self.dataset.genome:
+                    junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
+                    if junction_strand != alignment_strand: # Did not find a valid splice junction
+                        splice[i] = False
         
-        # Quality control of end labels:
-        # 1) An improperly mapped 5'/3' end of a read should be stripped of its tag
-        # 2) Upstream untemplated Gs on a 5' end are evidence for a cap structure (requires genome)
-        # 3) End labels that match the genome-templated sequence are false positive trims (requires genome)
-        # 4) False positive oligo-dT priming can occur at genome-templated purine-rich sites (requires genome)
-        # 5) False positive template-switching can occur at matching RNA sites of 3+ nucleotides (requires genome)
-        
-        # EVALUATE SOFTCLIPPED NUCLEOTIDES
-        is_upstream_side = mate == 1
-        is_downstream_side = (mate == 1 and not line.is_paired) or mate == 2
-        if head == -1: # Special case: left side clipped off for quality issues
-            if strand == 1:
-                s_tag = capped = False
-            elif strand == -1:
-                e_tag = False
-        
-        if tail == -1: # Special case: right side clipped off for quality issues
-            if strand == 1:
-                e_tag = False
-            elif strand == -1:
-                s_tag = capped = False
-        
-        if s_tag: # Check for upstream untemplated Gs
-            if is_upstream_side:
-                if strand == 1:
-                    if head > 0: # Plus-stranded left clip
-                        if head > 4: # Softclipped sequence is too long
-                            s_tag = False
-                            capped = False
-                        else: # From 1-4 softclipped nucleotides; check if untemplated G's
-                            if seq[:head] == 'G'*head: # Softclipped nucleotides are G
-                                if dataset.genome:
-                                    if get_flank(dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                                        capped = True # One or more upstream untemplated Gs were detected
-                                else:
-                                    capped = True
-                elif strand == -1:
-                    if tail > 0: # Minus-stranded right clip
-                        if tail > 4: # Softclipped sequence is too long
-                            s_tag = False
-                            capped = False
-                        else:
-                            if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
-                                if dataset.genome:
-                                    if get_flank(dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                                        capped = True
-                                else:
-                                    capped = True
-            elif is_downstream_side: # Can't have an s_tag if downstream mate
-                s_tag = False
-                capped = False
-                
-        
-        if e_tag: # Check for softclipped nucleotides to add back
-            if is_downstream_side:
-                if strand == 1:
-                    if tail > 0:
-                        if tail > 10: # Softclipped sequence is too long
-                            e_tag = False
-                        elif tail < 4:
-                            ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
-                elif strand == -1:
-                    if head > 0: # Left clip exists
-                        if head > 10: # Left clip is too long
-                            e_tag = False
-                        elif head < 4:
-                            ranges[0] = (ranges[0][0]-head,ranges[0][1])
-            else: # Can't have an s_tag if it is the upstream mate
-                e_tag = False
-        
-        # EVALUATE FALSE POSITIVE TAGS
-        start_pos = 0
-        end_pos = 0
-        if strand == 1:
-            start_pos = ranges[0][0]
-            end_pos = ranges[-1][-1]-1
-        elif strand == -1:
-            start_pos = ranges[-1][-1]-1
-            end_pos = ranges[0][0]
-        
-        if dataset.genome:            
-            if s_tag and is_upstream_side:
-                flank = get_flank(dataset.genome, chrom, start_pos, strand, 'S', s_len) # Get upstream flanking sequence to start
-                if len(flank) > 0:
-                    flankmatch = dataset.start_array[-s_len:]
-                    if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, dataset.mismatch_rate*s_len) <= dataset.mismatch_rate*s_len:
-                        s_tag = False # Query sequence matched well enough to masking sequence
-            
-            if e_tag and is_downstream_side:
-                flank = get_flank(dataset.genome, chrom, end_pos, strand, 'E', e_len) # Get downstream flanking sequence to end
-                if len(flank) > 0:
-                    flankmatch = dataset.end_array[:e_len]
-                    if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, dataset.mismatch_rate*e_len) <= dataset.mismatch_rate*e_len:
-                        e_tag = False # Query sequence matched well enough to masking sequence
-        
-        # Reconcile strand information given by start, end, and splice
-        if junction_strand != 0:
-            if strand != junction_strand: # Splice disagrees with end tags; remove tags
-                strand = junction_strand
-                s_tag = False
-                e_tag = False
-                capped = False
-        
-        if not stranded_method and not s_tag and not e_tag and junction_strand == 0:
-            strand = 0 # No strand information can be found
-        
-        # Generate a ReadObject with the parsed attributes above
-        read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
-        current_mapping = RNAseqMapping(read_data)
-        current_mapping.e_len = e_tag_len
-        current_mapping.s_len = s_tag_len
-        if map_number not in mappings:
-            mappings[map_number] = current_mapping
-        else:
-            mappings[map_number].merge(current_mapping) # merge two mate-pair ReadObjects together
+        return splice
     
-    return list(mappings.values())
+    cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):
+        """Determines whether the s_tag, e_tag and capped parameters
+        should be removed an alignment that has softclipping on its edges."""  
+        if strand == 1:
+            if fiveprime:
+                if head == -1 or head > 4:
+                    s_tag = capped = False
+            
+            if threeprime:
+                if tail == -1 or tail > 4:
+                    e_tag = False
+        elif strand == -1:
+            if fiveprime:
+                if tail == -1 or tail > 4:
+                    s_tag = capped = False
+                
+            if threeprime:
+                if head == -1 or head > 4:
+                    e_tag = False
+        else: # Read isn't strand-specific, can't have labels
+            s_tag = e_tag = capped = False
+        
+        return s_tag, e_tag, capped
+    
+    cdef bint untemplated_upstream_g(self, int strand, int head, int tail, str seq, str chrom, list ranges):
+        """Checks (1) if a softclipped string at a read's 5' end
+        is an oligomer of G and (2) if that oligomer does not match the genome.
+        Returns True if evidence supports a cap."""
+        if strand == 1:
+            if head <= 0 or head > 4:
+                return False
+            
+            if seq[:head] == 'G'*head: # Softclipped nucleotides are G
+                if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
+                    return True # One or more upstream untemplated Gs were detected
+                else:
+                    return False
+        elif strand == -1:
+            if tail <= 0 or tail > 4:
+                return False
+            
+            if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
+                if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
+                    return True
+                else:
+                    return False
+
+    cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):
+        """Updates the mapping ranges of a read with a softclipped
+        sequenced added back to one end."""
+        if strand == 1: 
+            if tail > 0: # Right clip exists
+                ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
+        elif strand == -1:
+            if head > 0: # Left clip exists
+                ranges[0] = (ranges[0][0]-head,ranges[0][1])
+
+    cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):
+        """Evaluates whether a clipped tag matches too closely
+        with a genome-templated region could have caused 
+        false positive end signal"""
+        ## 5'
+        flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
+        if len(flank) > 0:
+            if readtype == 'S':
+                flankmatch = self.dataset.start_array[-length:]
+            elif readtype == 'E':
+                flankmatch = self.dataset.end_array[:length]
+                
+            if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate*length) <= self.dataset.mismatch_rate*length:
+                return True
+        
+        return False
 
 
 def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
