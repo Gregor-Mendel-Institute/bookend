@@ -1,0 +1,61 @@
+#!/bin/bash
+
+CPUS=1
+RAM=8
+TEMP="."
+
+function usage() {
+cat <<HELP
+    usage: elr_collapse input.elr > collapsed.elr
+    Condenses a sorted End-Labeled Read (ELR) file
+    by merging together all duplicate lines.
+    
+HELP
+}
+
+while [ "$1" != "" ]; do
+    case $1 in
+    -h | --help )               usage; exit 1;;
+    * )                         ELRFILE=$1; break;;
+    esac
+    shift
+done
+
+if [ -z $ELRFILE ]; then
+    echo "ERROR: No ELR file found."
+    usage
+    exit 1
+fi
+
+LC_NUMERIC="C" awk '{ 
+  if ($1==last1){
+    if ($2==last2){
+      if ($3==last3){
+        if ($4==last4){
+          if ($5==last5){
+            if ($6==last6){
+              #IDENTICAL TO LAST ROW
+              last7=last7+$7
+              next
+            }
+          }
+        }
+      }
+    }
+  }
+  if($1 == "#C" || $1 == "#S"){
+    print $0
+    next
+  }
+  if(last1!=""){
+    print last1"\t"last2"\t"last3"\t"last4"\t"last5"\t"last6"\t"last7   
+  }
+  last1=$1
+  last2=$2
+  last3=$3
+  last4=$4
+  last5=$5
+  last6=$6
+  last7=$7
+}' $ELRFILE
+

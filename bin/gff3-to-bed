@@ -1,0 +1,62 @@
+#!/bin/bash
+
+function usage() {
+cat <<HELP
+    usage: gff3_to_bed12 input.gff3 > output.bed
+    Converts a GFF3 annotation file to BED12.
+    
+HELP
+}
+
+while [ "$1" != "" ]; do
+    case $1 in
+    -h | --help ) usage; exit 1;;
+    * )           GFF3=$1; break;;
+    esac
+    shift
+done
+
+if [ -z $GFF3 ]; then
+    echo "ERROR: No GFF3 file found."
+    usage
+    exit 1
+fi
+
+cat $GFF3 | # Print all lines of GFF3 file to stdout
+sed 's/\t\([\+-]\)\t\.\t.*Parent=\(transcript:\)\?\([^;]\+\);\?.*$/\t\1\t.\t\3/' | # Simplify attribute line to only the transcript ID
+grep -P '\texon\t' | # Subset GFF3 file for only 'exon' lines
+awk '{ print $1"\t"$4-1"\t"$5"\t"$9"\t"$6"\t"$7 }' | # Convert GFF3 lines to BED
+awk '{ # Convert BED to BED12
+  if (name==$4){
+    blockCount+=1
+    if ($2>start){
+      blockSizes=blockSizes","$3-$2
+      blockStarts=blockStarts","$2
+      end=$3
+    }else{
+      blockSizes=$3-$2","blockSizes
+      blockStarts=$2","blockStarts
+      start=$2
+    }
+  }else{
+    if(name!=""){
+      NB=split(blockStarts, relativeStarts, ",")
+      blockStarts="0"
+      for (i = 1; i <= NB; i++){
+        if(relativeStarts[i]-start==0){
+          blockStarts=relativeStarts[i]-start
+        }else{
+          blockStarts=blockStarts","relativeStarts[i]-start
+        }
+      }
+      print $1"\t"start"\t"end"\t"name"\t.\t"strand"\t"start"\t"end"\t0,0,0\t"blockCount"\t"blockSizes"\t"blockStarts
+    }
+    name=$4
+    start=$2
+    end=$3
+    blockCount=1
+    blockSizes=$3-$2
+    blockStarts=$2
+    strand=$6
+  }
+}'
