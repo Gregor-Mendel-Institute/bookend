@@ -1286,7 +1286,7 @@ cdef class BAMobject:
         self.ignore_ends = ignore_ends
         self.secondary = secondary
     
-    cdef list generate_read(self):
+    cpdef list generate_read(self):
         cdef:
             int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
             int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors
@@ -1298,6 +1298,7 @@ cdef class BAMobject:
             bint stranded, stranded_method, fiveprime, threeprime, junction_exists
             (int, int) g
             array.array flankmatch
+            RNAseqMapping current_mapping, mate_read
         
         s_tag_len = e_tag_len = 0
         stranded = stranded_method = False
@@ -1346,7 +1347,7 @@ cdef class BAMobject:
                 counter += 1
             
             try:
-                map_number = line.get_tag('HI') - 1
+                map_number = line.get_tag('HI')
             except KeyError:
                 map_number = counter
             
@@ -1369,7 +1370,7 @@ cdef class BAMobject:
             try:
                 mdstring = line.get_tag('MD')
             except KeyError:
-                mdstring = ''
+                mdstring = str(len(seq))
             
             ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring)
             number_of_blocks = len(ranges)
@@ -1442,8 +1443,9 @@ cdef class BAMobject:
             current_mapping.s_len = s_tag_len
             if map_number not in mappings:
                 mappings[map_number] = current_mapping
-            else:
-                mappings[map_number].merge(current_mapping) # merge two mate-pair ReadObjects together
+            else: # merge two mate-pair ReadObjects together
+                mate_read = mappings[map_number]
+                mate_read.merge(current_mapping)
         
         return list(mappings.values())
 
@@ -1549,24 +1551,24 @@ cdef class BAMobject:
     cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):
         """Determines whether the s_tag, e_tag and capped parameters
         should be removed an alignment that has softclipping on its edges."""  
-        if strand == 1:
-            if fiveprime:
-                if head == -1 or head > 4:
-                    s_tag = capped = False
-            
-            if threeprime:
-                if tail == -1 or tail > 4:
-                    e_tag = False
-        elif strand == -1:
-            if fiveprime:
-                if tail == -1 or tail > 4:
-                    s_tag = capped = False
-                
-            if threeprime:
-                if head == -1 or head > 4:
-                    e_tag = False
-        else: # Read isn't strand-specific, can't have labels
-            s_tag = e_tag = capped = False
+        if strand == 0:
+            return False, False, False
+
+        if not fiveprime:
+            s_tag = capped = False
+        else:
+            if strand == 1 and (head == -1 or head > 4):
+                s_tag = capped = False
+            elif strand == -1 and (tail == -1 or tail > 4):
+                s_tag = capped = False
+        
+        if not threeprime:
+            e_tag = False
+        else:
+            if strand == 1 and (tail == -1 or tail > 4):
+                e_tag = False
+            elif strand == -1 and (head == -1 or head > 4):
+                e_tag = False
         
         return s_tag, e_tag, capped
     
