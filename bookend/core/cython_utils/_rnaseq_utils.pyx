@@ -6,200 +6,21 @@ import numpy as np
 cimport numpy as np
 import json
 import bookend.core.cython_utils._fasta_utils as fu
-# from cython_utils import _fasta_utils as fu
+from bookend.core.cython_utils._pq import IndexMinPQ
 from collections import namedtuple, Counter
 from ast import literal_eval
 import copy
 ctypedef unsigned char uint8
 ctypedef np.float32_t float32
 
-##############################################################################################################
-##############################################################################################################
-# Object for defining a collection of RNA sequencing reads #
-##############################################################################################################
-##############################################################################################################
-config_defaults = {
-    'source':'',
-    's_tag':False,
-    'e_tag':False,
-    'capped':False,
-    'stranded':False,
-    'start_seq':'ACGGG',
-    'end_seq':'RRRRRRRRRRRRRRR',
-    'minlen_strict':20,
-    'minlen_loose':25,
-    'mismatch_rate':0.2,
-    'sj_shift':2
-}
-
-cdef class RNAseqDataset:
-    cdef public list read_list, chrom_array, source_array, chrom_lengths
-    cdef public int chrom_index, source_index
-    cdef public dict chrom_dict, source_dict
-    cdef readonly dict config, genome, label_tally
-    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
-    cdef readonly str start_seq, end_seq
-    cdef readonly int minlen, minlen_strict, minlen_loose, sj_shift
-    cdef readonly float mismatch_rate
-    cdef readonly array.array start_array, end_array
-
-    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults):
-        """Container for RNAseqMapping objects. Stores a reference dictionary for all
-        chromosome names and sample names. Contains methods for parsing
-        a variety of files into a collection of read objects."""
-        self.label_tally = {'S':Counter(), 's':Counter(), 'E':Counter(), 'e':Counter()}
-        self.read_list = []
-        self.config = config
-        self.s_tag = self.config['s_tag']
-        self.e_tag = self.config['e_tag']
-        self.capped = self.config['capped']
-        self.stranded = self.config['stranded']
-        self.start_seq = self.config['start_seq']
-        self.end_seq = self.config['end_seq']
-        self.minlen_strict = self.config['minlen_strict']
-        self.minlen_loose = self.config['minlen_loose']
-        self.minlen = self.minlen_strict
-        self.mismatch_rate = self.config['mismatch_rate']
-        self.sj_shift = self.config['sj_shift']
-        self.start_array = fu.nuc_to_int(self.start_seq)
-        self.end_array = fu.nuc_to_int(self.end_seq)
-        if genome_fasta is not None:
-            self.genome, index = fu.import_genome(genome_fasta)
-            self.chrom_array = sorted(self.genome.keys())
-            self.chrom_index = len(self.chrom_array)
-            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
-            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
-        else:
-            self.genome = {}
-            self.chrom_lengths = chrom_lengths
-            self.chrom_dict = {}
-            self.chrom_index = 0
-            self.chrom_array = []
-            if chrom_array is not None:
-                for c in chrom_array:
-                    self.add_chrom(c)
-        
-        self.source_dict = {}
-        self.source_index = 0
-        self.source_array = []
-        if source_array is not None:
-            for s in source_array:
-                self.add_source(s)
-    
-    cpdef add_source(self, source_string):
-        if source_string not in self.source_dict:
-            self.source_array.append(source_string)
-            self.source_dict[source_string] = self.source_index
-            self.source_index += 1
-    
-    cpdef add_chrom(self, chrom_string):
-        if chrom_string not in self.chrom_dict:
-            self.chrom_array.append(chrom_string)
-            self.chrom_dict[chrom_string] = self.chrom_index
-            self.chrom_index += 1
-    
-    cpdef add_read_from_BED(self, bed_line, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
-        cdef RNAseqMapping new_read
-        input_data = parse_BED_line(bed_line, self.chrom_dict, self.source_dict, source_string, s_tag, e_tag, capped, gaps_are_junctions)
-        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
-            chrom_string = input_data.chrom
-            input_data = input_data._replace(chrom=self.chrom_index)
-            self.add_chrom(chrom_string)
-        
-        if type(input_data.source) is str: # Source wasn't in source_dict
-            source_string = input_data.source
-            input_data = input_data._replace(source=self.source_index)
-            self.add_source(source_string)
-        
-        new_read = RNAseqMapping(input_data)
-        self.read_list.append(new_read)
-    
-    cpdef add_read(self, input_data):
-        cdef RNAseqMapping new_read
-        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
-            chrom_string = input_data.chrom
-            input_data = input_data._replace(chrom=self.chrom_index)
-            self.add_chrom(chrom_string)
-        
-        if type(input_data.source) is str: # Source wasn't in source_dict
-            source_string = input_data.source
-            input_data = input_data._replace(source=self.source_index)
-            self.add_source(source_string)
-        
-        new_read = RNAseqMapping(input_data)
-        self.read_list.append(new_read)
-    
-    cpdef add_read_from_ELR(self, elr_line):
-        cdef RNAseqMapping new_read
-        new_read = elr_to_readobject(elr_line)
-        self.read_list.append(new_read)
-    
-    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
-        cdef list new_read_list
-        cdef RNAseqMapping read
-        cdef BAMobject BAM
-        if type(bam_lines) is not list:
-            bam_lines = [bam_lines]
-        
-        BAM = BAMobject(self, bam_lines, ignore_ends, secondary)
-        new_read_list = BAM.generate_read()
-        if len(new_read_list) > 0:
-            read = new_read_list[0]
-            if read.s_len > 0:
-                if read.s_tag:
-                    self.label_tally['S'][read.s_len] += 1
-                else:
-                    self.label_tally['s'][read.s_len] += 1
-            
-            if read.e_len > 0:
-                if read.e_tag:
-                    self.label_tally['E'][read.e_len] += 1
-                else:
-                    self.label_tally['e'][read.e_len] += 1
-        
-        self.read_list += new_read_list
-    
-    cpdef add_read_from_GTF(self, gtf_lines, bint ignore_ends=False):
-        cdef RNAseqMapping new_read
-        new_read = generate_read_from_gtf(self, gtf_lines)
-        self.read_list += new_read
-    
-    cpdef add_read_from_GFF(self, gff_lines, bint ignore_ends=False):
-        cdef RNAseqMapping new_read
-        new_read = generate_read_from_gff(self, gff_lines)
-        self.read_list += new_read
-
-    cpdef pop_read(self, read_format='elr', as_string=True):
-        """Remove the last read added to the stack and write it in 'format'.
-        """
-        if read_format.lower() == 'elr':
-            return(self.read_list.pop().write_as_elr(as_string))
-        elif read_format.lower() == 'bed':
-            return(self.read_list.pop().write_as_bed(self.chrom_array, self.source_array, as_string))
-        elif read_format.lower() == 'gtf':
-            return(self.read_list.pop().write_as_gtf(self.chrom_array, 'bed'))
-    
-    cpdef dump_header(self):
-        """Returns an array of strings that describe chrom_dict and source_dict of the Dataset."""
-        header_list = []
-        for i,c in enumerate(self.chrom_array):
-            header_list += ['#C {} {}'.format(i, c)]
-        
-        for i,s in enumerate(self.source_array):
-            header_list += ['#S {} {}'.format(i, s)]
-        
-        return header_list
-
-##############################################################################################################
-##############################################################################################################
+##############################################
 # Object for defining an RNA sequencing read #
-##############################################################################################################
-##############################################################################################################
+##############################################
 ELdata = namedtuple('ELdata', 'chrom source strand ranges splice s_tag e_tag capped weight')
 cdef class RNAseqMapping:
     cdef public int chrom, source, strand, s_len, e_len
     cdef public list ranges, splice
-    cdef public bint s_tag, e_tag, capped, complete
+    cdef public bint s_tag, e_tag, capped, complete, is_reference
     cdef public dict attributes
     cdef public (int, int) span
     cdef public float weight, coverage
@@ -207,6 +28,7 @@ cdef class RNAseqMapping:
         """Initializes a Read Object given a tuple of input data.
         Requires a chromosome, strand, source, weight, a sorted tuple of
         exon ranges and an array of booleans indicating which gaps between exons are splice junctions."""
+        self.is_reference = False
         self.s_len = self.e_len = 0
         self.chrom, self.source = int(input_data.chrom), int(input_data.source)
         self.strand = input_data.strand
@@ -568,6 +390,436 @@ cdef class RNAseqMapping:
         
         return json_line
 
+############################################################
+# Object for defining a collection of RNA sequencing reads #
+############################################################
+config_defaults = {
+    'source':'',
+    's_tag':False,
+    'e_tag':False,
+    'capped':False,
+    'stranded':False,
+    'start_seq':'ACGGG',
+    'end_seq':'RRRRRRRRRRRRRRR',
+    'minlen_strict':20,
+    'minlen_loose':25,
+    'mismatch_rate':0.2
+}
+
+cdef class RNAseqDataset:
+    cdef public list read_list, chrom_array, source_array, chrom_lengths
+    cdef public int chrom_index, source_index
+    cdef public dict chrom_dict, source_dict
+    cdef readonly dict config, genome, label_tally
+    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
+    cdef readonly str start_seq, end_seq
+    cdef readonly int minlen, minlen_strict, minlen_loose
+    cdef readonly float mismatch_rate
+    cdef readonly array.array start_array, end_array
+
+    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults):
+        """Container for RNAseqMapping objects. Stores a reference dictionary for all
+        chromosome names and sample names. Contains methods for parsing
+        a variety of files into a collection of read objects."""
+        self.label_tally = {'S':Counter(), 's':Counter(), 'E':Counter(), 'e':Counter()}
+        self.read_list = []
+        self.config = config
+        self.s_tag = self.config['s_tag']
+        self.e_tag = self.config['e_tag']
+        self.capped = self.config['capped']
+        self.stranded = self.config['stranded']
+        self.start_seq = self.config['start_seq']
+        self.end_seq = self.config['end_seq']
+        self.minlen_strict = self.config['minlen_strict']
+        self.minlen_loose = self.config['minlen_loose']
+        self.minlen = self.minlen_strict
+        self.mismatch_rate = self.config['mismatch_rate']
+        self.start_array = fu.nuc_to_int(self.start_seq)
+        self.end_array = fu.nuc_to_int(self.end_seq)
+        if genome_fasta is not None:
+            self.genome, index = fu.import_genome(genome_fasta)
+            self.chrom_array = sorted(self.genome.keys())
+            self.chrom_index = len(self.chrom_array)
+            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
+            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
+        else:
+            self.genome = {}
+            self.chrom_lengths = chrom_lengths
+            self.chrom_dict = {}
+            self.chrom_index = 0
+            self.chrom_array = []
+            if chrom_array is not None:
+                for c in chrom_array:
+                    self.add_chrom(c)
+        
+        self.source_dict = {}
+        self.source_index = 0
+        self.source_array = []
+        if source_array is not None:
+            for s in source_array:
+                self.add_source(s)
+    
+    cpdef add_source(self, source_string):
+        if source_string not in self.source_dict:
+            self.source_array.append(source_string)
+            self.source_dict[source_string] = self.source_index
+            self.source_index += 1
+    
+    cpdef add_chrom(self, chrom_string):
+        if chrom_string not in self.chrom_dict:
+            self.chrom_array.append(chrom_string)
+            self.chrom_dict[chrom_string] = self.chrom_index
+            self.chrom_index += 1
+    
+    cpdef add_read_from_BED(self, bed_line, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
+        cdef RNAseqMapping new_read
+        input_data = parse_BED_line(bed_line, self.chrom_dict, self.source_dict, source_string, s_tag, e_tag, capped, gaps_are_junctions)
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        self.read_list.append(new_read)
+    
+    cpdef add_read(self, input_data):
+        cdef RNAseqMapping new_read
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        self.read_list.append(new_read)
+    
+    cpdef add_read_from_ELR(self, elr_line):
+        cdef RNAseqMapping new_read
+        new_read = elr_to_readobject(elr_line)
+        self.read_list.append(new_read)
+    
+    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
+        cdef list new_read_list
+        cdef RNAseqMapping read
+        cdef BAMobject BAM
+        if type(bam_lines) is not list:
+            bam_lines = [bam_lines]
+        
+        BAM = BAMobject(self, bam_lines, ignore_ends, secondary)
+        new_read_list = BAM.generate_read()
+        if len(new_read_list) > 0:
+            read = new_read_list[0]
+            if read.s_len > 0:
+                if read.s_tag:
+                    self.label_tally['S'][read.s_len] += 1
+                else:
+                    self.label_tally['s'][read.s_len] += 1
+            
+            if read.e_len > 0:
+                if read.e_tag:
+                    self.label_tally['E'][read.e_len] += 1
+                else:
+                    self.label_tally['e'][read.e_len] += 1
+        
+        self.read_list += new_read_list
+
+    cpdef pop_read(self, read_format='elr', as_string=True):
+        """Remove the last read added to the stack and write it in 'format'.
+        """
+        if read_format.lower() == 'elr':
+            return(self.read_list.pop().write_as_elr(as_string))
+        elif read_format.lower() == 'bed':
+            return(self.read_list.pop().write_as_bed(self.chrom_array, self.source_array, as_string))
+        elif read_format.lower() == 'gtf':
+            return(self.read_list.pop().write_as_gtf(self.chrom_array, 'bed'))
+    
+    cpdef dump_header(self):
+        """Returns an array of strings that describe chrom_dict and source_dict of the Dataset."""
+        header_list = []
+        for i,c in enumerate(self.chrom_array):
+            header_list += ['#C {} {}'.format(i, c)]
+        
+        for i,s in enumerate(self.source_array):
+            header_list += ['#S {} {}'.format(i, s)]
+        
+        return header_list
+
+
+######################################
+# Utilities for GTF/GFF file parsing #
+######################################
+gtf_defaults = {
+    'parent_types':set(['transcript']),
+    'parent_key_transcript':'transcript_id',
+    'parent_key_gene':'gene_id',
+    'child_types':set(['exon']),
+    'child_key_transcript':'transcript_id',
+    'child_key_gene':'gene_id'
+}
+gff_defaults = {
+    'parent_types':set(['mRNA','transcript']),
+    'parent_key_transcript':'ID',
+    'parent_key_gene':'Parent',
+    'child_types':set(['exon']),
+    'child_key_transcript':'Parent',
+    'child_key_gene':'gene_id'
+}
+
+cdef class AnnotationObject:
+    cdef public dict attributes
+    cdef public bint keep, parent
+    cdef public str format, gene_id, transcript_id, chrom, source, anno_type
+    cdef public int strand
+    cdef public (int, int) span
+    cdef public tuple fields
+    def __init__(self, anno_string, format, config_dict):
+        """Generates an intermediate object from a single line of a GTF/GFF file.
+        This will not completely represent a transcript, only one exon."""
+        cdef:
+            set child_types, parent_types
+            str gene_id_key, transcript_id_key
+        
+        anno_string = anno_string.rstrip()
+        self.format = format
+        self.keep = False
+        self.parent = False
+        self.gene_id = ''
+        self.transcript_id = ''
+        self.anno_type = ''
+        self.fields = ()
+        if len(anno_string) > 0:
+            if anno_string[0] != '#':
+                self.fields = tuple(anno_string.split('\t')[0:9])
+                self.anno_type = self.fields[2]
+                child_types = config_dict['child_types']
+                parent_types = config_dict['parent_types']
+                if self.anno_type in child_types:
+                    self.keep = True
+                    self.parent = False
+                elif self.anno_type in parent_types:
+                    self.keep = True
+                    self.parent = True
+                
+                if self.keep:
+                    self.chrom = self.fields[0]
+                    self.source = self.fields[1]
+                    self.span = (int(self.fields[3])-1, int(self.fields[4]))
+                    self.attributes = self.parse_attributes(self.fields[8], self.format)
+                    if self.parent:
+                        gene_id_key=config_dict['parent_key_gene']
+                        transcript_id_key=config_dict['parent_key_transcript']
+                    else:
+                        gene_id_key=config_dict['child_key_gene']
+                        transcript_id_key=config_dict['child_key_transcript']
+                    
+                    self.gene_id = self.attributes.get(gene_id_key,'')
+                    self.transcript_id = self.attributes.get(transcript_id_key,'')
+                    self.attributes['gene_id'] = self.gene_id
+                    self.attributes['transcript_id'] = self.transcript_id
+                    if self.fields[6] == '+':
+                        self.strand = 1
+                    elif self.fields[6] == '-':
+                        self.strand = -1
+                    else:
+                        self.strand = 0
+    
+    cpdef dict parse_attributes(self, str attr_string, str attr_format):
+        """Converts a GTF or GFF3 formatted string to """
+        cdef dict attr_dict = {}
+        if attr_format == 'GTF':
+            attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
+        elif attr_format == 'GFF':
+            attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
+        
+        return attr_dict
+    
+    def __eq__(self, other): return self.span == other.span
+    def __ne__(self, other): return self.span != other.span
+    def __gt__(self, other): return self.span >  other.span
+    def __ge__(self, other): return self.span >= other.span
+    def __lt__(self, other): return self.span <  other.span
+    def __le__(self, other): return self.span <= other.span
+
+
+cdef class AnnotationDataset(RNAseqDataset):
+    """Child of an RNAseqDataset. Parses a set of input annotations (GFF3/GTF/BED12/ELR).
+    Has methods that allow these annotations to be merged together to
+    form a single consensus or to be merged directly into a 'reference' annotation."""
+    cdef public dict annotations, gtf_config, gff_config
+    cdef public object generator
+    def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults):
+        RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
+        self.gtf_config = gtf_config
+        self.gff_config = gff_config
+        cdef str f, name, k
+        cdef RNAseqMapping v
+        self.annotations = {}
+        for f in annotation_files:
+            name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
+            self.annotations[name] = self.import_annotation(f)
+        
+        if reference is not None:
+            self.annotations['reference'] = self.import_annotation(reference)
+            for k in self.annotations['reference'].keys():
+                for v in self.annotations['reference'][k]:
+                    v.is_reference = True
+        
+        self.generator = self.generate_loci()
+    
+    cpdef dict import_annotation(self, filename):
+        """Given a file path to a valid GTF/GFF3/BED/ELR file,
+        Converts the entire file to a dict of RNAseqMapping objects.
+        Each key:value pair is a chromosome:position-sorted list of objects."""
+        cdef RNAseqMapping item
+        cdef AnnotationObject line_object
+        cdef str file_extension, format, chrom
+        cdef dict object_dict, config_dict
+        cdef AnnotationObject current_object, current_parent
+        cdef list children
+        object_dict = {k:[] for k in self.chrom_array}
+        config_dict = {}
+        file_extension = filename.split('.')[-1].upper()
+        if file_extension not in ['GTF','GFF3','GFF','BED','ELR']:
+            return object_dict
+        elif file_extension in ['GFF3','GFF']:
+            format = 'GFF'
+            config_dict = self.gff_config
+        elif file_extension == 'GTF':
+            format = 'GTF'
+            config_dict = self.gtf_config
+        elif file_extension == 'BED':
+            format = 'BED'
+        elif file_extension == 'ELR':
+            format = 'ELR'
+        
+        file = open(filename,'r')
+        current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
+        children = []
+        if format in ['GFF','GTF']: # Parse a GFF/GTF file
+            for line in file:
+                current_object = AnnotationObject(line, format, config_dict)
+                if current_object.keep:
+                    if current_object.parent: # Add the old object to object_dict and start a new one
+                        if current_parent.parent: # Ignore the first empty annotation object
+                            item = self.anno_to_mapping_object(current_parent, children)
+                            chrom = self.chrom_array[item.chrom]
+                            if chrom not in object_dict.keys(): object_dict[chrom] = []
+                            object_dict[chrom].append(item)
+                        
+                        current_parent = current_object
+                        children = []
+                    elif current_object.transcript_id == current_parent.transcript_id:
+                        children.append(current_object)
+            
+            item = self.anno_to_mapping_object(current_parent, children)
+            chrom = self.chrom_array[item.chrom]
+            if chrom not in object_dict.keys(): object_dict[chrom] = []
+            object_dict[chrom].append(item)
+        elif format == 'BED':
+            for line in file:
+                item = self.parse_bed_line(line)
+                chrom = self.chrom_array[item.chrom]
+                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                object_dict[chrom].append(item)
+        elif format == 'ELR':
+            for line in file:
+                item = elr_to_readobject(line)
+                chrom = self.chrom_array[item.chrom]
+                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                object_dict[chrom].append(item)
+        
+        file.close()
+        for chrom in object_dict.keys():
+            object_dict[chrom].sort()
+        
+        return object_dict
+    
+    cdef RNAseqMapping parse_bed_line(self, str line):
+        cdef RNAseqMapping new_read
+        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict)
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        return new_read
+
+    cpdef RNAseqMapping anno_to_mapping_object(self, AnnotationObject parent, list children):
+        """Given a top-level 'transcript' GTF/GFF feature and a list of 'exon' children,
+        return a matching RNAseqMapping object."""
+        cdef AnnotationObject child
+        cdef RNAseqMapping mapping_object
+        cdef list ranges, splice
+        cdef int chrom, source, strand
+        
+        strand = parent.strand
+        if parent.chrom not in self.chrom_dict.keys():
+            self.add_chrom(parent.chrom)
+        
+        chrom = self.chrom_dict[parent.chrom]
+        if parent.source not in self.source_dict.keys():
+            self.add_source(parent.source)
+        
+        source = self.source_dict[parent.source]
+        ranges = []
+        children.sort()
+        splice = [True]*(len(children)-1)
+        for child in children:
+            ranges += [child.span]
+
+        input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1)
+        mapping_object = RNAseqMapping(input_data, parent.attributes)
+        return mapping_object
+    
+    def generate_loci(self):
+        """Yields a contiguous chunk of all annotation objects as a list
+        by interleaving all sorted annotations together."""
+        cdef str chrom
+        cdef list current_chunk
+        cdef RNAseqMapping item
+        cdef int number_of_items, i, left
+        number_of_files = len(self.annotations)
+        for chrom in self.chrom_array:
+            chrom_annotation_list = []
+            for k in self.annotations.keys():
+                chrom_annotation_list += self.annotations[k].get(chrom, [])
+            
+            chrom_annotation_list.sort()
+            number_of_items = len(chrom_annotation_list)
+            left = 0
+            rightmost = -1
+            for i in range(number_of_items):
+                item = chrom_annotation_list[i]
+                if rightmost > 0:
+                    if item.left() > rightmost: # A gap was jumped
+                        yield chrom_annotation_list[left:i]
+                        left = i
+
+                if item.span[1] > rightmost:
+                    rightmost = item.span[1]
+                
+            yield chrom_annotation_list[left:]
+
+        
+#########################################
+# Utilities for BED/ELR file processing #
+#########################################
+
 bed_colors = {
     'U':'128,130,133',
     'C':'0,212,145',
@@ -816,121 +1068,14 @@ cpdef RNAseqMapping elr_to_readobject(elr_line):
     """Converts an ELR line to an RNAseqMapping object
     """
     cdef input_data = parse_ELR_line(elr_line)
-    output_object = RNAseqMapping(input_data)
+    cdef RNAseqMapping output_object = RNAseqMapping(input_data)
     return output_object
 
-##############################################################################################################
-# GTF/GFF file parsing #
-##############################################################################################################
-gtf_defaults = {
-    'parent_types':set(['transcript']),
-    'parent_key_transcript':'transcript_id',
-    'parent_key_gene':'gene_id',
-    'child_types':set(['exon']),
-    'child_key_transcript':'transcript_id',
-    'child_key_gene':'gene_id'
-}
-gff_defaults = {
-    'parent_types':set(['mRNA','transcript']),
-    'parent_key_transcript':'ID',
-    'parent_key_gene':'Parent',
-    'child_types':set(['exon']),
-    'child_key_transcript':'Parent',
-    'child_key_gene':'gene_id'
-}
-
-cpdef dict parse_attributes(str attr_string, str attr_format):
-    """Converts a GTF or GFF3 formatted string to """
-    cdef dict attr_dict = {}
-    if attr_format == 'GTF':
-        attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
-    elif attr_format == 'GFF':
-        attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
-    
-    return attr_dict
-
-cdef class AnnotationObject:
-    cdef public dict attributes
-    cdef public bint keep, parent
-    cdef public str format, gene_id, transcript_id, chrom, source, anno_type
-    cdef public int strand
-    cdef public (int, int) span
-    #cdef public (str, str, str, str, str, str, str, str, str) fields
-    cdef public tuple fields
-    def __init__(self, anno_string, format, config_dict):
-        """Generates an intermediate object from a single line of a GTF/GFF file.
-        This will not completely represent """
-        cdef:
-            set child_types, parent_types
-            str gene_id_key, transcript_id_key
-        
-        self.format = format
-        self.keep = False
-        self.fields = tuple(anno_string.split('\t')[0:9])
-        self.anno_type = self.fields[2]
-        self.parent = False
-        child_types = config_dict['child_types']
-        parent_types = config_dict['parent_types']
-        if self.anno_type in child_types:
-            self.keep = True
-            self.parent = False
-        elif self.anno_type in parent_types:
-            self.keep = True
-            self.parent = True
-        
-        if self.keep:
-            self.chrom = self.fields[0]
-            self.source = self.fields[1]
-            self.span = (int(self.fields[3])-1, int(self.fields[4]))
-            self.attributes = parse_attributes(self.fields[8], self.format)
-            if self.parent:
-                gene_id_key=config_dict['parent_key_gene']
-                transcript_id_key=config_dict['parent_key_transcript']
-            else:
-                gene_id_key=config_dict['child_key_gene']
-                transcript_id_key=config_dict['child_key_transcript']
-            
-            self.gene_id = self.attributes.get(gene_id_key,'')
-            self.transcript_id = self.attributes.get(transcript_id_key,'')
-            if self.field[6] == '+':
-                self.strand = 1
-            elif self.field[6] == '-':
-                self.strand = -1
-            else:
-                self.strand = 0
-    
-    def __eq__(self, other): return self.span == other.span
-    def __ne__(self, other): return self.span != other.span
-    def __gt__(self, other): return self.span >  other.span
-    def __ge__(self, other): return self.span >= other.span
-    def __lt__(self, other): return self.span <  other.span
-    def __le__(self, other): return self.span <= other.span
-
-cpdef RNAseqMapping anno_to_mapping_object(AnnotationObject parent, list children):
-    """Given a top-level 'transcript' GTF/GFF feature and a list of 'exon' children,
-    return a matching RNAseqMapping object."""
-    pass
-
-cpdef RNAseqMapping generate_read_from_gtf(RNAseqDataset dataset, list gtf_lines):
-    """Converts a list of GTF-formatted strings to an RNAseqMapping object
-    for a single transcript, retaining exon positional information and
-    attributes of the 'transcript' parent line. Does not assume the lines are in
-    any particular order, but does require that they belong to the same transcript.
-    """
-    pass
-
-cpdef RNAseqMapping generate_read_from_gff(RNAseqDataset dataset, list gff_lines):
-    """Converts a list of GFF3-formatted strings to an RNAseqMapping object
-    for a single transcript, retaining exon positional information and
-    attributes of the 'transcript' parent line. Does not assume the lines are in
-    any particular order, but does require that they belong to the same transcript.
-    """
-    pass
 
 
-##############################################################################################################
-# BAM file processing #
-##############################################################################################################
+#####################################
+# Utilities for BAM file processing #
+#####################################
 # A set of functions for generating an RNAseqMapping object from one or more lines of a SAM file
 cpdef (int, int) range_of_reads(list reads):
     """Returns the leftmost and rightmost position of a 
@@ -1069,35 +1214,6 @@ cdef int get_junction_strand(dict genome, str chrom, int left, int right):
         strand = 0
     
     return strand
-
-# cdef (int, int) shift_junction(dict genome, str chrom, int left, int right, int junction_strand, int sj_shift):
-#     """Given a (left, right) pair of splice junction positions,
-#     searches for a canonical splice junction at the position. If one is not found,
-#     performs a search in range +-sj_shift around the given positions for a canonical junction."""
-#     cdef:
-#         int j0, j1
-#         str leftseq, rightseq
-    
-#     j0 = left
-#     j1 = right
-#     if strand == 1:
-#         leftseq = 'GT'
-#         rightseq = 'AG'
-#     else:
-#         leftseq = 'CT'
-#         rightseq = 'AC'
-    
-#     left_flank = get_flank(genome, chrom, j0-1, 1, 'E', 2).upper()
-#     right_flank = get_flank(genome, chrom, j1, 1, 'S', 2).upper()
-#     if left_flank != leftseq:
-#         strand = 1
-#     elif flanking_sequence in ['CTAC','CTGC','GTAT','CCAC']:
-#         strand = -1
-#     else:
-#         strand = 0
-    
-#     return (j0, j1)
-
 
 def parse_MD_string(str mdstring):
     """Creates a generator object to yield the elements
@@ -1670,11 +1786,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
     fileconn.close()
 
 
-##############################################################################################################
-##############################################################################################################
+
+#############################################################################################
 # Object for summarizing the coverage and features of a collection of RNAseqMapping objects #
-##############################################################################################################
-##############################################################################################################
+#############################################################################################
 
 cdef class BranchpointArray:
     cdef readonly dict S_plus, S_minus, E_plus, E_minus, J_plus, J_minus
