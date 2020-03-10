@@ -13,15 +13,16 @@ import time
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
-    cdef public bint naive, infer_starts, infer_ends
+    cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_percent, novelty_ratio, mean_read_length, intron_filter
     cdef public dict adj, bp_lookup
-    cdef public list transcripts
+    cdef public list transcripts, traceback
     cdef public object BP, graph
-    cdef public np.ndarray read_lengths, frag_len, frag_by_pos, strand_array, weight_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False):
+    cdef public np.ndarray read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.transcripts = []
+        self.traceback = []
         self.bp_lookup = {}
         self.chunk_number = chunk_number
         self.naive = naive
@@ -33,29 +34,47 @@ cdef class Locus:
         self.cap_percent = cap_percent
         self.infer_starts = infer_starts
         self.infer_ends = infer_ends
-        self.leftmost, self.rightmost = range_of_reads(list_of_reads)
-        self.reads = tuple(list_of_reads) # Cannot be mutated
-        self.read_lengths = np.array([r.get_length() for r in self.reads])
-        self.mean_read_length = np.mean(self.read_lengths)
-        self.weight = float(0)
-        self.extend = extend
-        self.end_extend = end_extend
-        self.generate_branchpoints()
-        self.build_membership_matrix()
-        self.denoise(verbose)
-        self.filter_run_on_frags()
-        if self.membership.shape[0] > 0:
-            self.build_overlap_matrix(reduce)
-            self.build_graph(reduce)
-
+        self.use_attributes = use_attributes
+        if len(list_of_reads) > 0:
+            self.leftmost, self.rightmost = range_of_reads(list_of_reads)
+            self.reads = tuple(list_of_reads) # Cannot be mutated
+            self.read_lengths = np.array([r.get_length() for r in self.reads])
+            self.mean_read_length = np.mean(self.read_lengths)
+            self.weight = float(0)
+            self.extend = extend
+            self.end_extend = end_extend
+            self.generate_branchpoints()
+            if type(self) is AnnotationLocus:
+                self.traceback = [set([i]) for i in range(len(self.reads))]
+                self.build_membership_matrix(0)
+                self.filter_by_reps(self.minreps)
+                if self.membership.shape[0] > 0:
+                    self.build_overlap_matrix(reduce=False, ignore_ends=True)
+            else:
+                self.build_membership_matrix()
+                self.denoise(verbose)
+                self.filter_run_on_frags()
+                if self.membership.shape[0] > 0:
+                    self.build_overlap_matrix(reduce)
+                    self.build_graph(reduce)
+    
     def __len__(self):
         return self.rightmost - self.leftmost
     
+    def __repr__(self):
+        symbols = {-1:'-', 0:' ', 1:'+', 2:'^'}
+        summary_string = '<{} ({})>\n'.format(str(type(self)).split("'")[-2], self.number_of_elements)
+        for l in range(self.number_of_elements):
+            members = ''.join([symbols[i] for i in self.membership[l,:]])
+            overlap = ''.join([symbols[i] for i in self.overlap[l,:]])
+            summary_string += '  |{}|\t|{}|\n'.format(members, overlap)
+        
+        return summary_string
+
     cpdef generate_branchpoints(self):
-        self.BP = BranchpointArray(self.leftmost, self.rightmost, self.reads, self.extend, self.end_extend, self.minimum_proportion, self.cap_percent, self.min_overhang, self.infer_starts, self.infer_ends)
+        self.BP = BranchpointArray(self.leftmost, self.rightmost, self.reads, self.extend, self.end_extend, self.minimum_proportion, self.cap_percent, self.min_overhang, self.infer_starts, self.infer_ends, self.use_attributes)
 
-
-    cpdef build_membership_matrix(self):
+    cpdef build_membership_matrix(self, threshold=1):
         """After branchpoints are identified, populate a table that stores information about
         each read's membership within each frag:
             (1) read overlaps with frag
@@ -119,15 +138,15 @@ cdef class Locus:
         
         number_of_reads = len(self.reads)
         number_of_frags = len(self.frags)
+        self.rep_array = np.ones(number_of_reads, dtype=np.int32)
         membership = np.zeros((number_of_reads, number_of_frags+4), dtype=np.int8) # Container for membership of each vertex in each read (-1 False, 1 True, 0 Unmeasured)
         strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
         weight_array = np.array([read.weight for read in self.reads], dtype=np.float32)
         cdef char [:, :] MEMBERSHIP = membership
         source_plus, sink_plus, source_minus, sink_minus = range(number_of_frags, number_of_frags+4)
-        last_rfrag = 0
         locus_length = len(self.frag_by_pos)
-
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
+            last_rfrag = 0
             read = self.reads[i]
             s = read.strand
             strand_array[i] = s
@@ -157,7 +176,7 @@ cdef class Locus:
                             r_overhang = self.frag_by_pos[r-self.min_overhang]
                             if r_overhang != rfrag: # The left overhang is too short
                                 rfrag = r_overhang
-                
+
                 if j == 0: # Starting block
                     if s == 1 and read.s_tag: # Left position is a 5' end
                         if l+self.leftmost in self.BP.S_plus.keys():
@@ -171,7 +190,7 @@ cdef class Locus:
                             l = self.BP.branchpoints[self.BP.E_minus[l+self.leftmost]].pos - self.leftmost
                             lfrag = self.frag_by_pos[l]
                             MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond sink
-                
+
                 if j == len(read.ranges)-1: # Ending block
                     if s == 1 and read.e_tag: # Right position is a 3' end
                         if r+self.leftmost in self.BP.E_plus.keys():
@@ -185,7 +204,7 @@ cdef class Locus:
                             r = self.BP.branchpoints[self.BP.S_minus[r+self.leftmost]].pos - self.leftmost
                             rfrag = self.frag_by_pos[r-1]
                             MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
-                
+
                 if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
                     if len(read.ranges) > 1:
                         if j == 0 and read.splice[j]: # The right border is a splice junction, structural violation
@@ -199,8 +218,8 @@ cdef class Locus:
                         rfrag = lfrag
                     else: # The right border was updated
                         lfrag = rfrag
-                
-                MEMBERSHIP[i, lfrag:rfrag+1] = 1 # Add all covered frags to the membership table
+
+                MEMBERSHIP[i, lfrag:(rfrag+1)] = 1 # Add all covered frags to the membership table
                 if j > 0: # Processing a downstream block
                     if read.splice[j-1]: # The gap between this block and the last was a splice junction
                         # Check that this junction is in the list of splice junctions
@@ -215,15 +234,16 @@ cdef class Locus:
                             break
                         
                         MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                
+
                 last_rfrag = rfrag
 
-        for i in range(len(self.frags)):
-            l,r = self.frags[i]
-            frag_depth = self.BP.depth[l-self.leftmost:r-self.leftmost]
-            if not passes_threshold(frag_depth, self.extend): # This frag has too large of a gap
-                MEMBERSHIP[:,i] = -1
-
+        if threshold > 0:
+            for i in range(len(self.frags)):
+                l,r = self.frags[i]
+                frag_depth = self.BP.depth[l-self.leftmost:r-self.leftmost]
+                if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
+                    MEMBERSHIP[:,i] = -1
+        
         self.membership = membership
         self.weight_array = weight_array
         self.strand_array = strand_array
@@ -233,6 +253,32 @@ cdef class Locus:
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
     
+    cpdef get_border_branchpoint(self, int pos, int side, int strand):
+        """Given a leftmost member position, find the nearest compatible
+        branchpoint that can act as an end."""
+        cdef str branchtype = ''
+        cdef float weight = 0
+        bp = self.bp_lookup[pos]
+        if strand == 1:
+            if side == 0: branchtype = 'S'
+            else: branchtype = 'E'
+        else:
+            if side == 0: branchtype = 'E'
+            else: branchtype = 'S'
+        
+        if strand != bp.strand or branchtype != bp.branchtype:
+            candidates = candidates = [b for b in self.BP.branchpoints if b.strand == strand and b.branchtype == branchtype and pos in b.span]
+            if len(candidates) > 0:
+                if len(candidates) == 1:
+                    bp = candidates[0]
+                else:
+                    for b in candidates:
+                        if b.weight > weight:
+                            bp = b
+                            weight = bp.weight
+        
+        return bp
+
     cpdef void filter_run_on_frags(self):
         """Iterates over frags looking for those putatively connecting the ends
         of two transcripts together. Applies the stringent filter (intron_filter)
@@ -252,31 +298,6 @@ cdef class Locus:
             np.ndarray has_frag
         
         removed_a_frag = False
-        # valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
-        # frag_index = bp_index = 0
-        # number_of_frags = len(self.frags)
-        # number_of_bps = len(self.BP.branchpoints)
-        # for frag_index in range(1,number_of_frags-1):
-        #     l, r = self.frags[frag_index]
-        #     lbp = self.bp_lookup[l]
-        #     rbp = self.bp_lookup[r]
-        #     end_pair = lbp.branchtype
-        #     end_pair += '>' if lbp.strand == 1 else '<'
-        #     end_pair += rbp.branchtype
-        #     end_pair += '>' if rbp.strand == 1 else '<'
-        #     if end_pair in valid_end_pairs:
-        #         ll,lr = self.frags[frag_index-1]
-        #         rl,rr = self.frags[frag_index+1]
-        #         weight_with_frag = np.mean(self.BP.depth[l-self.leftmost:r-self.leftmost])
-        #         flank_left = np.mean(self.BP.depth[ll-self.leftmost:lr-self.leftmost])
-        #         flank_right = np.mean(self.BP.depth[rl-self.leftmost:rr-self.leftmost])
-        #         if weight_with_frag < max(flank_left, flank_right)*self.intron_filter:
-        #             has_frag = np.where(self.membership[:,frag_index]==1)[0]
-        #             self.membership[has_frag,:] = -1
-        #             self.membership[:,frag_index] = -1
-        #             removed_a_frag = True
-                # valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
-        
         #TODO: Check upstream of EVERY S and downstream of EVERY E
         valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
         frag_index = bp_index = 0
@@ -304,13 +325,14 @@ cdef class Locus:
         
         if removed_a_frag:
             keep = np.where(np.sum(self.membership==1,axis=1)>0)[0]
+            self.membership = self.membership[keep,:]
             self.weight_array = self.weight_array[keep]
             self.strand_array = self.strand_array[keep]
             self.member_content = self.member_content[keep]
-            self.membership = self.membership[keep,:]   
             self.weight = np.sum(self.weight_array)
             self.number_of_elements = self.membership.shape[0]
             self.information_content = get_information_content(self.membership)
+            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void denoise(self, verbose=False):
         """Examines the membership of each frag. If coverage within a frag
@@ -356,10 +378,12 @@ cdef class Locus:
         keep = np.array(list(set(range(self.membership.shape[0])).difference(to_delete)))
         if len(keep) > 0:
             self.weight_array = self.weight_array[keep]
+            self.rep_array = self.rep_array[keep]
             self.strand_array = self.strand_array[keep]
             self.information_content = self.information_content[keep]
             self.member_content = self.member_content[keep]
             self.membership = self.membership[keep,:]   
+            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
             self.weight = np.sum(self.weight_array)
             self.number_of_elements = self.membership.shape[0]
 
@@ -370,12 +394,24 @@ cdef class Locus:
         cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
+        cdef Py_ssize_t i,v
         reduced_membership, reverse_lookup = np.unique(self.membership, axis=0, return_inverse=True)
         new_weights = np.zeros(shape=reduced_membership.shape[0], dtype=np.float32)
         new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
+        new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
+        
+        if type(self) is AnnotationLocus:
+            new_traceback = []
+            for i in range(reduced_membership.shape[0]):
+                new_traceback += [set()]
+            
+            for i,v in enumerate(reverse_lookup):
+                new_traceback[v].add(i)
+
         for i,v in enumerate(reverse_lookup):
             new_weights[v] += self.weight_array[i]
             new_strands[v] = self.strand_array[i]
+            new_reps[v] += self.rep_array[i]
 
         members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
         number_of_members = np.sum(members_bool[:,2:-2],axis=1)
@@ -387,15 +423,36 @@ cdef class Locus:
         self.membership = reduced_membership[sorted_indices,:]
         self.weight_array = new_weights[sorted_indices]
         self.strand_array = new_strands[sorted_indices]
+        self.rep_array = new_reps[sorted_indices]
+        if len(self.traceback) > 0:
+            self.traceback = [new_traceback[i] for i in sorted_indices]
 
+    cpdef void filter_by_reps(self, int minreps=1):
+        """Enforce that elements in the membership"""
+        cdef np.ndarray keep
+        if minreps > 1:
+            keep = np.where(self.rep_array >= minreps)[0]
+            self.rep_array = self.rep_array[keep]
+            self.weight_array = self.weight_array[keep]
+            self.strand_array = self.strand_array[keep]
+            self.membership = self.membership[keep,:]
+            self.number_of_elements = len(keep)
+            self.information_content = get_information_content(self.membership)
+            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
 
-    cpdef void build_overlap_matrix(self, bint reduce=True):
+    cpdef void build_overlap_matrix(self, bint reduce=True, bint ignore_ends=False):
         """Builds reduced-representation matrix where every read is (-1) incompatible,
         (1) overlapping, or (0) non-overlapping with every other read. Any read completely
         contained in one or more reads with more information are removed, with their
         weight distributed proportionally to the containers.
         """
-        self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
+        if ignore_ends:
+            endless_matrix = remove_ends(self.membership)
+            endless_info = get_information_content(endless_matrix)
+            self.overlap = calculate_overlap(endless_matrix, endless_info, self.strand_array)
+        else:
+            self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
+        
         if reduce:
             maxIC = self.membership.shape[1]
             new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, maxIC)
@@ -404,9 +461,11 @@ cdef class Locus:
             self.overlap = self.overlap[keep,:][:,keep]
             self.membership = self.membership[keep,:]
             self.weight_array = new_weights[keep]
+            self.rep_array = self.rep_array[keep]
             self.strand_array = self.strand_array[keep]
             self.information_content = self.information_content[keep]
             self.member_content = self.member_content[keep]
+            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     def build_graph(self, reduce=True):
         """Constructs one or more graphs from 
@@ -573,7 +632,7 @@ cdef class Locus:
                 paths_to_remove.append(index)
 
         return paths_to_remove
-
+    
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
         to store in the GTF attributes column."""
@@ -681,6 +740,7 @@ cdef class Locus:
             self.information_content = get_information_content(self.membership)
             self.member_content = get_member_content(self.membership)
             self.build_overlap_matrix(True)
+            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
@@ -688,7 +748,7 @@ cdef class Locus:
         cdef Py_ssize_t i
         for i in range(self.membership.shape[1]): # Iterate over columns of the membership table
             p = self.membership[parent_index,i]
-            c = self.membership[child_index,i]
+            c = self.membership[child_index,i]  
             if p == 0: # If no info in parent, overwrite with child
                 self.membership[parent_index, i] = c
             elif c != 0 and p != c: # Conflicting membership information
@@ -1013,8 +1073,288 @@ cdef class Locus:
         """Returns a string in JSON format that fully describes the locus,
         its input data and its solution."""
         locusname = 'bookend.{}'.format(self.chunk_number)
-        
 
+##########################################
+
+cdef class AnnotationLocus(Locus):
+    """Processes sets of RNAseqMapping objects with behavior specific
+    to 'bookend merge'"""
+    cdef public bint ignore_reference_ends
+    cdef public list ref_reads, high_confidence_transcripts
+    cdef public int minreps, confidence
+    cdef public float total_s, total_e
+    cdef public AnnotationLocus ref_locus
+    def __init__(self, chrom, chunk_number, list_of_reads, end_extend, min_overhang=0, minimum_proportion=0, cap_percent=0.1, intron_filter=0, ignore_reference_ends=True, minreps=1, confidence=-1):
+        self.minreps = minreps
+        self.confidence = confidence
+        self.ignore_reference_ends = ignore_reference_ends
+        self.cap_percent = cap_percent
+        self.ref_reads, nonref_reads = self.get_annotation_info(list_of_reads)
+        if len(nonref_reads) > 0:
+            Locus.__init__(self, chrom, chunk_number, nonref_reads, 0, end_extend, min_overhang, True, minimum_proportion, 0, 1, False, False, True, intron_filter, False, False, True)
+            self.cap_percent = cap_percent
+            self.total_s = sum([bp.weight for bp in self.BP.branchpoints if bp.branchtype == 'S'])
+            self.total_e = sum([bp.weight for bp in self.BP.branchpoints if bp.branchtype == 'E'])
+            self.transcripts = [self.transcript_from_membership(i) for i in range(self.membership.shape[0])]
+            if self.confidence == -1:
+                self.high_confidence_transcripts = []
+            else:
+                self.high_confidence_transcripts = list(np.where(self.rep_array >= self.confidence)[0])
+
+    cpdef tuple get_annotation_info(self, list list_of_reads):
+        """Updates features of the RNAseqMapping object with specific
+        fields from its attribute dict, if they exist."""
+        cdef list ref_reads, nonref_reads
+        cdef float percent_capped, s_reads, c_reads
+        ref_reads = []
+        nonref_reads = []
+        for read in list_of_reads:
+            read.weight = float(read.attributes['TPM']) if 'TPM' in read.attributes.keys() else read.weight
+            if read.is_reference:
+                if self.ignore_reference_ends:
+                    read.s_tag = read.e_tag = read.capped = False
+                
+                ref_reads.append(read) 
+            else:
+                s_reads = float(read.attributes.get('S.reads', 1))
+                c_reads = float(read.attributes.get('S.capped', 1))
+                percent_capped = c_reads/(s_reads+c_reads)
+                read.capped = True if percent_capped >= self.cap_percent else False
+                read.attributes['transcript_id'] = '{}.{}'.format(read.attributes['source'],read.attributes['transcript_id'])
+                nonref_reads.append(read)
+        
+        return ref_reads, nonref_reads
+    
+    cpdef list identify_truncations(self):
+        """Returns a list of member indices which are fully contained in
+        longer transcript(s)."""
+        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
+        return list(np.where(np.sum(containment, axis=1) > 1)[0])
+    
+    cpdef list identify_containers(self):
+        """Returns a list of member indices which fully contain
+        shorter transcript(s)."""
+        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
+        return list(np.where(np.sum(containment, axis=0) > 1)[0])
+
+    cpdef void filter_fused_and_truncated_annotations(self):
+        """Identifies situations in the merged Membership matrix that
+        represent putative false positive truncations (5' or 3' fragments)
+        and false positive fusions (containment of two adjacent nonoverlapping genes).
+        Requires that each must pass filtering criteria to be kept."""
+        cdef:
+            list truncation_indices, container_indices, to_remove, breaks
+            int strand, i, c, pos
+            set containers
+            np.ndarray members, contained_segments, 
+        
+        if len(self.transcripts) == 0:
+            return
+        
+        # TEST 1: Check if a truncation is capped (Short in Long with different TSS)
+        # FILTER 1: Short must be capped
+        truncation_indices = self.identify_truncations()
+        to_remove = []
+        if len(truncation_indices) == 0: # Nothing is contained in anything else
+            return
+        
+        for i in truncation_indices:
+            read = self.transcripts[i]
+            strand = read.strand
+            startpos = sorted([pos*strand for pos in read.span])[0]
+            # At least 1 container has an upstream 5' end
+            containers = set(np.where(self.overlap[i,:]==2)[0]).difference([i])
+            upstream_start = any([sorted([pos*strand for pos in self.transcripts[c].span])[0] < startpos for c in containers])
+            if upstream_start and not read.capped:
+                to_remove.append(i)
+        
+        self.remove_transcripts(to_remove)
+        # TEST 2: Check if a putative fusion exists (non-overlapping Short pair in Long)
+        # FILTER 2: Long must have more weight than each Short
+        to_remove = []
+        container_indices = self.identify_containers()
+        if len(container_indices) == 0: # Nothing is contained in anything else
+            return
+        
+        container_indices = [container_indices[i] for i in np.argsort(-self.member_content[container_indices])]
+        for i in container_indices: # Iterate over containers in decreasing length
+            contained = list(set(np.where(self.overlap[:,i]==2)[0]).difference([i]))
+            if len(contained) > 1:
+                members = np.where(self.membership[i,:-4]==1)[0]
+                contained_segments = self.membership[contained, :][:, members]
+                breaks = find_breaks(contained_segments,False)
+                if len(breaks) > 0: # i spans a split population of contained transcripts
+                    c_weight = max([self.transcripts[c].weight for c in contained])
+                    if self.transcripts[i].weight < c_weight:
+                        to_remove.append(i)
+        
+        self.remove_transcripts(to_remove)
+        # TEST 3: Check for putative fragments (spurious caps and end labels)
+        # FILTER 3: Short must have more weight than each Long
+        truncations = self.identify_truncations()
+        to_remove = []
+        if len(truncations) == 0: # Nothing is contained in anything else
+            return
+        
+        for i in truncations:
+            read = self.transcripts[i]
+            containers = set(np.where(self.overlap[i,:]==2)[0]).difference([i])
+            c_weight = max([self.transcripts[c].weight for c in containers])
+            if read.weight < c_weight:
+                to_remove.append(i)
+        
+        self.remove_transcripts(to_remove)
+    
+    cpdef remove_transcripts(self, list to_remove):
+        """Reduce the locus to only the set of elements
+        not present in the list to_remove."""
+        cdef list keep
+        cdef int r, k
+        to_remove = [r for r in to_remove if r not in self.high_confidence_transcripts]
+        if len(to_remove) == 0:
+            return
+        
+        keep = [i for i in range(self.number_of_elements) if i not in to_remove]
+        self.number_of_elements = len(keep)
+        self.overlap = self.overlap[keep,:][:,keep]
+        self.membership = self.membership[keep,:]
+        self.weight_array = self.weight_array[keep]
+        self.rep_array = self.rep_array[keep]
+        self.strand_array = self.strand_array[keep]
+        self.information_content = self.information_content[keep]
+        self.member_content = self.member_content[keep]
+        self.transcripts = [self.transcripts[k] for k in keep]
+        if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
+        if self.confidence >= 0: self.high_confidence_transcripts = list(np.where(self.rep_array >= self.confidence)[0])
+
+    cpdef end_ratio(self, int index):
+        """Calculates the average deviation from an equal ratio
+        of Start and End read proportions across all reads of the meta-assembly."""
+        traceback = self.traceback[index]
+        average_ratio = 0
+        for i in traceback:
+            read = self.reads[i]
+            part_s = float(read.attributes.get('S.ppm',0))/self.total_s
+            part_e = float(read.attributes.get('E.ppm',0))/self.total_e
+            ordered_ends = sorted([part_s, part_e])
+            ratio = (ordered_ends[1]+0.01) / (ordered_ends[0]+0.01)
+            average_ratio += ratio
+
+        average_ratio = average_ratio / len(traceback)
+        return average_ratio
+    
+    cpdef tuple get_name_for(self, index):
+        """Given its relationship to the annotation set,
+        generates a gene_id and transcript_id for
+        row [index] of the membership matrix."""
+        gene_id = 'bookend'
+        transcript_id = 'bookend.1'
+        return gene_id, transcript_id
+    
+    cpdef transcript_from_membership(self, int index):
+        """Produces a collection of RNAseqMapping objects from the items in membership"""
+        gene_id, transcript_id = self.get_name_for(index)
+        e_tag = s_tag = True
+        members = list(np.where(self.membership[index,:-4]==1)[0])
+        ranges = []
+        strand = self.strand_array[index]
+        chrom = self.chrom
+        source = 0
+        
+        elementAttributes = {}
+        elementAttributes['gene_id'] = gene_id
+        elementAttributes['transcript_id'] = transcript_id
+        elementAttributes['source'] = 'bookend'
+        elementAttributes['assemblies'] = self.rep_array[index]
+        elementAttributes['assembled_in'] = ''
+        weight = 0
+        elementAttributes['S.reads'] = 0
+        elementAttributes['S.capped'] = 0
+        elementAttributes['E.reads'] = 0
+        for i in self.traceback[index]:
+            read = self.reads[i]
+            weight += float(read.attributes['TPM'])
+            elementAttributes['S.reads'] += float(read.attributes.get('S.reads', 0))
+            elementAttributes['S.capped'] += float(read.attributes.get('S.capped', 0))
+            elementAttributes['E.reads'] += float(read.attributes.get('E.reads', 0))
+            elementAttributes['assembled_in'] += ',{}'.format(read.attributes.get('source',''))
+
+        elementAttributes['assembled_in'] = elementAttributes['assembled_in'].lstrip(',')
+        left = right = -1
+        current_frag = (left, right)
+        number_of_members = len(members)
+        last = number_of_members - 1
+        for i in range(number_of_members):
+            left, right = self.frags[members[i]]
+            if i == 0: # First member
+                lbp = self.get_border_branchpoint(left, 0, strand)
+                left = lbp.pos
+                if strand == 1:
+                    capped = lbp.percent_capped() >= self.cap_percent
+            
+            if i == last: # Last member
+                rbp = self.get_border_branchpoint(right, 1, strand)
+                right = rbp.pos
+                if strand == -1:
+                    capped = rbp.percent_capped() >= self.cap_percent
+            
+            if current_frag[1] == -1: # Uninitialized
+                current_frag = (left, right)
+            elif current_frag[1] == left: # Contiguous with the next member
+                current_frag = (current_frag[0], right)
+            else: # Jumped
+                ranges.append(current_frag)
+                current_frag = (left, right)
+        
+        ranges.append(current_frag)
+        splice = [True] * (len(ranges)-1)
+        elementData = ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+        readObject = RNAseqMapping(elementData, elementAttributes)
+        return readObject
+    
+    cpdef int matching_ref(self, read):
+        """Returns the index number in ref_reads of the best-matching ref transcript."""
+        cdef int match, smallest_diff, diff
+        match = smallest_diff = -1
+        for i in range(len(self.ref_reads)):
+            ref = self.ref_reads[i]
+            if read.overlaps(ref):
+                if read.is_compatible(ref, ignore_ends=True, ignore_source=True):
+                    diff = read.diff(ref)
+                    if smallest_diff == -1 or diff < smallest_diff:
+                        smallest_diff = diff
+                        match = i
+        
+        return match
+    
+    cpdef int sense_ref(self, read):
+        """Returns the index number in ref_reads of the best-matching ref transcript."""
+        cdef int match, smallest_diff, diff
+        match = smallest_diff = -1
+        for i in range(len(self.ref_reads)):
+            ref = self.ref_reads[i]
+            if read.sense_match(ref, 1):
+                diff = read.diff(ref)
+                if smallest_diff == -1 or diff < smallest_diff:
+                    smallest_diff = diff
+                    match = i
+        
+        return match
+
+    cpdef int antisense_ref(self, read):
+        """Returns the index number in ref_reads of the best-matching ref transcript."""
+        cdef int match, smallest_diff, diff
+        match = smallest_diff = -1
+        for i in range(len(self.ref_reads)):
+            ref = self.ref_reads[i]
+            if read.antisense_match(ref, self.end_extend):
+                diff = read.diff(ref)
+                if smallest_diff == -1 or diff < smallest_diff:
+                    smallest_diff = diff
+                    match = i
+        
+        return match
+    
 
 ##########################################
 
@@ -1137,6 +1477,27 @@ cpdef bint passes_threshold(np.ndarray array, int max_gap, float threshold=1):
     
     return passed
 
+cpdef np.ndarray remove_ends(np.ndarray[char, ndim=2] membership_matrix):
+    """Given a full membership matrix, return a reduced version in which
+    end information is ignored."""
+    cdef:
+        np.ndarray endless_matrix, boundaries
+        Py_ssize_t i, columns
+        int first, last
+    
+    endless_matrix = copy.copy(membership_matrix[:,:-4])
+    boundaries = np.apply_along_axis(first_and_last, 1, endless_matrix)
+    columns = endless_matrix.shape[1]
+    for i in range(endless_matrix.shape[0]):
+        first, last = boundaries[i,:2]
+        if first >= 0:
+            endless_matrix[i,:first] = 0
+        
+        if last >= 0:
+            endless_matrix[i,(last+1):] = 0
+    
+    return endless_matrix
+
 cpdef (int, int) first_and_last(np.ndarray[char, ndim=1] membership_row):
     """Returns a (left,right) tuple of the first and last member positions."""
     cdef np.ndarray indices = np.where(membership_row==1)[0]
@@ -1145,15 +1506,23 @@ cpdef (int, int) first_and_last(np.ndarray[char, ndim=1] membership_row):
     else:
         return (-1, -1)
 
-cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix):
+cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_ends=True):
     """Identifies all points along the membership array where it could
     be cleanly divided in two, with reads entirely on one side or the other."""
-    cdef np.ndarray boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix[:,:-4])
+    cdef np.ndarray boundaries, gaps, boolarray
     cdef list breaks = []
-    cdef np.ndarray gaps = np.where(np.sum(membership_matrix[:,:-4]==1,0)==0)[0]
+    if ignore_ends:
+        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix[:,:-4])
+        gaps = np.where(np.sum(membership_matrix[:,:-4]==1,0)==0)[0]
+    else:
+        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix)
+        gaps = np.where(np.sum(membership_matrix==1,0)==0)[0]
+    
     for g in gaps:
-        if not np.any(np.sum(g > boundaries, 1)==1):
-            breaks.append(g)
+        boolarray = g > boundaries
+        if not np.any(np.sum(boolarray, 1)==1): # G isn't inside any membership ranges
+            if len(np.unique(boolarray)) == 2:
+                breaks.append(g)
     
     return breaks
 

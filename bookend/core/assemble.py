@@ -11,6 +11,7 @@ if __name__ == '__main__':
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
+        self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
         self.genome = args['GENOME']
@@ -75,6 +76,7 @@ class Assembler:
 
     def process_entry(self, chunk):
         STOP_AT=float('inf')
+        # STOP_AT=3624
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             subchunks = ru.split_chunk(chunk, self.min_proportion, self.max_gap)
@@ -134,6 +136,7 @@ class Assembler:
     
     def display_summary(self):
         summary = ''
+        summary += 'Total elapsed time: {}'.format(round(self.end_time - self.start_time, 5))
         return summary
     
     def file_extension(self, filename):
@@ -173,6 +176,7 @@ class Assembler:
             self.process_entry(locus)
         
         self.output_file.close()
+        self.end_time = time.time()
         print(self.display_summary())
 
 if __name__ == '__main__':

@@ -6,11 +6,11 @@ from bookend.core.bam_to_elr import BAMtoELRconverter
 from bookend.core.fasta_index import Indexer
 from bookend.core.bed_to_elr import BEDtoELRconverter
 from bookend.core.elr_to_bed import ELRtoBEDconverter
+from bookend.core.gtf_merge import AnnotationMerger
 # from core.elr_combine import ELRcombiner
 # from core.sam_sj_out import SAMtoSJconverter
 # from core.sj_merge import SJmerger
 # from core.sj_to_bed import SJtoBEDconverter
-# from bookend.core.gtf_merge import AnnotationMerger
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -151,9 +151,7 @@ bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
 bed_to_elr_parser.set_defaults(object=BEDtoELRconverter)
 
 ### elr_combine.py ###
-
 # parser.add_argument(dest='INPUT', help="Input sorted ELR file.", type=str, nargs='+')
-
 # args = parser.parse_args()
 
 ### elr_to_bed.py ###
@@ -191,16 +189,28 @@ fasta_index_parser.add_argument("--bridge_max", dest='MAXLEN',help="Maximum tole
 fasta_index_parser.set_defaults(object=Indexer)
 
 ### gtf_merge.py ###
-# merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation GTF/GFF3 files to one consensus")
-# merge_parser.add_argument('-r', dest='reference_GFF', help="[GFF3/GTF] Path to reference annotation(s)", nargs='*')
-# merge_parser.add_argument('-i', dest='input_GFF', help="[GFF3/GTF] Path to input annotation(s)", nargs='+')
-# merge_parser.add_argument('--genome', dest='genome_fasta', help="Path to a FASTA file of the genome.", default=None)
-# merge_parser.add_argument("--tracking", dest='tracking_file', help="gffcompare .tracking file.", default=None)
-# merge_parser.add_argument("--stats", dest='stats_file', help="bookend .stats file.", default=None)
-# merge_parser.add_argument("--buffer", dest='buffer', help="Number of allowed nonoverlapping terminal nucleotides.", default=100, type=int)
-# merge_parser.add_argument("--fasta_out", dest='fasta_out', help="Output FASTA file of transcript sequences.", default=None, type=str)
-# merge_parser.add_argument("--protein_out", dest='protein_out', help="Output FASTA file of amino acid sequences.", default=None, type=str)
-# merge_parser.set_defaults(object=AnnotationMerger)
+merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
+merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
+merge_parser.add_argument("--fasta_out", dest='FASTA_OUT', help="Output FASTA file of spliced transcript sequences.", default=None, type=str)
+merge_parser.add_argument("--orf_out", dest='ORF_OUT', help="Output FASTA file of amino acid sequence for the longest ORF.", default=None, type=str)
+merge_parser.add_argument('--genome', dest='GENOME', help="Path to a FASTA file of the genome.", default=None)
+merge_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
+merge_parser.add_argument('--refname', dest='REFNAME', help="Name of the reference source", type=str, default=None)
+merge_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
+merge_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
+merge_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
+merge_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
+merge_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=100, help="Largest distance between ends to consider in one cluster (number of nucleotides).")
+merge_parser.add_argument('--minlen', dest='MINLEN', type=int, default=50, help="Minimum transcript length of merged assemblies.")
+merge_parser.add_argument('--min_reps', dest='MIN_REPS', type=int, default=1, help="Number of times a transcript must be independently assembled (for multiple input files).")
+merge_parser.add_argument('--high_conf', dest='CONFIDENCE', type=float, default=0.5, help="[float 0-1] Assemblies present in >= this percent of input files cannot be discarded.")
+merge_parser.add_argument('--cap_percent', dest='CAP_PERCENT', type=float, default=0.05, help="[float 0-1] Discard 5' end features with < this percent of cap-labeled reads (reads that contain upstream untemplated G).")
+merge_parser.add_argument('--keep_truncations', dest='KEEP_TRUNCATIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies contained in longer assemblies.")
+merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies that bridge two adjacent loci.")
+merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
+merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='+')
+merge_parser.set_defaults(object=AnnotationMerger)
+
 
 ### sam_sj_out.py ###
 sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.")
