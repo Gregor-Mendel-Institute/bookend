@@ -75,7 +75,7 @@ class EndLabeler:
             self.outfile1 = open(self.out1,'w')
             self.outfile2 = open(self.out2,'w')
         
-        self.fastq_generator = self.generate_fastq_entries()    
+        self.fastq_generator = self.generate_fastq_entries()
 
     def run(self):
         """Executes end labeling on all reads."""
@@ -212,15 +212,21 @@ class EndLabeler:
                 if not self.suppress_untrimmed or label != '':
                     if trim2 is None:
                         if len(trim1) >= self.minlen: # A single read was written from the pair
-                            self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
-                            self.labeldict[label] += 1
+                            if fu.is_homopolymer(trim1):
+                                self.labeldict['XQ'] += 1
+                            else:
+                                self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                self.labeldict[label] += 1
                         else:
                             self.labeldict['XL'] += 1
                     else:
                         if len(trim1) >= self.minlen and len(trim2) >= self.minlen: # Write trimmed, oriented, paired-end reads
-                            self.outfile1.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
-                            self.outfile2.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file2_read[0], label, trim2, file2_read[2], qtrm2))
-                            self.labeldict[label] += 1
+                            if fu.is_homopolymer(trim1) or fu.is_homopolymer(trim2):
+                                self.labeldict['XQ'] += 1
+                            else:
+                                self.outfile1.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                self.outfile2.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file2_read[0], label, trim2, file2_read[2], qtrm2))
+                                self.labeldict[label] += 1
                         else:
                             self.labeldict['XL'] += 1
             else:
@@ -239,7 +245,9 @@ class EndLabeler:
                 print(self.display_trim(file1_read[1], '', trim1, '', label))
             
             if len(trim1) > 0:
-                if not self.suppress_untrimmed or label != '':
+                if fu.is_homopolymer(trim1):
+                    self.labeldict['XQ'] += 1
+                elif not self.suppress_untrimmed or label != '':
                     if len(trim1) >= self.minlen: # A single read was output
                         self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
                         self.labeldict[label] += 1

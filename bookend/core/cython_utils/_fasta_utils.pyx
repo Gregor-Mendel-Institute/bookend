@@ -262,6 +262,31 @@ cpdef array.array nuc_to_int(str nuc_string, str qual_string='', int qualmask=12
     
     return array.array('i',nuc_as_int)
 
+cpdef bint is_homopolymer(str string, float threshold=0.8):
+    """Returns whether a single character composes > threshold
+    of a string."""
+    cdef str n
+    cdef int count_n, total_count, string_length, thresh_length
+    
+    string = string.upper()
+    string_length = len(string)
+    thresh_length = int(round(string_length * threshold))
+    if string_length == 0:
+        return True
+    
+    total_count = 0
+    for n in ['A','T','G','C']:
+        count_n = string.count(n)
+        if count_n >= thresh_length:
+            return True
+        else:
+            total_count += count_n
+            if total_count > string_length - thresh_length:
+                # Enough subthreshold nucleotides were found
+                return False
+    
+    return False
+
 cpdef double quality_score(str qual_string):
     """Takes an Illumina format quality string
     and returns the average score"""
