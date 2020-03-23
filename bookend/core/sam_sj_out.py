@@ -198,7 +198,7 @@ def junctions_from_sam(input_lines, sjdb):
 # PROCESS INPUT FILE # 
 ######################
 if __name__ == '__main__':
-    genome = fu.import_genome(args.FASTA)
+    genome, index = fu.import_genome(args.FASTA)
     sj_dict = {}
     
     if args.FILENAME:
