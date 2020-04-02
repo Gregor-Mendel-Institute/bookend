@@ -27,8 +27,12 @@ class AnnotationMerger:
         self.verbose = self.args['VERBOSE']
         self.reference = self.args['REFERENCE']
         self.refname = self.args['REFNAME']
-        if self.refname is None:
+        if self.refname is None and self.reference is not None:
             self.refname = '.'.join(self.reference.split('/')[-1].split('.')[:-1])
+        
+        if len(self.input) == 0 and self.reference is None:
+            parser.print_help()
+            sys.exit(0)
         
         self.gtf_parent = self.args['GTF_PARENT']
         self.gtf_child = self.args['GTF_CHILD']
