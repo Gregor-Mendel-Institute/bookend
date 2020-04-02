@@ -211,7 +211,7 @@ merge_parser.add_argument('--cap_percent', dest='CAP_PERCENT', type=float, defau
 merge_parser.add_argument('--keep_truncations', dest='KEEP_TRUNCATIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies contained in longer assemblies.")
 merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies that bridge two adjacent loci.")
 merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
-merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='+')
+merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
 merge_parser.set_defaults(object=AnnotationMerger)
 
 
@@ -225,5 +225,4 @@ sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
 ### sj_merge.py ###
 
 ### sj_to_bed.py ###
-
 

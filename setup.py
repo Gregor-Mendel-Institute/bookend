@@ -22,7 +22,7 @@ setuptools.setup(
     ],
     keywords='transcriptome assembler bioinformatics rna sequencing',
     install_requires=['cython', 'numpy', 'pysam'],
-    scripts=['bin/sort-elr', 'bin/collapse-elr', 'bin/gff3-to-bed'],
+    # scripts=['bin/sort-elr', 'bin/collapse-elr', 'bin/gff3-to-bed'],
     entry_points={
         'console_scripts': ['bookend = bookend.bookend:main'],
     },
