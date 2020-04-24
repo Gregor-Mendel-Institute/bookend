@@ -5,7 +5,7 @@ import sys
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
-class SJobject():
+class SJobject:
     def __init__(self, line, linetype=None):
         """Parses a line of SJ.out.tab or SJ.bed to an SJ object.
         O-indexed open coordinates."""
@@ -59,7 +59,7 @@ class SJobject():
             if self.name is None:
                 self.name = other.name
     
-    def as_string(self, linetype=self.linetype):
+    def as_string(self, linetype='star'):
         """Writes the SJobject as a SJ.out.tab or SJ.bed format"""
         if linetype == 'star':
             return '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
