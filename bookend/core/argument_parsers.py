@@ -14,10 +14,10 @@ from bookend.core.elr_combine import ELRcombiner
 from bookend.core.sam_sj_out import SAMtoSJconverter
 from bookend.core.sj_merge import SJmerger
 from bookend.core.sj_to_bed import SJtoBEDconverter
-from bookend.core.elr_sort import ELRsorter
-from bookend.core.elr_collapse import ELRcollapser
-from bookend.core.gff3_to_bed import GFF3converter
-from bookend.core.gtf_to_bed import GTFconverter
+# from bookend.core.elr_sort import ELRsorter
+# from bookend.core.elr_collapse import ELRcollapser
+# from bookend.core.gff3_to_bed import GFF3converter
+# from bookend.core.gtf_to_bed import GTFconverter
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -46,7 +46,7 @@ Subcommands (use -h/--help for more info):
     gtf-to-bed
     sam-to-sj
     sj-to-bed
-    merge-sj
+    sj-merge
 
     --setup/indexing--
     index-fasta
@@ -158,11 +158,11 @@ bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
 bed_to_elr_parser.set_defaults(object=BEDtoELRconverter)
 
 ### elr_combine.py ###
-combine_parser = subparsers.add_parser('combine-elr',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
-combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
-combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
-combine_parser.add_argument("--temp", dest='TEMPDIR', type='_combinetmp', default=None, required=True, help="Prefix for temp files.")
-combine_parser.set_defaults(object=ELRcombiner)
+# combine_parser = subparsers.add_parser('combine-elr',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+# combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
+# combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
+# combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")
+# combine_parser.set_defaults(object=ELRcombiner)
 
 ### elr_to_bed.py ###
 elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)
@@ -230,7 +230,7 @@ sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
 sam_sj_parser.set_defaults(object=SAMtoSJconverter)
 
 ### sj_merge.py ###
-sj_merge_parser = subparsers.add_parser('merge-sj', help="Combines multiple SJ.out.tab or SJ.bed files.")
+sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.")
 sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj_merge.out.tab', help="Filepath to write merged file.")
 sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
@@ -240,34 +240,35 @@ sj_merge_parser.add_argument("INPUT", nargs='+')
 sj_merge_parser.set_defaults(object=SJmerger)
 
 ### sj_to_bed.py ###
+sj_to_bed_parser = subparsers.add_parser('sj-to-bed', help="Converts SJ.out.tab file to an SJ.bed file.")
 sj_to_bed_parser.add_argument("INPUT", type=str, help="Input SJ.out.tab file")
 sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='SJ.bed', help="Filepath to write SJ.bed file.")
 sj_merge_parser.set_defaults(object=SJtoBEDconverter)
 
 ### elr_sort.py ###
-elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
-elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_sort_parser.add_argument("--ram", dest='RAM', help="Amount of available RAM in gigabytes (default: 8)", default=8, type=int)
-elr_sort_parser.add_argument("--cpus", dest='CPUS', help="Number of cores available (default: 1)", default=1, type=int)
-elr_sort_parser.add_argument("--T", dest='TEMP', help="Path to write temporary files (default: '.')", default='.')
-elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
-elr_sort_parser.set_defaults(object=ELRsorter)
+# elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
+# elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+# elr_sort_parser.add_argument("--ram", dest='RAM', help="Amount of available RAM in gigabytes (default: 8)", default=8, type=int)
+# elr_sort_parser.add_argument("--cpus", dest='CPUS', help="Number of cores available (default: 1)", default=1, type=int)
+# elr_sort_parser.add_argument("--T", dest='TEMP', help="Path to write temporary files (default: '.')", default='.')
+# elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
+# elr_sort_parser.set_defaults(object=ELRsorter)
 
 ### elr_collapse.py ###
-elr_collapse_parser = subparsers.add_parser('collapse-elr',help="Condenses a sorted End-Labeled Read (ELR) file by merging together all duplicate lines.")
-elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_collapse_parser.add_argument("INPUT", type=str, help="Input ELR file")
-elr_collapse_parser.set_defaults(object=ELRcollapser)
+# elr_collapse_parser = subparsers.add_parser('collapse-elr',help="Condenses a sorted End-Labeled Read (ELR) file by merging together all duplicate lines.")
+# elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+# elr_collapse_parser.add_argument("INPUT", type=str, help="Input ELR file")
+# elr_collapse_parser.set_defaults(object=ELRcollapser)
 
 ### gff3_to_bed.py ###
-elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GFF3 annotation file to BED12.")
-elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_collapse_parser.add_argument("INPUT", type=str, help="Input GFF3 file")
-elr_collapse_parser.set_defaults(object=GFF3converter)
+# elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GFF3 annotation file to BED12.")
+# elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+# elr_collapse_parser.add_argument("INPUT", type=str, help="Input GFF3 file")
+# elr_collapse_parser.set_defaults(object=GFF3converter)
 
 ### gtf_to_bed.py ###
-elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GTF annotation file to BED12.")
-elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_collapse_parser.add_argument("INPUT", type=str, help="Input GTF file")
-elr_collapse_parser.set_defaults(object=GTFconverter)
+# elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GTF annotation file to BED12.")
+# elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+# elr_collapse_parser.add_argument("INPUT", type=str, help="Input GTF file")
+# elr_collapse_parser.set_defaults(object=GTFconverter)
 

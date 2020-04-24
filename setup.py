@@ -1,4 +1,5 @@
 import setuptools
+import numpy
 from distutils.core import setup
 from distutils.extension import Extension
 
@@ -27,11 +28,11 @@ setuptools.setup(
         'console_scripts': ['bookend = bookend.bookend:main'],
     },
     ext_modules = [
-        Extension("bookend.core.cython_utils._assembly_utils", ["bookend/core/cython_utils/_assembly_utils.c"]),
-        Extension("bookend.core.cython_utils._element_graph", ["bookend/core/cython_utils/_element_graph.c"]),
+        Extension("bookend.core.cython_utils._assembly_utils", ["bookend/core/cython_utils/_assembly_utils.c"], include_dirs=[numpy.get_include()]),
+        Extension("bookend.core.cython_utils._element_graph", ["bookend/core/cython_utils/_element_graph.c"], include_dirs=[numpy.get_include()]),
         Extension("bookend.core.cython_utils._fasta_utils", ["bookend/core/cython_utils/_fasta_utils.c"]),
         Extension("bookend.core.cython_utils._pq", ["bookend/core/cython_utils/_pq.c"]),
-        Extension("bookend.core.cython_utils._rnaseq_utils", ["bookend/core/cython_utils/_rnaseq_utils.c"]),
+        Extension("bookend.core.cython_utils._rnaseq_utils", ["bookend/core/cython_utils/_rnaseq_utils.c"], include_dirs=[numpy.get_include()]),
     ],
     python_requires='>=3.6',
 )
