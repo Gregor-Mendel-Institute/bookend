@@ -11,9 +11,9 @@ from bookend.core.bed_to_elr import BEDtoELRconverter
 from bookend.core.elr_to_bed import ELRtoBEDconverter
 from bookend.core.gtf_merge import AnnotationMerger
 from bookend.core.elr_combine import ELRcombiner
-# from core.sam_sj_out import SAMtoSJconverter
-# from core.sj_merge import SJmerger
-# from core.sj_to_bed import SJtoBEDconverter
+from bookend.core.sam_sj_out import SAMtoSJconverter
+from bookend.core.sj_merge import SJmerger
+from bookend.core.sj_to_bed import SJtoBEDconverter
 from bookend.core.elr_sort import ELRsorter
 from bookend.core.elr_collapse import ELRcollapser
 from bookend.core.gff3_to_bed import GFF3converter
@@ -230,8 +230,19 @@ sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
 sam_sj_parser.set_defaults(object=SAMtoSJconverter)
 
 ### sj_merge.py ###
+sj_merge_parser = subparsers.add_parser('merge-sj', help="Combines multiple SJ.out.tab or SJ.bed files.")
+sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj_merge.out.tab', help="Filepath to write merged file.")
+sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
+sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
+sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
+sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
+sj_merge_parser.add_argument("INPUT", nargs='+')
+sj_merge_parser.set_defaults(object=SJmerger)
 
 ### sj_to_bed.py ###
+sj_to_bed_parser.add_argument("INPUT", type=str, help="Input SJ.out.tab file")
+sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='SJ.bed', help="Filepath to write SJ.bed file.")
+sj_merge_parser.set_defaults(object=SJtoBEDconverter)
 
 ### elr_sort.py ###
 elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
