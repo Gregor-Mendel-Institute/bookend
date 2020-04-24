@@ -1313,7 +1313,7 @@ def split_chunk(list reads, float minimum_proportion, int max_gap):
     
     yield reads[last_index:]
 
-cdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type, int label_len):
+cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type, int label_len):
     """Gets flanking region to a genomic position to compare to an end label
     """
     cdef str flank
