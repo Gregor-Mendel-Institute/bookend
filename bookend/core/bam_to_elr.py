@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
 if __name__ == '__main__':
     sys.path.append('../../bookend')
@@ -107,7 +110,7 @@ class BAMtoELRconverter:
                 bam_lines = [line]
                 current_ID = ID
         
-        yield bam_lines                
+        yield bam_lines
 
     def output_lines(self, lines, output):
         """Takes a list of bed lines and writes

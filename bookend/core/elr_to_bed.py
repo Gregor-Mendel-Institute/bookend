@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import bookend.core.cython_utils._rnaseq_utils as ru
