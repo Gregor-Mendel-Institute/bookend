@@ -14,7 +14,7 @@ class ELRsorter:
         self.cpus = args['CPUS']
         self.temp = args['TEMP']
 
-        self.command_string = 'bin/elr-sort --ram {} --cpus {} -T {} {}'.format(self.ram, self.cpus, self.temp, self.input)
+        self.command_string = 'bin/sort-elr --ram {} --cpus {} -T {} {}'.format(self.ram, self.cpus, self.temp, self.input)
         if self.output != 'stdout':
             self.command_string += ' > {}'.format(self.output)
 
