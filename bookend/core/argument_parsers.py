@@ -15,7 +15,7 @@ from bookend.core.sam_sj_out import SAMtoSJconverter
 from bookend.core.sj_merge import SJmerger
 from bookend.core.sj_to_bed import SJtoBEDconverter
 from bookend.core.elr_sort import ELRsorter
-# from bookend.core.elr_collapse import ELRcollapser
+from bookend.core.elr_collapse import ELRcollapser
 # from bookend.core.gff3_to_bed import GFF3converter
 # from bookend.core.gtf_to_bed import GTFconverter
 
@@ -255,10 +255,10 @@ elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object=ELRsorter)
 
 ### elr_collapse.py ###
-# elr_collapse_parser = subparsers.add_parser('collapse-elr',help="Condenses a sorted End-Labeled Read (ELR) file by merging together all duplicate lines.")
-# elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-# elr_collapse_parser.add_argument("INPUT", type=str, help="Input ELR file")
-# elr_collapse_parser.set_defaults(object=ELRcollapser)
+elr_collapse_parser = subparsers.add_parser('collapse-elr',help="Condenses a sorted End-Labeled Read (ELR) file by merging together all duplicate lines.")
+elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+elr_collapse_parser.add_argument("INPUT", type=str, help="Input ELR file")
+elr_collapse_parser.set_defaults(object=ELRcollapser)
 
 ### gff3_to_bed.py ###
 # elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GFF3 annotation file to BED12.")
