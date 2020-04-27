@@ -58,5 +58,4 @@ awk '{ # Convert BED to BED12
     blockSizes=$3-$2
     blockStarts=$2
     strand=$6
-  }
-}'
+  }} END {print $1"\t"start"\t"end"\t"name"\t.\t"strand"\t"start"\t"end"\t0,0,0\t"blockCount"\t"blockSizes"\t"blockStarts}'
