@@ -14,13 +14,15 @@ class ELRsorter:
         self.cpus = args['CPUS']
         self.temp = args['TEMP']
 
-        self.command_string = 'sh bin/elr-sort --ram {} --cpus {} -T {}'.format(self.ram, self.cpus, self.temp)
+        self.command_string = 'bin/elr-sort --ram {} --cpus {} -T {} {}'.format(self.ram, self.cpus, self.temp, self.input)
         if self.output != 'stdout':
             self.command_string += ' > {}'.format(self.output)
 
     def run(self):
-        print(self.display_options())
-        return subprocess.call(self.command_string)
+        if self.output != 'stdout':
+            print(self.display_options())
+        
+        return subprocess.call(self.command_string, shell=True)
     
     def display_options(self):
         """Returns a string describing all input args"""
