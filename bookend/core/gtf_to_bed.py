@@ -5,16 +5,13 @@ import sys
 import os
 import subprocess
 
-class ELRsorter:
+class GTFconverter:
     def __init__(self, args):
-        """Converts each line of BED-formatted input to ELR"""
+        """Converts each transcript of GTF-formatted input to BED12"""
         self.input = args['INPUT']
         self.output = args['OUT']
-        self.ram = args['RAM']
-        self.cpus = args['CPUS']
-        self.temp = args['TEMP']
-
-        self.command_string = 'bin/sort-elr --ram {} --cpus {} -T {} {}'.format(self.ram, self.cpus, self.temp, self.input)
+        
+        self.command_string = 'bin/gtf-to-bed {}'.format(self.input)
         if self.output != 'stdout':
             self.command_string += ' > {}'.format(self.output)
 
@@ -26,18 +23,14 @@ class ELRsorter:
     
     def display_options(self):
         """Returns a string describing all input args"""
-        options_string = "\n/| bookend sort-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string = "\n/| bookend gtf-to-bed |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input file:    {}\n".format(self.input)
         options_string += "  Output file:   {}\n".format(self.output)
-        options_string += "  *** Parameters ***\n"
-        options_string += "  Temp directory: {}\n".format(self.temp)
-        options_string += "  --ram: {}\n".format(self.ram)
-        options_string += "  --cpus: {}\n".format(self.cpus)
         return options_string
 
 if __name__ == '__main__':
     sys.path.append('../../bookend')
-    from argument_parsers import elr_sort_parser as parser
+    from argument_parsers import gtf_to_bed_parser as parser
     args = vars(parser.parse_args())
-    obj = ELRsorter(args)
+    obj = GTFconverter(args)
     sys.exit(obj.run())

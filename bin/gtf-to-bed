@@ -2,8 +2,8 @@
 
 function usage() {
 cat <<HELP
-    usage: gff3_to_bed input.gff3 > output.bed
-    Converts a GFF3 annotation file to BED12.
+    usage: gtf_to_bed input.gtf > output.bed
+    Converts a GTF annotation file to BED12.
     
 HELP
 }
@@ -11,21 +11,21 @@ HELP
 while [ "$1" != "" ]; do
     case $1 in
     -h | --help ) usage; exit 1;;
-    * )           GFF3=$1; break;;
+    * )           GTF=$1; break;;
     esac
     shift
 done
 
-if [ -z $GFF3 ]; then
-    echo "ERROR: No GFF3 file found."
+if [ -z $GTF ]; then
+    echo "ERROR: No GTF file found."
     usage
     exit 1
 fi
 
-cat $GFF3 | # Print all lines of GFF3 file to stdout
-sed 's/\t\([\+-]\)\t\.\t.*Parent=\(transcript:\)\?\([^;]\+\);\?.*$/\t\1\t.\t\3/' | # Simplify attribute line to only the transcript ID
-grep -P '\texon\t' | # Subset GFF3 file for only 'exon' lines
-awk '{ print $1"\t"$4-1"\t"$5"\t"$9"\t"$6"\t"$7 }' | # Convert GFF3 lines to BED
+cat $GTF | # Print all lines of GTF file to stdout
+sed 's/\t\([\+-]\)\t\.\t.*transcript_id \"\([^\"]\+\)\";\?.*$/\t\1\t.\t\2/' | # Simplify attribute line to only the transcript ID
+grep -P '\texon\t' | # Subset GTF file for only 'exon' lines
+awk '{ print $1"\t"$4-1"\t"$5"\t"$9"\t"$6"\t"$7 }' | # Convert GTF lines to BED
 awk '{ # Convert BED to BED12
   if (name==$4){
     blockCount+=1
@@ -69,4 +69,4 @@ awk '{ # Convert BED to BED12
       }
     }
     print $1"\t"start"\t"end"\t"name"\t.\t"strand"\t"start"\t"end"\t0,0,0\t"blockCount"\t"blockSizes"\t"blockStarts
-  }'
+}'

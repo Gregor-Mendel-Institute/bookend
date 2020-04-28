@@ -17,7 +17,7 @@ from bookend.core.sj_to_bed import SJtoBEDconverter
 from bookend.core.elr_sort import ELRsorter
 from bookend.core.elr_collapse import ELRcollapser
 from bookend.core.gff3_to_bed import GFF3converter
-# from bookend.core.gtf_to_bed import GTFconverter
+from bookend.core.gtf_to_bed import GTFconverter
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -267,8 +267,8 @@ gff3_to_bed_parser.add_argument("INPUT", type=str, help="Input GFF3 file")
 gff3_to_bed_parser.set_defaults(object=GFF3converter)
 
 ### gtf_to_bed.py ###
-# elr_collapse_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GTF annotation file to BED12.")
-# elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-# elr_collapse_parser.add_argument("INPUT", type=str, help="Input GTF file")
-# elr_collapse_parser.set_defaults(object=GTFconverter)
+gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF annotation file to BED12.")
+gtf_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+gtf_to_bed_parser.add_argument("INPUT", type=str, help="Input GTF file")
+gtf_to_bed_parser.set_defaults(object=GTFconverter)
 
