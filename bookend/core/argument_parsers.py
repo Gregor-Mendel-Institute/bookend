@@ -252,12 +252,6 @@ elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrit
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object=ELRsorter)
 
-### elr_collapse.py ###
-elr_collapse_parser = subparsers.add_parser('collapse-elr',help="Condenses a sorted End-Labeled Read (ELR) file by merging together all duplicate lines.")
-elr_collapse_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_collapse_parser.add_argument("INPUT", type=str, help="Input ELR file")
-elr_collapse_parser.set_defaults(object=ELRcollapser)
-
 ### gff3_to_bed.py ###
 gff3_to_bed_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GFF3 annotation file to BED12.")
 gff3_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')

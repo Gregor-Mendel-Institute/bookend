@@ -12,6 +12,7 @@ class ELRsorter:
         self.force = args['FORCE']
         self.read_tuples = []
         self.linecount = 0
+        self.outlinecount = 0
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
@@ -43,11 +44,27 @@ class ELRsorter:
             self.linecount += 1
     
     def dump_sorted_reads(self):
+        """Writes sorted reads to output, collapsing
+        any identical reads into a single line with increased weight"""
         self.read_tuples.sort(reverse=True)
-        while self.read_tuples:
+        if len(self.read_tuples) > 0:
             read_tuple = self.read_tuples.pop()
-            line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(-read_tuple[6])
+            weight = -read_tuple[6]
+            while self.read_tuples:
+                next_tuple = self.read_tuples.pop()
+                if next_tuple[:6] == read_tuple[:6]:
+                    weight += -next_tuple[6]
+                    continue
+                else:
+                    line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
+                    self.output_line(line)
+                    self.outlinecount += 1
+                    read_tuple = next_tuple
+                    weight = -read_tuple[6]
+            
+            line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
             self.output_line(line)
+            self.outlinecount += 1
     
     def add_read_tuple(self, elr_line):
         l = elr_line.rstrip().split('\t')
@@ -74,6 +91,7 @@ class ELRsorter:
     def display_summary(self):
         summary_string = ''
         summary_string += 'Processed {} lines.\n'.format(self.linecount)
+        summary_string += 'Wrote {} sorted unique reads.\n'.format(self.outlinecount)
         return summary_string
 
 
