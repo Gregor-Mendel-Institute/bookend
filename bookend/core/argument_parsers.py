@@ -15,7 +15,6 @@ from bookend.core.sam_sj_out import SAMtoSJconverter
 from bookend.core.sj_merge import SJmerger
 from bookend.core.sj_to_bed import SJtoBEDconverter
 from bookend.core.elr_sort import ELRsorter
-from bookend.core.elr_collapse import ELRcollapser
 from bookend.core.gff3_to_bed import GFF3converter
 from bookend.core.gtf_to_bed import GTFconverter
 
