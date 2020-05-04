@@ -248,9 +248,7 @@ sj_merge_parser.set_defaults(object=SJtoBEDconverter)
 ### elr_sort.py ###
 elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
 elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-elr_sort_parser.add_argument("--ram", dest='RAM', help="Amount of available RAM in gigabytes (default: 8)", default=8, type=int)
-elr_sort_parser.add_argument("--cpus", dest='CPUS', help="Number of cores available (default: 1)", default=1, type=int)
-elr_sort_parser.add_argument("--T", dest='TEMP', help="Path to write temporary files (default: '.')", default='.')
+elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object=ELRsorter)
 
