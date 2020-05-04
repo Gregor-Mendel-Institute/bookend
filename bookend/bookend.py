@@ -12,6 +12,7 @@ import argparse
 import logging, logging.config
 import os
 import sys
+
 from bookend.core.argument_parsers import main_parser
 from bookend.__init__ import __version__,__updated__,__date__
 
