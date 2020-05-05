@@ -1,6 +1,5 @@
-import setuptools
-from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup, find_packages
+from setuptools.extension import Extension
 try:
     from Cython.setuptools import build_ext
 except:
@@ -37,9 +36,9 @@ class CustomBuildExtCommand(build_ext):
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="bookend_rna", # Replace with your own username
-    version="0.0.6",
+    version="0.0.7",
     author="Michael A. Schon",
     author_email="michael.schon@gmi.oeaw.ac.at",
     description="End-guided transcript assembler for short and long RNA-seq reads.",
@@ -47,7 +46,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Gregor-Mendel-Institute/bookend",
     install_requires=['cython', 'numpy', 'pysam'],
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     cmdclass = {'build_ext': CustomBuildExtCommand},
     entry_points={'console_scripts': ['bookend = bookend.__main__:main']},
     classifiers=[
