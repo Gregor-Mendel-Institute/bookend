@@ -14,7 +14,7 @@ import os
 import sys
 
 from .core.argument_parsers import main_parser as parser
-from __init__ import __version__,__updated__,__date__
+from .__init__ import __version__,__updated__,__date__
 
 LOGGING = {
     'version': 1,
