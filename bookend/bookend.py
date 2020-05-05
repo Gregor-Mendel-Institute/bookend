@@ -13,7 +13,7 @@ import logging, logging.config
 import os
 import sys
 
-from bookend.core.argument_parsers import main_parser
+from bookend.core.argument_parsers import main_parser, Helper
 from bookend.__init__ import __version__,__updated__,__date__
 
 LOGGING = {
@@ -57,6 +57,9 @@ def import_object(object_name):
     if object_name == 'Assembler':
         from bookend.core.assemble import Assembler
         objectClass = Assembler
+    elif object_name == 'Helper':
+        from bookend.core.argument_parsers import Helper
+        objectClass = Helper
     elif object_name == 'EndLabeler':
         from bookend.core.fastq_end_label import EndLabeler
         objectClass = EndLabeler
@@ -110,11 +113,11 @@ def main():
         log_level = args['log_level']
         log.setLevel(log_level)
         objectClass = import_object(args['object'])
-        if obj is None:
+        if objectClass is None:
             log.error('Subcommand not recognized. See bookend --help')
             return 1
         
-        obj = objectClass(args)        
+        obj = objectClass(args)
         return obj.run()
     except KeyboardInterrupt:
         return 0

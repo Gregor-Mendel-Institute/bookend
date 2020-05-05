@@ -21,7 +21,6 @@ Subcommands (use -h/--help for more info):
     --end-labeled read (ELR) operations--
     make-elr
     sort-elr
-    collapse-elr
     combine-elr
 
     --file conversion--
@@ -44,7 +43,7 @@ Subcommands (use -h/--help for more info):
 
 desc = 'Functions for end-guided assembly of RNA-seq data.'
 main_parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
-main_parser.set_defaults(object=Helper)
+main_parser.set_defaults(object='Helper')
 subparsers = main_parser.add_subparsers(title='subcommands',description='Choose a command to run',help='Supported subcommands:')
 
 ELRdesc = """
