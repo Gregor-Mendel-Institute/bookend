@@ -16,11 +16,11 @@ class ELRsorter:
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
-            if os.path.exists(self.output) and not self.force:
+            if self.force or not os.path.exists(self.output):
+                self.output_file = open(self.output,'w')
+            else:
                 print("ERROR: output file already exists")
                 sys.exit(1)
-            else:
-                self.output_file = open(self.output, 'w')
 
     def run(self):
         if self.output != 'stdout':
@@ -65,7 +65,7 @@ class ELRsorter:
             line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
             self.output_line(line)
             self.outlinecount += 1
-    
+
     def add_read_tuple(self, elr_line):
         l = elr_line.rstrip().split('\t')
         # parse the line as a tuple of sortable values

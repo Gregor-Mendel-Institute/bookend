@@ -270,10 +270,6 @@ class AnnotationMerger:
     def run(self):
         """Executes end labeling on all reads."""
         for chunk in self.generator:
-            # if 'AT1G01770' in [r.attributes['gene_id'] for r in chunk]:
-            #     self.chunk = chunk
-            #     sys.exit(0)
-            
             self.process_entry(chunk)
         
         self.output_file.close()

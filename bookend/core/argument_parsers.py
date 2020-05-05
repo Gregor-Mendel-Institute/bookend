@@ -15,7 +15,6 @@ from bookend.core.sam_sj_out import SAMtoSJconverter
 from bookend.core.sj_merge import SJmerger
 from bookend.core.sj_to_bed import SJtoBEDconverter
 from bookend.core.elr_sort import ELRsorter
-from bookend.core.gff3_to_bed import GFF3converter
 from bookend.core.gtf_to_bed import GTFconverter
 
 #TODO: Flesh out Helper class
@@ -41,7 +40,6 @@ Subcommands (use -h/--help for more info):
     --file conversion--
     bed-to-elr
     elr-to-bed
-    gff3-to-bed
     gtf-to-bed
     sam-to-sj
     sj-to-bed
@@ -251,15 +249,14 @@ elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrit
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object=ELRsorter)
 
-### gff3_to_bed.py ###
-gff3_to_bed_parser = subparsers.add_parser('gff3-to-bed',help="Converts a GFF3 annotation file to BED12.")
-gff3_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-gff3_to_bed_parser.add_argument("INPUT", type=str, help="Input GFF3 file")
-gff3_to_bed_parser.set_defaults(object=GFF3converter)
-
 ### gtf_to_bed.py ###
-gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF annotation file to BED12.")
+gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3 annotation file to BED12.")
+gtf_to_bed_parser.add_argument("INPUT", type=str, help="Input GTF/GFF3 file")
 gtf_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
-gtf_to_bed_parser.add_argument("INPUT", type=str, help="Input GTF file")
+gtf_to_bed_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
+gtf_to_bed_parser.add_argument("--score", dest='SCORE', help="Name of attribute to pass to score column (default: None)", default=None, type=str)
+gtf_to_bed_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
+gtf_to_bed_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
+gtf_to_bed_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
+gtf_to_bed_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
 gtf_to_bed_parser.set_defaults(object=GTFconverter)
-

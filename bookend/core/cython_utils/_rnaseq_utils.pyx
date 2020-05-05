@@ -361,7 +361,7 @@ cdef class RNAseqMapping():
         elif score_column == 'coverage':
             score = round(self.coverage,2)
         else:
-            score = '.'
+            score = str(score_column)
         
         chromStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
         bed_line = [
@@ -948,7 +948,6 @@ cdef class AnnotationDataset(RNAseqDataset):
                     rightmost = item.span[1]
                 
             yield chrom_annotation_list[left:]
-
         
 #########################################
 # Utilities for BED/ELR file processing #
