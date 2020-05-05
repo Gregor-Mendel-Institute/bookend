@@ -13,8 +13,7 @@ import logging, logging.config
 import os
 import sys
 
-from . import core.argument_parsers.main_parser as parser
-from . import core.argument_parsers.Helper as Helper
+from .core.argument_parsers import main_parser as parser
 from __init__ import __version__,__updated__,__date__
 
 LOGGING = {
