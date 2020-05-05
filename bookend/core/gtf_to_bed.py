@@ -3,6 +3,7 @@
 
 import sys
 import os
+import copy
 import bookend.core.cython_utils._rnaseq_utils as ru
 
 class GTFconverter:
@@ -12,10 +13,10 @@ class GTFconverter:
         self.output = args['OUT']
         self.score = args['SCORE']
         self.force = args['FORCE']
-        self.gtf_parent = self.args['GTF_PARENT']
-        self.gtf_child = self.args['GTF_CHILD']
-        self.gff_parent = self.args['GFF_PARENT']
-        self.gff_child = self.args['GFF_CHILD']
+        self.gtf_parent = args['GTF_PARENT']
+        self.gtf_child = args['GTF_CHILD']
+        self.gff_parent = args['GFF_PARENT']
+        self.gff_child = args['GFF_CHILD']
         self.linecount = 0
         self.outlinecount = 0
 
@@ -35,8 +36,12 @@ class GTFconverter:
                 sys.exit(1)
             
         config_defaults, gtf_defaults, gff_defaults = self.make_config_dicts()
+        self.gtf_parent = gtf_defaults['parent_types']
+        self.gtf_child = gtf_defaults['child_types']
+        self.gff_parent = gff_defaults['parent_types']
+        self.gff_child = gff_defaults['child_types']
         self.dataset = ru.AnnotationDataset(
-            annotation_files=None,
+            annotation_files=[],
             reference=self.input, 
             config=config_defaults, 
             gtf_config=gtf_defaults, 
@@ -89,8 +94,9 @@ class GTFconverter:
             if self.output_type == 'elr':
                 out_string = mapping_object.write_as_elr()
             else:
-                score_column = mapping_object.attributes.get(self.score, 'weight')
-                out_string = mapping_object.write_as_bed(self.dataset.chrom_array, self.dataset.source_array, score_column, name_attr='transcript_id')
+                score_column = mapping_object.attributes.get(self.score, '.')
+                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr='transcript_id')
+                out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
             self.output_line(out_string)
     
