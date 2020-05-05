@@ -62,37 +62,37 @@ def import_object(object_name):
     elif object_name == 'EndLabeler':
         from .core.fastq_end_label import EndLabeler
         objectClass = EndLabeler
-    elif object_name == 'EndLabeler':
+    elif object_name == 'BAMtoELRconverter':
         from .core.bam_to_elr import BAMtoELRconverter
         objectClass = BAMtoELRconverter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'Indexer':
         from .core.fasta_index import Indexer
         objectClass = Indexer
-    elif object_name == 'EndLabeler':
+    elif object_name == 'BEDtoELRconverter':
         from .core.bed_to_elr import BEDtoELRconverter
         objectClass = BEDtoELRconverter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'ELRtoBEDconverter':
         from .core.elr_to_bed import ELRtoBEDconverter
         objectClass = ELRtoBEDconverter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'AnnotationMerger':
         from .core.gtf_merge import AnnotationMerger
         objectClass = AnnotationMerger
-    elif object_name == 'EndLabeler':
+    elif object_name == 'ELRcombiner':
         from .core.elr_combine import ELRcombiner
         objectClass = ELRcombiner
-    elif object_name == 'EndLabeler':
+    elif object_name == 'SAMtoSJconverter':
         from .core.sam_sj_out import SAMtoSJconverter
         objectClass = SAMtoSJconverter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'SJmerger':
         from .core.sj_merge import SJmerger
         objectClass = SJmerger
-    elif object_name == 'EndLabeler':
+    elif object_name == 'SJtoBEDconverter':
         from .core.sj_to_bed import SJtoBEDconverter
         objectClass = SJtoBEDconverter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'ELRsorter':
         from .core.elr_sort import ELRsorter
         objectClass = ELRsorter
-    elif object_name == 'EndLabeler':
+    elif object_name == 'GTFconverter':
         from .core.gtf_to_bed import GTFconverter
         objectClass = GTFconverter
     else:
