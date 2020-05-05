@@ -39,7 +39,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bookend_rna", # Replace with your own username
-    version="0.0.3",
+    version="0.0.4",
     author="Michael A. Schon",
     author_email="michael.schon@gmi.oeaw.ac.at",
     description="End-guided transcript assembler for short and long RNA-seq reads.",
@@ -49,7 +49,7 @@ setuptools.setup(
     install_requires=['cython', 'numpy', 'pysam'],
     packages=setuptools.find_packages(),
     cmdclass = {'build_ext': CustomBuildExtCommand},
-    entry_points={'console_scripts': ['bookend = bookend.bookend:main']},
+    entry_points={'console_scripts': ['bookend = bookend.__main__:main']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
