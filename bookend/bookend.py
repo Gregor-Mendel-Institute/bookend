@@ -52,6 +52,51 @@ def get_parser(program_version_message):
     parser.add_argument('-l', '--loglevel',dest='log_level', help='Set log level', default='INFO', choices=['DEBUG','INFO','WARNING','ERROR'])
     return parser
 
+def import_object(object_name):
+    """Imports only the object needed to execute the subcommand."""
+    if object_name == 'Assembler':
+        from bookend.core.assemble import Assembler
+        objectClass = Assembler
+    elif object_name == 'EndLabeler':
+        from bookend.core.fastq_end_label import EndLabeler
+        objectClass = EndLabeler
+    elif object_name == 'EndLabeler':
+        from bookend.core.bam_to_elr import BAMtoELRconverter
+        objectClass = BAMtoELRconverter
+    elif object_name == 'EndLabeler':
+        from bookend.core.fasta_index import Indexer
+        objectClass = Indexer
+    elif object_name == 'EndLabeler':
+        from bookend.core.bed_to_elr import BEDtoELRconverter
+        objectClass = BEDtoELRconverter
+    elif object_name == 'EndLabeler':
+        from bookend.core.elr_to_bed import ELRtoBEDconverter
+        objectClass = ELRtoBEDconverter
+    elif object_name == 'EndLabeler':
+        from bookend.core.gtf_merge import AnnotationMerger
+        objectClass = AnnotationMerger
+    elif object_name == 'EndLabeler':
+        from bookend.core.elr_combine import ELRcombiner
+        objectClass = ELRcombiner
+    elif object_name == 'EndLabeler':
+        from bookend.core.sam_sj_out import SAMtoSJconverter
+        objectClass = SAMtoSJconverter
+    elif object_name == 'EndLabeler':
+        from bookend.core.sj_merge import SJmerger
+        objectClass = SJmerger
+    elif object_name == 'EndLabeler':
+        from bookend.core.sj_to_bed import SJtoBEDconverter
+        objectClass = SJtoBEDconverter
+    elif object_name == 'EndLabeler':
+        from bookend.core.elr_sort import ELRsorter
+        objectClass = ELRsorter
+    elif object_name == 'EndLabeler':
+        from bookend.core.gtf_to_bed import GTFconverter
+        objectClass = GTFconverter
+    else:
+        return None
+    
+    return objectClass
 
 def main():
     """Passes commandline options to subfunctions."""
@@ -59,12 +104,17 @@ def main():
     date = str(__updated__)
     program_version_message = '{} ({})'.format(version, date)
     
-    parser = get_parser(program_version_message)
+    parser = get_parser(program_version_message)    
     args = vars(parser.parse_args())
     try:
         log_level = args['log_level']
         log.setLevel(log_level)
-        obj = args['object'](args)
+        objectClass = import_object(args['object'])
+        if obj is None:
+            log.error('Subcommand not recognized. See bookend --help')
+            return 1
+        
+        obj = objectClass(args)        
         return obj.run()
     except KeyboardInterrupt:
         return 0

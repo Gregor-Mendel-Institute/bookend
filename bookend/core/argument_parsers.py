@@ -3,19 +3,6 @@
 
 import argparse
 from argparse import RawTextHelpFormatter
-from bookend.core.assemble import Assembler
-from bookend.core.fastq_end_label import EndLabeler
-from bookend.core.bam_to_elr import BAMtoELRconverter
-from bookend.core.fasta_index import Indexer
-from bookend.core.bed_to_elr import BEDtoELRconverter
-from bookend.core.elr_to_bed import ELRtoBEDconverter
-from bookend.core.gtf_merge import AnnotationMerger
-from bookend.core.elr_combine import ELRcombiner
-from bookend.core.sam_sj_out import SAMtoSJconverter
-from bookend.core.sj_merge import SJmerger
-from bookend.core.sj_to_bed import SJtoBEDconverter
-from bookend.core.elr_sort import ELRsorter
-from bookend.core.gtf_to_bed import GTFconverter
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -116,7 +103,7 @@ assemble_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float
 assemble_parser.add_argument('--cap_percent', dest='CAP_PERCENT', type=float, default=0.05, help="[float 0-1] Exclude 5' end features with < this percent of cap-labeled reads (reads that contain upstream untemplated G).")
 assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")
 assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepath. MUST be a single coordinate-sorted file.")
-assemble_parser.set_defaults(object=Assembler)
+assemble_parser.set_defaults(object='Assembler')
 
 ### bam_to_elr.py ###
 bam_to_elr_parser = subparsers.add_parser('make-elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
@@ -140,7 +127,7 @@ bam_to_elr_parser.add_argument("--sj_shift", dest='SJ_SHIFT', default=2, type=in
 bam_to_elr_parser.add_argument("--minlen_strict", dest='MINLEN_STRICT', default=16, type=int, help="Keep reads down to this length only if perfectly aligned.")
 bam_to_elr_parser.add_argument("--minlen_loose", dest='MINLEN_LOOSE', default=25, type=int, help="Keep reads down to this length if they passed alignment parameters.")
 bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/SAM file")
-bam_to_elr_parser.set_defaults(object=BAMtoELRconverter)
+bam_to_elr_parser.set_defaults(object='BAMtoELRconverter')
 
 ### bed_to_elr.py ###
 bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
@@ -152,7 +139,7 @@ bed_to_elr_parser.add_argument("-s", dest='START', default=False, action='store_
 bed_to_elr_parser.add_argument("-c", dest='CAPPED', default=False, action='store_true', help="All 5' ends are capped.")
 bed_to_elr_parser.add_argument("-e", dest='END', default=False, action='store_true', help="All read 3' ends are transcript end sites.")
 bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
-bed_to_elr_parser.set_defaults(object=BEDtoELRconverter)
+bed_to_elr_parser.set_defaults(object='BEDtoELRconverter')
 
 ### elr_combine.py ###
 # combine_parser = subparsers.add_parser('combine-elr',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
@@ -166,7 +153,7 @@ elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Lab
 elr_to_bed_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
 elr_to_bed_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 elr_to_bed_parser.add_argument("INPUT", help='Input ELR file')
-elr_to_bed_parser.set_defaults(object=ELRtoBEDconverter)
+elr_to_bed_parser.set_defaults(object='ELRtoBEDconverter')
 
 ### fastq_end_label.py ###    
 end_label_parser = subparsers.add_parser('label',help="Trims and labels RNA 5' and 3' ends in a FASTQ file")
@@ -185,7 +172,7 @@ end_label_parser.add_argument('--mismatch_rate', dest='MM_RATE', type=float, def
 end_label_parser.add_argument('--qualmask', dest='QUALMASK', type=float, default=16, help="Ignores any basecalls with phred score < this, treats base as N.")
 end_label_parser.add_argument('--minqual', dest='MINQUAL', type=float, default=25, help="Suppresses any trimmed sequences with lower than this mean phred quality score.")
 end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FASTQ file(s). 1 for single-end, 2 for paired-end")
-end_label_parser.set_defaults(object=EndLabeler)
+end_label_parser.set_defaults(object='EndLabeler')
 
 ### fasta_index.py ###
 fasta_index_parser = subparsers.add_parser('index-fasta',help="Generates index files for the reference genome FASTA file.")
@@ -193,7 +180,7 @@ fasta_index_parser.add_argument('FASTA', type=str,help="Path to FASTA file.")
 fasta_index_parser.add_argument('-S','--split', dest='SPLIT_ON', type=str, help="Character string to split header name from description.",default=' ')
 fasta_index_parser.add_argument("--bridge_min", dest='MINLEN',help="Minimum tolerated length for a bridge over a softmasked region.", default=100, type=int)
 fasta_index_parser.add_argument("--bridge_max", dest='MAXLEN',help="Maximum tolerated length for a bridge over a softmasked region.", default=500, type=int)
-fasta_index_parser.set_defaults(object=Indexer)
+fasta_index_parser.set_defaults(object='Indexer')
 
 ### gtf_merge.py ###
 merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
@@ -216,7 +203,7 @@ merge_parser.add_argument('--keep_truncations', dest='KEEP_TRUNCATIONS', default
 merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies that bridge two adjacent loci.")
 merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
 merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
-merge_parser.set_defaults(object=AnnotationMerger)
+merge_parser.set_defaults(object='AnnotationMerger')
 
 ### sam_sj_out.py ###
 sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.")
@@ -224,7 +211,7 @@ sam_sj_parser.add_argument("-F", "--fasta", dest='FASTA', help="Genome FASTA fil
 sam_sj_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sam_sj_parser.add_argument("--filter", dest='FILTER', help="Remove noncanonical splice junctions from the output", default=False, action='store_true')
 sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
-sam_sj_parser.set_defaults(object=SAMtoSJconverter)
+sam_sj_parser.set_defaults(object='SAMtoSJconverter')
 
 ### sj_merge.py ###
 sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.")
@@ -234,20 +221,20 @@ sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs
 sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
 sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
 sj_merge_parser.add_argument("INPUT", nargs='+')
-sj_merge_parser.set_defaults(object=SJmerger)
+sj_merge_parser.set_defaults(object='SJmerger')
 
 ### sj_to_bed.py ###
 sj_to_bed_parser = subparsers.add_parser('sj-to-bed', help="Converts SJ.out.tab file to an SJ.bed file.")
 sj_to_bed_parser.add_argument("INPUT", type=str, help="Input SJ.out.tab file")
 sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='SJ.bed', help="Filepath to write SJ.bed file.")
-sj_merge_parser.set_defaults(object=SJtoBEDconverter)
+sj_merge_parser.set_defaults(object='SJtoBEDconverter')
 
 ### elr_sort.py ###
 elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
 elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
-elr_sort_parser.set_defaults(object=ELRsorter)
+elr_sort_parser.set_defaults(object='ELRsorter')
 
 ### gtf_to_bed.py ###
 gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3 annotation file to BED12.")
@@ -259,4 +246,4 @@ gtf_to_bed_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, narg
 gtf_to_bed_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
 gtf_to_bed_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
 gtf_to_bed_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
-gtf_to_bed_parser.set_defaults(object=GTFconverter)
+gtf_to_bed_parser.set_defaults(object='GTFconverter')
