@@ -13,7 +13,8 @@ import logging, logging.config
 import os
 import sys
 
-from core.argument_parsers import main_parser, Helper
+from . import core.argument_parsers.main_parser as parser
+from . import core.argument_parsers.Helper as Helper
 from __init__ import __version__,__updated__,__date__
 
 LOGGING = {
@@ -47,7 +48,6 @@ logging.config.dictConfig(LOGGING)
 log = logging.getLogger()
 
 def get_parser(program_version_message):
-    parser = main_parser
     parser.add_argument('-v', '--version', action='version', version=program_version_message)
     parser.add_argument('-l', '--loglevel',dest='log_level', help='Set log level', default='INFO', choices=['DEBUG','INFO','WARNING','ERROR'])
     return parser
@@ -55,46 +55,46 @@ def get_parser(program_version_message):
 def import_object(object_name):
     """Imports only the object needed to execute the subcommand."""
     if object_name == 'Assembler':
-        from core.assemble import Assembler
+        from .core.assemble import Assembler
         objectClass = Assembler
     elif object_name == 'Helper':
-        from core.argument_parsers import Helper
+        from .core.argument_parsers import Helper
         objectClass = Helper
     elif object_name == 'EndLabeler':
-        from core.fastq_end_label import EndLabeler
+        from .core.fastq_end_label import EndLabeler
         objectClass = EndLabeler
     elif object_name == 'EndLabeler':
-        from core.bam_to_elr import BAMtoELRconverter
+        from .core.bam_to_elr import BAMtoELRconverter
         objectClass = BAMtoELRconverter
     elif object_name == 'EndLabeler':
-        from core.fasta_index import Indexer
+        from .core.fasta_index import Indexer
         objectClass = Indexer
     elif object_name == 'EndLabeler':
-        from core.bed_to_elr import BEDtoELRconverter
+        from .core.bed_to_elr import BEDtoELRconverter
         objectClass = BEDtoELRconverter
     elif object_name == 'EndLabeler':
-        from core.elr_to_bed import ELRtoBEDconverter
+        from .core.elr_to_bed import ELRtoBEDconverter
         objectClass = ELRtoBEDconverter
     elif object_name == 'EndLabeler':
-        from core.gtf_merge import AnnotationMerger
+        from .core.gtf_merge import AnnotationMerger
         objectClass = AnnotationMerger
     elif object_name == 'EndLabeler':
-        from core.elr_combine import ELRcombiner
+        from .core.elr_combine import ELRcombiner
         objectClass = ELRcombiner
     elif object_name == 'EndLabeler':
-        from core.sam_sj_out import SAMtoSJconverter
+        from .core.sam_sj_out import SAMtoSJconverter
         objectClass = SAMtoSJconverter
     elif object_name == 'EndLabeler':
-        from core.sj_merge import SJmerger
+        from .core.sj_merge import SJmerger
         objectClass = SJmerger
     elif object_name == 'EndLabeler':
-        from core.sj_to_bed import SJtoBEDconverter
+        from .core.sj_to_bed import SJtoBEDconverter
         objectClass = SJtoBEDconverter
     elif object_name == 'EndLabeler':
-        from core.elr_sort import ELRsorter
+        from .core.elr_sort import ELRsorter
         objectClass = ELRsorter
     elif object_name == 'EndLabeler':
-        from core.gtf_to_bed import GTFconverter
+        from .core.gtf_to_bed import GTFconverter
         objectClass = GTFconverter
     else:
         return None
