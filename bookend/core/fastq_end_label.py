@@ -3,6 +3,7 @@
 
 import re
 import sys
+import gzip
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
@@ -33,14 +34,8 @@ class EndLabeler:
         self.single_out = args['SINGLE_OUT']
         self.mm_rate = args['MM_RATE']
         self.labeldict = Counter()
-        if len(self.input) == 2:
-            self.experiment_type = "PE"
-            self.file1 = open(self.input[0],'r')
-            self.file2 = open(self.input[1],'r')
-        elif len(self.input) == 1:
-            self.experiment_type = "SE"
-            self.file1 = open(self.input[0],'r')
-        
+        self.open_input_files()
+       
         self.s_label = '' if args['START'] == 'none' else args['START']
         self.S5string = self.s_label
         if len(self.S5string) > 1:
@@ -92,7 +87,21 @@ class EndLabeler:
             self.outfile2.close()
         
         print(self.display_label_summary())
-
+    
+    def open_input_files(self):
+        self.experiment_type = "SE"
+        if self.input[0].endswith('gz'):
+            self.file1 = gzip.open(self.input[0], 'rt')
+        else:
+            self.file1 = open(self.input[0],'r')
+        
+        if len(self.input) == 2:
+            self.experiment_type = "PE"
+            if self.input[1].endswith('gz'):
+                self.file2 = gzip.open(self.input[1], 'rt')
+            else:
+                self.file2 = open(self.input[1],'r')
+    
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend label |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
