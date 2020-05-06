@@ -5,179 +5,21 @@ from cpython cimport array
 import numpy as np
 cimport numpy as np
 import json
-from cython_utils import _fasta_utils as fu
+import bookend.core.cython_utils._fasta_utils as fu
 from collections import namedtuple, Counter
 from ast import literal_eval
 import copy
 ctypedef unsigned char uint8
 ctypedef np.float32_t float32
 
-##############################################################################################################
-##############################################################################################################
-# Object for defining a collection of RNA sequencing reads #
-##############################################################################################################
-##############################################################################################################
-config_defaults = {
-    'source':'',
-    's_tag':False,
-    'e_tag':False,
-    'capped':False,
-    'stranded':False,
-    'start_seq':'ACGGG',
-    'end_seq':'RRRRRRRRRRRRRRR',
-    'minlen':20,
-    'mismatch_rate':0.2,
-    'sj_shift':2
-}
-
-cdef class RNAseqDataset:
-    cdef public list read_list, chrom_array, source_array, chrom_lengths
-    cdef public int chrom_index, source_index
-    cdef public dict chrom_dict, source_dict
-    cdef readonly dict config, genome
-    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
-    cdef readonly str start_seq, end_seq
-    cdef readonly int minlen, sj_shift
-    cdef readonly float mismatch_rate
-    cdef readonly array.array start_array, end_array
-
-    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults):
-        """Container for RNAseqMapping objects. Stores a reference dictionary for all
-        chromosome names and sample names. Contains methods for parsing
-        a variety of files into a collection of read objects."""
-        self.read_list = []
-        self.config = config
-        self.s_tag = self.config['s_tag']
-        self.e_tag = self.config['e_tag']
-        self.capped = self.config['capped']
-        self.stranded = self.config['stranded']
-        self.start_seq = self.config['start_seq']
-        self.end_seq = self.config['end_seq']
-        self.minlen = self.config['minlen']
-        self.mismatch_rate = self.config['mismatch_rate']
-        self.sj_shift = self.config['sj_shift']
-        self.start_array = fu.nuc_to_int(self.start_seq)
-        self.end_array = fu.nuc_to_int(self.end_seq)
-        if genome_fasta is not None:
-            self.genome = fu.import_genome(genome_fasta)
-            self.chrom_array = sorted(self.genome.keys())
-            self.chrom_index = len(self.chrom_array)
-            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
-            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
-        else:
-            self.genome = {}
-            self.chrom_lengths = chrom_lengths
-            self.chrom_dict = {}
-            self.chrom_index = 0
-            self.chrom_array = []
-            if chrom_array is not None:
-                for c in chrom_array:
-                    self.add_chrom(c)
-        
-        self.source_dict = {}
-        self.source_index = 0
-        self.source_array = []
-        if source_array is not None:
-            for s in source_array:
-                self.add_source(s)
-    
-    cpdef add_source(self, source_string):
-        if source_string not in self.source_dict:
-            self.source_array.append(source_string)
-            self.source_dict[source_string] = self.source_index
-            self.source_index += 1
-    
-    cpdef add_chrom(self, chrom_string):
-        if chrom_string not in self.chrom_dict:
-            self.chrom_array.append(chrom_string)
-            self.chrom_dict[chrom_string] = self.chrom_index
-            self.chrom_index += 1
-    
-    cpdef add_read_from_BED(self, bed_line, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
-        cdef RNAseqMapping new_read
-        input_data = parse_BED_line(bed_line, self.chrom_dict, self.source_dict, source_string, s_tag, e_tag, capped, gaps_are_junctions)
-        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
-            chrom_string = input_data.chrom
-            input_data = input_data._replace(chrom=self.chrom_index)
-            self.add_chrom(chrom_string)
-        
-        if type(input_data.source) is str: # Source wasn't in source_dict
-            source_string = input_data.source
-            input_data = input_data._replace(source=self.source_index)
-            self.add_source(source_string)
-        
-        new_read = RNAseqMapping(input_data)
-        self.read_list.append(new_read)
-    
-    cpdef add_read(self, input_data):
-        cdef RNAseqMapping new_read
-        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
-            chrom_string = input_data.chrom
-            input_data = input_data._replace(chrom=self.chrom_index)
-            self.add_chrom(chrom_string)
-        
-        if type(input_data.source) is str: # Source wasn't in source_dict
-            source_string = input_data.source
-            input_data = input_data._replace(source=self.source_index)
-            self.add_source(source_string)
-        
-        new_read = RNAseqMapping(input_data)
-        self.read_list.append(new_read)
-    
-    cpdef add_read_from_ELR(self, elr_line):
-        cdef RNAseqMapping new_read
-        new_read = elr_to_readobject(elr_line)
-        self.read_list.append(new_read)
-    
-    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
-        cdef list new_read_list
-        if type(bam_lines) is not list:
-            bam_lines = [bam_lines]
-        
-        new_read_list = generate_read_from_bam(self, bam_lines, ignore_ends, secondary)
-        self.read_list += new_read_list
-    
-    cpdef add_read_from_GTF(self, gtf_lines, bint ignore_ends=False):
-        cdef RNAseqMapping new_read
-        new_read = generate_read_from_gtf(self, gtf_lines)
-        self.read_list += new_read
-    
-    cpdef add_read_from_GFF(self, gff_lines, bint ignore_ends=False):
-        cdef RNAseqMapping new_read
-        new_read = generate_read_from_gff(self, gff_lines)
-        self.read_list += new_read
-
-    cpdef pop_read(self, read_format='elr', as_string=True):
-        """Remove the last read added to the stack and write it in 'format'.
-        """
-        if read_format.lower() == 'elr':
-            return(self.read_list.pop().write_as_elr(as_string))
-        elif read_format.lower() == 'bed':
-            return(self.read_list.pop().write_as_bed(self.chrom_array, self.source_array, as_string))
-        elif read_format.lower() == 'gtf':
-            return(self.read_list.pop().write_as_gtf(self.chrom_array, 'bed'))
-    
-    cpdef dump_header(self):
-        """Returns an array of strings that describe chrom_dict and source_dict of the Dataset."""
-        header_list = []
-        for i,c in enumerate(self.chrom_array):
-            header_list += ['#C {} {}'.format(i, c)]
-        
-        for i,s in enumerate(self.source_array):
-            header_list += ['#S {} {}'.format(i, s)]
-        
-        return header_list
-
-##############################################################################################################
-##############################################################################################################
+##############################################
 # Object for defining an RNA sequencing read #
-##############################################################################################################
-##############################################################################################################
+##############################################
 ELdata = namedtuple('ELdata', 'chrom source strand ranges splice s_tag e_tag capped weight')
-cdef class RNAseqMapping:
-    cdef public int chrom, source, strand
+cdef class RNAseqMapping():
+    cdef public int chrom, source, strand, s_len, e_len
     cdef public list ranges, splice
-    cdef public bint s_tag, e_tag, capped, complete
+    cdef public bint s_tag, e_tag, capped, complete, is_reference
     cdef public dict attributes
     cdef public (int, int) span
     cdef public float weight, coverage
@@ -185,6 +27,8 @@ cdef class RNAseqMapping:
         """Initializes a Read Object given a tuple of input data.
         Requires a chromosome, strand, source, weight, a sorted tuple of
         exon ranges and an array of booleans indicating which gaps between exons are splice junctions."""
+        self.is_reference = False
+        self.s_len = self.e_len = 0
         self.chrom, self.source = int(input_data.chrom), int(input_data.source)
         self.strand = input_data.strand
         self.ranges = input_data.ranges
@@ -245,14 +89,14 @@ cdef class RNAseqMapping:
         
         return length
 
-    def gaps(self):
+    cpdef gaps(self):
         """Returns an array of 0-indexed (start, end) tuples of gaps between ranges"""
         if len(self.ranges) == 1:
             return []
         
         return [(self.ranges[i][-1], self.ranges[i+1][0]) for i in range(len(self.ranges)-1)]
     
-    def junctions(self):
+    cpdef junctions(self):
         """Returns an array of 0-indexed (start, end) tuples of intron locations"""
         j_array = []
         for i,j in enumerate(self.splice):
@@ -260,6 +104,10 @@ cdef class RNAseqMapping:
                 j_array += [(self.ranges[i][-1], self.ranges[i+1][0])]
         
         return j_array
+    
+    cpdef int diff(self, other):
+        """Returns the total number of nucleotides overlapped by only one read."""
+        return abs(self.span[0]-other.span[0])+abs(self.span[1]-other.span[1])
     
     cpdef bint overlaps(self, RNAseqMapping other):
         """Returns a boolean if the mapping range of self overlaps other."""
@@ -295,22 +143,61 @@ cdef class RNAseqMapping:
         
         return False
     
-    cpdef bint is_compatible(self, RNAseqMapping other):
+    cpdef bint splice_match(self, RNAseqMapping other, bint ignore_ends=True):
+        """Returns bool of whether self and other ranges match perfectly.
+        Discards 5' and 3' terminus if ignore_ends."""
+        cdef list exons_self, exons_other
+        if ignore_ends:
+            return self.junctions() == other.junctions()
+        else:
+            return self.ranges == other.ranges
+
+    cpdef bint antisense_match(self, RNAseqMapping other, int end_extend):
+        """Returns bool if self is antisense to other and overlaps by at least end_extend."""
+        cdef int left, right, self_size, other_size
+        if self.overlaps(other):
+            self_size = self.span[1]-self.span[0]
+            other_size = other.span[1]-other.span[0]
+            end_extend = min([end_extend, self_size, other_size])
+            if self.strand == -other.strand:
+                left, right = self.overlap_range(other)
+                if right - left >= end_extend:
+                    return True
+            
+        return False
+    
+    cpdef bint sense_match(self, RNAseqMapping other, int end_extend):
+        """Returns bool if self is sense to other and overlaps by at least end_extend."""
+        cdef int left, right, self_size, other_size
+        if self.overlaps(other):
+            self_size = self.span[1]-self.span[0]
+            other_size = other.span[1]-other.span[0]
+            end_extend = min([end_extend, self_size, other_size])
+            if self.strand == other.strand:
+                left, right = self.overlap_range(other)
+                if right - left >= end_extend:
+                    return True
+            
+        return False
+
+    cpdef bint is_compatible(self, RNAseqMapping other, bint ignore_ends=False, bint ignore_source=False):
         """Self and other contain no attributes that demonstrate they could
         not be subsequences of a common longer molecule."""
         cdef (int, int) overlap
         if self.chrom != other.chrom:
             return False
         
-        if self.source != other.source:
-            return False
+        if not ignore_source:
+            if self.source != other.source:
+                return False
         
         if self.strand != 0 and other.strand != 0 and self.strand != other.strand:
             return False
         
         # If self or other contain terminal tags, the tags must be compatible
-        if self.ends_clash(other):
-            return False
+        if not ignore_ends:
+            if self.ends_clash(other):
+                return False
         
         if not self.overlaps(other):
             return True # No incompatibilities were found
@@ -318,8 +205,8 @@ cdef class RNAseqMapping:
         # If the two reads share a chrom and strand and overlap,
         # check the overlapping range for identical splice architecture
         overlap = self.overlap_range(other)
-        j1 = [j for j in self.junctions() if j[0] > overlap[-1] and j[-1] < overlap[0]]
-        j2 = [j for j in other.junctions() if j[0] > overlap[-1] and j[-1] < overlap[0]]
+        j1 = [j for j in self.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
+        j2 = [j for j in other.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
         if j1 == j2:
             return True
         
@@ -365,7 +252,7 @@ cdef class RNAseqMapping:
         self.span = (self.left(), self.right())
         return True
     
-    def get_node_labels(self):
+    def get_node_labels(self, record_artifacts=False):
         """Returns a string with one label for each edge of each range in self.ranges."""
         if self.strand == 1:
             gapchar = 'DA'
@@ -375,12 +262,18 @@ cdef class RNAseqMapping:
                 else:
                     startchar = 'S'
             else:
-                startchar = '.'
+                if record_artifacts and self.s_len > 0:
+                    startchar = 's'
+                else:
+                    startchar = '.'
             
             if self.e_tag:
                 endchar = 'E'
             else:
-                endchar = '.'
+                if record_artifacts and self.e_len > 0:
+                    endchar = 'e'
+                else:
+                    endchar = '.'
         elif self.strand == -1:
             gapchar = 'AD'
             if self.s_tag:
@@ -389,21 +282,35 @@ cdef class RNAseqMapping:
                 else:
                     endchar = 'S'
             else:
-                endchar = '.'
+                if record_artifacts and self.s_len > 0:
+                    endchar = 's'
+                else:
+                    endchar = '.'
             
             if self.e_tag:
                 startchar = 'E'
             else:
-                startchar = '.'
+                if record_artifacts and self.e_len > 0:
+                    startchar = 'e'
+                else:
+                    startchar = '.'
         else:
             gapchar = '..'
             startchar = endchar = '.'
+            if record_artifacts:
+                if self.s_len > 0:
+                    startchar = 's'
+                
+                if self.e_len > 0:
+                    endchar = 'e'
         
         return(''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar]))
     
-    def write_as_elr(self, as_string=True):
+    cpdef write_as_elr(self, as_string=True, record_artifacts=False):
         """Returns a string that represents the ReadObject
         in the end-labeled read (ELR) format"""
+        cdef str elr_strand, labels
+        cdef list block_ends, elr_line
         elr_strand = '.'
         if self.strand == 1:
             elr_strand = '+'
@@ -412,7 +319,7 @@ cdef class RNAseqMapping:
         
         block_ends = flatten(self.ranges)
         lengths = [block_ends[i]-block_ends[i-1] for i in range(1,len(block_ends))]
-        labels = self.get_node_labels()
+        labels = self.get_node_labels(record_artifacts)
         EL_CIGAR = ''.join([str(a)+str(b) for a,b in zip(labels,lengths+[''])])
         read_len = self.right() - self.left()
         elr_line = [self.chrom, self.left(), read_len, elr_strand, EL_CIGAR, self.source, round(self.weight,2)]
@@ -421,10 +328,10 @@ cdef class RNAseqMapping:
         else:
             return elr_line
      
-    def write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight'):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
-        labels = self.get_node_labels()
+        labels = self.get_node_labels(record_artifacts)
         bed_strand = '.'
         if self.strand == 1:
             bed_strand = '+'
@@ -446,12 +353,15 @@ cdef class RNAseqMapping:
             rgb = bed_colors['U']
         
         name = '.'
+        if name_attr is not None:
+            name = self.attributes.get(name_attr, '.')
+        
         if score_column == 'weight':
             score = round(self.weight,2)
         elif score_column == 'coverage':
             score = round(self.coverage,2)
         else:
-            score = '.'
+            score = str(score_column)
         
         chromStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
         bed_line = [
@@ -524,6 +434,524 @@ cdef class RNAseqMapping:
         }};'
         
         return json_line
+
+############################################################
+# Object for defining a collection of RNA sequencing reads #
+############################################################
+config_defaults = {
+    'source':'',
+    's_tag':False,
+    'e_tag':False,
+    'capped':False,
+    'stranded':False,
+    'start_seq':'ACGGG',
+    'end_seq':'RRRRRRRRRRRRRRR',
+    'minlen_strict':20,
+    'minlen_loose':25,
+    'mismatch_rate':0.2,
+    'min_reps':2,
+    'cap_percent':0.05,
+    'confidence_threshold':0.5
+}
+
+cdef class RNAseqDataset():
+    cdef public list read_list, chrom_array, source_array, chrom_lengths
+    cdef public int chrom_index, source_index
+    cdef public dict chrom_dict, source_dict
+    cdef readonly dict config, genome, label_tally
+    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
+    cdef readonly str start_seq, end_seq
+    cdef readonly int minlen, minlen_strict, minlen_loose
+    cdef readonly float mismatch_rate
+    cdef readonly array.array start_array, end_array
+
+    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults):
+        """Container for RNAseqMapping objects. Stores a reference dictionary for all
+        chromosome names and sample names. Contains methods for parsing
+        a variety of files into a collection of read objects."""
+        self.label_tally = {'S':Counter(), 's':Counter(), 'E':Counter(), 'e':Counter()}
+        self.read_list = []
+        self.config = config
+        self.s_tag = self.config['s_tag']
+        self.e_tag = self.config['e_tag']
+        self.capped = self.config['capped']
+        self.stranded = self.config['stranded']
+        self.start_seq = self.config['start_seq']
+        self.end_seq = self.config['end_seq']
+        self.minlen_strict = self.config['minlen_strict']
+        self.minlen_loose = self.config['minlen_loose']
+        self.minlen = self.minlen_strict
+        self.mismatch_rate = self.config['mismatch_rate']
+        self.start_array = fu.nuc_to_int(self.start_seq)
+        self.end_array = fu.nuc_to_int(self.end_seq)
+        if genome_fasta is not None:
+            self.genome, index = fu.import_genome(genome_fasta)
+            self.chrom_array = sorted(self.genome.keys())
+            self.chrom_index = len(self.chrom_array)
+            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
+            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
+        else:
+            self.genome = {}
+            self.chrom_lengths = chrom_lengths
+            self.chrom_dict = {}
+            self.chrom_index = 0
+            self.chrom_array = []
+            if chrom_array is not None:
+                for c in chrom_array:
+                    self.add_chrom(c)
+        
+        self.source_dict = {}
+        self.source_index = 0
+        self.source_array = []
+        if source_array is not None:
+            for s in source_array:
+                self.add_source(s)
+    
+    cpdef add_source(self, source_string):
+        if source_string not in self.source_dict:
+            self.source_array.append(source_string)
+            self.source_dict[source_string] = self.source_index
+            self.source_index += 1
+    
+    cpdef add_chrom(self, chrom_string):
+        if chrom_string not in self.chrom_dict:
+            self.chrom_array.append(chrom_string)
+            self.chrom_dict[chrom_string] = self.chrom_index
+            self.chrom_index += 1
+    
+    cpdef add_read_from_BED(self, bed_line, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
+        cdef RNAseqMapping new_read
+        input_data = parse_BED_line(bed_line, self.chrom_dict, self.source_dict, source_string, s_tag, e_tag, capped, gaps_are_junctions)
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        self.read_list.append(new_read)
+    
+    cpdef add_read(self, input_data):
+        cdef RNAseqMapping new_read
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        self.read_list.append(new_read)
+    
+    cpdef add_read_from_ELR(self, elr_line):
+        cdef RNAseqMapping new_read
+        new_read = elr_to_readobject(elr_line)
+        self.read_list.append(new_read)
+    
+    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
+        cdef list new_read_list
+        cdef RNAseqMapping read
+        cdef BAMobject BAM
+        if type(bam_lines) is not list:
+            bam_lines = [bam_lines]
+        
+        BAM = BAMobject(self, bam_lines, ignore_ends, secondary)
+        new_read_list = BAM.generate_read()
+        if len(new_read_list) > 0:
+            read = new_read_list[0]
+            if read.s_len > 0:
+                if read.s_tag:
+                    self.label_tally['S'][read.s_len] += 1
+                else:
+                    self.label_tally['s'][read.s_len] += 1
+            
+            if read.e_len > 0:
+                if read.e_tag:
+                    self.label_tally['E'][read.e_len] += 1
+                else:
+                    self.label_tally['e'][read.e_len] += 1
+        
+        self.read_list += new_read_list
+
+    cpdef pop_read(self, read_format='elr', as_string=True):
+        """Remove the last read added to the stack and write it in 'format'.
+        """
+        if read_format.lower() == 'elr':
+            return(self.read_list.pop().write_as_elr(as_string))
+        elif read_format.lower() == 'bed':
+            return(self.read_list.pop().write_as_bed(self.chrom_array, self.source_array, as_string))
+        elif read_format.lower() == 'gtf':
+            return(self.read_list.pop().write_as_gtf(self.chrom_array, 'bed'))
+    
+    cpdef dump_header(self):
+        """Returns an array of strings that describe chrom_dict and source_dict of the Dataset."""
+        header_list = []
+        for i,c in enumerate(self.chrom_array):
+            header_list += ['#C {} {}'.format(i, c)]
+        
+        for i,s in enumerate(self.source_array):
+            header_list += ['#S {} {}'.format(i, s)]
+        
+        return header_list
+
+
+######################################
+# Utilities for GTF/GFF file parsing #
+######################################
+gtf_defaults = {
+    'parent_types':set(['transcript']),
+    'parent_key_transcript':'transcript_id',
+    'parent_key_gene':'gene_id',
+    'child_types':set(['exon']),
+    'child_key_transcript':'transcript_id',
+    'child_key_gene':'gene_id'
+}
+gff_defaults = {
+    'parent_types':set([
+        'mRNA','transcript',
+        'snoRNA','tRNA','snRNA','rRNA','miRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
+        'antisense_lncRNA','antisense_RNA','lnc_RNA']),
+    'parent_key_transcript':'ID',
+    'parent_key_gene':'Parent',
+    'child_types':set(['exon','pseudogenic_exon']),
+    'child_key_transcript':'Parent',
+    'child_key_gene':'gene_id'
+}
+
+cdef class AnnotationObject:
+    cdef public dict attributes
+    cdef public bint keep, parent
+    cdef public str format, gene_id, transcript_id, chrom, source, anno_type
+    cdef public int strand
+    cdef public (int, int) span
+    cdef public tuple fields
+    def __init__(self, anno_string, format, config_dict):
+        """Generates an intermediate object from a single line of a GTF/GFF file.
+        This will not completely represent a transcript, only one exon."""
+        cdef:
+            set child_types, parent_types
+            str gene_id_key, transcript_id_key
+        
+        anno_string = anno_string.rstrip()
+        self.format = format
+        self.keep = False
+        self.parent = False
+        self.gene_id = ''
+        self.transcript_id = ''
+        self.anno_type = ''
+        self.fields = ()
+        if len(anno_string) > 0:
+            if anno_string[0] != '#':
+                self.fields = tuple(anno_string.split('\t')[0:9])
+                self.anno_type = self.fields[2]
+                child_types = config_dict['child_types']
+                parent_types = config_dict['parent_types']
+                if self.anno_type in child_types:
+                    self.keep = True
+                    self.parent = False
+                elif self.anno_type in parent_types:
+                    self.keep = True
+                    self.parent = True
+                
+                if self.keep:
+                    self.chrom = self.fields[0]
+                    self.source = self.fields[1]
+                    self.span = (int(self.fields[3])-1, int(self.fields[4]))
+                    self.attributes = self.parse_attributes(self.fields[8], self.format)
+                    if self.parent:
+                        gene_id_key=config_dict['parent_key_gene']
+                        transcript_id_key=config_dict['parent_key_transcript']
+                    else:
+                        gene_id_key=config_dict['child_key_gene']
+                        transcript_id_key=config_dict['child_key_transcript']
+                    
+                    self.gene_id = self.attributes.get(gene_id_key,'')
+                    self.transcript_id = self.attributes.get(transcript_id_key,'')
+                    self.attributes['gene_id'] = self.gene_id
+                    self.attributes['transcript_id'] = self.transcript_id
+                    if self.fields[6] == '+':
+                        self.strand = 1
+                    elif self.fields[6] == '-':
+                        self.strand = -1
+                    else:
+                        self.strand = 0
+    
+    cpdef dict parse_attributes(self, str attr_string, str attr_format):
+        """Converts a GTF or GFF3 formatted string to """
+        cdef dict attr_dict = {}
+        if attr_format == 'GTF':
+            attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
+        elif attr_format == 'GFF':
+            attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
+        
+        return attr_dict
+    
+    def __eq__(self, other): return self.span == other.span
+    def __ne__(self, other): return self.span != other.span
+    def __gt__(self, other): return self.span >  other.span
+    def __ge__(self, other): return self.span >= other.span
+    def __lt__(self, other): return self.span <  other.span
+    def __le__(self, other): return self.span <= other.span
+
+
+cdef class AnnotationDataset(RNAseqDataset):
+    """Child of an RNAseqDataset. Parses a set of input annotations (GFF3/GTF/BED12/ELR).
+    Has methods that allow these annotations to be merged together to
+    form a single consensus or to be merged directly into a 'reference' annotation."""
+    cdef public dict annotations, gtf_config, gff_config
+    cdef public object generator
+    cdef public int number_of_assemblies, counter, min_reps, confidence
+    cdef public float cap_percent
+    cdef public bint verbose
+    def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults, confidence=1):
+        RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
+        self.min_reps = config['min_reps']
+        self.cap_percent = config['cap_percent']
+        self.verbose = config.get('verbose',False)
+        self.number_of_assemblies = len(annotation_files)
+        self.confidence = confidence
+        self.gtf_config = gtf_config
+        self.gff_config = gff_config
+        cdef str f, name, k
+        cdef RNAseqMapping v
+        self.annotations = {}
+        for f in annotation_files:
+            name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
+            self.annotations[name] = self.import_annotation(f, name)
+        
+        if reference is not None:
+            self.annotations['reference'] = self.import_annotation(reference, 'reference')
+            for k in self.annotations['reference'].keys():
+                for v in self.annotations['reference'][k]:
+                    v.is_reference = True
+                    v.attributes['TPM'] = 1
+        
+        self.counter = 0
+        self.generator = self.generate_loci()
+
+    cpdef dict import_annotation(self, str filename, str name):
+        """Given a file path to a valid GTF/GFF3/BED/ELR file,
+        Converts the entire file to a dict of RNAseqMapping objects.
+        Each key:value pair is a chromosome:position-sorted list of objects."""
+        cdef:
+            RNAseqMapping item
+            AnnotationObject line_object
+            str file_extension, format, chrom
+            dict object_dict, config_dict
+            AnnotationObject current_object, current_parent
+            list children
+            int counter
+            float total_coverage, total_s, total_e
+        
+        if self.verbose:
+            print('Importing {}...'.format(filename))
+        
+        total_coverage = 0
+        total_s = 0
+        total_e = 0
+        object_dict = {k:[] for k in self.chrom_array}
+        config_dict = {}
+        file_extension = filename.split('.')[-1].upper()
+        if file_extension not in ['GTF','GFF3','GFF','BED','ELR']:
+            return object_dict
+        elif file_extension in ['GFF3','GFF']:
+            format = 'GFF'
+            config_dict = self.gff_config
+        elif file_extension == 'GTF':
+            format = 'GTF'
+            config_dict = self.gtf_config
+        elif file_extension == 'BED':
+            format = 'BED'
+        elif file_extension == 'ELR':
+            format = 'ELR'
+        
+        file = open(filename,'r')
+        current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
+        children = []
+        if format in ['GFF','GTF']: # Parse a GFF/GTF file
+            for line in file:
+                current_object = AnnotationObject(line, format, config_dict)
+                if current_object.keep:
+                    if current_object.parent: # Add the old object to object_dict and start a new one
+                        if current_parent.parent: # Ignore the first empty annotation object
+                            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
+                            item.attributes['source'] = name
+                            total_coverage += item.weight
+                            total_s += float(item.attributes.get('S.reads', 0))
+                            total_s += float(item.attributes.get('S.capped', 0))
+                            total_e += float(item.attributes.get('E.reads', 0))
+                            chrom = self.chrom_array[item.chrom]
+                            if chrom not in object_dict.keys(): object_dict[chrom] = []
+                            object_dict[chrom].append(item)
+                        
+                        current_parent = current_object
+                        children = []
+                    elif current_object.transcript_id == current_parent.transcript_id:
+                        children.append(current_object)
+            
+            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
+            item.attributes['source'] = name
+            total_coverage += item.weight
+            total_s += float(item.attributes.get('S.reads', 0))
+            total_s += float(item.attributes.get('S.capped', 0))
+            total_e += float(item.attributes.get('E.reads', 0))
+            chrom = self.chrom_array[item.chrom]
+            if chrom not in object_dict.keys(): object_dict[chrom] = []
+            object_dict[chrom].append(item)
+        elif format == 'BED':
+            for line in file:
+                item = self.parse_bed_line(line)
+                item.attributes['source'] = name
+                total_coverage += item.weight
+                chrom = self.chrom_array[item.chrom]
+                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                object_dict[chrom].append(item)
+        elif format == 'ELR':
+            counter = 0
+            for line in file:
+                item = self.parse_elr_line(line, name, counter)
+                item.attributes['source'] = name
+                total_coverage += item.weight
+                chrom = self.chrom_array[item.chrom]
+                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                object_dict[chrom].append(item)
+                counter += 1
+        
+        file.close()
+        if total_s == 0:
+            total_s = total_coverage
+        
+        if total_e == 0:
+            total_e = total_coverage
+        
+        for chrom in object_dict.keys():
+            object_dict[chrom].sort()
+            for item in object_dict[chrom]:
+                item.attributes['TPM'] = item.weight/total_coverage*1000000
+                if format in ['ELR','BED']:
+                    item.attributes['S.reads'] = item.attributes['TPM'] if item.s_tag else 0
+                    item.attributes['S.capped'] = item.attributes['TPM'] if item.capped else 0
+                    item.attributes['E.reads'] = item.attributes['TPM'] if item.e_tag else 0
+                
+                if 'S.reads' in item.attributes:
+                    item.attributes['S.ppm'] = float(item.attributes['S.reads'])/total_s*1000000
+                
+                if 'S.capped' in item.attributes:
+                    item.attributes['C.ppm'] = float(item.attributes['S.capped'])/total_s*1000000
+                
+                if 'E.reads' in item.attributes:
+                    item.attributes['E.ppm'] = float(item.attributes['E.reads'])/total_e*1000000
+        
+        return object_dict
+    
+    cpdef str get_transcript_fasta(self, RNAseqMapping transcript):
+        """Given a transcript model, return it's mature cDNA sequence."""
+        cdef:
+            str chrom, fasta
+        
+        chrom = self.chrom_array[transcript.chrom]
+        fasta = ''.join([self.genome[chrom][l:r] for l,r in transcript.ranges])
+        if transcript.strand == -1:
+            fasta = fu.rc(fasta)
+        
+        return fasta
+
+    cdef RNAseqMapping parse_bed_line(self, str line):
+        cdef RNAseqMapping new_read
+        cdef list bed_elements
+        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict)
+        if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
+            chrom_string = input_data.chrom
+            input_data = input_data._replace(chrom=self.chrom_index)
+            self.add_chrom(chrom_string)
+        
+        if type(input_data.source) is str: # Source wasn't in source_dict
+            source_string = input_data.source
+            input_data = input_data._replace(source=self.source_index)
+            self.add_source(source_string)
+        
+        new_read = RNAseqMapping(input_data)
+        bed_elements = line.rstrip().split('\t')
+        new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split('.')[:-1])
+        new_read.attributes['transcript_id'] = bed_elements[3]
+        new_read.attributes['S.reads'] = new_read.weight if new_read.s_tag else 0
+        new_read.attributes['S.capped'] = new_read.weight if new_read.capped else 0
+        new_read.attributes['E.reads'] = new_read.weight if new_read.e_tag else 0
+        new_read.attributes['cov'] = new_read.weight
+        return new_read
+    
+    cdef RNAseqMapping parse_elr_line(self, str line, str name, str counter):
+        cdef RNAseqMapping new_read
+        new_read = elr_to_readobject(line)
+        new_read.attributes['gene_id'] = name
+        new_read.attributes['transcript_id'] = '{}.{}'.format(name, counter)
+        return new_read
+
+    cpdef RNAseqMapping anno_to_mapping_object(self, AnnotationObject parent, list children, int source):
+        """Given a top-level 'transcript' GTF/GFF feature and a list of 'exon' children,
+        return a matching RNAseqMapping object."""
+        cdef AnnotationObject child
+        cdef RNAseqMapping mapping_object
+        cdef list ranges, splice
+        cdef int chrom, strand
+        
+        strand = parent.strand
+        if parent.chrom not in self.chrom_dict.keys():
+            self.add_chrom(parent.chrom)
+        
+        chrom = self.chrom_dict[parent.chrom]
+        ranges = []
+        children.sort()
+        splice = [True]*(len(children)-1)
+        for child in children:
+            ranges += [child.span]
+
+        input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1)
+        mapping_object = RNAseqMapping(input_data, parent.attributes)
+        if 'cov' in mapping_object.attributes.keys():
+            mapping_object.weight = float(mapping_object.attributes['cov'])
+        
+        return mapping_object
+    
+    def generate_loci(self):
+        """Yields a contiguous chunk of all annotation objects as a list
+        by interleaving all sorted annotations together."""
+        cdef str chrom
+        cdef list current_chunk
+        cdef RNAseqMapping item
+        cdef int number_of_items, i, left
+        number_of_files = len(self.annotations)
+        for chrom in self.chrom_array:
+            chrom_annotation_list = []
+            for k in self.annotations.keys():
+                chrom_annotation_list += self.annotations[k].get(chrom, [])
+            
+            chrom_annotation_list.sort()
+            number_of_items = len(chrom_annotation_list)
+            left = 0
+            rightmost = -1
+            for i in range(number_of_items):
+                item = chrom_annotation_list[i]
+                if rightmost > 0:
+                    if item.left() > rightmost: # A gap was jumped
+                        yield chrom_annotation_list[left:i]
+                        left = i
+
+                if item.span[1] > rightmost:
+                    rightmost = item.span[1]
+                
+            yield chrom_annotation_list[left:]
+        
+#########################################
+# Utilities for BED/ELR file processing #
+#########################################
 
 bed_colors = {
     'U':'128,130,133',
@@ -773,121 +1201,14 @@ cpdef RNAseqMapping elr_to_readobject(elr_line):
     """Converts an ELR line to an RNAseqMapping object
     """
     cdef input_data = parse_ELR_line(elr_line)
-    output_object = RNAseqMapping(input_data)
+    cdef RNAseqMapping output_object = RNAseqMapping(input_data)
     return output_object
 
-##############################################################################################################
-# GTF/GFF file parsing #
-##############################################################################################################
-gtf_defaults = {
-    'parent_types':set(['transcript']),
-    'parent_key_transcript':'transcript_id',
-    'parent_key_gene':'gene_id',
-    'child_types':set(['exon']),
-    'child_key_transcript':'transcript_id',
-    'child_key_gene':'gene_id'
-}
-gff_defaults = {
-    'parent_types':set(['mRNA','transcript']),
-    'parent_key_transcript':'ID',
-    'parent_key_gene':'Parent',
-    'child_types':set(['exon']),
-    'child_key_transcript':'Parent',
-    'child_key_gene':'gene_id'
-}
-
-cpdef dict parse_attributes(str attr_string, str attr_format):
-    """Converts a GTF or GFF3 formatted string to """
-    cdef dict attr_dict = {}
-    if attr_format == 'GTF':
-        attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
-    elif attr_format == 'GFF':
-        attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
-    
-    return attr_dict
-
-cdef class AnnotationObject:
-    cdef public dict attributes
-    cdef public bint keep, parent
-    cdef public str format, gene_id, transcript_id, chrom, source, anno_type
-    cdef public int strand
-    cdef public (int, int) span
-    #cdef public (str, str, str, str, str, str, str, str, str) fields
-    cdef public tuple fields
-    def __init__(self, anno_string, format, config_dict):
-        """Generates an intermediate object from a single line of a GTF/GFF file.
-        This will not completely represent """
-        cdef:
-            set child_types, parent_types
-            str gene_id_key, transcript_id_key
-        
-        self.format = format
-        self.keep = False
-        self.fields = tuple(anno_string.split('\t')[0:9])
-        self.anno_type = self.fields[2]
-        self.parent = False
-        child_types = config_dict['child_types']
-        parent_types = config_dict['parent_types']
-        if self.anno_type in child_types:
-            self.keep = True
-            self.parent = False
-        elif self.anno_type in parent_types:
-            self.keep = True
-            self.parent = True
-        
-        if self.keep:
-            self.chrom = self.fields[0]
-            self.source = self.fields[1]
-            self.span = (int(self.fields[3])-1, int(self.fields[4]))
-            self.attributes = parse_attributes(self.fields[8], self.format)
-            if self.parent:
-                gene_id_key=config_dict['parent_key_gene']
-                transcript_id_key=config_dict['parent_key_transcript']
-            else:
-                gene_id_key=config_dict['child_key_gene']
-                transcript_id_key=config_dict['child_key_transcript']
-            
-            self.gene_id = self.attributes.get(gene_id_key,'')
-            self.transcript_id = self.attributes.get(transcript_id_key,'')
-            if self.field[6] == '+':
-                self.strand = 1
-            elif self.field[6] == '-':
-                self.strand = -1
-            else:
-                self.strand = 0
-    
-    def __eq__(self, other): return self.span == other.span
-    def __ne__(self, other): return self.span != other.span
-    def __gt__(self, other): return self.span >  other.span
-    def __ge__(self, other): return self.span >= other.span
-    def __lt__(self, other): return self.span <  other.span
-    def __le__(self, other): return self.span <= other.span
-
-cpdef RNAseqMapping anno_to_mapping_object(AnnotationObject parent, list children):
-    """Given a top-level 'transcript' GTF/GFF feature and a list of 'exon' children,
-    return a matching RNAseqMapping object."""
-    pass
-
-cpdef RNAseqMapping generate_read_from_gtf(RNAseqDataset dataset, list gtf_lines):
-    """Converts a list of GTF-formatted strings to an RNAseqMapping object
-    for a single transcript, retaining exon positional information and
-    attributes of the 'transcript' parent line. Does not assume the lines are in
-    any particular order, but does require that they belong to the same transcript.
-    """
-    pass
-
-cpdef RNAseqMapping generate_read_from_gff(RNAseqDataset dataset, list gff_lines):
-    """Converts a list of GFF3-formatted strings to an RNAseqMapping object
-    for a single transcript, retaining exon positional information and
-    attributes of the 'transcript' parent line. Does not assume the lines are in
-    any particular order, but does require that they belong to the same transcript.
-    """
-    pass
 
 
-##############################################################################################################
-# BAM file processing #
-##############################################################################################################
+#####################################
+# Utilities for BAM file processing #
+#####################################
 # A set of functions for generating an RNAseqMapping object from one or more lines of a SAM file
 cpdef (int, int) range_of_reads(list reads):
     """Returns the leftmost and rightmost position of a 
@@ -991,7 +1312,7 @@ def split_chunk(list reads, float minimum_proportion, int max_gap):
     
     yield reads[last_index:]
 
-cdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type, int label_len):
+cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type, int label_len):
     """Gets flanking region to a genomic position to compare to an end label
     """
     cdef str flank
@@ -1026,35 +1347,6 @@ cdef int get_junction_strand(dict genome, str chrom, int left, int right):
         strand = 0
     
     return strand
-
-# cdef (int, int) shift_junction(dict genome, str chrom, int left, int right, int junction_strand, int sj_shift):
-#     """Given a (left, right) pair of splice junction positions,
-#     searches for a canonical splice junction at the position. If one is not found,
-#     performs a search in range +-sj_shift around the given positions for a canonical junction."""
-#     cdef:
-#         int j0, j1
-#         str leftseq, rightseq
-    
-#     j0 = left
-#     j1 = right
-#     if strand == 1:
-#         leftseq = 'GT'
-#         rightseq = 'AG'
-#     else:
-#         leftseq = 'CT'
-#         rightseq = 'AC'
-    
-#     left_flank = get_flank(genome, chrom, j0-1, 1, 'E', 2).upper()
-#     right_flank = get_flank(genome, chrom, j1, 1, 'S', 2).upper()
-#     if left_flank != leftseq:
-#         strand = 1
-#     elif flanking_sequence in ['CTAC','CTGC','GTAT','CCAC']:
-#         strand = -1
-#     else:
-#         strand = 0
-    
-#     return (j0, j1)
-
 
 def parse_MD_string(str mdstring):
     """Creates a generator object to yield the elements
@@ -1167,6 +1459,33 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
     
     return ranges, gaps, head, tail
 
+
+cdef bint is_homopolymer(str string, float threshold=0.8):
+    """Returns whether a single character composes > threshold
+    of a string."""
+    cdef str n
+    cdef int count_n, total_count, string_length, thresh_length
+    
+    string = string.upper()
+    string_length = len(string)
+    thresh_length = int(round(string_length * threshold))
+    if string_length == 0:
+        return True
+    
+    total_count = 0
+    for n in ['A','T','G','C']:
+        count_n = string.count(n)
+        if count_n >= thresh_length:
+            return True
+        else:
+            total_count += count_n
+            if total_count > string_length - thresh_length:
+                # Enough subthreshold nucleotides were found
+                return False
+    
+    return False
+
+
 cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
     """Updates readtype based on a tag present in the ID string"""
     cdef int e_len, s_len
@@ -1198,275 +1517,359 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
     
     return s_tag, e_tag, s_len, e_len
 
-cdef list generate_read_from_bam(RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
-    """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset"""
-    cdef:
-        int s_len, e_len, Nmap, counter, input_len, map_number, mate, strand
-        int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos
-        str ID, chrom, js, seq, trimmed_nuc
-        (bint, bint, int, int) ID_tags = (False, False, 0, 0)
-        dict mappings
-        list splice, gaps, ranges, introns
-        bint is_upstream_side, is_downstream_side, stranded, stranded_method
-        (int, int) g
-        array.array flankmatch
+cdef class BAMobject:
+    cdef readonly RNAseqDataset dataset
+    cdef readonly list input_lines
+    cdef readonly bint ignore_ends, secondary
+    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
+        """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
+        Quality control of end labels:
+        1) An improperly mapped 5'/3' end of a read should be stripped of its tag
+        2) Upstream untemplated Gs on a 5' end are evidence for a cap structure (requires genome)
+        3) End labels that match the genome-templated sequence are false positive trims (requires genome)
+        4) False positive oligo-dT priming can occur at genome-templated purine-rich sites (requires genome)
+        5) False positive template-switching can occur at matching RNA sites of 3+ nucleotides (requires genome)
+        """
+        self.dataset = dataset
+        self.input_lines = input_lines
+        self.ignore_ends = ignore_ends
+        self.secondary = secondary
     
-    stranded = stranded_method = False
-    if dataset.stranded: # The read is strand-specific
-        stranded_method = True # The method to generate the read is inherently stranded
-    
-    input_len = len(input_lines)
-    mappings = {} # Make an empty array of length to store each mapping
-    s_len = len(dataset.start_array)
-    e_len = len(dataset.end_array)
-    Nmap = 0
-    map_number = 0
-    counter = 1
-    ID = 'none'
-    seq = ''
-    cdef float weight = float(1)/input_len
-    capped = dataset.capped
-    for line in input_lines: # Each line must be a pysam.AlignedSegment
-        if ID == 'none':
-            ID_tags = (False, False, 0, 0)
-            ID = line.query_name
-            if not ignore_ends:
-                ID_tags = parse_tag(ID)
-            
-            if ID_tags[2] > 0:
-                if ID_tags[2] < s_len:
-                    s_len = ID_tags[2]
-            
-            if ID_tags[3] > 0:
-                if ID_tags[3] < e_len:
-                    e_len = ID_tags[3]
+    cpdef list generate_read(self):
+        cdef:
+            int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
+            int i, gap_len, pos, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors
+            float weight
+            str ID, chrom, js, seq, aligned_seq, trimmed_nuc
+            (bint, bint, int, int) ID_tags = (False, False, 0, 0)
+            dict mappings
+            list splice, gaps, ranges, introns
+            bint stranded, stranded_method, fiveprime, threeprime, junction_exists
+            (int, int) g
+            array.array flankmatch
+            RNAseqMapping current_mapping, mate_read
         
-        s_tag = dataset.s_tag or ID_tags[0]
-        e_tag = dataset.e_tag or ID_tags[1]
-        if s_tag or e_tag:
-            stranded = True
+        s_tag_len = e_tag_len = 0
+        stranded = stranded_method = False
+        if self.dataset.stranded: # The read is strand-specific
+            stranded_method = True # The method to generate the read is inherently stranded
         
-        if Nmap == 0: # Update the mapping number with attribute NH:i
-            if line.has_tag('NH'):
-                Nmap = line.get_tag('NH')
-        
-        if line.has_tag('HI'): # Get which of Nmap mappings this line belongs to
-            map_number = line.get_tag('HI') - 1
-        else:
-            map_number = counter - 1 
-        
-        if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
-            counter += 1
-            continue
-        
-        if line.is_secondary and not secondary: # Unless secondary alignments are allowed, skip these too
-            counter += 1
-            continue
+        capped = self.dataset.capped
+        input_len = len(self.input_lines)
+        weight = float(1)/input_len
+        mappings = {} # Make an empty dict to store each mapping object
+        s_len = len(self.dataset.start_array)
+        e_len = len(self.dataset.end_array)
+        Nmap = self.get_mapping_number()
+        map_number = 0
+        counter = 0
+        seq = ''
+        if input_len == 0:
+            return []
 
-        if seq == '':
-            seq = line.query_sequence
+        ID = self.input_lines[0].query_name
+        if not self.ignore_ends:
+            ID_tags = parse_tag(ID)
         
-        # Determine the RNA strand
+        s_tag_len = ID_tags[2]
+        e_tag_len = ID_tags[3]
+        if s_tag_len > 0:
+            if s_tag_len < s_len:
+                s_len = s_tag_len
+        
+        if e_tag_len > 0:
+            if e_tag_len < e_len:
+                e_len = e_tag_len
+        
+        for i in range(input_len): 
+            s_tag = self.dataset.s_tag or ID_tags[0]
+            e_tag = self.dataset.e_tag or ID_tags[1]
+            if s_tag or e_tag or stranded_method:
+                stranded = True
+            
+            line = self.input_lines[i] # Each line must be a pysam.AlignedSegment
+            if self.should_skip(line): # Line must pass filters
+                continue
+            
+            mate, strand = self.determine_strand(line, stranded)
+            if mate == 1:
+                counter += 1
+            
+            try:
+                map_number = line.get_tag('HI')
+            except KeyError:
+                map_number = counter
+            
+            if seq == '':
+                seq = line.query_sequence
+            
+            pos = line.reference_start
+            chrom_id = line.reference_id
+            try:
+                chrom = line.header.get_reference_name(chrom_id)
+            except:
+                chrom = line.reference_name
+            
+            # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
+            try:
+                errors = line.get_tag('NM')
+            except KeyError:
+                errors = 0
+            
+            try:
+                mdstring = line.get_tag('MD')
+            except KeyError:
+                mdstring = str(len(seq))
+            
+            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring)
+            number_of_blocks = len(ranges)
+            if number_of_blocks == 0: # No exons of passing quality were found
+                continue
+            elif number_of_blocks == 1:
+                alignment_strand = 0
+                splice = []
+            else:
+                alignment_strand = self.get_alignment_strand(line)
+                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand) # Check which gaps between exon blocks are present in intron blocks
+            
+            if tail == 0:
+                aligned_seq = seq[head:]
+            else:
+                aligned_seq = seq[head:-tail]
+            
+            if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
+                continue
+            
+            match_length = len(aligned_seq) - errors
+            if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
+                if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
+                    continue
+            
+            
+            # EVALUATE SOFTCLIPPED NUCLEOTIDES
+            fiveprime = mate == 1
+            threeprime = (mate == 1 and not line.is_paired) or mate == 2
+            s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
+            # Check for uuG's (5') or terminal mismatches (3')
+            if self.dataset.genome:
+                start_pos = 0
+                end_pos = 0
+                if strand == 1:
+                    start_pos = ranges[0][0]
+                    end_pos = ranges[-1][-1]-1
+                elif strand == -1:
+                    start_pos = ranges[-1][-1]-1
+                    end_pos = ranges[0][0]
+                
+                if s_tag and fiveprime:
+                    if head > 0 or tail > 0:
+                        capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
+                    
+                    if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence
+                        s_tag = capped = False
+                
+                if e_tag and threeprime:
+                    if head > 0 or tail > 0:
+                        self.restore_terminal_mismatches(strand, head, tail, ranges)
+                    
+                    if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+                        e_tag = False
+            
+            # Reconcile strand information given by start, end, and splice
+            junction_exists = sum(splice) > 0
+            if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
+                if strand != alignment_strand: # Splice disagrees with end tags; remove tags
+                    strand = alignment_strand
+                    s_tag = e_tag = capped = False
+            
+            if not stranded_method and not s_tag and not e_tag and not junction_exists:
+                strand = 0 # No strand information can be found
+            
+            # Generate a ReadObject with the parsed attributes above
+            read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
+            current_mapping = RNAseqMapping(read_data)
+            current_mapping.e_len = e_tag_len
+            current_mapping.s_len = s_tag_len
+            if map_number not in mappings:
+                mappings[map_number] = current_mapping
+            else: # merge two mate-pair ReadObjects together
+                mate_read = mappings[map_number]
+                mate_read.merge(current_mapping)
+        
+        return list(mappings.values())
+
+    cdef int get_mapping_number(self):  
+        """Given a list of pysam objects, determine
+        how many locations in the genome the read (pair) mapped."""
+        cdef int Nmap = 0
+        cdef int num_lines = len(self.input_lines)
+        if num_lines > 0: # Process the line(s)
+            if num_lines == 1:
+                Nmap = 1
+            else: # More than one line, could be multimapper and/or paired
+                line = self.input_lines[0]
+                try:
+                    Nmap = line.get_tag('NH')
+                except KeyError:
+                    if line.is_paired:
+                        Nmap = int(num_lines*0.5)
+                    else:
+                        Nmap = num_lines
+        
+        return Nmap
+    
+    cdef (int, int) determine_strand(self, line, bint stranded):
+        """Determine the RNA strand of a pysam object"""
+        cdef int mate, strand
         mate = 1
         strand = 0
         if line.is_paired:
-            if not line.is_proper_pair:
-                continue
-            
-            if line.is_read1:
-                mate = 1
-                if Nmap < counter:
-                    Nmap = counter
-                
-                counter += 1
-                if stranded:
-                    if line.is_reverse:
-                        strand = -1
-                    else:
-                        strand = 1
-            else:
-                mate = 2
-                if stranded:
-                    if line.is_reverse:
-                        strand = 1
-                    else:
-                        strand = -1
-        else:
-            mate = 1
-            if Nmap < counter:
-                Nmap = counter
-            
-            counter += 1
-            if stranded:
-                if line.is_reverse:
-                    strand = -1
-                else:
-                    strand = 1
-
-        pos = line.reference_start
-        chrom_id = line.reference_id
-        try:
-            chrom = line.header.get_reference_name(chrom_id)
-        except:
-            chrom = line.reference_name
+            mate = 1 if line.is_read1 else 2
         
-        # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
-        mdstring = line.get_tag('MD') if line.has_tag('MD') else ''
-        ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, error_rate=dataset.mismatch_rate)
-        if len(ranges) == 0: # No exons of passing quality were found
-            continue
+        if mate == 1: # If stranded, sense w.r.t. RNA
+            if stranded:
+                strand = -1 if line.is_reverse else 1
+        else:
+            if stranded:
+                strand = 1 if line.is_reverse else -1
+        
+        return mate, strand
+    
+    cdef bint should_skip(self, line):
+        """The read should not be processed."""
+        if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
+            return True
+        elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
+            return True
+        elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads
+            return True
+        
+        return False
 
-        # Check which gaps between exon blocks are present in intron blocks
-        gaps = [(a,b) for a,b in zip([r for l,r in ranges[:-1]],[l for l,r in ranges[1:]])] # List of all gaps in ranges
-        gap_len = len(gaps)
+    cdef bint fails_stringent_filters(self, int Nmap, int match_length, int head, int tail, int errors):
+        """Reads below the 'minlen_loose' length should be treated
+        more stringently: no allowed softclipping, multimapping, or mismatches.
+        Absolutely require the length to be longer than minlen_strict."""
+        if head > 0 or tail > 0 or errors > 0 or Nmap > 1 or match_length < self.dataset.minlen_strict:
+            return True
+        
+        return False
+
+    cdef int get_alignment_strand(self, line):
+        """Returns 1(+), -1(-), or 0(.) if one of the BAM
+        splice tags (XS, ts) contains strand information."""
+        cdef str js
+        cdef alignment_strand = 0
+        try:
+            js = line.get_tag('XS')
+        except KeyError:
+            try:
+                js = line.get_tag('ts')
+            except KeyError:
+                js = '.'
+        
+        if js == '+':
+            alignment_strand = 1
+        elif js == '-':
+            alignment_strand = -1
+        
+        return alignment_strand
+
+    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand):
+        """Returns a list of booleans denoting whether each gap
+        between ranges is a splice junction or not."""
+        cdef list splice
+        cdef Py_ssize_t i, range_len, gap_len
+        cdef junction_strand
+        cdef str js = '.'
+        range_len = len(ranges)
+        gap_len = range_len - 1
+        gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges
         splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction
-        junction_strand = 0
         for i in range(gap_len):
-            junction_strand = 0
             g = gaps[i]
             if g in introns:
                 splice[i] = True
-                if junction_strand == 0: # Try to resolve a nonstranded read with splice junctions
-                    if line.has_tag('XS'):
-                        js = line.get_tag('XS')
-                        if js == '+':
-                            junction_strand = 1
-                        elif js == '-':
-                            junction_strand = -1
-                    else:
-                        if dataset.genome:
-                            junction_strand = get_junction_strand(dataset.genome, chrom, g[0], g[1])
-                            # if junction_strand == 0: # Did not find a valid splice junction
-                            #     j0, j1, s = shift_junction(genome, chrom, g[0], g[1], sj_shift)
-                            #     if j0 == -1 or j1 == -1:
-                            #         splice[i] = False
-                            #     else:
-                            #         # If shift_junction() found a shift, update the appropriate edge in ranges
-                            #         junction_strand = s
-                            #         if j0 != g[0]:
-                            #             ranges[i][1] = j0
-                            #         if j1 != g[1]:
-                            #             ranges[i+1][0] = j1
-            
-                if junction_strand == 0:
-                    splice[i] = False
+                if self.dataset.genome:
+                    junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
+                    if junction_strand != alignment_strand: # Did not find a valid splice junction
+                        splice[i] = False
         
-        # Quality control of end labels:
-        # 1) An improperly mapped 5'/3' end of a read should be stripped of its tag
-        # 2) Upstream untemplated Gs on a 5' end are evidence for a cap structure (requires genome)
-        # 3) End labels that match the genome-templated sequence are false positive trims (requires genome)
-        # 4) False positive oligo-dT priming can occur at genome-templated purine-rich sites (requires genome)
-        # 5) False positive template-switching can occur at matching RNA sites of 3+ nucleotides (requires genome)
-        
-        # EVALUATE SOFTCLIPPED NUCLEOTIDES
-        is_upstream_side = mate == 1
-        is_downstream_side = (mate == 1 and not line.is_paired) or mate == 2
-        if head == -1: # Special case: left side clipped off for quality issues
-            if strand == 1:
-                s_tag = capped = False
-            elif strand == -1:
-                e_tag = False
-        
-        if tail == -1: # Special case: right side clipped off for quality issues
-            if strand == 1:
-                e_tag = False
-            elif strand == -1:
-                s_tag = capped = False
-        
-        if s_tag: # Check for upstream untemplated Gs
-            if is_upstream_side:
-                if strand == 1:
-                    if head > 0: # Plus-stranded left clip
-                        if head > 4: # Softclipped sequence is too long
-                            s_tag = False
-                            capped = False
-                        else: # From 1-4 softclipped nucleotides; check if untemplated G's
-                            if seq[:head] == 'G'*head: # Softclipped nucleotides are G
-                                if dataset.genome:
-                                    if get_flank(dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                                        capped = True # One or more upstream untemplated Gs were detected
-                                else:
-                                    capped = True
-                elif strand == -1:
-                    if tail > 0: # Minus-stranded right clip
-                        if tail > 4: # Softclipped sequence is too long
-                            s_tag = False
-                            capped = False
-                        else:
-                            if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
-                                if dataset.genome:
-                                    if get_flank(dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                                        capped = True
-                                else:
-                                    capped = True
-            elif is_downstream_side: # Can't have an s_tag if downstream mate
-                s_tag = False
-                capped = False
-                
-        
-        if e_tag: # Check for softclipped nucleotides to add back
-            if is_downstream_side:
-                if strand == 1:
-                    if tail > 0:
-                        if tail > 10: # Softclipped sequence is too long
-                            e_tag = False
-                        elif tail < 4:
-                            ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
-                elif strand == -1:
-                    if head > 0: # Left clip exists
-                        if head > 10: # Left clip is too long
-                            e_tag = False
-                        elif head < 4:
-                            ranges[0] = (ranges[0][0]-head,ranges[0][1])
-            else: # Can't have an s_tag if it is the upstream mate
-                e_tag = False
-        
-        # EVALUATE FALSE POSITIVE TAGS
-        start_pos = 0
-        end_pos = 0
-        if strand == 1:
-            start_pos = ranges[0][0]
-            end_pos = ranges[-1][-1]-1
-        elif strand == -1:
-            start_pos = ranges[-1][-1]-1
-            end_pos = ranges[0][0]
-        
-        if dataset.genome:            
-            if s_tag and is_upstream_side:
-                flank = get_flank(dataset.genome, chrom, start_pos, strand, 'S', s_len) # Get upstream flanking sequence to start
-                if len(flank) > 0:
-                    flankmatch = dataset.start_array[-s_len:]
-                    if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, dataset.mismatch_rate*s_len) <= dataset.mismatch_rate*s_len:
-                        s_tag = False # Query sequence matched well enough to masking sequence
-            
-            if e_tag and is_downstream_side:
-                flank = get_flank(dataset.genome, chrom, end_pos, strand, 'E', e_len) # Get downstream flanking sequence to end
-                if len(flank) > 0:
-                    flankmatch = dataset.end_array[:e_len]
-                    if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, dataset.mismatch_rate*e_len) <= dataset.mismatch_rate*e_len:
-                        e_tag = False # Query sequence matched well enough to masking sequence
-        
-        # Reconcile strand information given by start, end, and splice
-        if junction_strand != 0:
-            if strand != junction_strand: # Splice disagrees with end tags; remove tags
-                strand = junction_strand
-                s_tag = False
-                e_tag = False
-                capped = False
-        
-        if not stranded_method and not s_tag and not e_tag and junction_strand == 0:
-            strand = 0 # No strand information can be found
-        
-        # Generate a ReadObject with the parsed attributes above
-        read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
-        current_mapping = RNAseqMapping(read_data)
-        
-        if map_number not in mappings:
-            mappings[map_number] = current_mapping
-        else:
-            mappings[map_number].merge(current_mapping) # merge two mate-pair ReadObjects together
+        return splice
     
-    return list(mappings.values())
+    cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):
+        """Determines whether the s_tag, e_tag and capped parameters
+        should be removed an alignment that has softclipping on its edges."""  
+        if strand == 0:
+            return False, False, False
+
+        if not fiveprime:
+            s_tag = capped = False
+        else:
+            if strand == 1 and (head == -1 or head > 4):
+                s_tag = capped = False
+            elif strand == -1 and (tail == -1 or tail > 4):
+                s_tag = capped = False
+        
+        if not threeprime:
+            e_tag = False
+        else:
+            if strand == 1 and (tail == -1 or tail > 4):
+                e_tag = False
+            elif strand == -1 and (head == -1 or head > 4):
+                e_tag = False
+        
+        return s_tag, e_tag, capped
+    
+    cdef bint untemplated_upstream_g(self, int strand, int head, int tail, str seq, str chrom, list ranges):
+        """Checks (1) if a softclipped string at a read's 5' end
+        is an oligomer of G and (2) if that oligomer does not match the genome.
+        Returns True if evidence supports a cap."""
+        if strand == 1:
+            if head <= 0 or head > 4:
+                return False
+            
+            if seq[:head] == 'G'*head: # Softclipped nucleotides are G
+                if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
+                    return True # One or more upstream untemplated Gs were detected
+                else:
+                    return False
+        elif strand == -1:
+            if tail <= 0 or tail > 4:
+                return False
+            
+            if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
+                if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
+                    return True
+                else:
+                    return False
+
+    cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):
+        """Updates the mapping ranges of a read with a softclipped
+        sequenced added back to one end."""
+        if strand == 1: 
+            if tail > 0: # Right clip exists
+                ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
+        elif strand == -1:
+            if head > 0: # Left clip exists
+                ranges[0] = (ranges[0][0]-head,ranges[0][1])
+
+    cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):
+        """Evaluates whether a clipped tag matches too closely
+        with a genome-templated region could have caused 
+        false positive end signal"""
+        ## 5'
+        flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
+        if len(flank) > 0:
+            if readtype == 'S':
+                flankmatch = self.dataset.start_array[-length:]
+            elif readtype == 'E':
+                flankmatch = self.dataset.end_array[:length]
+                
+            if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate*length) <= self.dataset.mismatch_rate*length:
+                return True
+        
+        return False
 
 
 def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
@@ -1516,11 +1919,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
     fileconn.close()
 
 
-##############################################################################################################
-##############################################################################################################
+
+#############################################################################################
 # Object for summarizing the coverage and features of a collection of RNAseqMapping objects #
-##############################################################################################################
-##############################################################################################################
+#############################################################################################
 
 cdef class BranchpointArray:
     cdef readonly dict S_plus, S_minus, E_plus, E_minus, J_plus, J_minus
@@ -1529,26 +1931,29 @@ cdef class BranchpointArray:
     cdef readonly float weight, threshold, cap_percent, minimum_proportion
     cdef readonly np.ndarray depth
     cdef public OrderedArray bp_plus, bp_minus
-    def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0):
+    cdef readonly bint infer_starts, infer_ends, use_attributes
+    def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0, bint infer_starts=False, bint infer_ends=False, bint use_attributes=False):
         """Makes a collection of positions in the locus that act as dividing
         points for all nodes of the graph. Every donor (D) and acceptor (A) 
         site are retained as-is, but start (S) and end (E) are collapsed into
         a set of reference points."""
-        cdef BranchPoint BP, bp, lbp, rbp, lterm, rterm
-        cdef RNAseqMapping read
-        cdef float e_threshold, s_threshold, s_counter, e_counter, weight, wt, threshold_depth
-        cdef str branchtype, junction_hash
-        cdef int pos, dist, bt, length, i, number_of_reads
-        cdef char strand
-        cdef list s_rank, e_rank, rank_sort, merged_plus, merged_minus, to_remove, donors, acceptors, gaps, gap_branchpoints
-        cdef (float, int, int, int) ranking
-        cdef (int, float) item
-        cdef (int, int) block
-        cdef dict lookup, end_counts
-        cdef set donor_sites, acceptor_sites
-        cdef bint first_element, s_added
+        cdef:
+            BranchPoint BP, bp, lbp, rbp, lterm, rterm
+            RNAseqMapping read
+            float e_threshold, s_threshold, s_counter, e_counter, weight, wt, threshold_depth, s_weight, c_weight, e_weight
+            str branchtype, junction_hash
+            int pos, dist, bt, length, i, number_of_reads
+            char strand
+            list s_rank, e_rank, rank_sort, merged_plus, merged_minus, to_remove, donors, acceptors, gaps, gap_branchpoints
+            (float, int, int, int) ranking
+            (int, float) item
+            (int, int) block
+            dict lookup, end_counts, Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict 
+            set donor_sites, acceptor_sites
+            bint first_element, s_added
+            tuple branchpoints
         
-        Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict = Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter()
+        Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
         self.J_plus = {}
         self.J_minus = {}
         self.extend = extend
@@ -1560,46 +1965,57 @@ cdef class BranchpointArray:
         self.cap_percent = cap_percent
         self.leftmost = leftmost
         self.rightmost = rightmost
+        self.infer_starts = infer_starts
+        self.infer_ends = infer_ends
+        self.use_attributes = use_attributes
         length = self.rightmost-self.leftmost
         self.depth = calculate_coverage(list(reads), self.leftmost, self.rightmost)
         self.weight = np.sum(self.depth)
         number_of_reads = len(reads)
         for i in range(number_of_reads):
             read = reads[i]
+            if self.use_attributes: # Check a read's attributes for different values of each type
+                weight = read.weight
+                s_weight = float(read.attributes.get('S.ppm', read.weight))
+                e_weight = float(read.attributes.get('E.ppm', read.weight))
+                c_weight = float(read.attributes.get('C.ppm', read.weight))
+            else:
+                weight = s_weight = e_weight = c_weight = read.weight
+            
             if read.strand == 1:
                 for l,r in read.junctions():
-                    Dp[l] += read.weight
-                    Ap[r] += read.weight
+                    Dp[l] = Dp.get(l, 0.0) + weight
+                    Ap[r] = Ap.get(r, 0.0) + weight
                     block = (l,r)
                     junction_hash = str(block)
-                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + read.weight
+                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
                 
                 if read.s_tag:
                     pos = read.span[0]
-                    Sp[pos] += read.weight
+                    Sp[pos] = Sp.get(pos, 0.0) + s_weight
                     if read.capped:
-                        Cp[pos] += read.weight
+                        Cp[pos] = Cp.get(pos, 0.0) + c_weight
                 
                 if read.e_tag:
                     pos = read.span[1]
-                    Ep[pos] += read.weight
+                    Ep[pos] = Ep.get(pos, 0.0) + e_weight
             elif read.strand == -1:
                 for l,r in read.junctions():
-                    Am[l] += read.weight
-                    Dm[r] += read.weight
+                    Am[l] = Am.get(l, 0.0) + weight
+                    Dm[r] = Dm.get(r, 0.0) + weight
                     block = (l,r)
                     junction_hash = str(block)
-                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + read.weight
+                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
                 
                 if read.e_tag:
                     pos = read.span[0]
-                    Em[pos] += read.weight
+                    Em[pos] = Em.get(pos, 0.0) + e_weight
                 
                 if read.s_tag:
                     pos = read.span[1]
-                    Sm[pos] += read.weight
+                    Sm[pos] = Sm.get(pos, 0.0) + s_weight
                     if read.capped:
-                        Cm[pos] += read.weight
+                        Cm[pos] = Cm.get(pos, 0.0) + c_weight
         
         # Populate the two BP arrays with D/A sites
         #TODO: Remove D/A sites below minimum_proportion of their position's coverage
@@ -1636,12 +2052,12 @@ cdef class BranchpointArray:
             e_threshold = sum(E.values()) * self.threshold
             
             s_rank = [
-                (-weight, self.distance_from_edge(pos, strand, 'S'), 2, pos)
-                for pos, weight in S.most_common()
+                (-S[pos], self.distance_from_edge(pos, strand, 'S'), 2, pos)
+                for pos in sorted(S, reverse=True, key=S.get)
             ]
             e_rank = [
-                (-weight, self.distance_from_edge(pos, strand, 'E'), 1, pos)
-                for pos, weight in E.most_common()
+                (-E[pos], self.distance_from_edge(pos, strand, 'E'), 1, pos)
+                for pos in sorted(E, reverse=True, key=E.get)
             ]
             s_counter = float(0)
             e_counter = float(0)
@@ -1652,7 +2068,7 @@ cdef class BranchpointArray:
                 if bt == 2:
                     if s_counter < s_threshold:
                         s_counter += weight
-                        BP = StartPoint(strand, pos, weight, self.end_extend, C[pos])
+                        BP = StartPoint(strand, pos, weight, self.end_extend, C.get(pos, 0.0))
                         self.add_endpoint(BP, True)
                 else:
                     if e_counter < e_threshold:
@@ -1667,6 +2083,9 @@ cdef class BranchpointArray:
                 end_counts['S'] += bp.weight
             elif bp.branchtype == 'E':
                 end_counts['E'] += bp.weight
+            elif bp.branchtype in ['D','A']:
+                if bp.weight > end_counts[bp.branchtype]:
+                    end_counts[bp.branchtype] = bp.weight
 
         merged_plus = []
         first_element = True
@@ -1687,6 +2106,9 @@ cdef class BranchpointArray:
                 end_counts['S'] += bp.weight
             elif bp.branchtype == 'E':
                 end_counts['E'] += bp.weight
+            elif bp.branchtype in ['D','A']:
+                if bp.weight > end_counts[bp.branchtype]:
+                    end_counts[bp.branchtype] = bp.weight
 
         merged_minus = []
         for  bp in self.bp_minus:
@@ -1778,7 +2200,7 @@ cdef class BranchpointArray:
                 gap_branchpoints.append(BranchPoint('N', 0, r, 0))
 
 
-        self.branchpoints = tuple(sorted(merged_plus + merged_minus))
+        branchpoints = tuple(sorted(merged_plus + merged_minus))
         # Evaluate whether terminal branchpoints must be added.
         # If no boundary Start/Endpoint exists, add a nonspecified one at leftmost/rightmost
         passes_threshold = np.where(self.depth >= threshold_depth)[0]
@@ -1789,12 +2211,12 @@ cdef class BranchpointArray:
             lbp = BranchPoint('N', 0, self.leftmost, 0)
             rbp = BranchPoint('N', 0, self.rightmost, 0)
         
-        if len(self.branchpoints) == 0:
-            self.branchpoints = tuple([lbp, rbp])
+        if len(branchpoints) == 0:
+            branchpoints = tuple([lbp, rbp])
         else:
             # Extend left border if S>/E< doesn't contain
-            lterm = self.branchpoints[0]
-            rterm = self.branchpoints[-1]
+            lterm = branchpoints[0]
+            rterm = branchpoints[-1]
             add_lbp = True
             add_rbp = True
             if (lterm.branchtype == 'S' and lterm.strand == 1) or (lterm.branchtype == 'E' and lterm.strand == -1):
@@ -1808,12 +2230,15 @@ cdef class BranchpointArray:
             
             if add_lbp or add_rbp:
                 if add_lbp and add_rbp:
-                    self.branchpoints = tuple([lbp] + list(self.branchpoints) + [rbp])
+                    branchpoints = tuple([lbp] + list(branchpoints) + [rbp])
                 elif add_lbp:
-                    self.branchpoints = tuple([lbp] + list(self.branchpoints))
+                    branchpoints = tuple([lbp] + list(branchpoints))
                 else:
-                    self.branchpoints = tuple(list(self.branchpoints) + [rbp])
-    
+                    branchpoints = tuple(list(branchpoints) + [rbp])
+
+        # Update 'N' branchpoints with their best inference
+        self.branchpoints = self.infer_unknown_branchpoints(branchpoints)
+
         # Add an index for each branchpoint so a unique lookup can be used
         for i,bp in enumerate(self.branchpoints):
             bp.index = i
@@ -1859,7 +2284,7 @@ cdef class BranchpointArray:
                         if bp.weight > otherBP.weight: # Pick the heavier one
                             lookup[pos] = i
     
-    cpdef list bp_from_counter(self, counter, str branchtype, char strand):
+    cpdef list bp_from_counter(self, dict counter, str branchtype, char strand):
         """Generates a list of Branchpoint objects
         of the given type and strand at the positions and weights
         given by a counter object. If the weight of the Branchpoint
@@ -1942,6 +2367,20 @@ cdef class BranchpointArray:
             if force:
                 array.add(BP)
     
+    cpdef tuple infer_unknown_branchpoints(self, tuple branchpoints):
+        """Tries to use adjacent branchpoint features to infer the identity
+        of gaps marked by 'N' (unknown) branchpoints. Returns a modified
+        branchpoint tuple."""
+        cdef tuple adjusted_branchpoints = branchpoints
+        cdef BranchPoint FDP, FDM, LAP, LAM
+        # If no inference is allowed, return with no changes
+        if not self.infer_starts and not self.infer_ends:
+            return adjusted_branchpoints
+        
+        # Iterate over branchpoints to identify where an inference is needed
+        
+        return adjusted_branchpoints
+
     cpdef void remove_branchpoint(self, str strand, int index):
         """Remove the BranchPoint at index in the strand bp dict.
         If the neighboring branchpoints are the same type and within range of each other,
@@ -2014,6 +2453,7 @@ cdef class StartPoint(BranchPoint):
     def __init__(self, strand, pos, weight, extend=0, capped_weight=0):
         BranchPoint.__init__(self, 'S', strand, pos, weight)
         self.extend = extend
+        self.weight += capped_weight
         self.capped = capped_weight
         self.span = range(self.left-self.extend, self.right+self.extend+1)
     
@@ -2142,6 +2582,36 @@ cdef class OrderedArray:
     def probe(self, item, init=None):
         """Return the insert position of an item if it were to be added to the array"""
         return self.get_insert_pos((item, self.n + 1), init)
+
+cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
+    """Returns two positions in the array that represent
+      [0] the sharpest increase and 
+      [1] the sharpest decrease
+    in the float values in the array.
+    """
+    cdef Py_ssize_t i, j, l
+    cdef float vi, vj, delta, max_delta, min_delta
+    cdef (int, int) top_positions = (0, 0)
+    cdef float [:] ARRAY = array
+    if offset < 1:
+        offset = 1
+    
+    l = array.shape[0]
+    max_delta = min_delta = 0
+    for i in range(1, l):
+        j = i - 1
+        vi = ARRAY[i]
+        vj = ARRAY[j]
+        delta = (vi - vj)/(vi + offset)
+        if delta > max_delta: # A gap begins or extends
+            max_delta = delta
+            top_positions[0] = i
+        elif delta < min_delta: # Not in a gap
+            min_delta = delta
+            top_positions[1] = i-1
+    
+    return top_positions
+
 
 cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):
     """Returns True if no gap longer than maxgap in the array falls below the threshold"""

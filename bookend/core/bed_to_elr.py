@@ -1,170 +1,134 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
-import argparse
-from cython_utils import _rnaseq_utils as ru
-from argparse import RawTextHelpFormatter
+import os
+import bookend.core.cython_utils._rnaseq_utils as ru
+if __name__ == '__main__':
+    sys.path.append('../../bookend')
+    from argument_parsers import bed_to_elr_parser as parser
 
-def output_lines(lines, output):
-    """Takes a list of bed lines and writes
-    them to the output stream.
-    """
-    if output == 'stdout':
-        for output_string in lines:
-            print(output_string)
-    else:
-        for output_string in lines:
-            o = output_string.rstrip()
-            output.write('{}\n'.format(o))
+class BEDtoELRconverter:
+    def __init__(self, args):
+        """Converts each line of BED-formatted input to ELR"""
+        self.input = args['INPUT']
+        self.output = args['OUTPUT']
+        self.header = args['HEADER']
+        self.source = args['SOURCE']
+        self.junctions = args['JUNCTIONS']
+        self.start = args['START']
+        self.capped = args['CAPPED']
+        self.end = args['END']
+        if self.output == 'stdout':
+            self.output_file = 'stdout'
+        else:
+            self.output_file = open(self.output, 'w')
+        
+        if self.header is None:
+            self.header_file = self.output_file
+        else:
+            self.header_file = open(self.header, 'w')
+        
+        if self.source:
+            source_array = [self.source]
+        else:
+            source_array = None
+        
+        self.linecount = 0
+        self.readcount = 0
+        self.dataset = ru.RNAseqDataset(source_array=source_array)
 
-if __name__ == "__main__":
-    ###################
-    # INPUT ARGUMENTS #
-    ###################
-    desc = (
-        "Converts BED files to a 'end labeled read' (ELR) format.\n"
-        "ELR contains a two-component header: #G (genome) and #N (names of samples).\n"
-        "Each line is a read or read stack with six columns:\n"
-        "  chromosome  position  strand  ELCIGAR  sample  weight\n"
-        "\n"
-        "  chromosome: Chromosome number, as indexed by the #G header\n"
-        "  position: 0-indexed position in chromosome\n"
-        "  strand: Inferred RNA strand; +, -, or . (unknown)\n"
-        "  ELCIGAR: String describing the mapped read (full description below)\n"
-        "  sample: Sample number, as indexed by the #N header\n"
-        "  weight: Read count (allows partial counts for multimappers)\n"
-    )
+    def process_input(self):
+        """Yield ELR lines from each line of a BED input."""
+        current_source_index = self.dataset.source_index
+        current_chrom_index = self.dataset.chrom_index
+        
+        if current_chrom_index > 0: # Header already exists
+            for i,c in enumerate(self.dataset.chrom_array):
+                self.output_line('#C {} {}'.format(i,c), self.header_file)
+        
+        if current_source_index > 0:
+            for i,s in enumerate(self.dataset.source_array):
+                self.output_line('#S {} {}'.format(i,s), self.header_file)
+        
+        
+        bed_in = open(self.input, 'r')
 
-    epilog = (
-        "ELCIGAR strings are Character|Number strings and one trailing character\n"
-        "([CN]xC), where C is a label and N is a numeric length on the genome.\n"
-        "Each C labels an end or gap in the alignment as one of the following:\n"
-        "  S: start\n"
-        "  s: start (low confidence)\n"
-        "  C: start (capped)\n"
-        "  E: end (polyA tail)\n"
-        "  e: end (low confidence)\n"
-        "  D: splice junction donor\n"
-        "  A: splice junction acceptor\n"
-        "  .: unspecified gap or end\n"
-        "\n"
-        "For example, a paired-end 50 read of a 185-nt fragment would be\n"
-        "  x50x85x50x\n"
-        "A full 3-exon transcript could be described as:\n"
-        "  S256D800A128D800A512E\n"
-        "where the 3 exons are 256, 128, and 512 nucleotides,\n"
-        "and the 2 introns are both 800 nucleotides.\n"
-        "\n"
-    )
-
-    # initilize argumentparser to read in commands
-    parser = argparse.ArgumentParser(
-        description=desc,
-        epilog=epilog,
-        formatter_class=RawTextHelpFormatter
-    )
-    parser.add_argument(
-        "--source", dest='SOURCE',
-        help="Source of BED lines.",
-        default=None, type=str
-    )
-    parser.add_argument(
-        "-j", dest='JUNCTIONS', default=False, action='store_true',
-        help="Gaps in the reads are splice junctions."
-    )
-    parser.add_argument(
-        "-s", dest='START', default=False, action='store_true',
-        help="Read 5' ends are transcript start sites."
-    )
-    parser.add_argument(
-        "-c", dest='CAPPED', default=False, action='store_true',
-        help="5' end data is capped."
-    )
-    parser.add_argument(
-        "-e", dest='END', default=False, action='store_true',
-        help="Read 3' ends are transcript end sites."
-    )
-    parser.add_argument(
-        "--bed", dest='BED_OUT', default=False, action='store_true',
-        help="Output a 15-column end labeled BED file."
-    )
-    parser.add_argument(
-        "-O", "--output", dest='OUTPUT', type=str, default='stdout',
-        help="Filepath to write ELR file."
-    )
-    parser.add_argument(
-        "--header", dest='HEADER', type=str, default='stdout',
-        help="Filepath to write ELR header."
-    )
-    parser.add_argument(
-        "FILENAME", nargs='?'
-    )
-    args = parser.parse_args()
-    
-    s={'+':'plus','-':'minus','.':'ns'}
-    if args.FILENAME:
-        if args.FILENAME.split('.')[-1].lower() not in ['bed','bed']:
-            print("\nERROR: input file must be BED format.")
-            parser.print_help()
-            sys.exit(1)
-        bed_in = open(args.FILENAME)
-    elif not sys.stdin.isatty():
-        bed_in = sys.stdin
-    else:
-        print("\nERROR: requires BED file as input.")
-        parser.print_help()
-        sys.exit(1)
-
-    output_file = 'stdout'
-    if args.OUTPUT != 'stdout':
-        output_file = open(args.OUTPUT, 'w')
-    
-    header_file = 'stdout'
-    if args.HEADER != 'stdout':
-        header_file = open(args.HEADER, 'w')
-    
-    if args.SOURCE:
-        source_array = [args.SOURCE]
-    else:
-        source_array = None
-    
-    dataset = ru.RNAseqDataset(source_array=source_array)
-    current_source_index = dataset.source_index
-    current_chrom_index = dataset.chrom_index
-    
-    if current_chrom_index > 0:
-        output_lines(['#C {} {}'.format(i,c) for i,c in enumerate(dataset.chrom_array)], header_file)                      
-                      
-    if current_source_index > 0:
-        output_lines(['#S {} {}'.format(i,c) for i,c in enumerate(dataset.source_array)], header_file)
-    
-    for bed_line in bed_in:
-        if bed_line[0] == '#': # A header is being passed from the ELR file
-            header_line = bed_line.rstrip().split(' ')
-            if header_line[0] == '#S':
-                dataset.add_source(header_line[-1])
-            if header_line[0] == '#C':
-                dataset.add_chrom(header_line[-1])
+        for bed_line in bed_in:
+            if bed_line[0] == '#': # A header is being passed from the BED file
+                header_line = bed_line.rstrip().split(' ')
+                if header_line[0] == '#S':
+                    self.dataset.add_source(header_line[-1])
+                if header_line[0] == '#C':
+                    self.dataset.add_chrom(header_line[-1])
+                
+                self.output_line(bed_line.rstrip(), self.header_file)
+                continue
             
-            output_lines([bed_line.rstrip()], output_file)
-            continue
-        
-        current_chrom_index = dataset.chrom_index
-        current_source_index = dataset.source_index
-        dataset.add_read_from_BED(bed_line, source_string=args.SOURCE, s_tag=args.START, e_tag=args.END, capped=args.CAPPED, gaps_are_junctions=args.JUNCTIONS)
-        if dataset.chrom_index > current_chrom_index: # A new chromosome was encountered
-            output_lines(['#C {} {}'.format(len(dataset.chrom_array)-1, dataset.chrom_array[-1])], header_file)
-            current_chrom_index = dataset.chrom_index
-        
-        if dataset.source_index > current_source_index: # A new source was encountered
-            output_lines(['#S {} {}'.format(len(dataset.source_array)-1, dataset.source_array[-1])], header_file)
-            current_source_index = dataset.source_index
-        
-        while len(dataset.read_list) > 0:
-            if args.BED_OUT:
-                out_line = dataset.pop_read('bed')
-            else:
-                out_line = dataset.pop_read()
+            current_chrom_index = self.dataset.chrom_index
+            current_source_index = self.dataset.source_index
+            self.dataset.add_read_from_BED(bed_line, source_string=self.source, s_tag=self.start, e_tag=self.end, capped=self.capped, gaps_are_junctions=self.junctions)
+            self.linecount += 1
+            self.readcount += self.dataset.read_list[-1].weight
+            if self.dataset.chrom_index > current_chrom_index: # A new chromosome was encountered
+                self.output_line('#C {} {}'.format(len(self.dataset.chrom_array)-1, self.dataset.chrom_array[-1]), self.header_file)
+                current_chrom_index = self.dataset.chrom_index
             
-            output_lines([out_line], output_file)
+            if self.dataset.source_index > current_source_index: # A new source was encountered
+                self.output_line('#S {} {}'.format(len(self.dataset.source_array)-1, self.dataset.source_array[-1]), self.header_file)
+                current_source_index = self.dataset.source_index
+            
+            while len(self.dataset.read_list) > 0:
+                out_line = self.dataset.pop_read()
+                self.output_line(out_line, self.output_file)
+        
+        if self.output != 'stdout':
+            self.output_file.close()
+        
+        if self.header_file != self.output_file and self.header_file != 'stdout':
+            self.header_file.close()
 
+    def output_line(self, line, output_file):
+        """Takes a list of bed lines and writes
+        them to the output stream.
+        """
+        if output_file == 'stdout':
+            print(line)
+        else:
+            output_file.write('{}\n'.format(line.rstrip()))
+    
+    def run(self):
+        print(self.display_options())
+        if not self.input.split('.')[-1].lower() in ['bed','bed12']:
+            print("ERROR: input must be in the BED12 format (.bed, .bed12)")
+            return 1
+        
+        self.process_input()
+        print(self.display_summary())
+        return 0
+    
+    def display_options(self):
+        """Returns a string describing all input args"""
+        options_string = "\n/| bookend bed-to-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string += "  Input file:    {}\n".format(self.input)
+        options_string += "  Output file:   {}\n".format(self.output)
+        options_string += "  Header output: {}\n".format(self.header)
+        options_string += "  Output source: {}\n".format(self.source)
+        options_string += "  *** Parameters ***\n"
+        options_string += "  All gaps are junctions (-j): {}\n".format(self.junctions)
+        options_string += "  All 5' ends are starts (-s): {}\n".format(self.start)
+        options_string += "  All 5' ends are capped (-c): {}\n".format(self.capped)
+        options_string += "  All 3' ends are polyA (-e):  {}\n".format(self.end)
+        return options_string
+    
+    def display_summary(self):
+        summary_string = ''
+        summary_string += 'Processed {} lines ({} total reads).\n'.format(self.linecount, round(self.readcount,2))
+        return summary_string
+    
 
-
+if __name__ == '__main__':
+    args = vars(parser.parse_args())
+    obj = BEDtoELRconverter(args)
+    sys.exit(obj.run())
+        
