@@ -18,6 +18,7 @@ class GTFconverter:
         self.gff_parent = args['GFF_PARENT']
         self.gff_child = args['GFF_CHILD']
         self.color_key = args['COLOR_KEY']
+        self.name_attr = args['NAME_ATTR']
         if self.color_key is None:
             self.color_code = {'.':'0,0,0'}
         elif args['COLOR_CODE'] is not None:
@@ -112,7 +113,7 @@ class GTFconverter:
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
                 color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '0,0,0')
-                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr='transcript_id', color=color)
+                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color)
                 out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
             self.output_line(out_string)
