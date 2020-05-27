@@ -754,7 +754,10 @@ cdef class AnnotationObject:
         """Converts a GTF or GFF3 formatted string to """
         cdef dict attr_dict = {}
         if attr_format == 'GTF':
-            attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
+            try:
+                attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
+            except: # Failure case: attribute values aren't all surrounded by quotes
+                attr_dict = {k:v.strip('"') for k,v in [attr.rstrip(';').split(' ') for attr in attr_string.split('; ')]}
         elif attr_format == 'GFF':
             attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
         
