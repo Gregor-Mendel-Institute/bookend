@@ -67,7 +67,8 @@ def import_object(object_name):
         from .core.elr_simulate import ELRsimulator
         objectClass = ELRsimulator
     else:
-        return None
+        from .core.argument_parsers import Helper
+        objectClass = Helper
     
     return objectClass
 
@@ -80,6 +81,7 @@ def main():
     parser = get_parser(program_version_message)    
     args = vars(parser.parse_args())
     try:
+        objectClass = import_object(args['object'])
         if objectClass is None:
             print('Subcommand not recognized. See bookend --help')
             return 1
