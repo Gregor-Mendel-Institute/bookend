@@ -328,7 +328,7 @@ cdef class RNAseqMapping():
         else:
             return elr_line
      
-    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
         labels = self.get_node_labels(record_artifacts)
@@ -341,16 +341,20 @@ cdef class RNAseqMapping():
         l = labels[0]
         r = labels[-1]
         ends = l+r
-        if ends in ['SE','ES']:
-            rgb = bed_colors['SE']
-        elif 'C' in ends:
-            rgb = bed_colors['C']
-        elif 'S' in ends:
-            rgb = bed_colors['S']
-        elif 'E' in ends:
-            rgb = bed_colors['E']
+        if color is None:
+            rgb = '0,0,0'
+            if ends in ['SE','ES']:
+                rgb = bed_colors['SE']
+            elif 'C' in ends:
+                rgb = bed_colors['C']
+            elif 'S' in ends:
+                rgb = bed_colors['S']
+            elif 'E' in ends:
+                rgb = bed_colors['E']
+            else:
+                rgb = bed_colors['U']
         else:
-            rgb = bed_colors['U']
+            rgb = color
         
         name = '.'
         if name_attr is not None:
@@ -624,6 +628,69 @@ gff_defaults = {
     'child_key_transcript':'Parent',
     'child_key_gene':'gene_id'
 }
+gtf_colorcode = {
+    '3prime_overlapping_ncRNA': '203,98,130',
+    'antisense': '194,71,71', 
+    'antisense_RNA': '194,71,71', 
+    'atlncRNA': '56,114,168', 
+    'atRNA': '56,114,168', 
+    'bidirectional_promoter_lncRNA': '153,108,206', 
+    'IG_C_gene': '110,66,19', 
+    'IG_C_pseudogene': '80,80,80', 
+    'IG_D_gene': '110,66,19', 
+    'IG_D_pseudogene': '80,80,80', 
+    'IG_J_gene': '110,66,19', 
+    'IG_LV_gene': '110,66,19', 
+    'IG_pseudogene': '80,80,80', 
+    'IG_V_gene': '110,66,19', 
+    'IG_V_pseudogene': '80,80,80', 
+    'lincRNA': '56,114,168', 
+    'lncRNA': '56,114,168', 
+    'macro_lncRNA': '6,74,140', 
+    'miRNA': '198,95,84', 
+    'misc_RNA': '249,185,54', 
+    'Mt_rRNA': '0,0,0', 
+    'Mt_tRNA': '0,0,0', 
+    'ncRNA': '249,185,54',
+    'nonsense_mediated_decay': '180,155,100', 
+    'non_stop_decay': '180,155,100', 
+    'nontranslating_CDS': '180,155,100',
+    'otherRNA': '56,114,168',
+    'polymorphic_pseudogene': '80,80,80', 
+    'pre_miRNA': '198,95,84', 
+    'processed_pseudogene': '80,80,80', 
+    'processed_transcript': '180,155,100', 
+    'protein_coding': '49,132,44', 
+    'pseudogene': '80,80,80', 
+    'retained_intron': '180,155,100', 
+    'ribozyme': '249,185,54', 
+    'rRNA': '0,0,0', 
+    'RNase_MRP_RNA': '249,185,54', 
+    'scaRNA': '249,185,54', 
+    'scRNA': '249,185,54', 
+    'sense_intronic': '56,114,168', 
+    'sense_overlapping': '56,114,168', 
+    'snoRNA': '249,185,54', 
+    'snRNA': '249,185,54', 
+    'SRP_RNA': '249,185,54', 
+    'sRNA': '249,185,54', 
+    'TEC': '120,120,120', 
+    'transcribed_processed_pseudogene': '80,80,80', 
+    'transcribed_unitary_pseudogene': '80,80,80', 
+    'transcribed_unprocessed_pseudogene': '120,120,120', 
+    'translated_processed_pseudogene': '80,80,80', 
+    'translated_unprocessed_pseudogene': '120,120,120', 
+    'tRNA': '0,0,0',
+    'TR_C_gene': '110,66,19', 
+    'TR_D_gene': '110,66,19', 
+    'TR_J_gene': '110,66,19', 
+    'TR_J_pseudogene': '80,80,80', 
+    'TR_V_gene': '110,66,19', 
+    'TR_V_pseudogene': '80,80,80', 
+    'unitary_pseudogene': '80,80,80', 
+    'unprocessed_pseudogene': '120,120,120'
+}
+
 
 cdef class AnnotationObject:
     cdef public dict attributes
