@@ -844,6 +844,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         children = []
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
             for line in file:
+                if line[0] == '#':continue
                 current_object = AnnotationObject(line, format, config_dict)
                 if current_object.keep:
                     if current_object.parent: # Add the old object to object_dict and start a new one
@@ -874,6 +875,7 @@ cdef class AnnotationDataset(RNAseqDataset):
             object_dict[chrom].append(item)
         elif format == 'BED':
             for line in file:
+                if line[0] == '#':continue
                 item = self.parse_bed_line(line)
                 item.attributes['source'] = name
                 total_coverage += item.weight
@@ -883,6 +885,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         elif format == 'ELR':
             counter = 0
             for line in file:
+                if line[0] == '#':continue
                 item = self.parse_elr_line(line, name, counter)
                 item.attributes['source'] = name
                 total_coverage += item.weight
