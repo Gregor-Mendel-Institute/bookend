@@ -24,16 +24,12 @@ Subcommands (use -h/--help for more info):
     combine-elr
 
     --file conversion--
+    gtf-to-bed
     bed-to-elr
     elr-to-bed
-    gtf-to-bed
     sam-to-sj
     sj-to-bed
     sj-merge
-
-    --setup/indexing--
-    index-fasta
-    softbridge-fasta
 
 """
     
@@ -173,14 +169,6 @@ end_label_parser.add_argument('--minqual', dest='MINQUAL', type=float, default=2
 end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FASTQ file(s). 1 for single-end, 2 for paired-end")
 end_label_parser.set_defaults(object='EndLabeler')
 
-### fasta_index.py ###
-fasta_index_parser = subparsers.add_parser('index-fasta',help="Generates index files for the reference genome FASTA file.")
-fasta_index_parser.add_argument('FASTA', type=str,help="Path to FASTA file.")
-fasta_index_parser.add_argument('-S','--split', dest='SPLIT_ON', type=str, help="Character string to split header name from description.",default=' ')
-fasta_index_parser.add_argument("--bridge_min", dest='MINLEN',help="Minimum tolerated length for a bridge over a softmasked region.", default=100, type=int)
-fasta_index_parser.add_argument("--bridge_max", dest='MAXLEN',help="Maximum tolerated length for a bridge over a softmasked region.", default=500, type=int)
-fasta_index_parser.set_defaults(object='Indexer')
-
 ### gtf_merge.py ###
 merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
 merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
@@ -219,7 +207,7 @@ sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
 sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
 sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
-sj_merge_parser.add_argument("INPUT", nargs='+')
+sj_merge_parser.add_argument("INPUT", nargs='+', default=[])
 sj_merge_parser.set_defaults(object='SJmerger')
 
 ### sj_to_bed.py ###
@@ -253,6 +241,7 @@ gtf_to_bed_parser.set_defaults(object='GTFconverter')
 
 ### elr_simulate.py ###
 simulate_parser = subparsers.add_parser('simulate',help="Simulates an ELR file from a ground truth of transcripts and abundances.")
+simulate_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 simulate_parser.add_argument('-r', '--reference', dest='REFERENCE', help="Reference annotation file (ELR/BED12/GTF/GFF3).", default=None, type=str)
 simulate_parser.add_argument('-a', '--abundance', dest='ABUNDANCE', help="Two-column table of [transcript ID]\t[relative abundance].", default=None, type=str)
 simulate_parser.add_argument("--count", dest='READ_COUNT', type=int, default=1000000, help="Number of reads to simulate.")

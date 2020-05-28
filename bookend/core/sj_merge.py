@@ -125,7 +125,8 @@ class SJmerger:
     
     def add_sj_file_to_dict(self, sj_file):
         filetype = None
-        for line in open(sj_file):
+        sjf = open(sj_file)
+        for line in sjf:
             sj = SJobject(line, filetype)
             if filetype is None:
                 filetype = sj.linetype
@@ -134,6 +135,8 @@ class SJmerger:
                 self.sj_dict[sj.hash].merge(sj)
             else:
                 self.sj_dict[sj.hash] = sj
+        
+        sjf.close()
     
     def write_sj_dict_to_file(self):
         outfile_name = self.output
