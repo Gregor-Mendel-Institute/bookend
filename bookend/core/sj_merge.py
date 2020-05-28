@@ -12,9 +12,9 @@ class SJobject:
         fields = line.rstrip().split('\t')
         if linetype is None:
             if len(fields) == 9:
-                linetype == 'star'
+                linetype = 'star'
             else:
-                linetype == 'bed'
+                linetype = 'bed'
         
         self.count = 1
         self.linetype = linetype
