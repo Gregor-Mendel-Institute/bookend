@@ -143,7 +143,7 @@ class SJmerger:
             outfile_name += '.bed'
 
         output_file = open(outfile_name, 'w')
-        for sj in sorted(list(self.sj_dict.items())):
+        for sj_hash, sj in sorted(list(self.sj_dict.items())):
             if self.new and not sj.new: continue
             if sj.count < self.min_reps: continue
             if sj.unique < self.min_unique: continue
