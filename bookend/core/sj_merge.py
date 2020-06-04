@@ -12,9 +12,9 @@ class SJobject:
         fields = line.rstrip().split('\t')
         if linetype is None:
             if len(fields) == 9:
-                linetype == 'star'
+                linetype = 'star'
             else:
-                linetype == 'bed'
+                linetype = 'bed'
         
         self.count = 1
         self.linetype = linetype
@@ -125,7 +125,8 @@ class SJmerger:
     
     def add_sj_file_to_dict(self, sj_file):
         filetype = None
-        for line in open(sj_file):
+        sjf = open(sj_file)
+        for line in sjf:
             sj = SJobject(line, filetype)
             if filetype is None:
                 filetype = sj.linetype
@@ -134,6 +135,8 @@ class SJmerger:
                 self.sj_dict[sj.hash].merge(sj)
             else:
                 self.sj_dict[sj.hash] = sj
+        
+        sjf.close()
     
     def write_sj_dict_to_file(self):
         outfile_name = self.output
@@ -143,7 +146,7 @@ class SJmerger:
             outfile_name += '.bed'
 
         output_file = open(outfile_name, 'w')
-        for sj in sorted(list(self.sj_dict.items())):
+        for sj_hash, sj in sorted(list(self.sj_dict.items())):
             if self.new and not sj.new: continue
             if sj.count < self.min_reps: continue
             if sj.unique < self.min_unique: continue

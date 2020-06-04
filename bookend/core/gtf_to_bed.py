@@ -17,6 +17,15 @@ class GTFconverter:
         self.gtf_child = args['GTF_CHILD']
         self.gff_parent = args['GFF_PARENT']
         self.gff_child = args['GFF_CHILD']
+        self.color_key = args['COLOR_KEY']
+        self.name_attr = args['NAME_ATTR']
+        if self.color_key is None:
+            self.color_code = {'.':'0,0,0'}
+        elif args['COLOR_CODE'] is not None:
+            self.color_code = self.parse_color_code(args['COLOR_CODE'])
+        else:
+            self.color_code = ru.gtf_colorcode
+        
         self.linecount = 0
         self.outlinecount = 0
 
@@ -72,6 +81,14 @@ class GTFconverter:
             extension = split_name[-1].lower()
             return extension
     
+    @staticmethod
+    def parse_color_code(filename):
+        f = open(filename)
+        lines = f.read()
+        f.close()
+        pairs = [l.split('\t') for l in lines.rstrip().split('\n')]
+        return {k:v for k,v in pairs}
+    
     def make_config_dicts(self):
         """Converts commandline input into three config dicts
         to pass to the AnnotationDataset."""
@@ -95,7 +112,8 @@ class GTFconverter:
                 out_string = mapping_object.write_as_elr()
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
-                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr='transcript_id')
+                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '0,0,0')
+                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color)
                 out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
             self.output_line(out_string)

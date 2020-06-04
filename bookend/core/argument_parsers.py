@@ -24,16 +24,12 @@ Subcommands (use -h/--help for more info):
     combine-elr
 
     --file conversion--
+    gtf-to-bed
     bed-to-elr
     elr-to-bed
-    gtf-to-bed
     sam-to-sj
     sj-to-bed
     sj-merge
-
-    --setup/indexing--
-    index-fasta
-    softbridge-fasta
 
 """
     
@@ -173,14 +169,6 @@ end_label_parser.add_argument('--minqual', dest='MINQUAL', type=float, default=2
 end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FASTQ file(s). 1 for single-end, 2 for paired-end")
 end_label_parser.set_defaults(object='EndLabeler')
 
-### fasta_index.py ###
-fasta_index_parser = subparsers.add_parser('index-fasta',help="Generates index files for the reference genome FASTA file.")
-fasta_index_parser.add_argument('FASTA', type=str,help="Path to FASTA file.")
-fasta_index_parser.add_argument('-S','--split', dest='SPLIT_ON', type=str, help="Character string to split header name from description.",default=' ')
-fasta_index_parser.add_argument("--bridge_min", dest='MINLEN',help="Minimum tolerated length for a bridge over a softmasked region.", default=100, type=int)
-fasta_index_parser.add_argument("--bridge_max", dest='MAXLEN',help="Maximum tolerated length for a bridge over a softmasked region.", default=500, type=int)
-fasta_index_parser.set_defaults(object='Indexer')
-
 ### gtf_merge.py ###
 merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
 merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
@@ -219,7 +207,7 @@ sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
 sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
 sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
-sj_merge_parser.add_argument("INPUT", nargs='+')
+sj_merge_parser.add_argument("INPUT", nargs='+', default=[])
 sj_merge_parser.set_defaults(object='SJmerger')
 
 ### sj_to_bed.py ###
@@ -240,9 +228,35 @@ gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3
 gtf_to_bed_parser.add_argument("INPUT", type=str, help="Input GTF/GFF3 file")
 gtf_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 gtf_to_bed_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
-gtf_to_bed_parser.add_argument("--score", dest='SCORE', help="Name of attribute to pass to score column (default: None)", default=None, type=str)
+gtf_to_bed_parser.add_argument("--name", dest='NAME_ATTR', help="Attribute to pass to the name column (default: transcript_id)", default='transcript_id', type=str)
+gtf_to_bed_parser.add_argument("--score", dest='SCORE', help="Attribute to pass to score column (default: None)", default=None, type=str)
 gtf_to_bed_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
 gtf_to_bed_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
 gtf_to_bed_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
 gtf_to_bed_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
+gtf_to_bed_parser.add_argument('--color_key', dest='COLOR_KEY', type=str, default=None, help="Attribute name to lookup transcript type")
+gtf_to_bed_parser.add_argument('--color_code', dest='COLOR_CODE', type=str, default=None, help="Tab-separated file of transcript type R,G,B colors (e.g. 'type\t255,255,255')")
 gtf_to_bed_parser.set_defaults(object='GTFconverter')
+
+
+### elr_simulate.py ###
+simulate_parser = subparsers.add_parser('simulate',help="Simulates an ELR file from a ground truth of transcripts and abundances.")
+simulate_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+simulate_parser.add_argument('-r', '--reference', dest='REFERENCE', help="Reference annotation file (ELR/BED12/GTF/GFF3).", default=None, type=str)
+simulate_parser.add_argument('-a', '--abundance', dest='ABUNDANCE', help="Two-column table of [transcript ID]\t[relative abundance].", default=None, type=str)
+simulate_parser.add_argument("--count", dest='READ_COUNT', type=int, default=1000000, help="Number of reads to simulate.")
+simulate_parser.add_argument("--read_length", dest='READ_LENGTH', type=int, default=50, help="Sequencing read length for simulated reads.")
+simulate_parser.add_argument("--min_length", dest='MIN_LENGTH', type=int, default=20, help="Smallest length of genome-matching read to keep.")
+simulate_parser.add_argument("--adapter_5p", dest='ADAPTER_5P', type=int, default=30, help="Length of adapter on the 5' end of cDNA.")
+simulate_parser.add_argument("--adapter_3p", dest='ADAPTER_3P', type=int, default=55, help="Length of adapters on the 3' end of cDNA.")
+simulate_parser.add_argument("--paired", dest='PAIRED', default=False, action="store_true", help="If True, sequencing is paired-end.")
+simulate_parser.add_argument("--fragment_mean", dest='FRAGMENT_MEAN', type=float, default=200, help="Mean length of RNA fragments.")
+simulate_parser.add_argument("--fragment_sd", dest='FRAGMENT_SD', type=float, default=50, help="Standard deviation of RNA fragment length (gaussian).")
+simulate_parser.add_argument("--var_5p", dest='VAR_5P', type=float, default=0, help="Variation of 5P end positions (laplace scale parameter).")
+simulate_parser.add_argument("--var_3p", dest='VAR_3P', type=float, default=0, help="Variation of 3P end positions (laplace scale parameter).")
+simulate_parser.add_argument("--percent_intact", dest='PERCENT_INTACT', type=float, default=100, help="(0-100] Percent of transcripts that are full-length.")
+simulate_parser.add_argument("--percent_sense", dest='PERCENT_SENSE', type=float, default=50, help="[0-100] Percent of reads that are in sense to the RNA strand.")
+simulate_parser.add_argument("--label_noise", dest='LABEL_NOISE', type=float, default=0, help="[0-100] Percent of reads falsely labeled ends.")
+simulate_parser.add_argument("--seed", dest='SEED', type=int, default=0, help="Seed for random number generator.")
+simulate_parser.add_argument("--bed", dest='BED', default=False, action="store_true", help="If True, output in BED12 format.")
+simulate_parser.set_defaults(object='ELRsimulator')
