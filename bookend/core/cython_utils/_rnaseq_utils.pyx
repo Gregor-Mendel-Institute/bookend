@@ -488,21 +488,24 @@ cdef class RNAseqDataset():
         self.mismatch_rate = self.config['mismatch_rate']
         self.start_array = fu.nuc_to_int(self.start_seq)
         self.end_array = fu.nuc_to_int(self.end_seq)
+        self.chrom_lengths = chrom_lengths
+        self.chrom_dict = {}
+        self.chrom_index = 0
+        self.chrom_array = []
+        if chrom_array is not None:
+            for c in chrom_array:
+                self.add_chrom(c)
+        
         if genome_fasta is not None:
             self.genome, index = fu.import_genome(genome_fasta)
-            self.chrom_array = sorted(self.genome.keys())
-            self.chrom_index = len(self.chrom_array)
-            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
-            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
+            if chrom_array is None:
+                index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
+                self.chrom_array = [l[0] for l in index_lines]
+                self.chrom_lengths = [int(l[1]) for l in index_lines]
+                self.chrom_index = len(self.chrom_array)
+                self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
         else:
             self.genome = {}
-            self.chrom_lengths = chrom_lengths
-            self.chrom_dict = {}
-            self.chrom_index = 0
-            self.chrom_array = []
-            if chrom_array is not None:
-                for c in chrom_array:
-                    self.add_chrom(c)
         
         self.source_dict = {}
         self.source_index = 0
