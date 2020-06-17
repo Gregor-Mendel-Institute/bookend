@@ -71,7 +71,7 @@ class SJobject:
                 self.multi,
                 self.overhang
             )
-        elif linetype == 'bed':
+        else:
             return '{}\t{}\t{}\t{}\t{}\t{}\n'.format(
                 self.chrom, self.start, self.end, self.name, self.unique+self.multi, self.strand
             )
