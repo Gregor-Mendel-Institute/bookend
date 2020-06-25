@@ -14,6 +14,8 @@ if __name__ == '__main__':
 class ELRcombiner:
     def __init__(self, args):
         """Leaves together ELR files in sort order"""
+        self.strand_sort_values = {'+':-1, '.':0, '-':1}
+        self.strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
         self.input = args['INPUT']
         self.output = args['OUTPUT']
         if self.output == 'stdout':
@@ -58,7 +60,7 @@ class ELRcombiner:
         chrom = int(self.dataset.chrom_dict[self.file_headers[index]['chrom'][split_line[0]]])
         start = int(split_line[1])
         length = int(split_line[2])
-        strand = strand_sort_values[split_line[3]]
+        strand = self.strand_sort_values[split_line[3]]
         elcigar = split_line[4]
         source = int(self.dataset.source_dict[self.file_headers[index]['source'][split_line[5]]])
         weight = -float(split_line[6])
@@ -66,7 +68,7 @@ class ELRcombiner:
 
     def sortable_tuple_to_read(self, sortable_tuple):
         l = list(sortable_tuple)
-        l[3] = strand_reverse_values[l[3]]    
+        l[3] = self.strand_reverse_values[l[3]]    
         l[6] = -l[6]
         return '\t'.join([str(i) for i in l])
     
@@ -100,8 +102,6 @@ class ELRcombiner:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
         
-        strand_sort_values = {'+':-1, '.':0, '-':1}
-        strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
         self.file_headers = ['']*self.number_of_files
         current_lines = ['']*self.number_of_files
         for i in range(self.number_of_files):
