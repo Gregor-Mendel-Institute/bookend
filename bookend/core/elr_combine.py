@@ -84,11 +84,11 @@ class ELRcombiner:
     
     def run(self):
         if self.output != 'stdout':
-            self.display_options()
+            print(self.display_options())
         
         self.combine_files()
         if self.output != 'stdout':
-            self.display_summary()
+            print(self.display_summary())
     
     def combine_files(self):
         if self.input:
