@@ -55,12 +55,12 @@ class ELRcombiner:
         with shared chrom and source indices."""
         split_line = line.split('\t')
         # Swap index for the merged index value
-        chrom = int(self.dataset.chrom_dict[file_headers[index]['chrom'][split_line[0]]])
+        chrom = int(self.dataset.chrom_dict[self.file_headers[index]['chrom'][split_line[0]]])
         start = int(split_line[1])
         length = int(split_line[2])
         strand = strand_sort_values[split_line[3]]
         elcigar = split_line[4]
-        source = int(self.dataset.source_dict[file_headers[index]['source'][split_line[5]]])
+        source = int(self.dataset.source_dict[self.file_headers[index]['source'][split_line[5]]])
         weight = -float(split_line[6])
         return (chrom, start, length, strand, elcigar, source, weight)
 
@@ -102,14 +102,14 @@ class ELRcombiner:
         
         strand_sort_values = {'+':-1, '.':0, '-':1}
         strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
-        file_headers = ['']*self.number_of_files
+        self.file_headers = ['']*self.number_of_files
         current_lines = ['']*self.number_of_files
         for i in range(self.number_of_files):
-            file_headers[i], current_lines[i] = self.get_header(files[i])
+            self.file_headers[i], current_lines[i] = self.get_header(files[i])
         
         set_of_chroms = set()
         set_of_sources = set()
-        for h in file_headers:
+        for h in self.file_headers:
             set_of_chroms.update(h['chrom'].values())
             set_of_sources.update(h['source'].values())
         
