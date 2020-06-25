@@ -72,14 +72,14 @@ class ELRcombiner:
         l[6] = -l[6]
         return '\t'.join([str(i) for i in l])
     
-    def output_line(self, line, output_file):
+    def output_line(self, line):
         """Takes a list of bed lines and writes
         them to the output stream.
         """
-        if output_file == 'stdout':
+        if self.output_file == 'stdout':
             print(line)
         else:
-            output_file.write('{}\n'.format(line.rstrip()))
+            self.output_file.write('{}\n'.format(line.rstrip()))
     
     def run(self):
         if self.output != 'stdout':
