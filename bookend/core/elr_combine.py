@@ -103,8 +103,9 @@ class ELRcombiner:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
         
-        self.file_headers = ['']*self.number_of_files
+        self.file_headers = [{}]*self.number_of_files
         current_lines = ['']*self.number_of_files
+        self.chroms = []
         for i in range(self.number_of_files):
             self.file_headers[i], current_lines[i] = self.get_header(files[i])
             if i == 0: # Store the first chroms list
