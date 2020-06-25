@@ -138,11 +138,11 @@ bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
 bed_to_elr_parser.set_defaults(object='BEDtoELRconverter')
 
 ### elr_combine.py ###
-# combine_parser = subparsers.add_parser('combine-elr',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
-# combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
-# combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
-# combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")
-# combine_parser.set_defaults(object=ELRcombiner)
+combine_parser = subparsers.add_parser('elr-combine',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
+combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
+combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")
+combine_parser.set_defaults(object=ELRcombiner)
 
 ### elr_to_bed.py ###
 elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)

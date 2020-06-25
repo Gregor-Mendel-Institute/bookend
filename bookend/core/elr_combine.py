@@ -14,33 +14,17 @@ if __name__ == '__main__':
 
 class ELRcombiner:
     def __init__(self):
-        """Converts each line of BED-formatted input to ELR"""
+        """Leaves together ELR files in sort order"""
         self.input = args['INPUT']
         self.output = args['OUTPUT']
-        self.header = args['HEADER']
-        self.source = args['SOURCE']
-        self.junctions = args['JUNCTIONS']
-        self.start = args['START']
-        self.capped = args['CAPPED']
-        self.end = args['END']
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
             self.output_file = open(self.output, 'w')
         
-        if self.header is None:
-            self.header_file = self.output_file
-        else:
-            self.header_file = open(self.header, 'w')
-        
-        if self.source:
-            source_array = [self.source]
-        else:
-            source_array = None
-        
         self.linecount = 0
         self.readcount = 0
-        self.dataset = ru.RNAseqDataset(source_array=source_array)
+        self.dataset = ru.RNAseqDataset()
 
     def get_header(self, file):
         """From an open connection to an ELR file, 
@@ -85,13 +69,16 @@ class ELRcombiner:
         l[3] = strand_reverse_values[l[3]]    
         l[6] = -l[6]
         return '\t'.join([str(i) for i in l])
-
-    def combine_elr_files(self, list_of_files):
-        """Sets up a minimum priority queue of sorted files
-        and interleaves them in order."""
-        pass
     
     def run(self):
+        if self.output != 'stdout':
+            self.display_options()
+        
+        self.combine_files()
+        if self.output != 'stdout':
+            self.display_summary()
+    
+    def combine_files(self):
         if args.INPUT:
             if not all([i[-3:].lower()=='elr' for i in args.INPUT]):
                 print("\nERROR: all input files must be ELR format.")
@@ -99,6 +86,7 @@ class ELRcombiner:
                 sys.exit(1)
         
             filenames = args.INPUT
+            #TODO: Check open file resource limits!
             files = [open(f) for f in filenames]
         else:
             print("\nERROR: requires ELR file as input.")
@@ -120,7 +108,6 @@ class ELRcombiner:
             set_of_chroms.update(h['chrom'].values())
             set_of_sources.update(h['source'].values())
         
-
         merged_chroms = sorted(list(set_of_chroms))
         merged_sources = sorted(list(set_of_sources))
         dataset = ru.RNAseqDataset(chrom_array=merged_chroms, source_array=merged_sources)
@@ -152,20 +139,14 @@ class ELRcombiner:
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend bed-to-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
-        options_string += "  Input file:    {}\n".format(self.input)
-        options_string += "  Output file:   {}\n".format(self.output)
-        options_string += "  Header output: {}\n".format(self.header)
-        options_string += "  Output source: {}\n".format(self.source)
-        options_string += "  *** Parameters ***\n"
-        options_string += "  All gaps are junctions (-j): {}\n".format(self.junctions)
-        options_string += "  All 5' ends are starts (-s): {}\n".format(self.start)
-        options_string += "  All 5' ends are capped (-c): {}\n".format(self.capped)
-        options_string += "  All 3' ends are polyA (-e):  {}\n".format(self.end)
+        options_string += "  Input file:     {}\n".format(self.input)
+        options_string += "  Output file:    {}\n".format(self.output)
+        options_string += "  Temp directory: {}\n".format(self.header)
         return options_string
     
     def display_summary(self):
         summary_string = ''
-        summary_string += 'Processed {} lines ({} total reads).\n'.format(self.linecount, round(self.readcount,2))
+        summary_string += 'Wrote {} lines ({} total reads) from {} files.\n'.format(self.linecount, round(self.readcount,2), len(self.input))
         return summary_string
 
 ####################
