@@ -102,9 +102,9 @@ class ELRcombiner:
         
         strand_sort_values = {'+':-1, '.':0, '-':1}
         strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
-        file_headers = ['']*number_of_files
-        current_lines = ['']*number_of_files
-        for i in range(number_of_files):
+        file_headers = ['']*self.number_of_files
+        current_lines = ['']*self.number_of_files
+        for i in range(self.number_of_files):
             file_headers[i], current_lines[i] = self.get_header(files[i])
         
         set_of_chroms = set()
@@ -130,7 +130,7 @@ class ELRcombiner:
         for h in dataset.dump_header():
             self.output_line(h)
         
-        while finished_files < number_of_files: # Keep going until every line of every file is processed
+        while finished_files < self.number_of_files: # Keep going until every line of every file is processed
             index, item = self.PQ.pop(True)
             self.output_line(self.sortable_tuple_to_read(item))
             next_line = files[index].readline().rstrip()
