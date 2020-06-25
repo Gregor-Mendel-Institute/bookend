@@ -15,13 +15,14 @@ usage: bookend [subcommand] [options] [input file(s)]
 Subcommands (use -h/--help for more info):
 
     label    (Label 5' and 3' ends in a FASTQ file)
+    elr      (Convert a BAM/SAM file to the end-labeled read format)
     assemble (Assemble transcripts from aligned end-labeled reads)
     merge    (Merge assembled GTFs with a reference annotation)
 
     --end-labeled read (ELR) operations--
-    make-elr
-    sort-elr
-    combine-elr
+    elr-sort
+    elr-subset
+    elr-combine
 
     --file conversion--
     gtf-to-bed
@@ -101,7 +102,7 @@ assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepat
 assemble_parser.set_defaults(object='Assembler')
 
 ### bam_to_elr.py ###
-bam_to_elr_parser = subparsers.add_parser('make-elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
 bam_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, help="Filepath to write end-labeled file.")
 bam_to_elr_parser.add_argument("--source", dest='SOURCE', default=None, type=str, help="Name the source of BAM/SAM reads.")
 bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file")
@@ -217,11 +218,20 @@ sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='S
 sj_merge_parser.set_defaults(object='SJtoBEDconverter')
 
 ### elr_sort.py ###
-elr_sort_parser = subparsers.add_parser('sort-elr',help="Sorts an End-Labeled Read (ELR) file.")
+elr_sort_parser = subparsers.add_parser('elr-sort',help="Sorts an End-Labeled Read (ELR) file.")
 elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object='ELRsorter')
+
+### elr_subset.py ###
+elr_subset_parser = subparsers.add_parser('elr-subset',help="Writes a subsetted region of an ELR file.")
+elr_subset_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+elr_subset_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
+elr_subset_parser.add_argument("-r" ,"--region", dest='REGION', help="[chrom:start-end] Region to write to output", type=str, required=True)
+elr_subset_parser.add_argument("INPUT", type=str, help="Input ELR file")
+elr_subset_parser.set_defaults(object='ELRsubsetter')
+
 
 ### gtf_to_bed.py ###
 gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3 annotation file to BED12.")
