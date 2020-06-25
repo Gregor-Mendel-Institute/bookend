@@ -6,14 +6,13 @@ import sys
 import argparse
 import resource
 import bookend.core.cython_utils._rnaseq_utils as ru
-import bookend.core.cython_utils._fasta_utils as fu
 from bookend.core.cython_utils._pq import IndexMinPQ
 if __name__ == '__main__':
     sys.path.append('../../bookend')
     from argument_parsers import combine_parser as parser
 
 class ELRcombiner:
-    def __init__(self):
+    def __init__(self, args):
         """Leaves together ELR files in sort order"""
         self.input = args['INPUT']
         self.output = args['OUTPUT']
@@ -24,8 +23,9 @@ class ELRcombiner:
         
         self.linecount = 0
         self.readcount = 0
-        self.dataset = ru.RNAseqDataset()
-
+        self.number_of_files = len(self.input)
+        self.PQ = IndexMinPQ(self.number_of_files)
+    
     def get_header(self, file):
         """From an open connection to an ELR file, 
         extract the header information and store it as
@@ -70,6 +70,15 @@ class ELRcombiner:
         l[6] = -l[6]
         return '\t'.join([str(i) for i in l])
     
+    def output_line(self, line, output_file):
+        """Takes a list of bed lines and writes
+        them to the output stream.
+        """
+        if output_file == 'stdout':
+            print(line)
+        else:
+            output_file.write('{}\n'.format(line.rstrip()))
+    
     def run(self):
         if self.output != 'stdout':
             self.display_options()
@@ -79,10 +88,9 @@ class ELRcombiner:
             self.display_summary()
     
     def combine_files(self):
-        if args.INPUT:
+        if self.input:
             if not all([i[-3:].lower()=='elr' for i in args.INPUT]):
                 print("\nERROR: all input files must be ELR format.")
-                parser.print_help()
                 sys.exit(1)
         
             filenames = args.INPUT
@@ -90,13 +98,10 @@ class ELRcombiner:
             files = [open(f) for f in filenames]
         else:
             print("\nERROR: requires ELR file as input.")
-            parser.print_help()
             sys.exit(1)
         
         strand_sort_values = {'+':-1, '.':0, '-':1}
         strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
-        number_of_files = len(filenames)
-        file_number = 0
         file_headers = ['']*number_of_files
         current_lines = ['']*number_of_files
         for i in range(number_of_files):
@@ -108,30 +113,30 @@ class ELRcombiner:
             set_of_chroms.update(h['chrom'].values())
             set_of_sources.update(h['source'].values())
         
-        merged_chroms = sorted(list(set_of_chroms))
-        merged_sources = sorted(list(set_of_sources))
-        dataset = ru.RNAseqDataset(chrom_array=merged_chroms, source_array=merged_sources)
+        self.merged_chroms = sorted(list(set_of_chroms))
+        self.merged_sources = sorted(list(set_of_sources))
+        dataset = ru.RNAseqDataset(chrom_array=self.merged_chroms, source_array=self.merged_sources)
         # Initialize the priority queue with one ELR read object from each file
-        PQ = IndexMinPQ(number_of_files)
+        
         finished_files = 0
         for index, line in enumerate(current_lines):
             if line: # Populate the queue with the first line
                 item = self.read_to_sortable_tuple(line, index)
-                PQ.insert(index, item)
+                self.PQ.insert(index, item)
             else: # The file was empty
                 files[index].close()
                 finished_files += 1
         
         for h in dataset.dump_header():
-            print(h)
+            self.output_line(h)
         
         while finished_files < number_of_files: # Keep going until every line of every file is processed
-            index, item = PQ.pop(True)
-            print(self.sortable_tuple_to_read(item))
+            index, item = self.PQ.pop(True)
+            self.output_line(self.sortable_tuple_to_read(item))
             next_line = files[index].readline().rstrip()
             if next_line:
                 next_item = self.read_to_sortable_tuple(next_line, index)
-                PQ.insert(index, next_item)
+                self.PQ.insert(index, next_item)
             else: # No more lines in this file
                 files[index].close()
                 finished_files += 1
@@ -146,7 +151,7 @@ class ELRcombiner:
     
     def display_summary(self):
         summary_string = ''
-        summary_string += 'Wrote {} lines ({} total reads) from {} files.\n'.format(self.linecount, round(self.readcount,2), len(self.input))
+        summary_string += 'Wrote {} lines ({} total reads) from {} files.\n'.format(self.linecount, round(self.readcount,2), self.number_of_files)
         return summary_string
 
 ####################
