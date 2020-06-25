@@ -18,6 +18,7 @@ class ELRcombiner:
         self.strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
         self.input = args['INPUT']
         self.output = args['OUTPUT']
+        self.temp = args['TEMPDIR']
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
@@ -106,16 +107,21 @@ class ELRcombiner:
         current_lines = ['']*self.number_of_files
         for i in range(self.number_of_files):
             self.file_headers[i], current_lines[i] = self.get_header(files[i])
+            if i == 0: # Store the first chroms list
+                chrom_num = len(self.file_headers[i]['chrom'])
+                self.chroms = [self.file_headers[i]['chrom'][str(i)] for i in range(chrom_num)]
+            else:
+                if self.file_headers[i]['chrom'] != self.file_headers[0]['chrom']:
+                    print("ERROR: chromosome index does not match across input files!")
+                    print("Check that the same genome was used for all alignments.")
+                    sys.exit(1)
         
-        set_of_chroms = set()
         set_of_sources = set()
         for h in self.file_headers:
-            set_of_chroms.update(h['chrom'].values())
             set_of_sources.update(h['source'].values())
         
-        self.merged_chroms = sorted(list(set_of_chroms))
         self.merged_sources = sorted(list(set_of_sources))
-        self.dataset = ru.RNAseqDataset(chrom_array=self.merged_chroms, source_array=self.merged_sources)
+        self.dataset = ru.RNAseqDataset(chrom_array=self.chroms, source_array=self.merged_sources)
         # Initialize the priority queue with one ELR read object from each file
         
         finished_files = 0
@@ -146,7 +152,7 @@ class ELRcombiner:
         options_string = "\n/| bookend bed-to-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input file:     {}\n".format(self.input)
         options_string += "  Output file:    {}\n".format(self.output)
-        options_string += "  Temp directory: {}\n".format(self.header)
+        options_string += "  Temp directory: {}\n".format(self.temp)
         return options_string
     
     def display_summary(self):
