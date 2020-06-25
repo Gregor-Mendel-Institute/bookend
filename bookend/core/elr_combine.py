@@ -55,12 +55,12 @@ class ELRcombiner:
         with shared chrom and source indices."""
         split_line = line.split('\t')
         # Swap index for the merged index value
-        chrom = int(dataset.chrom_dict[file_headers[index]['chrom'][split_line[0]]])
+        chrom = int(self.dataset.chrom_dict[file_headers[index]['chrom'][split_line[0]]])
         start = int(split_line[1])
         length = int(split_line[2])
         strand = strand_sort_values[split_line[3]]
         elcigar = split_line[4]
-        source = int(dataset.source_dict[file_headers[index]['source'][split_line[5]]])
+        source = int(self.dataset.source_dict[file_headers[index]['source'][split_line[5]]])
         weight = -float(split_line[6])
         return (chrom, start, length, strand, elcigar, source, weight)
 
@@ -115,7 +115,7 @@ class ELRcombiner:
         
         self.merged_chroms = sorted(list(set_of_chroms))
         self.merged_sources = sorted(list(set_of_sources))
-        dataset = ru.RNAseqDataset(chrom_array=self.merged_chroms, source_array=self.merged_sources)
+        self.dataset = ru.RNAseqDataset(chrom_array=self.merged_chroms, source_array=self.merged_sources)
         # Initialize the priority queue with one ELR read object from each file
         
         finished_files = 0
@@ -127,7 +127,7 @@ class ELRcombiner:
                 files[index].close()
                 finished_files += 1
         
-        for h in dataset.dump_header():
+        for h in self.dataset.dump_header():
             self.output_line(h)
         
         while finished_files < self.number_of_files: # Keep going until every line of every file is processed
