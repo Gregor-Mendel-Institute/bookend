@@ -110,7 +110,7 @@ class ELRcombiner:
             self.file_headers[i], current_lines[i] = self.get_header(files[i])
             if i == 0: # Store the first chroms list
                 chrom_num = len(self.file_headers[i]['chrom'])
-                self.chroms = [self.file_headers[i]['chrom'][str(i)] for i in range(chrom_num)]
+                self.chroms = [self.file_headers[i]['chrom'][str(n)] for n in range(chrom_num)]
             else:
                 if self.file_headers[i]['chrom'] != self.file_headers[0]['chrom']:
                     print("ERROR: chromosome index does not match across input files!")
