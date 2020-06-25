@@ -89,11 +89,11 @@ class ELRcombiner:
     
     def combine_files(self):
         if self.input:
-            if not all([i[-3:].lower()=='elr' for i in args.INPUT]):
+            if not all([i[-3:].lower()=='elr' for i in self.input]):
                 print("\nERROR: all input files must be ELR format.")
                 sys.exit(1)
         
-            filenames = args.INPUT
+            filenames = self.input
             #TODO: Check open file resource limits!
             files = [open(f) for f in filenames]
         else:
