@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import resource
+from math import ceil
 import bookend.core.cython_utils._rnaseq_utils as ru
 from bookend.core.cython_utils._pq import IndexMinPQ
 if __name__ == '__main__':
@@ -27,7 +28,9 @@ class ELRcombiner:
         self.linecount = 0
         self.readcount = 0
         self.number_of_files = len(self.input)
+        self.file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
         self.PQ = IndexMinPQ(self.number_of_files)
+        self.dataset = None
     
     def get_header(self, file):
         """From an open connection to an ELR file, 
@@ -65,48 +68,64 @@ class ELRcombiner:
         elcigar = split_line[4]
         source = int(self.dataset.source_dict[self.file_headers[index]['source'][split_line[5]]])
         weight = -float(split_line[6])
+        self.linecount += 1
+        self.readcount += -weight
         return (chrom, start, length, strand, elcigar, source, weight)
-
+    
     def sortable_tuple_to_read(self, sortable_tuple):
         l = list(sortable_tuple)
         l[3] = self.strand_reverse_values[l[3]]    
         l[6] = -l[6]
         return '\t'.join([str(i) for i in l])
     
-    def output_line(self, line):
+    def output_line(self, line, output):
         """Takes a list of bed lines and writes
         them to the output stream.
         """
-        if self.output_file == 'stdout':
+        if output == 'stdout':
             print(line)
         else:
-            self.output_file.write('{}\n'.format(line.rstrip()))
+            output.write('{}\n'.format(line.rstrip()))
     
     def run(self):
         if self.output != 'stdout':
             print(self.display_options())
         
-        self.combine_files()
+        self.combine_files(self.input, self.output_file)
         if self.output != 'stdout':
             print(self.display_summary())
     
-    def combine_files(self):
-        if self.input:
+    def combine_files(self, file_list, output):
+        file_number = len(file_list)
+        if file_list is self.input:
             if not all([i[-3:].lower()=='elr' for i in self.input]):
                 print("\nERROR: all input files must be ELR format.")
                 sys.exit(1)
         
-            filenames = self.input
-            #TODO: Check open file resource limits!
-            files = [open(f) for f in filenames]
-        else:
+            if file_number > self.file_limit:
+                if not os.path.exists(self.temp):
+                    os.mkdir(self.temp)
+                
+                number_of_chunks = ceil(file_number / self.file_limit)
+                temp_list = []
+                for c in range(number_of_chunks):
+                    chunk = file_list[c::number_of_chunks]
+                    tempname = '{}/tmp{}.elr'.format(self.temp,c)
+                    temp_list.append(tempname)
+                    tempfile = open(tempname)
+                    self.combine_files(chunk, tempfile)
+                
+                files = [open(f) for f in temp_list]
+            else:
+                files = [open(f) for f in filenames]
+        elif file_list is None:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
         
-        self.file_headers = [{}]*self.number_of_files
-        current_lines = ['']*self.number_of_files
+        self.file_headers = [{}]*file_number
+        current_lines = ['']*file_number
         self.chroms = []
-        for i in range(self.number_of_files):
+        for i in range(file_number):
             self.file_headers[i], current_lines[i] = self.get_header(files[i])
             if i == 0: # Store the first chroms list
                 chrom_num = len(self.file_headers[i]['chrom'])
@@ -137,7 +156,7 @@ class ELRcombiner:
         for h in self.dataset.dump_header():
             self.output_line(h)
         
-        while finished_files < self.number_of_files: # Keep going until every line of every file is processed
+        while finished_files < file_number: # Keep going until every line of every file is processed
             index, item = self.PQ.pop(True)
             self.output_line(self.sortable_tuple_to_read(item))
             next_line = files[index].readline().rstrip()
@@ -151,7 +170,7 @@ class ELRcombiner:
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend bed-to-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
-        options_string += "  Input file:     {}\n".format(self.input)
+        options_string += "  Input files:     {}\n".format(self.input)
         options_string += "  Output file:    {}\n".format(self.output)
         options_string += "  Temp directory: {}\n".format(self.temp)
         return options_string
