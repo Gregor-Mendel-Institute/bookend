@@ -2005,7 +2005,7 @@ cdef class BranchpointArray:
     cdef readonly int leftmost, rightmost, extend, end_extend, length, min_overhang
     cdef readonly tuple branchpoints
     cdef readonly float weight, threshold, cap_percent, minimum_proportion
-    cdef readonly np.ndarray depth
+    cdef readonly np.ndarray depth, cov_plus, cov_minus
     cdef public OrderedArray bp_plus, bp_minus
     cdef readonly bint infer_starts, infer_ends, use_attributes
     def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0, bint infer_starts=False, bint infer_ends=False, bint use_attributes=False):
@@ -2034,64 +2034,19 @@ cdef class BranchpointArray:
         self.J_minus = {}
         self.extend = extend
         self.end_extend = end_extend
-        self.weight = 0
         self.minimum_proportion = minimum_proportion
         self.min_overhang = min_overhang
-        self.threshold = 1 - self.minimum_proportion
         self.cap_percent = cap_percent
         self.leftmost = leftmost
         self.rightmost = rightmost
         self.infer_starts = infer_starts
         self.infer_ends = infer_ends
         self.use_attributes = use_attributes
-        length = self.rightmost-self.leftmost
-        self.depth = calculate_coverage(list(reads), self.leftmost, self.rightmost)
-        self.weight = np.sum(self.depth)
-        number_of_reads = len(reads)
-        for i in range(number_of_reads):
-            read = reads[i]
-            if self.use_attributes: # Check a read's attributes for different values of each type
-                weight = read.weight
-                s_weight = float(read.attributes.get('S.ppm', read.weight))
-                e_weight = float(read.attributes.get('E.ppm', read.weight))
-                c_weight = float(read.attributes.get('C.ppm', read.weight))
-            else:
-                weight = s_weight = e_weight = c_weight = read.weight
-            
-            if read.strand == 1:
-                for l,r in read.junctions():
-                    Dp[l] = Dp.get(l, 0.0) + weight
-                    Ap[r] = Ap.get(r, 0.0) + weight
-                    block = (l,r)
-                    junction_hash = str(block)
-                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
-                
-                if read.s_tag:
-                    pos = read.span[0]
-                    Sp[pos] = Sp.get(pos, 0.0) + s_weight
-                    if read.capped:
-                        Cp[pos] = Cp.get(pos, 0.0) + c_weight
-                
-                if read.e_tag:
-                    pos = read.span[1]
-                    Ep[pos] = Ep.get(pos, 0.0) + e_weight
-            elif read.strand == -1:
-                for l,r in read.junctions():
-                    Am[l] = Am.get(l, 0.0) + weight
-                    Dm[r] = Dm.get(r, 0.0) + weight
-                    block = (l,r)
-                    junction_hash = str(block)
-                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
-                
-                if read.e_tag:
-                    pos = read.span[0]
-                    Em[pos] = Em.get(pos, 0.0) + e_weight
-                
-                if read.s_tag:
-                    pos = read.span[1]
-                    Sm[pos] = Sm.get(pos, 0.0) + s_weight
-                    if read.capped:
-                        Cm[pos] = Cm.get(pos, 0.0) + c_weight
+        self.threshold = 1 - self.minimum_proportion
+        self.length = self.rightmost-self.leftmost
+        self.make_depth_matrix(reads)
+        self.estimate_stranded_coverage()
+        
         
         # Populate the two BP arrays with D/A sites
         #TODO: Remove D/A sites below minimum_proportion of their position's coverage
@@ -2359,6 +2314,92 @@ cdef class BranchpointArray:
                         # if abs(bp.pos-pos) < abs(otherBP.pos-pos): # Pick the closer one
                         if bp.weight > otherBP.weight: # Pick the heavier one
                             lookup[pos] = i
+    
+    cpdef void make_depth_matrix(self, list reads):
+        """Returns a numpy array of coverage depth for a list of reads."""
+        cdef:
+            Py_ssize_t Sp, Ep, Dp, Ap, Sm, Em, Dm, Am, covp, covm, covn, covrow
+            int l, r, pos
+            str junction_hash
+            float weight, s_weight, e_weight, c_weight
+            (int, int) span, block
+            RNAseqMapping read
+        
+        Sp, Ep, Dp, Ap, Sm, Em, Dm, Am, covp, covm, covn = range(11)
+        self.depth = np.zeros(shape=(11, self.length), dtype=np.float32)
+        for read in reads:
+            if self.use_attributes: # Check a read's attributes for different values of each type
+                weight = read.weight
+                s_weight = float(read.attributes.get('S.ppm', weight))
+                e_weight = float(read.attributes.get('E.ppm', weight))
+                c_weight = float(read.attributes.get('C.ppm', weight))
+            else:
+                weight = s_weight = e_weight = c_weight = read.weight
+            
+            if read.strand == 1:
+                covrow = covp
+                for span in read.junctions():
+                    l = span[0] - self.leftmost
+                    r = span[1] - self.leftmost
+                    self.depth[Dp, l] += weight
+                    self.depth[Ap, r] += weight
+                    block = (l,r)
+                    junction_hash = str(block)
+                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
+                
+                if read.s_tag:
+                    pos = read.span[0] - self.leftmost
+                    if read.capped:
+                        self.depth[Sp, pos] += c_weight * self.cap_bonus
+                    else:
+                        self.depth[Sp, pos] += s_weight
+                
+                if read.e_tag:
+                    pos = read.span[1] - self.leftmost - 1
+                    self.depth[Ep, pos] += e_weight
+            elif read.strand == -1:
+                covrow = covm
+                for span in read.junctions():
+                    l = span[0] - self.leftmost
+                    r = span[1] - self.leftmost
+                    self.depth[Am, l] += weight
+                    self.depth[Dm, r] += weight
+                    block = (l,r)
+                    junction_hash = str(block)
+                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
+                
+                if read.e_tag:
+                    pos = read.span[0] - self.leftmost
+                    self.depth[Em, pos] += e_weight
+                
+                if read.s_tag:
+                    pos = read.span[1] - self.leftmost - 1
+                    if read.capped:
+                        self.depth[Sm, pos] += c_weight * self.cap_bonus
+                    else:
+                        self.depth[Sm, pos] += s_weight
+            else: # The read has no features other than non-stranded coverage
+                covrow = covn
+            
+            for span in read.ranges:
+                l = span[0] - self.leftmost
+                r = span[1] - self.leftmost
+                self.depth[covrow, l:(r+1)] += weight
+    
+    cpdef estimate_stranded_coverage(self):
+        """Given the ratio of strand-specific reads overlapping
+        a position, assign nonstranded coverage proportionally."""
+        cdef:
+            np.ndarray strandratio, covstranded, strandedpositions
+            int covp, covm, covn
+        
+        covp, covm, covn = 8, 9, 10
+        strandratio = np.full(self.depth.shape[1], 0.5, dtype=np.float32)
+        covstranded = np.sum(self.depth[(covp,covm),:],axis=0)
+        strandedpositions = np.where(covstranded > 0)[0]
+        strandratio[strandedpositions] = self.depth[covp,strandedpositions]/covstranded[strandedpositions]
+        self.cov_plus = self.depth[covp,] + self.depth[covn,]*strandratio
+        self.cov_minus = self.depth[covm,] + self.depth[covn,]*(1-strandratio)
     
     cpdef list bp_from_counter(self, dict counter, str branchtype, char strand):
         """Generates a list of Branchpoint objects
