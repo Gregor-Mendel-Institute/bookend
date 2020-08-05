@@ -90,26 +90,23 @@ class Assembler:
             total_reads = locus.weight
             if locus.graph:
                 locus.assemble_transcripts(complete=self.complete)
-            else:
-                continue
-            
-            if self.verbose:
-                reads_used = 0
-                transcripts_written = 0
-            
-            for transcript in locus.transcripts:
-                if self.passes_all_checks(transcript):
-                    self.output_transcripts(transcript, self.output_type)
-                    if self.verbose:
-                        reads_used += transcript.weight
-                        transcripts_written += 1
-            
-            if self.verbose:
-                print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
-                    transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
-            
-            if chunk[0].left() >= STOP_AT:
-                sys.exit()
+                if self.verbose:
+                    reads_used = 0
+                    transcripts_written = 0
+                
+                for transcript in locus.transcripts:
+                    if self.passes_all_checks(transcript):
+                        self.output_transcripts(transcript, self.output_type)
+                        if self.verbose:
+                            reads_used += transcript.weight
+                            transcripts_written += 1
+                
+                if self.verbose:
+                    print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
+                        transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
+                
+                if chunk[0].left() >= STOP_AT:
+                    sys.exit()
 
     def display_options(self):
         """Returns a string describing all input args"""
