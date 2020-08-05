@@ -1954,6 +1954,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     cdef RNAseqMapping last_read
     cdef int l, r, old_chrom, old_l, old_r, rightmost, k
     cdef float max_cov, current_cov
+    cdef list passed_positions
     cdef bint append_read, dump_read_list
     if file_type == 'elr':
         add_read = dataset.add_read_from_ELR
@@ -1965,7 +1966,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         return
     
     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
-    old_chrom, old_l, old_r, rightmost = -1, -1, -1
+    old_chrom, old_l, old_r, rightmost = -1, -1, -1, -1
     current_cov = 0
     for line in fileconn:
         if type(line) is str:
@@ -1990,9 +1991,9 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             current_cov, max_cov, end_positions = read.weight, read.weight, Counter()
             rightmost = r
         elif l > old_l: # Read advanced, but not by enough to automatically cut
-            for k in end_positions.keys():
-                if k <= l:
-                    current_cov -= end_positions.pop(k)
+            passed_positions = [k for k in end_positions.keys() if k <= l]
+            for k in passed_positions:
+                current_cov -= end_positions.pop(k)
             
             if current_cov < minimum_proportion * max_cov: # Current cov is sufficiently low to cause a break
                 yield dataset.read_list[:-1]
