@@ -83,35 +83,34 @@ class Assembler:
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
-            if len(chunk) > 0:
-                if self.verbose:
-                    print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
-                
-                locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.end_cluster, self.min_overhang, True, self.min_proportion, self.cap_percent, 0, self.complete, verbose=self.verbose, naive=False, intron_filter=self.intron_filter)
-                total_reads = locus.weight
-                if locus.graph:
-                    locus.assemble_transcripts(complete=self.complete)
-                else:
-                    continue
-                
-                if self.verbose:
-                    reads_used = 0
-                    transcripts_written = 0
-                
-                for transcript in locus.transcripts:
-                    if self.passes_all_checks(transcript):
-                        self.output_transcripts(transcript, self.output_type)
-                        if self.verbose:
-                            reads_used += transcript.weight
-                            transcripts_written += 1
-                
-                if self.verbose:
-                    print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
-                        transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
-                
-                if chunk[0].left() >= STOP_AT:
-                    sys.exit()
-    
+            if self.verbose:
+                print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
+            
+            locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.end_cluster, self.min_overhang, True, self.min_proportion, self.cap_percent, 0, self.complete, verbose=self.verbose, naive=False, intron_filter=self.intron_filter)
+            total_reads = locus.weight
+            if locus.graph:
+                locus.assemble_transcripts(complete=self.complete)
+            else:
+                continue
+            
+            if self.verbose:
+                reads_used = 0
+                transcripts_written = 0
+            
+            for transcript in locus.transcripts:
+                if self.passes_all_checks(transcript):
+                    self.output_transcripts(transcript, self.output_type)
+                    if self.verbose:
+                        reads_used += transcript.weight
+                        transcripts_written += 1
+            
+            if self.verbose:
+                print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
+                    transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
+            
+            if chunk[0].left() >= STOP_AT:
+                sys.exit()
+
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend assemble |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
