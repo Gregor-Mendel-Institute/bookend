@@ -4,12 +4,13 @@ cimport numpy as np
 import re
 import copy
 import json
-from ast import literal_eval
 from bookend.core.cython_utils._element_graph import ElementGraph
-from bookend.core.cython_utils._rnaseq_utils import BranchpointArray, RNAseqMapping, ELdata, range_of_reads
+from bookend.core.cython_utils._rnaseq_utils import RNAseqMapping, ELdata, range_of_reads
 from collections import deque, Counter
 import cython
 import time
+
+bp_typeorder = {'N':-1, 'E':0, 'A':1, 'D':2, 'S':3} # Sort order for branchpoint types
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
@@ -19,7 +20,7 @@ cdef class Locus:
     cdef public dict adj, bp_lookup
     cdef public list transcripts, traceback
     cdef public object BP, graph
-    cdef public np.ndarray read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
     def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.transcripts = []
         self.traceback = []
@@ -43,6 +44,7 @@ cdef class Locus:
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
+            self.build_depth_matrix()
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
                 self.traceback = [set([i]) for i in range(len(self.reads))]
@@ -72,7 +74,126 @@ cdef class Locus:
         return summary_string
 
     cpdef generate_branchpoints(self):
-        self.BP = BranchpointArray(self.leftmost, self.rightmost, self.reads, self.extend, self.end_extend, self.minimum_proportion, self.cap_percent, self.min_overhang, self.infer_starts, self.infer_ends, self.use_attributes)
+        """Estimate strand-specific coverage, then use it to generate an ordered array of
+        positions where branching could occur in the overlap graph."""
+        cdef:
+            np.ndarray strandratio, covstranded, strandedpositions, pos, vals
+            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
+            float threshold
+        
+        Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+        strandratio = np.full(self.depth_matrix.shape[1], 0.5, dtype=np.float32)
+        covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
+        strandedpositions = np.where(covstranded > 0)[0]
+        strandratio[strandedpositions] = self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]
+        self.cov_plus = self.depth_matrix[covp,] + self.depth_matrix[covn,]*strandratio
+        self.cov_minus = self.depth_matrix[covm,] + self.depth_matrix[covn,]*(1-strandratio)
+        
+        pos = np.where(self.depth_matrix[Sp,]>0)[0]
+        vals = np.power(self.depth_matrix[Sp, pos],2)/self.cov_plus[pos]
+        cumulative = 0
+        
+        total = 
+        while cumulative
+        np.argsort(vals)
+
+        pos = np.where(self.depth_matrix[Ep,]>0)[0]
+        vals = -np.power(self.depth_matrix[Ep, pos],2)/self.cov_plus[pos]
+        
+        pos = np.where(self.depth_matrix[Sm,]>0)[0]
+        vals = -np.power(self.depth_matrix[Sm, pos],2)/self.cov_minus[pos]
+        
+        pos = np.where(self.depth_matrix[Em,]>0)[0]
+        vals = -np.power(self.depth_matrix[Em, pos],2)/self.cov_minus[pos]
+        
+
+        np.argsort(-arr)
+    
+    @staticmethod
+    cdef str span_to_string((int, int) span):
+        """Converts a tuple of two ints to a string connected by ':'"""
+        return '{}:{}'.format(span[0], span[1])
+    
+    @staticmethod
+    cdef str string_to_span(str string):
+        """Converts a string from span_to_string() back into a span"""
+        cdef list splitstring = string.split(':')
+        return (int(splitstring[0]), int(splitstring[1]))
+    
+    cpdef build_depth_matrix(self):
+        """Stores a numpy array of feature-specific coverage depth for the read list.
+        Populates an 11-row matrix:
+        S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
+        Additionally, records splice junction D-A pairs in dicts J_plus and J_minus"""
+        cdef:
+            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
+            int array_length, l, r, pos
+            float weight, s_weight, e_weight, c_weight
+            (int, int) span, block
+            RNAseqMapping read
+            str junction_hash
+        
+        Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+        array_length = self.rightmost - self.leftmost
+        self.depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
+        for read in self.reads:
+            if self.use_attributes: # Check a read's attributes for different values of each type
+                weight = read.weight
+                s_weight = float(read.attributes.get('S.ppm', weight))
+                e_weight = float(read.attributes.get('E.ppm', weight))
+                c_weight = float(read.attributes.get('C.ppm', weight))
+            else:
+                weight = s_weight = e_weight = c_weight = read.weight
+            
+            if read.strand == 1:
+                covrow = covp
+                for span in read.junctions():
+                    l = span[0] - self.leftmost
+                    r = span[1] - self.leftmost
+                    self.depth_matrix[Dp, l] += weight
+                    self.depth_matrix[Ap, r] += weight
+                    block = (l,r)
+                    junction_hash = span_to_string(block)
+                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
+                
+                if read.s_tag:
+                    pos = read.span[0] - self.leftmost
+                    if read.capped:
+                        self.depth_matrix[Sp, pos] += c_weight * self.cap_bonus
+                    else:
+                        self.depth_matrix[Sp, pos] += s_weight
+                
+                if read.e_tag:
+                    pos = read.span[1] - self.leftmost - 1
+                    self.depth_matrix[Ep, pos] += e_weight
+            elif read.strand == -1:
+                covrow = covm
+                for span in read.junctions():
+                    l = span[0] - self.leftmost
+                    r = span[1] - self.leftmost
+                    self.depth_matrix[Am, l] += weight
+                    self.depth_matrix[Dm, r] += weight
+                    block = (l,r)
+                    junction_hash = span_to_string(block)
+                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
+                
+                if read.e_tag:
+                    pos = read.span[0] - self.leftmost
+                    self.depth_matrix[Em, pos] += e_weight
+                
+                if read.s_tag:
+                    pos = read.span[1] - self.leftmost - 1
+                    if read.capped:
+                        self.depth_matrix[Sm, pos] += c_weight * self.cap_bonus
+                    else:
+                        self.depth_matrix[Sm, pos] += s_weight
+            else: # The read has no features other than non-stranded coverage
+                covrow = covn
+            
+            for span in read.ranges:
+                l = span[0] - self.leftmost
+                r = span[1] - self.leftmost
+                self.depth_matrix[covrow, l:r] += weight
 
     cpdef build_membership_matrix(self, threshold=1):
         """After branchpoints are identified, populate a table that stores information about
@@ -96,21 +217,6 @@ cdef class Locus:
         cdef (int, int) block, span
         cdef str junction_hash
         cdef set positions = set()
-        
-        self.bp_lookup = {}
-        for bp in self.BP.branchpoints:
-            if bp.branchtype == 'S':
-                pos = bp.left if bp.strand == 1 else bp.right
-                self.bp_lookup[pos] = bp
-            elif bp.branchtype == 'E':
-                pos = bp.right if bp.strand == 1 else bp.left
-                self.bp_lookup[pos] = bp
-            else:
-                pos = bp.pos
-                if pos not in self.bp_lookup: # S/E branchpoints have lookup priority
-                    self.bp_lookup[pos] = bp
-            
-            positions.add(pos)
         
         bp_positions = sorted(list(positions))
         temp_frags = []
@@ -225,7 +331,7 @@ cdef class Locus:
                         # Check that this junction is in the list of splice junctions
                         # If it was filtered out, this read is invalid and should be removed.
                         span = (self.frags[last_rfrag][1], self.frags[lfrag][0])
-                        junction_hash = str(span)
+                        junction_hash = span_to_string(span)
                         if s == 1 and junction_hash not in self.BP.J_plus:
                             MEMBERSHIP[i,:] = -1 # Read contains a filtered junction, remove
                             break
@@ -252,32 +358,6 @@ cdef class Locus:
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
-    
-    cpdef get_border_branchpoint(self, int pos, int side, int strand):
-        """Given a leftmost member position, find the nearest compatible
-        branchpoint that can act as an end."""
-        cdef str branchtype = ''
-        cdef float weight = 0
-        bp = self.bp_lookup[pos]
-        if strand == 1:
-            if side == 0: branchtype = 'S'
-            else: branchtype = 'E'
-        else:
-            if side == 0: branchtype = 'E'
-            else: branchtype = 'S'
-        
-        if strand != bp.strand or branchtype != bp.branchtype:
-            candidates = candidates = [b for b in self.BP.branchpoints if b.strand == strand and b.branchtype == branchtype and pos in b.span]
-            if len(candidates) > 0:
-                if len(candidates) == 1:
-                    bp = candidates[0]
-                else:
-                    for b in candidates:
-                        if b.weight > weight:
-                            bp = b
-                            weight = bp.weight
-        
-        return bp
 
     cpdef void filter_run_on_frags(self):
         """Iterates over frags looking for those putatively connecting the ends
@@ -548,11 +628,11 @@ cdef class Locus:
             junctions = self.BP.J_plus if strand == 1 else self.BP.J_minus
             for junction_hash, junction_count in junctions.items():
                 # Convert all intron pair positions to frag indices
-                block = literal_eval(junction_hash)
+                block = string_to_span(junction_hash)
                 l = block[0] - self.leftmost
                 r = block[1] - self.leftmost
                 frag_pair = (self.frag_by_pos[l], self.frag_by_pos[r-1])
-                junctions_as_frags[str(frag_pair)] = junction_count      
+                junctions_as_frags[span_to_string(frag_pair)] = junction_count      
             
             for i in range(number_of_paths):
                 path = self.graph.paths[i]
@@ -560,7 +640,7 @@ cdef class Locus:
                 if path.strand == strand:
                     for frag_hash in junctions_as_frags.keys():
                         # Check each like-stranded intron: is it fully intact?
-                        block = literal_eval(frag_hash)
+                        block = string_to_span(frag_hash)
                         is_spliced_out = False
                         for frag in range(block[0],block[1]+1):
                             if frag not in members:
@@ -869,7 +949,7 @@ cdef class Locus:
             
             for span in path.get_introns():
                 junction = (self.frags[span[0]][0], self.frags[span[1]][1])
-                junction_hash = str(junction)
+                junction_hash = span_to_string(junction)
                 if junction_hash not in junctions:
                     path.complete = False
                     path.has_gaps = True
@@ -1029,7 +1109,7 @@ cdef class Locus:
             elif last_member == m-1:
                 r = frag[1]
             else: # A gap was jumped
-                junction_hash = '({}, {})'.format(r, frag[0])
+                junction_hash = span_to_string((r, frag[0]))
                 if junction_hash in junctions:
                     gap_is_splice = True
                 else:
@@ -1702,6 +1782,4 @@ def sum_subset(mask, array_to_mask):
     """Given an array and a boolean mask, return
     the sum of array values at which mask was True"""
     return array_to_mask[mask].sum()
-
-
 
