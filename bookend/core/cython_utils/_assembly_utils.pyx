@@ -17,7 +17,7 @@ cdef class Locus:
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_percent, novelty_ratio, mean_read_length, intron_filter
-    cdef public dict adj, bp_lookup
+    cdef public dict adj, bp_lookup, branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
@@ -46,19 +46,19 @@ cdef class Locus:
             self.end_extend = end_extend
             self.build_depth_matrix()
             self.generate_branchpoints()
-            if type(self) is AnnotationLocus:
-                self.traceback = [set([i]) for i in range(len(self.reads))]
-                self.build_membership_matrix(0)
-                self.filter_by_reps(self.minreps)
-                if self.membership.shape[0] > 0:
-                    self.build_overlap_matrix(reduce=False, ignore_ends=True)
-            else:
-                self.build_membership_matrix()
-                self.denoise(verbose)
-                self.filter_run_on_frags()
-                if self.membership.shape[0] > 0:
-                    self.build_overlap_matrix(reduce)
-                    self.build_graph(reduce)
+            # if type(self) is AnnotationLocus:
+            #     self.traceback = [set([i]) for i in range(len(self.reads))]
+            #     self.build_membership_matrix(0)
+            #     self.filter_by_reps(self.minreps)
+            #     if self.membership.shape[0] > 0:
+            #         self.build_overlap_matrix(reduce=False, ignore_ends=True)
+            # else:
+            #     self.build_membership_matrix()
+            #     self.denoise(verbose)
+            #     self.filter_run_on_frags()
+            #     if self.membership.shape[0] > 0:
+            #         self.build_overlap_matrix(reduce)
+            #         self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -77,8 +77,8 @@ cdef class Locus:
         """Estimate strand-specific coverage, then use it to generate an ordered array of
         positions where branching could occur in the overlap graph."""
         cdef:
-            np.ndarray strandratio, covstranded, strandedpositions, pos, vals
-            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
+            np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
+            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
             float threshold
         
         Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
@@ -88,26 +88,52 @@ cdef class Locus:
         strandratio[strandedpositions] = self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]
         self.cov_plus = self.depth_matrix[covp,] + self.depth_matrix[covn,]*strandratio
         self.cov_minus = self.depth_matrix[covm,] + self.depth_matrix[covn,]*(1-strandratio)
+        end_ranges = dict()
+        for endtype in [Sp, Ep, Sm, Em]:
+            pos = np.where(self.depth_matrix[endtype,]>0)[0]
+            if endtype in [Sp, Ep]:
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
+            else:
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
+            
+            end_ranges[endtype] = make_end_ranges(pos, vals)
         
-        pos = np.where(self.depth_matrix[Sp,]>0)[0]
-        vals = np.power(self.depth_matrix[Sp, pos],2)/self.cov_plus[pos]
+        self.branchpoints = end_ranges
+
+    cpdef list make_end_ranges(self, np.array pos, np.array vals):
+        """Returns a list of tuples that (1) filters low-signal positions
+        and (2) clusters high-signal positions within self.end_extend.
+        Returns list of (l,r) tuples demarking the edges of clustered end positions."""
+        cdef:
+            np.array value_order, filtered_pos
+            int p, ia
+            float cumulative, threshold
+            list ranges
+        
+        value_order = np.argsort(-vals)
+        threshold = (1 - self.minimum_proportion) * np.sum(vals)
         cumulative = 0
+        i = 0
+        while cumulative < threshold:
+            cumulative += vals[value_order[i]]
+            i += 1
         
-        total = 
-        while cumulative
-        np.argsort(vals)
-
-        pos = np.where(self.depth_matrix[Ep,]>0)[0]
-        vals = -np.power(self.depth_matrix[Ep, pos],2)/self.cov_plus[pos]
+        filtered_pos = np.sort(pos[value_order[:i]])
+        if filtered_pos.shape[0] == 0:
+            return []
+        elif filtered_pos.shape[0] == 1:
+            p = filtered_pos[0]
+            return [(p, p)]
+        else:
+            p = filtered_pos[0]
+            ranges = [(p, p)]
+            for p in filtered_pos[1:]:
+                if p - self.end_extend <= ranges[-1][1]:
+                    ranges[-1] = (ranges[-1][0], p)
+                else:
+                    ranges += [(p, p)]
         
-        pos = np.where(self.depth_matrix[Sm,]>0)[0]
-        vals = -np.power(self.depth_matrix[Sm, pos],2)/self.cov_minus[pos]
-        
-        pos = np.where(self.depth_matrix[Em,]>0)[0]
-        vals = -np.power(self.depth_matrix[Em, pos],2)/self.cov_minus[pos]
-        
-
-        np.argsort(-arr)
+        return ranges
     
     @staticmethod
     cdef str span_to_string((int, int) span):
