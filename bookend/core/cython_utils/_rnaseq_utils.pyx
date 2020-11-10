@@ -1277,7 +1277,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
             r = span[1] - leftmost
             depth_matrix[covrow, l:r] += weight
         
-        return depth_matrix, J_plus, J_minus
+    return depth_matrix, J_plus, J_minus
 
 cdef str span_to_string((int, int) span):
     """Converts a tuple of two ints to a string connected by ':'"""
