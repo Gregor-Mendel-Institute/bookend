@@ -17,7 +17,7 @@ cdef class Locus:
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_bonus, novelty_ratio, mean_read_length, intron_filter
-    cdef public dict adj, bp_lookup, branchpoints
+    cdef public dict adj, bp_lookup, J_plus, J_minus
     cdef public list transcripts, traceback
     cdef public object BP, graph
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
