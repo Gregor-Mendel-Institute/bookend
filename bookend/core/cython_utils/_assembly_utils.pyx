@@ -96,16 +96,16 @@ cdef class Locus:
             else:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
             
-            end_ranges[endtype] = make_end_ranges(pos, vals)
+            end_ranges[endtype] = self.make_end_ranges(pos, vals)
         
         self.branchpoints = end_ranges
 
-    cpdef list make_end_ranges(self, np.array pos, np.array vals):
+    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
         cdef:
-            np.array value_order, filtered_pos
+            np.ndarray value_order, filtered_pos
             int p, ia
             float cumulative, threshold
             list ranges
@@ -135,13 +135,11 @@ cdef class Locus:
         
         return ranges
     
-    @staticmethod
-    cdef str span_to_string((int, int) span):
+    cdef str span_to_string(self, (int, int) span):
         """Converts a tuple of two ints to a string connected by ':'"""
         return '{}:{}'.format(span[0], span[1])
     
-    @staticmethod
-    cdef str string_to_span(str string):
+    cdef str string_to_span(self, str string):
         """Converts a string from span_to_string() back into a span"""
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
@@ -156,7 +154,7 @@ cdef class Locus:
             int array_length, l, r, pos
             float weight, s_weight, e_weight, c_weight
             (int, int) span, block
-            RNAseqMapping read
+            object read
             str junction_hash
         
         Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
@@ -179,7 +177,7 @@ cdef class Locus:
                     self.depth_matrix[Dp, l] += weight
                     self.depth_matrix[Ap, r] += weight
                     block = (l,r)
-                    junction_hash = span_to_string(block)
+                    junction_hash = self.span_to_string(block)
                     self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
                 
                 if read.s_tag:
@@ -200,7 +198,7 @@ cdef class Locus:
                     self.depth_matrix[Am, l] += weight
                     self.depth_matrix[Dm, r] += weight
                     block = (l,r)
-                    junction_hash = span_to_string(block)
+                    junction_hash = self.span_to_string(block)
                     self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
                 
                 if read.e_tag:
@@ -357,7 +355,7 @@ cdef class Locus:
                         # Check that this junction is in the list of splice junctions
                         # If it was filtered out, this read is invalid and should be removed.
                         span = (self.frags[last_rfrag][1], self.frags[lfrag][0])
-                        junction_hash = span_to_string(span)
+                        junction_hash = self.span_to_string(span)
                         if s == 1 and junction_hash not in self.BP.J_plus:
                             MEMBERSHIP[i,:] = -1 # Read contains a filtered junction, remove
                             break
@@ -654,11 +652,11 @@ cdef class Locus:
             junctions = self.BP.J_plus if strand == 1 else self.BP.J_minus
             for junction_hash, junction_count in junctions.items():
                 # Convert all intron pair positions to frag indices
-                block = string_to_span(junction_hash)
+                block = self.string_to_span(junction_hash)
                 l = block[0] - self.leftmost
                 r = block[1] - self.leftmost
                 frag_pair = (self.frag_by_pos[l], self.frag_by_pos[r-1])
-                junctions_as_frags[span_to_string(frag_pair)] = junction_count      
+                junctions_as_frags[self.span_to_string(frag_pair)] = junction_count      
             
             for i in range(number_of_paths):
                 path = self.graph.paths[i]
@@ -666,7 +664,7 @@ cdef class Locus:
                 if path.strand == strand:
                     for frag_hash in junctions_as_frags.keys():
                         # Check each like-stranded intron: is it fully intact?
-                        block = string_to_span(frag_hash)
+                        block = self.string_to_span(frag_hash)
                         is_spliced_out = False
                         for frag in range(block[0],block[1]+1):
                             if frag not in members:
@@ -975,7 +973,7 @@ cdef class Locus:
             
             for span in path.get_introns():
                 junction = (self.frags[span[0]][0], self.frags[span[1]][1])
-                junction_hash = span_to_string(junction)
+                junction_hash = self.span_to_string(junction)
                 if junction_hash not in junctions:
                     path.complete = False
                     path.has_gaps = True
@@ -1135,7 +1133,7 @@ cdef class Locus:
             elif last_member == m-1:
                 r = frag[1]
             else: # A gap was jumped
-                junction_hash = span_to_string((r, frag[0]))
+                junction_hash = self.span_to_string((r, frag[0]))
                 if junction_hash in junctions:
                     gap_is_splice = True
                 else:
