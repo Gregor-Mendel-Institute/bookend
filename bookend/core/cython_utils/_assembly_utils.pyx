@@ -15,9 +15,9 @@ bp_typeorder = {'N':-1, 'E':0, 'A':1, 'D':2, 'S':3} # Sort order for branchpoint
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
     cdef public bint naive, infer_starts, infer_ends, use_attributes
-    cdef public tuple reads, frags, branchpoints
+    cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_bonus, novelty_ratio, mean_read_length, intron_filter
-    cdef public dict adj, bp_lookup, J_plus, J_minus
+    cdef public dict adj, bp_lookup, J_plus, J_minus, branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
@@ -98,7 +98,7 @@ cdef class Locus:
             
             end_ranges[endtype] = self.make_end_ranges(pos, vals)
         
-        self.branchpoints = tuple(end_ranges)
+        self.branchpoints = end_ranges
 
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals):
         """Returns a list of tuples that (1) filters low-signal positions
