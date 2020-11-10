@@ -1199,7 +1199,7 @@ cdef parse_ELR_line(str elr_line):
     # chrom source strand ranges splice s_tag e_tag capped weight
     return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
 
-cpdef build_depth_matrix(int leftmost, int rightmost, list read_list, float cap_bonus=1, bint use_attributes=False):
+cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bonus=1, bint use_attributes=False):
     """Stores a numpy array of feature-specific coverage depth for the read list.
     Populates an 11-row matrix:
     S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
@@ -1218,7 +1218,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, list read_list, float cap_
     array_length = rightmost - leftmost
     depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}
-    for read in read_list:
+    for read in reads:
         if use_attributes: # Check a read's attributes for different values of each type
             weight = read.weight
             s_weight = float(read.attributes.get('S.ppm', weight))

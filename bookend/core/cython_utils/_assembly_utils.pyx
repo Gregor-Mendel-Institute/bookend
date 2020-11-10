@@ -44,7 +44,7 @@ cdef class Locus:
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
-            self.depth_matrix, self.J_plus, self.J_minus = build_depth_matrix(self.leftmost, self.rightmost, list_of_reads, self.cap_bonus, self.use_attributes)
+            self.depth_matrix, self.J_plus, self.J_minus = build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             self.generate_branchpoints()
             # if type(self) is AnnotationLocus:
             #     self.traceback = [set([i]) for i in range(len(self.reads))]
