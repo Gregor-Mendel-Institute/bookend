@@ -1217,6 +1217,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, list read_list, float cap_
     Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
     array_length = rightmost - leftmost
     depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
+    J_plus, J_minus = {}, {}
     for read in read_list:
         if use_attributes: # Check a read's attributes for different values of each type
             weight = read.weight
