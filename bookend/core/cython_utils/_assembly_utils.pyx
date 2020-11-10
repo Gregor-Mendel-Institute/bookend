@@ -5,7 +5,7 @@ import re
 import copy
 import json
 from bookend.core.cython_utils._element_graph import ElementGraph
-from bookend.core.cython_utils._rnaseq_utils import RNAseqMapping, ELdata, range_of_reads
+from bookend.core.cython_utils._rnaseq_utils import RNAseqMapping, ELdata, range_of_reads, build_depth_matrix
 from collections import deque, Counter
 import cython
 import time
@@ -44,7 +44,7 @@ cdef class Locus:
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
-            self.build_depth_matrix()
+            self.depth_matrix, self.J_plus, self.J_minus = build_depth_matrix()
             self.generate_branchpoints()
             # if type(self) is AnnotationLocus:
             #     self.traceback = [set([i]) for i in range(len(self.reads))]
@@ -144,81 +144,6 @@ cdef class Locus:
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
     
-    cpdef build_depth_matrix(self):
-        """Stores a numpy array of feature-specific coverage depth for the read list.
-        Populates an 11-row matrix:
-        S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
-        Additionally, records splice junction D-A pairs in dicts J_plus and J_minus"""
-        cdef:
-            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
-            int array_length, l, r, pos
-            float weight, s_weight, e_weight, c_weight
-            (int, int) span, block
-            object read
-            str junction_hash
-        
-        Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
-        array_length = self.rightmost - self.leftmost
-        self.depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
-        for read in self.reads:
-            if self.use_attributes: # Check a read's attributes for different values of each type
-                weight = read.weight
-                s_weight = float(read.attributes.get('S.ppm', weight))
-                e_weight = float(read.attributes.get('E.ppm', weight))
-                c_weight = float(read.attributes.get('C.ppm', weight))
-            else:
-                weight = s_weight = e_weight = c_weight = read.weight
-            
-            if read.strand == 1:
-                covrow = covp
-                for span in read.junctions():
-                    l = span[0] - self.leftmost
-                    r = span[1] - self.leftmost
-                    self.depth_matrix[Dp, l] += weight
-                    self.depth_matrix[Ap, r] += weight
-                    block = (l,r)
-                    junction_hash = self.span_to_string(block)
-                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
-                
-                if read.s_tag:
-                    pos = read.span[0] - self.leftmost
-                    if read.capped:
-                        self.depth_matrix[Sp, pos] += c_weight * self.cap_bonus
-                    else:
-                        self.depth_matrix[Sp, pos] += s_weight
-                
-                if read.e_tag:
-                    pos = read.span[1] - self.leftmost - 1
-                    self.depth_matrix[Ep, pos] += e_weight
-            elif read.strand == -1:
-                covrow = covm
-                for span in read.junctions():
-                    l = span[0] - self.leftmost
-                    r = span[1] - self.leftmost
-                    self.depth_matrix[Am, l] += weight
-                    self.depth_matrix[Dm, r] += weight
-                    block = (l,r)
-                    junction_hash = self.span_to_string(block)
-                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
-                
-                if read.e_tag:
-                    pos = read.span[0] - self.leftmost
-                    self.depth_matrix[Em, pos] += e_weight
-                
-                if read.s_tag:
-                    pos = read.span[1] - self.leftmost - 1
-                    if read.capped:
-                        self.depth_matrix[Sm, pos] += c_weight * self.cap_bonus
-                    else:
-                        self.depth_matrix[Sm, pos] += s_weight
-            else: # The read has no features other than non-stranded coverage
-                covrow = covn
-            
-            for span in read.ranges:
-                l = span[0] - self.leftmost
-                r = span[1] - self.leftmost
-                self.depth_matrix[covrow, l:r] += weight
-
     cpdef build_membership_matrix(self, threshold=1):
         """After branchpoints are identified, populate a table that stores information about
         each read's membership within each frag:

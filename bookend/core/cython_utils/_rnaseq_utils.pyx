@@ -1199,6 +1199,96 @@ cdef parse_ELR_line(str elr_line):
     # chrom source strand ranges splice s_tag e_tag capped weight
     return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
 
+cpdef build_depth_matrix(int leftmost, int rightmost, list read_list, float cap_bonus=1, bint use_attributes=False):
+    """Stores a numpy array of feature-specific coverage depth for the read list.
+    Populates an 11-row matrix:
+    S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
+    Additionally, records splice junction D-A pairs in dicts J_plus and J_minus"""
+    cdef:
+        Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
+        int array_length, l, r, pos
+        float weight, s_weight, e_weight, c_weight
+        (int, int) span, block
+        str junction_hash
+        dict J_plus, J_minus
+        RNAseqMapping read
+        np.ndarray depth_matrix
+    
+    Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+    array_length = rightmost - leftmost
+    depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
+    for read in read_list:
+        if use_attributes: # Check a read's attributes for different values of each type
+            weight = read.weight
+            s_weight = float(read.attributes.get('S.ppm', weight))
+            e_weight = float(read.attributes.get('E.ppm', weight))
+            c_weight = float(read.attributes.get('C.ppm', weight))
+        else:
+            weight = s_weight = e_weight = c_weight = read.weight
+        
+        if read.strand == 1:
+            covrow = covp
+            for span in read.junctions():
+                l = span[0] - leftmost
+                r = span[1] - leftmost
+                depth_matrix[Dp, l] += weight
+                depth_matrix[Ap, r] += weight
+                block = (l,r)
+                junction_hash = span_to_string(block)
+                J_plus[junction_hash] = J_plus.get(junction_hash, 0) + weight
+            
+            if read.s_tag:
+                pos = read.span[0] - leftmost
+                if read.capped:
+                    depth_matrix[Sp, pos] += c_weight * cap_bonus
+                else:
+                    depth_matrix[Sp, pos] += s_weight
+            
+            if read.e_tag:
+                pos = read.span[1] - leftmost - 1
+                depth_matrix[Ep, pos] += e_weight
+        elif read.strand == -1:
+            covrow = covm
+            for span in read.junctions():
+                l = span[0] - leftmost
+                r = span[1] - leftmost
+                depth_matrix[Am, l] += weight
+                depth_matrix[Dm, r] += weight
+                block = (l,r)
+                junction_hash = span_to_string(block)
+                J_minus[junction_hash] = J_minus.get(junction_hash, 0) + weight
+            
+            if read.e_tag:
+                pos = read.span[0] - leftmost
+                depth_matrix[Em, pos] += e_weight
+            
+            if read.s_tag:
+                pos = read.span[1] - leftmost - 1
+                if read.capped:
+                    depth_matrix[Sm, pos] += c_weight * cap_bonus
+                else:
+                    depth_matrix[Sm, pos] += s_weight
+        else: # The read has no features other than non-stranded coverage
+            covrow = covn
+        
+        for span in read.ranges:
+            l = span[0] - leftmost
+            r = span[1] - leftmost
+            depth_matrix[covrow, l:r] += weight
+        
+        return depth_matrix, J_plus, J_minus
+
+cdef str span_to_string((int, int) span):
+    """Converts a tuple of two ints to a string connected by ':'"""
+    return '{}:{}'.format(span[0], span[1])
+
+
+cdef str string_to_span(str string):
+    """Converts a string from span_to_string() back into a span"""
+    cdef list splitstring = string.split(':')
+    return (int(splitstring[0]), int(splitstring[1]))
+
+
 cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
     """Parses one line of a 12- or 15-column BED file into an ELdata namedtuple.
     Examples:
