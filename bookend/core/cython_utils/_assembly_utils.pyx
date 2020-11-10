@@ -16,12 +16,12 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
-    cdef public float weight, minimum_proportion, cap_percent, novelty_ratio, mean_read_length, intron_filter
+    cdef public float weight, minimum_proportion, cap_bonus, novelty_ratio, mean_read_length, intron_filter
     cdef public dict adj, bp_lookup, branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_percent=0.00, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.transcripts = []
         self.traceback = []
         self.bp_lookup = {}
@@ -32,7 +32,7 @@ cdef class Locus:
         self.min_overhang = min_overhang
         self.chrom = chrom
         self.novelty_ratio = novelty_ratio
-        self.cap_percent = cap_percent
+        self.cap_bonus = cap_bonus
         self.infer_starts = infer_starts
         self.infer_ends = infer_ends
         self.use_attributes = use_attributes
@@ -1186,7 +1186,7 @@ cdef class AnnotationLocus(Locus):
     cdef public bint ignore_reference_ends
     cdef public list ref_reads, high_confidence_transcripts
     cdef public int minreps, confidence
-    cdef public float total_s, total_e
+    cdef public float total_s, total_e, cap_percent
     cdef public AnnotationLocus ref_locus
     def __init__(self, chrom, chunk_number, list_of_reads, end_extend, min_overhang=0, minimum_proportion=0, cap_percent=0.1, intron_filter=0, ignore_reference_ends=True, minreps=1, confidence=-1):
         self.minreps = minreps
