@@ -17,7 +17,8 @@ cdef class Locus:
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
     cdef public float weight, minimum_proportion, cap_bonus, novelty_ratio, mean_read_length, intron_filter
-    cdef public dict adj, bp_lookup, J_plus, J_minus, branchpoints
+    cdef public dict adj, bp_lookup, J_plus, J_minus
+    cdef public set branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
@@ -80,6 +81,7 @@ cdef class Locus:
             np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
             Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
             float threshold
+            int l, r
         
         Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
         strandratio = np.full(self.depth_matrix.shape[1], 0.5, dtype=np.float32)
@@ -97,9 +99,11 @@ cdef class Locus:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
             
             end_ranges[endtype] = self.make_end_ranges(pos, vals)
-        
-        self.branchpoints = end_ranges
-
+            if endtype in [Sp, Em]:
+                self.branchpoints.update([l for l,r in end_ranges[endtype]])
+            else:
+                self.branchpoints.update([r for l,r in end_ranges[endtype]])
+    
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
@@ -166,6 +170,13 @@ cdef class Locus:
         cdef (int, int) block, span
         cdef str junction_hash
         cdef set positions = set()
+        
+        positions.update(self.branchpoints)
+        for j in self.J_plus.keys():
+            positions.update(list(self.string_to_span(j)))
+        
+        for j in self.J_minus.keys():
+            positions.update(list(self.string_to_span(j)))
         
         bp_positions = sorted(list(positions))
         temp_frags = []
