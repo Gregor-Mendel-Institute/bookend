@@ -88,7 +88,9 @@ class EndLabeler:
         for fastq_entry in self.fastq_generator:
             self.label_fastq_entry(fastq_entry)
         
-        self.outfile_single.close()
+        if self.single_out is not None:
+            self.outfile_single.close()
+        
         if self.file2 is not None:
             self.outfile1.close()
             self.outfile2.close()
