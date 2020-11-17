@@ -31,7 +31,12 @@ class EndLabeler:
         self.suppress_untrimmed = args['SUPPRESS_UNTRIMMED']
         self.out1 = args['OUT1']
         self.out2 = args['OUT2']
-        self.single_out = args['SINGLE_OUT']
+        self.pseudomates = args['PSEUDOMATES']
+        if self.pseudomates:
+            self.single_out = None
+        else:
+            self.single_out = args['SINGLE_OUT']
+        
         self.mm_rate = args['MM_RATE']
         self.labeldict = Counter()
         self.open_input_files()
@@ -66,7 +71,9 @@ class EndLabeler:
         self.S3array = fu.nuc_to_int(self.S3string, 'J'*len(self.S3string))
         self.E5array = fu.nuc_to_int(self.E5string, 'J'*len(self.E5string))
         self.E3array = fu.nuc_to_int(self.E3string, 'J'*len(self.E3string))
-        self.outfile_single=open(self.single_out,'w')
+        if self.single_out is not None:
+            self.outfile_single=open(self.single_out,'w')
+        
         if self.file2 is None: # Single-end input
             self.out1 = self.outfile1 = self.out2 = self.outfile2 =  None
         else: # Paired-end input
@@ -121,6 +128,7 @@ class EndLabeler:
         options_string += "  Trimmed length min (--minlen):     {}\n".format(self.minlen)
         options_string += "  Min avg. phred score (--minqual):  {}\n".format(self.minqual)
         options_string += "  Phred to mask as N (--qualmask):   {}\n".format(self.qualmask)
+        options_string += "  Write pseudomates (--pseudomates): {}\n".format(self.pseudomates)
         return options_string
 
     def display_trim(self, mate1, mate2, trim1, trim2, label):
@@ -227,7 +235,12 @@ class EndLabeler:
                             if fu.is_homopolymer(trim1):
                                 self.labeldict['XQ'] += 1
                             else:
-                                self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                if self.pseudomates:
+                                    self.outfile1.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                    self.outfile2.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, fu.rc(trim1), file1_read[2], qtrm1[::-1]))
+                                else:
+                                    self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                
                                 self.labeldict[label] += 1
                         else:
                             self.labeldict['XL'] += 1

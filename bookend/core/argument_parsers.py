@@ -163,6 +163,7 @@ end_label_parser.add_argument('--min_start', dest='MIN_START', type=int, default
 end_label_parser.add_argument('--min_end', dest='MIN_END', type=int, default=9, help="Minimum number of nucleotides that must match to the end adapter sequence.")
 end_label_parser.add_argument('--suppress_untrimmed', dest='SUPPRESS_UNTRIMMED', default=False, action='store_true', help="If no trimming occurred, do not write the read to output.")
 end_label_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display each trimming result on stdout.")
+end_label_parser.add_argument('--pseudomates', dest='PSEUDOMATES', default=False, action='store_true', help="Write single reads to --out1 with an artificial reverse complement mate pair in --out2 (overrides --single_out)")
 end_label_parser.add_argument('--minlen', dest='MINLEN', type=int, default=16, help="Minimum sequence length to keep.")
 end_label_parser.add_argument('--mismatch_rate', dest='MM_RATE', type=float, default=.06, help="Highest allow proportion of mismatches.")
 end_label_parser.add_argument('--qualmask', dest='QUALMASK', type=float, default=16, help="Ignores any basecalls with phred score < this, treats base as N.")
