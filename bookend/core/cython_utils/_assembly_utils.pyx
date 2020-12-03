@@ -11,23 +11,25 @@ import cython
 import time
 
 cdef class EndRange:
-    cdef public str endtype
+    cdef public int endtype
     cdef public int left, right, peak, terminal, strand
     cdef public float weight
+    cdef public str tag
     """Represents a reference point for a Start or End site."""
-    def __init__(self, left, right, peak, weight, endtype, strand):
-        self.left, self.right, self.peak, self.weight, self.endtype, self.strand = left, right, peak, weight, endtype, strand
-        if (self.endtype == 'S' and self.strand == 1) or (self.endtype == 'E' and self.strand == -1):
+    def __init__(self, left, right, peak, weight, endtype):
+        self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
+        self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
+        if self.endtype in [0, 3]:
             self.terminal = left
         else:
             self.terminal = right
     
     def __repr__(self):
         strand = ['.','+','-'][self.strand]
-        return '{}{}{} ({})'.format(self.endtype, strand, self.peak, self.weight)
+        return '{}{}{} ({})'.format(self.tag, strand, self.peak, self.weight)
     
     def write_as_bed(self, chrom):
-        print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, min(self.first,self.last), max(self.first,self.last), self.endtype, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
+        print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
@@ -99,7 +101,7 @@ cdef class Locus:
             np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
             Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
             float threshold_depth
-            int l, r, pos
+            int l, r, p
             EndRange rng
             set prohibited_positions
         
@@ -120,7 +122,7 @@ cdef class Locus:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
-            self.branchpoints.update([rng.last for rng in self.end_ranges[endtype]])
+            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         for j in self.J_plus.keys():
             self.branchpoints.update(list(self.string_to_span(j)))
@@ -129,8 +131,8 @@ cdef class Locus:
             self.branchpoints.update(list(self.string_to_span(j)))
 
         prohibited_positions = set()
-        for pos in self.branchpoints:
-            prohibited_positions.update(range(pos-self.min_overhang, pos+self.min_overhang+1))
+        for p in self.branchpoints:
+            prohibited_positions.update(range(p-self.min_overhang, p+self.min_overhang+1))
         
         threshold_depth = np.max(self.depth)*self.minimum_proportion
         gaps = get_gaps(self.depth, self.extend, max(threshold_depth,1))
@@ -142,7 +144,7 @@ cdef class Locus:
             if r not in prohibited_positions:
                 self.branchpoints.add(r)
     
-    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, str endtype):
+    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
@@ -166,23 +168,27 @@ cdef class Locus:
             cumulative += vals[value_order[i]]
             i += 1
         
-        filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]]))
+        filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
         p,v = filtered_pos[0]
         maxv = v
         maxp = p
         weight = v
-        current_range = (p, p)
+        current_range = (p, p+1)
         end_ranges = []
         for p,v in filtered_pos[1:]:
-            if p - self.end_extend <= ranges[-1][1]:
-                current_range = (current_range[0], p)
+            if p - self.end_extend <= current_range[1]:
+                current_range = (current_range[0], p+1)
                 weight += v
                 if v > maxv:
                     maxv, maxp = v, p
             else:
                 end_ranges.append(EndRange(current_range[0], current_range[1], maxp, weight, endtype))
-                current_range = (p, p)
+                current_range = (p, p+1)
+                maxp = p
+                maxv = v
+                weight = v
         
+        end_ranges.append(EndRange(current_range[0], current_range[1], maxp, weight, endtype))
         return end_ranges
     
     cdef int end_of_cluster(self, int pos, list end_ranges):
@@ -190,7 +196,7 @@ cdef class Locus:
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
         for rng in end_ranges:
-            if pos in rng.range:
+            if pos >= rng.left and pos < rng.right:
                 return rng.terminal
         
         return -1
@@ -199,7 +205,7 @@ cdef class Locus:
         """Converts a tuple of two ints to a string connected by ':'"""
         return '{}:{}'.format(span[0], span[1])
     
-    cdef str string_to_span(self, str string):
+    cdef (int, int) string_to_span(self, str string):
         """Converts a string from span_to_string() back into a span"""
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
@@ -733,8 +739,7 @@ cdef class Locus:
         cdef:
             int first, last, s_pos, e_pos
             dict S_info, E_info, SBP, EBP
-            int 
-
+        
         for T in self.transcripts:
             T.attributes['length'] = T.get_length()
             T.attributes['reads'] = round(T.weight, 2)

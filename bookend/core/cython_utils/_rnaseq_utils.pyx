@@ -1205,7 +1205,7 @@ cpdef dict get_source_dict(list list_of_reads):
         set sources
         dict source_lookup
     
-    sources = set(read.source for read in list_of_reads])
+    sources = set([read.source for read in list_of_reads])
     source_lookup = dict(zip(sources, range(len(sources))))
     return source_lookup
 
@@ -1294,7 +1294,7 @@ cdef str span_to_string((int, int) span):
     return '{}:{}'.format(span[0], span[1])
 
 
-cdef str string_to_span(str string):
+cdef (int, int) string_to_span(str string):
     """Converts a string from span_to_string() back into a span"""
     cdef list splitstring = string.split(':')
     return (int(splitstring[0]), int(splitstring[1]))
