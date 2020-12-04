@@ -22,7 +22,7 @@ cdef class EndRange:
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
-            self.terminal = right
+            self.terminal = right-1
     
     def __repr__(self):
         strand = ['.','+','-'][self.strand]
@@ -158,7 +158,7 @@ cdef class Locus:
         if len(pos) == 0:
             return []
         elif len(pos) == 1:
-            return [EndRange(pos[0], pos[0], pos[0], vals[0], endtype)]
+            return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
         value_order = np.argsort(-vals)
         threshold = (1 - self.minimum_proportion) * np.sum(vals)
