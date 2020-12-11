@@ -172,7 +172,7 @@ cdef class ElementGraph:
                 if e.index in compatible:
                     compatible.difference_update(e.excludes)
             
-            reads_gained = sum([edge_dict[c]['available'] for c in compatible])
+            reads_gained = sum([sum(edge_dict[c]['available']) for c in compatible])
             length_gained = max(edge_dict[i]['length'], min_gained)
             info_gained = 1
             # info_gained = edge_dict[i]['newinfo']
