@@ -22,7 +22,7 @@ cdef class EndRange:
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
-            self.terminal = right-1
+            self.terminal = right
     
     def __repr__(self):
         strand = ['.','+','-'][self.strand]
@@ -196,7 +196,7 @@ cdef class Locus:
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
         for rng in end_ranges:
-            if pos >= rng.left and pos < rng.right:
+            if pos >= rng.left and pos <= rng.right:
                 return rng.terminal
         
         return -1
