@@ -42,7 +42,7 @@ cdef class ElementGraph:
                     if i != path.index:
                         path.includes.add(i)
                         part = self.elements[i]
-                        path.weight += self.available_reads(path, part)
+                        path.weights += self.available_reads(path, part)
                         part.assigned_to.append(path_index)
                         self.assignments[i] += 1
                         part.update()
@@ -62,7 +62,7 @@ cdef class ElementGraph:
         cdef float threshold, total_reads_assigned
         cdef Element path
         
-        total_reads_assigned = sum([path.weight for path in self.paths])
+        total_reads_assigned = sum([path.weights for path in self.paths])
         path = self.find_optimal_path(mean_read_length, naive)
         if path is self.emptyPath:
             return
@@ -81,14 +81,14 @@ cdef class ElementGraph:
         calculate how much coverage is actually available to the path."""
         # Get the total cov of all already assigned paths
         if len(part.assigned_to) == 0: # No competition, all reads are available
-            return part.weight
+            return part.weights
         
         cdef float assigned_cov = path.cov
         for i in part.assigned_to:
             assigned_cov += self.paths[i].cov
         
         proportion = path.cov / assigned_cov
-        return proportion * part.weight
+        return proportion * part.weights
     
     cpdef int max_info_gained(self, Element fromElement, Element throughElement):
         """Returns the amount of unique information in the throughElement."""
@@ -106,7 +106,7 @@ cdef class ElementGraph:
         if num_competitors > 0:
             if naive:
                 # NAIVE: Remove an equal amount or reads from each competitor
-                partial_proportion = proportion*e.weight/num_competitors
+                partial_proportion = proportion*e.weights/num_competitors
                 for i in range(num_competitors):
                     self.paths[e.assigned_to[i]].reads -= partial_proportion
             else:
@@ -114,9 +114,9 @@ cdef class ElementGraph:
                 competitor_cov = [self.elements[i].cov for i in e.assigned_to]
                 total_cov = sum(competitor_cov)
                 competitor_proportion = [c/total_cov for c in competitor_cov]
-                reads_to_remove = e.weight*proportion
+                reads_to_remove = e.weights*proportion
                 for i in range(num_competitors):
-                    self.paths[e.assigned_to[i]].weight -= reads_to_remove*competitor_proportion[i]
+                    self.paths[e.assigned_to[i]].weights -= reads_to_remove*competitor_proportion[i]
     
     cpdef void add_edge_to_path(self, Element path, dict edge, bint naive):
         """Merges the proper 
@@ -210,7 +210,7 @@ cdef class ElementGraph:
     cpdef dict make_edge(self, Element path, Element e):
         return {
             'element':e,
-            'total':e.weight, 
+            'total':e.weights, 
             'available':self.available_reads(path, e), 
             'length':e.uniqueLength(path),
             'newinfo':e.uniqueInformation(path)
@@ -329,7 +329,7 @@ cdef class ElementGraph:
                         if e.compatible(currentPath):
                             edge = {
                                 'element':e,
-                                'total':e.weight, 
+                                'total':e.weights, 
                                 'available':self.available_reads(currentPath, e), 
                                 'length':e.uniqueLength(currentPath)
                             }
@@ -635,7 +635,7 @@ cdef class Element:
         if self.strand == 0:
             self.strand = other.strand
         
-        self.weight += other.weight * proportion
+        self.weights += other.weights * proportion
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
