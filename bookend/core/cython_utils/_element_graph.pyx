@@ -26,7 +26,7 @@ cdef class ElementGraph:
         self.novelty_ratio = novelty_ratio
         self.number_of_elements = overlap_matrix.shape[0]
         self.elements = [Element(
-            i, weights[i], strands[i],
+            i, weights[i,:], strands[i],
             membership_matrix, overlap_matrix, lengths
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
@@ -42,7 +42,7 @@ cdef class ElementGraph:
                     if i != path.index:
                         path.includes.add(i)
                         part = self.elements[i]
-                        path.reads += self.available_reads(path, part)
+                        path.weight += self.available_reads(path, part)
                         part.assigned_to.append(path_index)
                         self.assignments[i] += 1
                         part.update()
@@ -62,7 +62,7 @@ cdef class ElementGraph:
         cdef float threshold, total_reads_assigned
         cdef Element path
         
-        total_reads_assigned = sum([path.reads for path in self.paths])
+        total_reads_assigned = sum([path.weight for path in self.paths])
         path = self.find_optimal_path(mean_read_length, naive)
         if path is self.emptyPath:
             return
@@ -76,19 +76,19 @@ cdef class ElementGraph:
             else:
                 total_reads_assigned += self.add_path(path)
 
-    cpdef float available_reads(self, Element path, Element part):
+    cpdef np.ndarray available_reads(self, Element path, Element part):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
         # Get the total cov of all already assigned paths
         if len(part.assigned_to) == 0: # No competition, all reads are available
-            return part.reads
+            return part.weight
         
         cdef float assigned_cov = path.cov
         for i in part.assigned_to:
             assigned_cov += self.paths[i].cov
         
         proportion = path.cov / assigned_cov
-        return proportion * part.reads
+        return proportion * part.weight
     
     cpdef int max_info_gained(self, Element fromElement, Element throughElement):
         """Returns the amount of unique information in the throughElement."""
@@ -106,7 +106,7 @@ cdef class ElementGraph:
         if num_competitors > 0:
             if naive:
                 # NAIVE: Remove an equal amount or reads from each competitor
-                partial_proportion = proportion*e.reads/num_competitors
+                partial_proportion = proportion*e.weight/num_competitors
                 for i in range(num_competitors):
                     self.paths[e.assigned_to[i]].reads -= partial_proportion
             else:
@@ -114,14 +114,14 @@ cdef class ElementGraph:
                 competitor_cov = [self.elements[i].cov for i in e.assigned_to]
                 total_cov = sum(competitor_cov)
                 competitor_proportion = [c/total_cov for c in competitor_cov]
-                reads_to_remove = e.reads*proportion
+                reads_to_remove = e.weight*proportion
                 for i in range(num_competitors):
-                    self.paths[e.assigned_to[i]].reads -= reads_to_remove*competitor_proportion[i]
+                    self.paths[e.assigned_to[i]].weight -= reads_to_remove*competitor_proportion[i]
     
     cpdef void add_edge_to_path(self, Element path, dict edge, bint naive):
         """Merges the proper 
         """
-        cdef float proportion = edge['available'] / edge['total']
+        cdef float proportion = sum(edge['available']) / sum(edge['total'])
         path.merge(edge['element'], proportion)
         self.take_from_competitors(edge['element'], proportion, naive)  
 
@@ -210,7 +210,7 @@ cdef class ElementGraph:
     cpdef dict make_edge(self, Element path, Element e):
         return {
             'element':e,
-            'total':e.reads, 
+            'total':e.weight, 
             'available':self.available_reads(path, e), 
             'length':e.uniqueLength(path),
             'newinfo':e.uniqueInformation(path)
@@ -329,7 +329,7 @@ cdef class ElementGraph:
                         if e.compatible(currentPath):
                             edge = {
                                 'element':e,
-                                'total':e.reads, 
+                                'total':e.weight, 
                                 'available':self.available_reads(currentPath, e), 
                                 'length':e.uniqueLength(currentPath)
                             }
@@ -390,11 +390,11 @@ cdef class Element:
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
     cdef public list assigned_to
     cdef public char strand
-    cdef public float cov, reads, coverage
+    cdef public float cov, coverage
     cdef public set members, nonmembers, ingroup, outgroup, excludes, includes, end_indices
-    cdef public np.ndarray frag_len
+    cdef public np.ndarray frag_len, weights
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
-    def __init__(self, int index, float reads, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len):
+    def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len):
         cdef Py_ssize_t i
         cdef char m, overOut, overIn
         self.is_spliced = False
@@ -402,7 +402,7 @@ cdef class Element:
         self.frag_len = frag_len
         self.number_of_elements = overlap.shape[0]
         self.includes = set([self.index])
-        self.reads = reads
+        self.weights = weights
         self.strand = strand
         self.length = 0
         self.coverage = -1
@@ -461,7 +461,7 @@ cdef class Element:
 
     cpdef float mean_coverage(self, float mean_read_length):
         """Returns an estimated coverage depth per nucleotide."""
-        cdef float estimated_coverage = self.reads * mean_read_length
+        cdef float estimated_coverage = np.sum(self.weights) * mean_read_length
         return estimated_coverage / self.length
 
     cpdef str as_string(self):
@@ -515,7 +515,7 @@ cdef class Element:
             self.s_tag = self.maxIC - 2 in self.members # has + start
             self.e_tag = self.maxIC - 1 in self.members # has + end
         
-        self.cov = self.reads / (self.length * (len(self.assigned_to)+1))
+        self.cov = sum(self.weights / (self.length * (len(self.assigned_to)+1)))
         self.IC = len(self.members) + len(self.nonmembers)
         if self.IC == self.maxIC:
             self.complete = True
@@ -635,7 +635,7 @@ cdef class Element:
         if self.strand == 0:
             self.strand = other.strand
         
-        self.reads += other.reads * proportion
+        self.weight += other.weight * proportion
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
