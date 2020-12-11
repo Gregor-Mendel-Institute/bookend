@@ -1073,19 +1073,19 @@ cdef class Locus:
         # Reassign all elements of the Graph proportionally to the prior ratios.
         for i in range(priors.shape[0]):
             path = self.graph.paths[i]
-            path.reads = 0
+            path.weights = np.zeros(path.weights.shape[0])
             path.coverage = priors[i]
-
+        
         for e in self.graph.elements:
             assigned = e.assigned_to
             assigned_cov = [priors[i] for i in assigned] 
             total_assigned_cov = sum(assigned_cov)
             if total_assigned_cov > 0:
                 for i in range(len(assigned_cov)):
-                    self.graph.paths[assigned[i]].reads += e.reads*assigned_cov[i]/total_assigned_cov
+                    self.graph.paths[assigned[i]].weights += e.weights*assigned_cov[i]/total_assigned_cov
         
         # return list(priors)
-        return list([path.reads for path in self.graph.paths])
+        return list([sum(path.weights) for path in self.graph.paths])
 
     cpdef convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
