@@ -704,7 +704,7 @@ cdef class Locus:
             nonmembers = copy.copy(path.nonmembers)
             if path.strand == 1:
                 members.discard(end_indices[0]) # Remove S+
-                members.discard(end_indices[1]) # Remove E+             
+                members.discard(end_indices[1]) # Remove E+
             elif path.strand == -1:
                 members.discard(end_indices[2]) # Remove S-
                 members.discard(end_indices[3]) # Remove E-
@@ -725,10 +725,10 @@ cdef class Locus:
                         if len(nonmembers.intersection(other_path.members)) == 0:
                             if len(other_path.nonmembers.intersection(members)) == 0:
                                 # path is fully contained in other_path
-                                container_reads += other_path.reads
+                                container_reads += np.sum(other_path.weights)
             
             # After all containers are found, compare path.reads to sum of all containers
-            if path.reads < container_reads:
+            if np.sum(path.weights) < container_reads:
                 paths_to_remove.append(index)
 
         return paths_to_remove
@@ -1155,7 +1155,7 @@ cdef class Locus:
         s_tag = element.s_tag
         e_tag = element.e_tag
         capped = False
-        weight = element.reads
+        weight = np.sum(element.weights)
         elementAttributes = {}
         elementData = ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
         readObject = RNAseqMapping(elementData, elementAttributes)
