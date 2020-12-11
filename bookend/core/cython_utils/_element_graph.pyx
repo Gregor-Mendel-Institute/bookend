@@ -99,7 +99,8 @@ cdef class ElementGraph:
 
     cpdef void take_from_competitors(self, Element e, float proportion, bint naive):
         """Remove the proportion of weight from competing paths."""
-        cdef float total_cov, c, partial_proportion, reads_to_remove
+        cdef float total_cov, c, partial_proportion
+        cdef np.ndarray reads_to_remove
         cdef int i, num_competitors
         cdef list competitor_cov, competitor_proportion
         num_competitors = len(e.assigned_to)
@@ -108,7 +109,7 @@ cdef class ElementGraph:
                 # NAIVE: Remove an equal amount or reads from each competitor
                 partial_proportion = proportion*e.weights/num_competitors
                 for i in range(num_competitors):
-                    self.paths[e.assigned_to[i]].reads -= partial_proportion
+                    self.paths[e.assigned_to[i]].weights -= partial_proportion
             else:
                 # PROPORTIONAL: Each competitor is "selfish" and holds onto a proportional number of reads
                 competitor_cov = [self.elements[i].cov for i in e.assigned_to]
@@ -347,7 +348,7 @@ cdef class ElementGraph:
         # Assign each included element to the path
         for i in path.includes:
             if self.assignments[i] == 0:
-                novel_reads += self.elements[i].reads
+                novel_reads += sum(self.elements[i].weights)
             
             self.assignments[i] += 1
             self.elements[i].assigned_to.append(len(self.paths))
