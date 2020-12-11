@@ -76,7 +76,7 @@ cdef class Locus:
             # else:
             #     self.build_membership_matrix()
             #     self.denoise(verbose)
-            #     self.filter_run_on_frags()
+            #     # self.filter_run_on_frags()
             #     if self.membership.shape[0] > 0:
             #         self.build_overlap_matrix(reduce)
             #         self.build_graph(reduce)
@@ -297,19 +297,19 @@ cdef class Locus:
                             r_overhang = self.frag_by_pos[r-self.min_overhang]
                             if r_overhang != rfrag: # The left overhang is too short
                                 rfrag = r_overhang
-
+                
                 if j == 0: # Starting block
                     if s == 1 and read.s_tag: # Left position is a 5' end
                         # Sp, Ep, Sm, Em
                         tl = self.end_of_cluster(l, self.end_ranges[0])
-                        if tl > 0: # 5' end is in an EndRange
+                        if tl >= 0: # 5' end is in an EndRange
                             MEMBERSHIP[i, source_plus] = 1 # Add s+ to the membership table
                             l = tl
                             lfrag = self.frag_by_pos[l]
                             MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond source
                     elif s == -1 and read.e_tag: # Left position is a 3' end
                         tl = self.end_of_cluster(l, self.end_ranges[3])
-                        if tl > 0:
+                        if tl >= 0:
                             MEMBERSHIP[i, sink_minus] = 1 # Add t- to the membership table
                             l = tl
                             lfrag = self.frag_by_pos[l]
@@ -318,14 +318,14 @@ cdef class Locus:
                 if j == len(read.ranges)-1: # Ending block
                     if s == 1 and read.e_tag: # Right position is a 3' end
                         tr = self.end_of_cluster(r, self.end_ranges[1])
-                        if tr > 0:
+                        if tr >= 0:
                             MEMBERSHIP[i, sink_plus] = 1 # Add t+ to the membership table
                             r = tr
                             rfrag = self.frag_by_pos[r-1]
                             MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond sink
                     elif s == -1 and read.s_tag: # Right position is a 5' end
                         tr = self.end_of_cluster(r, self.end_ranges[2])
-                        if tr > 0:
+                        if tr >= 0:
                             MEMBERSHIP[i, source_minus] = 1 # Add s- to the membership table
                             r = tr
                             rfrag = self.frag_by_pos[r-1]
@@ -344,7 +344,7 @@ cdef class Locus:
                         rfrag = lfrag
                     else: # The right border was updated
                         lfrag = rfrag
-
+                
                 MEMBERSHIP[i, lfrag:(rfrag+1)] = 1 # Add all covered frags to the membership table
                 if j > 0: # Processing a downstream block
                     if read.splice[j-1]: # The gap between this block and the last was a splice junction
@@ -378,61 +378,61 @@ cdef class Locus:
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
-
-    cpdef void filter_run_on_frags(self):
-        """Iterates over frags looking for those putatively connecting the ends
-        of two transcripts together. Applies the stringent filter (intron_filter)
-        to frags with the following pairs:
-            E>E<, S<S> - converging, diverging
-            E>S>, S<E< - consecutive
-        Coverage of this frag must exceed intron_filter*coverage of the heavier side.
-        If not, membership of this frag is set to all -1's.
-        Reads that lose all their members are thrown out.
-        """
-        cdef:
-            Py_ssize_t frag_index, bp_index, number_of_frags, number_of_bps, i
-            int l, r
-            tuple valid_end_pairs
-            str end_pair
-            bint removed_a_frag
-            np.ndarray has_frag
+    
+    # cpdef void filter_run_on_frags(self):
+    #     """Iterates over frags looking for those putatively connecting the ends
+    #     of two transcripts together. Applies the stringent filter (intron_filter)
+    #     to frags with the following pairs:
+    #         E>E<, S<S> - converging, diverging
+    #         E>S>, S<E< - consecutive
+    #     Coverage of this frag must exceed intron_filter*coverage of the heavier side.
+    #     If not, membership of this frag is set to all -1's.
+    #     Reads that lose all their members are thrown out.
+    #     """
+    #     cdef:
+    #         Py_ssize_t frag_index, bp_index, number_of_frags, number_of_bps, i
+    #         int l, r
+    #         tuple valid_end_pairs
+    #         str end_pair
+    #         bint removed_a_frag
+    #         np.ndarray has_frag
         
-        removed_a_frag = False
-        #TODO: Check upstream of EVERY S and downstream of EVERY E
-        valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
-        frag_index = bp_index = 0
-        number_of_frags = len(self.frags)
-        number_of_bps = len(self.BP.branchpoints)
-        for frag_index in range(1,number_of_frags-1):
-            l, r = self.frags[frag_index]
-            lbp = self.bp_lookup[l]
-            rbp = self.bp_lookup[r]
-            end_pair = lbp.endtype
-            end_pair += '>' if lbp.strand == 1 else '<'
-            end_pair += rbp.endtype
-            end_pair += '>' if rbp.strand == 1 else '<'
-            if end_pair in valid_end_pairs:
-                ll,lr = self.frags[frag_index-1]
-                rl,rr = self.frags[frag_index+1]
-                weight_with_frag = np.mean(self.depth[l-self.leftmost:r-self.leftmost])
-                flank_left = np.mean(self.depth[ll-self.leftmost:lr-self.leftmost])
-                flank_right = np.mean(self.depth[rl-self.leftmost:rr-self.leftmost])
-                if weight_with_frag < max(flank_left, flank_right)*self.intron_filter:
-                    has_frag = np.where(self.membership[:,frag_index]==1)[0]
-                    self.membership[has_frag,:] = -1
-                    self.membership[:,frag_index] = -1
-                    removed_a_frag = True
+    #     removed_a_frag = False
+    #     #TODO: Check upstream of EVERY S and downstream of EVERY E
+    #     valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
+    #     frag_index = bp_index = 0
+    #     number_of_frags = len(self.frags)
+    #     number_of_bps = len(self.BP.branchpoints)
+    #     for frag_index in range(1,number_of_frags-1):
+    #         l, r = self.frags[frag_index]
+    #         lbp = self.bp_lookup[l]
+    #         rbp = self.bp_lookup[r]
+    #         end_pair = lbp.endtype
+    #         end_pair += '>' if lbp.strand == 1 else '<'
+    #         end_pair += rbp.endtype
+    #         end_pair += '>' if rbp.strand == 1 else '<'
+    #         if end_pair in valid_end_pairs:
+    #             ll,lr = self.frags[frag_index-1]
+    #             rl,rr = self.frags[frag_index+1]
+    #             weight_with_frag = np.mean(self.depth[l-self.leftmost:r-self.leftmost])
+    #             flank_left = np.mean(self.depth[ll-self.leftmost:lr-self.leftmost])
+    #             flank_right = np.mean(self.depth[rl-self.leftmost:rr-self.leftmost])
+    #             if weight_with_frag < max(flank_left, flank_right)*self.intron_filter:
+    #                 has_frag = np.where(self.membership[:,frag_index]==1)[0]
+    #                 self.membership[has_frag,:] = -1
+    #                 self.membership[:,frag_index] = -1
+    #                 removed_a_frag = True
         
-        if removed_a_frag:
-            keep = np.where(np.sum(self.membership==1,axis=1)>0)[0]
-            self.membership = self.membership[keep,:]
-            self.weight_array = self.weight_array[keep,:]
-            self.strand_array = self.strand_array[keep]
-            self.member_content = self.member_content[keep]
-            self.weight = np.sum(self.weight_array)
-            self.number_of_elements = self.membership.shape[0]
-            self.information_content = get_information_content(self.membership)
-            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
+    #     if removed_a_frag:
+    #         keep = np.where(np.sum(self.membership==1,axis=1)>0)[0]
+    #         self.membership = self.membership[keep,:]
+    #         self.weight_array = self.weight_array[keep,:]
+    #         self.strand_array = self.strand_array[keep]
+    #         self.member_content = self.member_content[keep]
+    #         self.weight = np.sum(self.weight_array)
+    #         self.number_of_elements = self.membership.shape[0]
+    #         self.information_content = get_information_content(self.membership)
+    #         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void denoise(self, verbose=False):
         """Examines the membership of each frag. If coverage within a frag
