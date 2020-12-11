@@ -99,8 +99,8 @@ cdef class ElementGraph:
 
     cpdef void take_from_competitors(self, Element e, float proportion, bint naive):
         """Remove the proportion of weight from competing paths."""
-        cdef float total_cov, c, partial_proportion
-        cdef np.ndarray reads_to_remove
+        cdef float total_cov, c
+        cdef np.ndarray reads_to_remove, partial_proportion
         cdef int i, num_competitors
         cdef list competitor_cov, competitor_proportion
         num_competitors = len(e.assigned_to)
