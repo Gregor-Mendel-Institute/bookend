@@ -137,8 +137,9 @@ cdef class ElementGraph:
         cdef int c, i, j, length_gained, info_gained, min_gained
         cdef list best_indices, extend_list, included_elements
         cdef dict max_extend
-        cdef float reads_gained, score, best_score, dead_end_penalty
+        cdef float score, best_score, dead_end_penalty
         cdef bint is_internal
+        cdef np.ndarray reads_gained
         dead_end_penalty = 0.1
         best_indices = []
         best_score = 0
@@ -173,7 +174,7 @@ cdef class ElementGraph:
                 if e.index in compatible:
                     compatible.difference_update(e.excludes)
             
-            reads_gained = sum([sum(edge_dict[c]['available']) for c in compatible])
+            reads_gained = sum([edge_dict[c]['available'] for c in compatible])
             length_gained = max(edge_dict[i]['length'], min_gained)
             info_gained = 1
             # info_gained = edge_dict[i]['newinfo']
@@ -181,7 +182,7 @@ cdef class ElementGraph:
                 # length_gained = round(mean_read_length)
             
             # score = info_gained * reads_gained / ((length_gained+1) * ((len(element.assigned_to)*self.novelty_ratio)+1))
-            score = reads_gained / length_gained
+            score = sum(reads_gained) / length_gained / (np.linalg.norm(element.weights - reads_gained)+.01)
             if self.is_dead_end(path, element):
                 score = score * dead_end_penalty
             
@@ -384,7 +385,12 @@ cdef class ElementGraph:
             element.assigned_to = [old_indices[a].index for a in element.assigned_to]
 
 
-###########################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
+#################################################################################################################################
 
 cdef class Element:
     """Represents a read or collection of reads in a Locus."""
