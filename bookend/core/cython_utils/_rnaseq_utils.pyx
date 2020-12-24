@@ -1171,13 +1171,21 @@ cdef parse_ELR_line(str elr_line):
     # chrom source strand ranges splice s_tag e_tag capped weight
     return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
 
-cpdef dict get_source_dict(list list_of_reads):
+cpdef list get_sources(list list_of_reads):
     cdef:
         RNAseqMapping read
         set sources
         dict source_lookup
     
-    sources = set([read.source for read in list_of_reads])
+    sources = [read.source for read in list_of_reads]
+    return sources
+
+cpdef dict get_source_dict(list list_of_sources):
+    cdef:
+        set sources
+        dict source_lookup
+    
+    sources = set(list_of_sources)
     source_lookup = dict(zip(sources, range(len(sources))))
     return source_lookup
 

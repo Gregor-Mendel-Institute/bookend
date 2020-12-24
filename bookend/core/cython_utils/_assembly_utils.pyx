@@ -40,8 +40,10 @@ cdef class Locus:
     cdef public set branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
+    cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
     def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
+        self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.transcripts = []
         self.traceback = []
         self.branchpoints = set()
@@ -58,9 +60,14 @@ cdef class Locus:
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             self.reads = tuple(list_of_reads) # Cannot be mutated
-            self.read_lengths = np.array([r.get_length() for r in self.reads])
-            self.source_lookup = ru.get_source_dict(list_of_reads)
-            self.mean_read_length = np.mean(self.read_lengths)
+            self.read_lengths = np.array([r.get_length() for r in self.reads], dtype=np.int32)
+            self.sources = ru.get_sources(list_of_reads)
+            self.source_lookup = ru.get_source_dict(self.sources)
+            self.mean_read_length = np.zeros(len(self.source_lookup), dtype=np.float32)
+            length_by_source = list(zip(self.read_lengths, self.sources))
+            for k in self.source_lookup.keys():
+                self.mean_read_length[self.source_lookup[k]] = np.mean([l for l,s in length_by_source if s==k])
+            
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
@@ -178,7 +185,7 @@ cdef class Locus:
             if p - self.end_extend <= current_range[1]:
                 current_range = (current_range[0], p+1)
                 weight += v
-                if v > maxv:
+                if v > maxv or (v == maxv and endtype in [1,2]):
                     maxv, maxp = v, p
             else:
                 end_ranges.append(EndRange(current_range[0], current_range[1], maxp, weight, endtype))
@@ -199,6 +206,16 @@ cdef class Locus:
                 return rng.terminal
         
         return -1
+    
+    cdef EndRange get_end_cluster(self, int pos, list end_ranges):
+        """Returns the most common position of the EndRange object that
+        contains pos, if one exists. Else returns -1"""
+        cdef EndRange rng
+        for rng in end_ranges:
+            if pos >= rng.left and pos <= rng.right:
+                return rng
+        
+        return self.nullRange
     
     cdef str span_to_string(self, (int, int) span):
         """Converts a tuple of two ints to a string connected by ':'"""
@@ -238,7 +255,7 @@ cdef class Locus:
             temp_frags.append(block)
         
         self.frags = tuple(temp_frags) # Immutable after init, makes a vertex between all pairs of nonterminal branchpoint positions
-        self.frag_len = np.array([b-a for a,b in self.frags]+[int(self.mean_read_length*.5)]*4, dtype=np.int32)
+        self.frag_len = np.array([b-a for a,b in self.frags]+[np.mean(self.mean_read_length*.5)]*4, dtype=np.int32)
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
         
@@ -737,7 +754,9 @@ cdef class Locus:
         to store in the GTF attributes column."""
         cdef:
             int first, last, s_pos, e_pos
-            dict S_info, E_info, SBP, EBP
+            dict S_info, E_info
+            list S_ranges, E_ranges
+            EndRange S, E
         
         for T in self.transcripts:
             T.attributes['length'] = T.get_length()
@@ -749,32 +768,21 @@ cdef class Locus:
                 if T.strand == 1:
                     s_pos = first = T.span[0]
                     e_pos = last = T.span[1]
-                    SBP = self.BP.S_plus
-                    EBP = self.BP.E_plus
+                    S_ranges = self.end_ranges[0]
+                    E_ranges = self.end_ranges[1]
                 else:
                     s_pos = first = T.span[1]
                     e_pos = last = T.span[0]
-                    SBP = self.BP.S_minus
-                    EBP = self.BP.E_minus
+                    S_ranges = self.end_ranges[2]
+                    E_ranges = self.end_ranges[3]
                 
                 if T.s_tag:
-                    if first in SBP.keys():
-                        bp = self.BP.branchpoints[SBP[first]]
-                        S_info['S.reads'] = round(bp.weight,2)
-                        S_info['S.capped'] = round(bp.capped,2)
-                        S_info['S.left'] = bp.left
-                        S_info['S.right'] = bp.right
-                    else: # The slow way: Find which branchpoint's span the end is under
-                        for bp in self.BP.branchpoints:
-                            if bp.endtype == 'S' and bp.strand == T.strand:
-                                if bp.weight > S_info['S.reads']:
-                                    if first in bp.span:
-                                        S_info['S.reads'] = round(bp.weight,2)
-                                        S_info['S.capped'] = round(bp.capped,2)
-                                        S_info['S.left'] = bp.left
-                                        S_info['S.right'] = bp.right
-                                        s_pos = bp.pos
-
+                    S = self.get_end_cluster(first, S_ranges)
+                    if S is not self.nullRange:
+                        s_pos = S.peak
+                        S_info['S.reads'] = round(S.weight, 2)
+                        S_info['S.left'] = S.left
+                        S_info['S.right'] = S.right
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[0] = (s_pos, T.ranges[0][1])
@@ -782,21 +790,12 @@ cdef class Locus:
                                 T.ranges[-1] = (T.ranges[-1][0], s_pos)
                 
                 if T.e_tag:
-                    if last in EBP.keys():
-                        bp = self.BP.branchpoints[EBP[last]]
-                        E_info['E.reads'] = round(bp.weight,2)
-                        E_info['E.left'] = bp.left
-                        E_info['E.right'] = bp.right
-                    else: # The slow way: Find which branchpoint's span the end is under
-                        for bp in self.BP.branchpoints:
-                            if bp.endtype == 'E' and bp.strand == T.strand:
-                                if bp.weight > E_info['E.reads']:
-                                    if last in bp.span:
-                                        E_info['E.reads'] = round(bp.weight,2)
-                                        E_info['E.left'] = bp.left
-                                        E_info['E.right'] = bp.right
-                                        e_pos = bp.pos
-                    
+                    E = self.get_end_cluster(last, E_ranges)
+                    if E is not self.nullRange:
+                        e_pos = E.peak
+                        E_info['E.reads'] = round(E.weight,2)
+                        E_info['E.left'] = E.left
+                        E_info['E.right'] = E.right
                         if e_pos != last: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[-1] = (T.ranges[-1][0], e_pos)
@@ -805,7 +804,7 @@ cdef class Locus:
             
             T.attributes.update(S_info)
             T.attributes.update(E_info)
-
+    
     cpdef void collapse_linear_chains(self):
         """Collapses chains of vertices connected with a single edge.
         """
@@ -1097,6 +1096,7 @@ cdef class Locus:
         cdef set nonmembers
         cdef str gene_id, transcript_id, junction_hash
         cdef dict junctions
+        cdef EndRange S, E
         gene_id = 'bookend.{}'.format(self.chunk_number)
         transcript_id = 'bookend.{}.{}'.format(self.chunk_number, transcript_number)
         members = sorted(list(element.members))
@@ -1120,11 +1120,13 @@ cdef class Locus:
                 l, r = frag
                 # Update leftmost position if it matches an S/E branchpoint
                 if element.s_tag and element.strand == 1:
-                    if l in self.BP.S_plus:
-                        l = self.BP.branchpoints[self.BP.S_plus[l]].pos
+                    S = self.get_end_cluster(l, self.end_ranges[0])
+                    if S is not self.nullRange:
+                        l = S.peak
                 elif element.e_tag and element.strand == -1:
-                    if l in self.BP.E_minus:
-                        l = self.BP.branchpoints[self.BP.E_minus[l]].pos
+                    E = self.get_end_cluster(l, self.end_ranges[3])
+                    if E is not self.nullRange:
+                        l = E.peak
             elif last_member == m-1:
                 r = frag[1]
             else: # A gap was jumped
@@ -1143,12 +1145,14 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            if r in self.BP.S_minus:
-                r = self.BP.branchpoints[self.BP.S_minus[r]].pos
+            S = self.get_end_cluster(r, self.end_ranges[2])
+            if S is not self.nullRange:
+                r = S.peak
         elif element.e_tag and element.strand == 1:
-            if r in self.BP.E_plus:
-                r = self.BP.branchpoints[self.BP.E_plus[r]].pos
-
+            E = self.get_end_cluster(r, self.end_ranges[1])
+            if E is not self.nullRange:
+                r = E.peak
+        
         exon = (l, r)
         ranges.append(exon)
         s_tag = element.s_tag
@@ -1161,7 +1165,7 @@ cdef class Locus:
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
         if element.coverage == -1:
-            readObject.coverage = element.mean_coverage(self.mean_read_length)
+            readObject.coverage = np.sum(element.mean_coverage(self.mean_read_length))
         else:
             readObject.coverage = element.coverage
         
