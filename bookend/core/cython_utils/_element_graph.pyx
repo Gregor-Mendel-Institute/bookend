@@ -12,10 +12,9 @@ inf = float('Inf')
 cdef class ElementGraph:
     cdef public list elements, paths
     cdef public np.ndarray assignments
-    cdef public float novelty_ratio
     cdef readonly int number_of_elements
     cdef Element emptyPath
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, float novelty_ratio=1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -23,7 +22,6 @@ cdef class ElementGraph:
         self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]))
         cdef Element e, path, part
         cdef int e_index, path_index, i
-        self.novelty_ratio = novelty_ratio
         self.number_of_elements = overlap_matrix.shape[0]
         self.elements = [Element(
             i, weights[i,:], strands[i],
@@ -143,7 +141,7 @@ cdef class ElementGraph:
         dead_end_penalty = 0.1
         best_indices = []
         best_score = 0
-        min_gained = max(int(mean_read_length*.5),1)
+        # min_gained = max(int(mean_read_length*.5),1)
         # Choose edges by decreasing absolute distance from path.index
         elements = [edge_dict[i]['element'] for i in edge_dict.keys()]
         #TODO: Fix decision tree for when elements are INSIDE path (filling a gap)
@@ -169,14 +167,15 @@ cdef class ElementGraph:
                 and extend_right[e.index] < extend_right[element.index] # Doesn't extend past element on the right
             ])
             compatible.difference_update(element.excludes)
-            included_elements = sorted([self.elements[c] for c in compatible], reverse=True)
-            for e in included_elements: # From heaviest to lightest, exclude all incompatibilities of included elements
+            
+            for c in sorted(list(compatible), reverse=(i == max(compatible))):
+                e = self.elements[c]
                 if e.index in compatible:
                     compatible.difference_update(e.excludes)
             
             reads_gained = sum([edge_dict[c]['available'] for c in compatible])
-            length_gained = max(edge_dict[i]['length'], min_gained)
-            info_gained = 1
+            length_gained = max(edge_dict[i]['length'], 1)
+            # info_gained = 1
             # info_gained = edge_dict[i]['newinfo']
             # if element.is_spliced and mean_read_length < length_gained:
                 # length_gained = round(mean_read_length)
@@ -272,7 +271,7 @@ cdef class ElementGraph:
             
             best_indices = []
             if len(available) == 1: # Only one option, do not evaluate
-                i = list(available)[0]
+                i = available.pop()
                 e = self.elements[i]
                 edge = self.make_edge(currentPath, e)
                 self.add_edge_to_path(currentPath, edge, naive)
@@ -404,24 +403,24 @@ cdef class Element:
     def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len):
         cdef Py_ssize_t i
         cdef char m, overOut, overIn
-        self.is_spliced = False
-        self.index = self.left = self.right = index
-        self.frag_len = frag_len
-        self.number_of_elements = overlap.shape[0]
-        self.includes = set([self.index])
-        self.weights = weights
-        self.strand = strand
-        self.length = 0
-        self.coverage = -1
-        self.assigned_to = []
-        self.complete = False
-        self.has_gaps = False
-        self.members = set()
-        self.nonmembers = set()
-        self.ingroup = set()
-        self.outgroup = set()
-        self.excludes = set()
-        if index == -1: # Special Element emptyPath: placeholder for null values
+        self.is_spliced = False                       # Default: the path has no discontinuities
+        self.index = self.left = self.right = index   # Initialize left, right, and index
+        self.number_of_elements = overlap.shape[0]    # Total number of nodes in the graph
+        self.frag_len = frag_len                      # Length of the fragment is provided
+        self.includes = set([self.index])             # Which Elements are part of this Element
+        self.excludes = set()                         # Which Elements are incompatible with this Element
+        self.weights = weights                        # Array of read counts per Source
+        self.strand = strand                          # +1, -1, or 0 to indicate strand of path
+        self.length = 0                               # Number of nucleotides in the path
+        self.coverage = -1                            # Estimated read depth per nucleotide
+        self.assigned_to = []                         # List of Path indices this Element is a part of
+        self.complete = False                         # Represents an entire end-to-end transcript
+        self.has_gaps = False                         # Is missing information
+        self.members = set()                          # Set of Member indices contained in this Element
+        self.nonmembers = set()                       # Set of Members indices incompatible with this Element
+        self.ingroup = set()                          # Set of compatible upstream Elements
+        self.outgroup = set()                         # Set of Compatible downstream Elements
+        if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
             self.maxIC = 0
             self.end_indices = set()
@@ -466,9 +465,9 @@ cdef class Element:
         
         return '|{}| {}-{} ({})'.format(''.join(chars),self.left,self.right,strand)
 
-    cpdef float mean_coverage(self, float mean_read_length):
+    cpdef float mean_coverage(self, np.ndarray mean_read_length):
         """Returns an estimated coverage depth per nucleotide."""
-        cdef float estimated_coverage = np.sum(self.weights) * mean_read_length
+        cdef float estimated_coverage = np.sum(self.weights * mean_read_length)
         return estimated_coverage / self.length
 
     cpdef str as_string(self):
@@ -522,7 +521,7 @@ cdef class Element:
             self.s_tag = self.maxIC - 2 in self.members # has + start
             self.e_tag = self.maxIC - 1 in self.members # has + end
         
-        self.cov = sum(self.weights / (self.length * (len(self.assigned_to)+1)))
+        self.cov = sum(self.weights) / (self.length * (len(self.assigned_to)+1))
         self.IC = len(self.members) + len(self.nonmembers)
         if self.IC == self.maxIC:
             self.complete = True

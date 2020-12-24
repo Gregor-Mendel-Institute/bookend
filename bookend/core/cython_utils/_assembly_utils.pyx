@@ -35,13 +35,13 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
-    cdef public float weight, minimum_proportion, cap_bonus, novelty_ratio, mean_read_length, intron_filter
+    cdef public float weight, minimum_proportion, cap_bonus, intron_filter
     cdef public dict adj, J_plus, J_minus, end_ranges, source_lookup
     cdef public set branchpoints
     cdef public list transcripts, traceback
     cdef public object BP, graph
-    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, novelty_ratio=1, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
+    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.transcripts = []
         self.traceback = []
         self.branchpoints = set()
@@ -51,7 +51,6 @@ cdef class Locus:
         self.intron_filter = intron_filter
         self.min_overhang = min_overhang
         self.chrom = chrom
-        self.novelty_ratio = novelty_ratio
         self.cap_bonus = cap_bonus
         self.infer_starts = infer_starts
         self.infer_ends = infer_ends
@@ -585,7 +584,7 @@ cdef class Locus:
                 updated = self.prune_unreachable_edges()
                 self.collapse_linear_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len, self.novelty_ratio)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len)
 
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         self.graph.assemble(self.minimum_proportion, self.weight, self.mean_read_length, self.naive)

@@ -41,7 +41,7 @@ class EndLabeler:
         self.labeldict = Counter()
         self.open_input_files()
        
-        self.s_label = '' if args['START'] == 'none' else args['START']
+        self.s_label = '' if args['START'].lower() == 'none' else args['START']
         self.S5string = self.s_label
         if len(self.S5string) > 1:
             if self.S5string[-1] == '+': # 3'-terminal monomer is specified
