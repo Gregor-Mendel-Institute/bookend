@@ -4,7 +4,6 @@ import array
 from cpython cimport array
 import numpy as np
 cimport numpy as np
-import json
 import bookend.core.cython_utils._fasta_utils as fu
 from collections import namedtuple, Counter
 from ast import literal_eval
@@ -411,33 +410,6 @@ cdef class RNAseqMapping():
         elif format == 'gff':
             return ' '.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
 
-    def write_as_json(self, chrom_array=None, source_array=None):
-        """Returns a string that represents the ReadObject
-        in a JSON format"""
-        if chrom_array is None:
-            chrom = self.chrom
-        else:
-            chrom = chrom_array[self.chrom]
-        
-        if source_array is None:
-            source = self.source
-        else:
-            source = source_array[self.source]
-        
-        json_line = f'{{ \
-        "chrom": {json.dumps(chrom)}, \
-        "strand": {json.dumps(self.strand)} \
-        "span": {json.dumps(self.span)}\
-        "ranges": {json.dumps(self.ranges)}\
-        "splice": {json.dumps(self.splice)}\
-        "s_tag": {json.dumps(self.s_tag)}\
-        "e_tag": {json.dumps(self.e_tag)}\
-        "capped": {json.dumps(self.capped)}\
-        "weight": {json.dumps(self.weight)}\
-        "source": {json.dumps(source)}\
-        }};'
-        
-        return json_line
 
 ############################################################
 # Object for defining a collection of RNA sequencing reads #
