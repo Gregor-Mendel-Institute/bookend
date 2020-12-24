@@ -38,7 +38,7 @@ cdef class Locus:
     cdef public float weight, minimum_proportion, cap_bonus, intron_filter
     cdef public dict adj, J_plus, J_minus, end_ranges, source_lookup
     cdef public set branchpoints
-    cdef public list transcripts, traceback
+    cdef public list transcripts, traceback, sources
     cdef public object BP, graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
