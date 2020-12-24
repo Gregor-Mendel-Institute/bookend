@@ -5,7 +5,7 @@ import re
 import copy
 import json
 from bookend.core.cython_utils._element_graph import ElementGraph
-from bookend.core.cython_utils._rnaseq_utils import RNAseqMapping, ELdata, range_of_reads, get_gaps, get_source_dict, build_depth_matrix
+import bookend.core.cython_utils._rnaseq_utils as ru # RNAseqMapping, ELdata, range_of_reads, get_gaps, get_source_dict, build_depth_matrix
 from collections import deque, Counter
 import cython
 import time
@@ -56,15 +56,15 @@ cdef class Locus:
         self.infer_ends = infer_ends
         self.use_attributes = use_attributes
         if len(list_of_reads) > 0:
-            self.leftmost, self.rightmost = range_of_reads(list_of_reads)
+            self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             self.reads = tuple(list_of_reads) # Cannot be mutated
             self.read_lengths = np.array([r.get_length() for r in self.reads])
-            self.source_lookup = get_source_dict(list_of_reads)
+            self.source_lookup = ru.get_source_dict(list_of_reads)
             self.mean_read_length = np.mean(self.read_lengths)
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
-            self.depth_matrix, self.J_plus, self.J_minus = build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
+            self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             self.generate_branchpoints()
             # if type(self) is AnnotationLocus:
             #     self.traceback = [set([i]) for i in range(len(self.reads))]
@@ -134,7 +134,7 @@ cdef class Locus:
             prohibited_positions.update(range(p-self.min_overhang, p+self.min_overhang+1))
         
         threshold_depth = np.max(self.depth)*self.minimum_proportion
-        gaps = get_gaps(self.depth, self.extend, max(threshold_depth,1))
+        gaps = ru.get_gaps(self.depth, self.extend, max(threshold_depth,1))
         for block in gaps: 
             l, r = block[0]+self.leftmost, block[1]+self.leftmost
             if l not in prohibited_positions:
@@ -1156,8 +1156,8 @@ cdef class Locus:
         capped = False
         weight = np.sum(element.weights)
         elementAttributes = {}
-        elementData = ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
-        readObject = RNAseqMapping(elementData, elementAttributes)
+        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+        readObject = ru.RNAseqMapping(elementData, elementAttributes)
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
         if element.coverage == -1:
@@ -1408,8 +1408,8 @@ cdef class AnnotationLocus(Locus):
         
         ranges.append(current_frag)
         splice = [True] * (len(ranges)-1)
-        elementData = ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
-        readObject = RNAseqMapping(elementData, elementAttributes)
+        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+        readObject = ru.RNAseqMapping(elementData, elementAttributes)
         return readObject
     
     cpdef int matching_ref(self, read):
