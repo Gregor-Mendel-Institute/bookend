@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources
     cdef public object BP, graph
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
     def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.transcripts = []
@@ -96,7 +96,8 @@ cdef class Locus:
         for l in range(self.number_of_elements):
             members = ''.join([symbols[i] for i in self.membership[l,:]])
             overlap = ''.join([symbols[i] for i in self.overlap[l,:]])
-            summary_string += '  |{}|\t|{}|\n'.format(members, overlap)
+            indices = str(l) + (' ' if l < 100 else '') + (' ' if l < 10 else '')
+            summary_string += '{} |{}|\t|{}|\n'.format(indices, members, overlap)
         
         return summary_string
 
@@ -258,6 +259,7 @@ cdef class Locus:
         self.frag_len = np.array([b-a for a,b in self.frags]+[np.mean(self.mean_read_length*.5)]*4, dtype=np.int32)
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
+        self.member_lengths = np.zeros(shape=len(self.reads), dtype=np.int32)
         
         for i in range(len(self.frags)):
             if i == 0:
@@ -284,7 +286,6 @@ cdef class Locus:
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             last_rfrag = 0
             read = self.reads[i]
-            weight_array[i, self.source_lookup[read.source]] += read.weight
             s = read.strand
             strand_array[i] = s
             if s == 1:
@@ -330,7 +331,7 @@ cdef class Locus:
                             l = tl
                             lfrag = self.frag_by_pos[l]
                             MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond sink
-
+                
                 if j == len(read.ranges)-1: # Ending block
                     if s == 1 and read.e_tag: # Right position is a 3' end
                         tr = self.end_of_cluster(r, self.end_ranges[1])
@@ -346,7 +347,7 @@ cdef class Locus:
                             r = tr
                             rfrag = self.frag_by_pos[r-1]
                             MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
-
+                
                 if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
                     if len(read.ranges) > 1:
                         if j == 0 and read.splice[j]: # The right border is a splice junction, structural violation
@@ -376,9 +377,13 @@ cdef class Locus:
                             break
                         
                         MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-
+                
                 last_rfrag = rfrag
-
+            
+            # WEIGHT: partial coverage of the representative MEMBER by the current READ
+            self.member_lengths[i] = np.sum(self.frag_len[self.membership[i,:]==1])
+            weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
+        
         if threshold > 0:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
@@ -507,7 +512,7 @@ cdef class Locus:
         """Given a matrix of membership values, 
         returns a [reduced_membership_matrix, weights] array
         such that all rows are unique and in sort order."""
-        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool
+        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool, new_lengths
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
         cdef Py_ssize_t i,v
@@ -515,6 +520,7 @@ cdef class Locus:
         new_weights = np.zeros(shape=(reduced_membership.shape[0], self.weight_array.shape[1]), dtype=np.float32)
         new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
         new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
+        new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
         
         if type(self) is AnnotationLocus:
             new_traceback = []
@@ -528,7 +534,8 @@ cdef class Locus:
             new_weights[v] += self.weight_array[i]
             new_strands[v] = self.strand_array[i]
             new_reps[v] += self.rep_array[i]
-
+            new_lengths[v] += self.member_lengths[i]
+        
         members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
         number_of_members = np.sum(members_bool[:,2:-2],axis=1)
         left_member = np.argmax(members_bool, axis=1).tolist()
@@ -537,6 +544,7 @@ cdef class Locus:
         sort_triples = sorted(list(zip(left_member, right_member, index)))
         sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
         self.membership = reduced_membership[sorted_indices,:]
+        self.member_lengths = new_lengths[sorted_indices,:]
         self.weight_array = new_weights[sorted_indices,:]
         self.strand_array = new_strands[sorted_indices]
         self.rep_array = new_reps[sorted_indices]
@@ -571,7 +579,7 @@ cdef class Locus:
         
         if reduce:
             maxIC = self.membership.shape[1]
-            new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, maxIC)
+            new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC)
             keep = np.where(np.sum(new_weights, axis=1) > 0.1)[0]
             self.number_of_elements = len(keep)
             self.overlap = self.overlap[keep,:][:,keep]
@@ -1630,16 +1638,16 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, int maxIC):
+cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC):
     """Given a overlap matrix, 'bubble up' the weight of
     all reads that have one or more 'contained by' relationships
     to other reads. Pass from highest complexity reads down, assigning
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, containers, incompatible_with_containers, incompatible_with_i, incompatible
-        Py_ssize_t full_path, i
-        float incompatible_weight, total
+        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero
+        Py_ssize_t full_path, i, n
+        float incompatible_weight, total, weight, weight_transform
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
@@ -1651,31 +1659,27 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     new_weights = np.copy(read_weights)
     for i in IC_order:
         containers = np.where(containment[i,:])[0]
-        
         # Get the set of reads incompatible with all containers but that do not exclude i
-        incompatible_with_containers = overlap_matrix[:,containers]==-1
-        incompatible_with_i = np.where(overlap_matrix[i,:]==-1)[0]
-        incompatible_with_containers[incompatible_with_i,:] = False
-        incompatible = np.where(np.all(incompatible_with_containers,axis=1))[0]
-
+        incompatible_with_containers =  np.where(np.all(overlap_matrix[:,containers]==-1, axis=1))[0]
+        incompatible = incompatible_with_containers[overlap_matrix[i, incompatible_with_containers] >= 0]
         # Calculate the proportion of i to merge into i's containers and the proportion to separate
-        if len(incompatible) > 0:
-            incompatible_weight = np.sum(new_weights[incompatible])
-            # print("[{}] {} is incompatible with containers {}".format(i, incompatible, containers))
-        else:
-            incompatible_weight = 0
+        incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
+        nonzero = np.where(new_weights[i,:] > 0)[0]
+        weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
+        weight_transform = member_lengths[i]/member_lengths[containers]
+        for n in nonzero: # Each source that has reads of i is evaluated separately
+            container_weights = new_weights[containers,:][:,n]
+            total = np.sum(container_weights) + incompatible_weight[n]
+            weight = new_weights[i,n]
+            if total > 0:
+                weight_to_add[:,n] += (weight * container_weights / total) * weight_transform
+                new_weights[i,n] *= (incompatible_weight[n] / total) # Residual weight
         
-        adjusted_weights = new_weights[containers,:]
-        total = np.sum(adjusted_weights) + incompatible_weight
-        new_weights[containers,:] += (new_weights[i,:] / total) * adjusted_weights
-        if incompatible_weight == 0:
-            new_weights[i,:] = 0
+        new_weights[containers,:] += weight_to_add
+        if sum(incompatible_weight) == 0:
             containment[:,i] = False
-        else:
-            new_weights[i,:] = incompatible_weight/total * new_weights[i,:]
-
+    
     return new_weights
-
 
 cpdef set dictBFS(dict adjacency, source):
     """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
