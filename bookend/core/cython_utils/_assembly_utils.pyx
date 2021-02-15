@@ -1645,9 +1645,9 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero
+        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero, incompatible_weight
         Py_ssize_t full_path, i, n
-        float incompatible_weight, total, weight, weight_transform
+        float total, weight, weight_transform
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
