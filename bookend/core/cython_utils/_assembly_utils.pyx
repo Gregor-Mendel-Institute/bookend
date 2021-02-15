@@ -544,8 +544,8 @@ cdef class Locus:
         sort_triples = sorted(list(zip(left_member, right_member, index)))
         sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
         self.membership = reduced_membership[sorted_indices,:]
-        self.member_lengths = new_lengths[sorted_indices,:]
         self.weight_array = new_weights[sorted_indices,:]
+        self.member_lengths = new_lengths[sorted_indices]
         self.strand_array = new_strands[sorted_indices]
         self.rep_array = new_reps[sorted_indices]
         if len(self.traceback) > 0:
@@ -1645,9 +1645,9 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero, incompatible_weight
+        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero, incompatible_weight, weight_transform
         Py_ssize_t full_path, i, n
-        float total, weight, weight_transform
+        float total, weight
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
