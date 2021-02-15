@@ -381,7 +381,7 @@ cdef class Locus:
                 last_rfrag = rfrag
             
             # WEIGHT: partial coverage of the representative MEMBER by the current READ
-            self.member_lengths[i] = np.sum(self.frag_len[self.membership[i,:]==1])
+            self.member_lengths[i] = np.sum(self.frag_len[MEMBERSHIP[i,:]==1])
             weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
         if threshold > 0:
