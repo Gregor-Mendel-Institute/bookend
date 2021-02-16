@@ -589,6 +589,7 @@ cdef class Locus:
             self.strand_array = self.strand_array[keep]
             self.information_content = self.information_content[keep]
             self.member_content = self.member_content[keep]
+            self.member_lengths = self.member_lengths[keep]
             if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     def build_graph(self, reduce=True):
@@ -596,12 +597,7 @@ cdef class Locus:
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
-        cdef:
-            int i
-            char old_strand, new_strand
-            list reassigned_coverage
-            np.ndarray updated
-            float total_coverage
+        cdef np.ndarray updated
         
         if reduce: # Collapse linear chains prior to graph construction
             updated = np.array([-1])
@@ -612,6 +608,8 @@ cdef class Locus:
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len)
 
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
+        cdef list reassigned_coverage
+        cdef float total_coverage
         self.graph.assemble(self.minimum_proportion, self.weight, self.mean_read_length, self.naive)
         if complete: # Discard all paths that aren't complete
             paths_to_remove = [i for i in range(len(self.graph.paths)) if not self.graph.paths[i].complete]
@@ -840,6 +838,7 @@ cdef class Locus:
             self.weight_array = self.weight_array[keep,:]
             self.information_content = self.information_content[keep]
             self.member_content = self.member_content[keep]
+            self.member_lengths = self.member_lengths[keep]
             self.reduce_membership()
             self.weight = np.sum(self.weight_array)
             self.number_of_elements = self.membership.shape[0]
@@ -852,6 +851,7 @@ cdef class Locus:
         """Combines the information of two read elements in the locus."""
         cdef char p, c, s
         cdef Py_ssize_t i
+        cdef float weight_transform
         for i in range(self.membership.shape[1]): # Iterate over columns of the membership table
             p = self.membership[parent_index,i]
             c = self.membership[child_index,i]  
@@ -877,8 +877,9 @@ cdef class Locus:
         if s == 0:
             self.strand_array[parent_index] = self.strand_array[child_index]
         
-        # Add all of child's weight to parent
-        self.weight_array[parent_index,:] += self.weight_array[child_index,:]
+        self.member_lengths[parent_index] = np.sum(self.frag_len[self.membership[parent_index,:]==1])
+        weight_transform = self.member_lengths[child_index]/self.member_lengths[parent_index]
+        self.weight_array[parent_index,:] += self.weight_array[child_index,:]*weight_transform
         self.weight_array[child_index,:] = 0
 
     cpdef np.ndarray prune_unreachable_edges(self):
@@ -1172,12 +1173,7 @@ cdef class Locus:
         readObject = ru.RNAseqMapping(elementData, elementAttributes)
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
-        if element.coverage == -1:
-            readObject.coverage = np.sum(element.mean_coverage(self.mean_read_length))
-        else:
-            readObject.coverage = element.coverage
-        
-        readObject.attributes['cov'] = round(readObject.coverage, 2)
+        readObject.attributes['cov'] = round(readObject.weight, 2)
         return readObject
     
     def dump_json(self):
