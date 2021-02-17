@@ -243,7 +243,7 @@ cdef class Locus:
             self.membership_weights - (1 per row of reduced_membership) number of reads
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
-        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
+        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length, member_length
         cdef np.ndarray membership, strand_array, weight_array
         cdef char s
         cdef list temp_frags, bp_positions
@@ -286,6 +286,7 @@ cdef class Locus:
         locus_length = len(self.frag_by_pos)
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             last_rfrag = 0
+            member_length = 0
             read = self.reads[i]
             s = read.strand
             strand_array[i] = s
@@ -364,6 +365,7 @@ cdef class Locus:
                         lfrag = rfrag
                 
                 MEMBERSHIP[i, lfrag:(rfrag+1)] = 1 # Add all covered frags to the membership table
+                member_length += sum(self.frag_len[lfrag:(rfrag+1)])
                 if j > 0: # Processing a downstream block
                     if read.splice[j-1]: # The gap between this block and the last was a splice junction
                         # Check that this junction is in the list of splice junctions
@@ -382,8 +384,8 @@ cdef class Locus:
                 last_rfrag = rfrag
             
             # WEIGHT: partial coverage of the representative MEMBER by the current READ
-            self.member_lengths[i] = np.sum(self.frag_len[np.where(membership[i,:]==1)[0]])
-            weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
+            self.member_lengths[i] = member_length
+            weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / member_length
         
         if threshold > 0:
             for i in range(len(self.frags)):
