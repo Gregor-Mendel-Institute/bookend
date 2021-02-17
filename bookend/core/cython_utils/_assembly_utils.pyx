@@ -400,6 +400,7 @@ cdef class Locus:
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
+        self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
     
     # cpdef void filter_run_on_frags(self):
     #     """Iterates over frags looking for those putatively connecting the ends
@@ -852,6 +853,7 @@ cdef class Locus:
         """Combines the information of two read elements in the locus."""
         cdef char p, c, s
         cdef Py_ssize_t i
+        cdef int combined_length
         cdef float weight_transform
         for i in range(self.membership.shape[1]): # Iterate over columns of the membership table
             p = self.membership[parent_index,i]
@@ -878,11 +880,12 @@ cdef class Locus:
         if s == 0:
             self.strand_array[parent_index] = self.strand_array[child_index]
         
-        self.member_lengths[parent_index] = np.sum(self.frag_len[self.membership[parent_index,:]==1])
+        combined_length = np.sum(self.frag_len[self.membership[parent_index,:]==1])
         weight_transform = self.member_lengths[child_index]/self.member_lengths[parent_index]
-        self.weight_array[parent_index,:] += self.weight_array[child_index,:]*weight_transform
+        self.weight_array[parent_index,:] = (self.weight_array[child_index,:]*self.member_lengths[child_index] + self.weight_array[parent_index,:]*self.member_lengths[parent_index])/combined_length
+        self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
-
+    
     cpdef np.ndarray prune_unreachable_edges(self):
         """Given a overlap matrix, determine which directed edges are unreachable
         from an s-t path on that strand. Removes edges in-place in the matrix.
