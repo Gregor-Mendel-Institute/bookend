@@ -35,7 +35,7 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
-    cdef public float weight, minimum_proportion, cap_bonus, intron_filter
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
     cdef public dict adj, J_plus, J_minus, end_ranges, source_lookup
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources
@@ -61,6 +61,7 @@ cdef class Locus:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             self.reads = tuple(list_of_reads) # Cannot be mutated
             self.read_lengths = np.array([r.get_length() for r in self.reads], dtype=np.int32)
+            self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
             self.mean_read_length = np.zeros(len(self.source_lookup), dtype=np.float32)
@@ -381,7 +382,7 @@ cdef class Locus:
                 last_rfrag = rfrag
             
             # WEIGHT: partial coverage of the representative MEMBER by the current READ
-            self.member_lengths[i] = np.sum(self.frag_len[membership[i,:]==1])
+            self.member_lengths[i] = np.sum(self.frag_len[np.where(membership[i,:]==1)[0]])
             weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
         if threshold > 0:
