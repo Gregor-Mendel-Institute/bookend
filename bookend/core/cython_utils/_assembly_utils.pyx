@@ -534,8 +534,8 @@ cdef class Locus:
         for i,v in enumerate(reverse_lookup):
             new_weights[v] += self.weight_array[i]
             new_strands[v] = self.strand_array[i]
+            new_lengths[v] = self.member_lengths[i]
             new_reps[v] += self.rep_array[i]
-            new_lengths[v] += self.member_lengths[i]
         
         members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
         number_of_members = np.sum(members_bool[:,2:-2],axis=1)
