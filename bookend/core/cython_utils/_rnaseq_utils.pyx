@@ -1178,7 +1178,7 @@ cpdef list get_sources(list list_of_reads):
         dict source_lookup
     
     sources = set([read.source for read in list_of_reads])
-    return sources
+    return sorted(list(sources))
 
 cpdef dict get_source_dict(list list_of_sources):
     cdef:
