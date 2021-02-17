@@ -14,6 +14,7 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments
     cdef readonly int number_of_elements
     cdef Element emptyPath
+    cdef public float bases
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
@@ -29,6 +30,7 @@ cdef class ElementGraph:
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
+        self.bases = sum([e.bases for e in self.elements])
         # Assign all reads to any existing complete paths
         for e in self.elements:
             if e.complete: # A full-length path exists in the input elements
@@ -40,7 +42,7 @@ cdef class ElementGraph:
                     if i != path.index:
                         path.includes.add(i)
                         part = self.elements[i]
-                        path.weights += self.available_reads(path, part)
+                        path.weights += self.available_weight(path, part)
                         part.assigned_to.append(path_index)
                         self.assignments[i] += 1
                         part.update()
@@ -52,29 +54,29 @@ cdef class ElementGraph:
                 
                 path.update()
 
-    cpdef void assemble(self, float minimum_proportion, float total_reads, float mean_read_length, bint naive):
+    cpdef void assemble(self, float minimum_proportion, bint naive):
         """Iteratively perform find_optimal_path() on the graph
         until the number of novel reads fails to exceed minimum_proportion
         of the reads at the locus. If minimum_proportion == 0, assemble()
         only terminates when every read is in a path."""
-        cdef float threshold, total_reads_assigned
+        cdef float threshold, total_bases_assigned
         cdef Element path
         
-        total_reads_assigned = sum([path.weights for path in self.paths])
-        path = self.find_optimal_path(mean_read_length, naive)
+        total_bases_assigned = sum([path.bases for path in self.paths])
+        path = self.find_optimal_path(naive)
         if path is self.emptyPath:
             return
         
-        threshold = total_reads*(1-minimum_proportion)
-        total_reads_assigned += self.add_path(path)
-        while total_reads_assigned < threshold:
-            path = self.find_optimal_path(mean_read_length, naive)
+        threshold = self.bases*(1-minimum_proportion)
+        total_bases_assigned += self.add_path(path)
+        while total_bases_assigned < threshold:
+            path = self.find_optimal_path(naive)
             if path is self.emptyPath:
-                total_reads_assigned = threshold
+                total_bases_assigned = threshold
             else:
-                total_reads_assigned += self.add_path(path)
+                total_bases_assigned += self.add_path(path)
 
-    cpdef np.ndarray available_reads(self, Element path, Element part):
+    cpdef np.ndarray available_weight(self, Element path, Element part):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
         # Get the total cov of all already assigned paths
@@ -124,7 +126,7 @@ cdef class ElementGraph:
         path.merge(edge['element'], proportion)
         self.take_from_competitors(edge['element'], proportion, naive)  
 
-    cpdef list pick_best_edge(self, Element path, dict edge_dict, float mean_read_length):
+    cpdef list pick_best_edge(self, Element path, dict edge_dict):
         """When one or more mutually incompatible edges are available to traverse,
         the path branches and a decision must be made about which branch to follow.
         For each edge, a score is calculated:
@@ -212,7 +214,7 @@ cdef class ElementGraph:
         return {
             'element':e,
             'total':e.weights, 
-            'available':self.available_reads(path, e), 
+            'available':self.available_weight(path, e), 
             'length':e.uniqueLength(path),
             'newinfo':e.uniqueInformation(path)
         }
@@ -250,7 +252,7 @@ cdef class ElementGraph:
         return True # At least one extension is still possible if path and next_path merge
             
 
-    cpdef Element find_optimal_path(self, float mean_read_length, bint naive, bint backtrack=True, bint step=False):
+    cpdef Element find_optimal_path(self, bint naive, bint step=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
         cdef Element currentPath, e
         cdef int i, counter
@@ -294,7 +296,7 @@ cdef class ElementGraph:
                         edge = list(edge_dict.values())[0]
                         self.add_edge_to_path(currentPath, edge, naive)
                     elif len(edge_dict) > 0:
-                        best_indices = self.pick_best_edge(currentPath, edge_dict, mean_read_length)
+                        best_indices = self.pick_best_edge(currentPath, edge_dict)
                         if len(best_indices) == 0:
                             print("ERROR, no edge chosen!")
                 
@@ -331,7 +333,7 @@ cdef class ElementGraph:
                             edge = {
                                 'element':e,
                                 'total':e.weights, 
-                                'available':self.available_reads(currentPath, e), 
+                                'available':self.available_weight(currentPath, e), 
                                 'length':e.uniqueLength(currentPath)
                             }
                             self.add_edge_to_path(currentPath, edge, naive)
@@ -340,15 +342,12 @@ cdef class ElementGraph:
 
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
-        cdef Element e, p
         cdef int i
-        cdef float competing_reads, percent_in_path, extraction_depth, extracted_reads, portion_to_extract, amount_to_extract
-        cdef set other_edges = set()
-        cdef float novel_reads = 0
+        cdef float novel_bases = 0
         # Assign each included element to the path
         for i in path.includes:
             if self.assignments[i] == 0:
-                novel_reads += sum(self.elements[i].weights)
+                novel_bases += self.elements[i].bases
             
             self.assignments[i] += 1
             self.elements[i].assigned_to.append(len(self.paths))
@@ -356,7 +355,7 @@ cdef class ElementGraph:
         
         # Add the new path to the list of paths
         self.paths.append(path)
-        return novel_reads
+        return novel_bases
     
     cpdef void remove_paths(self, list indices):
         """Removes all trace of a path from paths."""
@@ -396,7 +395,7 @@ cdef class Element:
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
     cdef public list assigned_to
     cdef public char strand
-    cdef public float cov, coverage
+    cdef public float cov, coverage, bases
     cdef public set members, nonmembers, ingroup, outgroup, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
@@ -409,10 +408,9 @@ cdef class Element:
         self.frag_len = frag_len                      # Length of the fragment is provided
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
-        self.weights = weights                        # Array of read counts per Source
+        self.weights = weights                        # Array of read coverage per Source
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
-        self.coverage = -1                            # Estimated read depth per nucleotide
         self.assigned_to = []                         # List of Path indices this Element is a part of
         self.complete = False                         # Represents an entire end-to-end transcript
         self.has_gaps = False                         # Is missing information
@@ -464,12 +462,7 @@ cdef class Element:
             chars[n] = '_'
         
         return '|{}| {}-{} ({})'.format(''.join(chars),self.left,self.right,strand)
-
-    cpdef float mean_coverage(self, np.ndarray mean_read_length):
-        """Returns an estimated coverage depth per nucleotide."""
-        cdef float estimated_coverage = np.sum(self.weights * mean_read_length)
-        return estimated_coverage / self.length
-
+    
     cpdef str as_string(self):
         cdef str string = ''
         cdef int i
@@ -521,7 +514,8 @@ cdef class Element:
             self.s_tag = self.maxIC - 2 in self.members # has + start
             self.e_tag = self.maxIC - 1 in self.members # has + end
         
-        self.cov = sum(self.weights) / (self.length * (len(self.assigned_to)+1))
+        self.cov = sum(self.weights)
+        self.bases = self.cov*self.length
         self.IC = len(self.members) + len(self.nonmembers)
         if self.IC == self.maxIC:
             self.complete = True
@@ -627,6 +621,7 @@ cdef class Element:
         cdef set covered, unique
         cdef bint extendedLeft, extendedRight
         cdef int o, i, leftMember, rightMember
+        cdef float old_length
         if self.empty:
             return
         
@@ -641,7 +636,7 @@ cdef class Element:
         if self.strand == 0:
             self.strand = other.strand
         
-        self.weights += other.weights * proportion
+        old_length = self.length
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
@@ -686,6 +681,7 @@ cdef class Element:
             self.right = max(self.right, other.right)
             self.left = min(self.left, other.left)
         
+        self.weights = (other.weights*other.length*proportion + self.weights*old_length)/self.length
         self.update()
         if self.strand == 1: # Enforce directionality of edges
             self.outgroup = set([o for o in self.outgroup if o > self.right])

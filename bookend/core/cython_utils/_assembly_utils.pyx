@@ -854,7 +854,6 @@ cdef class Locus:
         cdef char p, c, s
         cdef Py_ssize_t i
         cdef int combined_length
-        cdef float weight_transform
         for i in range(self.membership.shape[1]): # Iterate over columns of the membership table
             p = self.membership[parent_index,i]
             c = self.membership[child_index,i]  
@@ -881,7 +880,6 @@ cdef class Locus:
             self.strand_array[parent_index] = self.strand_array[child_index]
         
         combined_length = np.sum(self.frag_len[self.membership[parent_index,:]==1])
-        weight_transform = self.member_lengths[child_index]/self.member_lengths[parent_index]
         self.weight_array[parent_index,:] = (self.weight_array[child_index,:]*self.member_lengths[child_index] + self.weight_array[parent_index,:]*self.member_lengths[parent_index])/combined_length
         self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
