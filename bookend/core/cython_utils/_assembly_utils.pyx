@@ -102,7 +102,7 @@ cdef class Locus:
         
         return summary_string
 
-    cpdef generate_branchpoints(self):
+    cpdef void generate_branchpoints(self):
         """Estimate strand-specific coverage, then use it to generate an ordered array of
         positions where branching could occur in the overlap graph."""
         cdef:
@@ -594,13 +594,12 @@ cdef class Locus:
             self.member_lengths = self.member_lengths[keep]
             if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
-    def build_graph(self, reduce=True):
+    cpdef void build_graph(self, reduce=True):
         """Constructs one or more graphs from 
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
         cdef np.ndarray updated
-        
         if reduce: # Collapse linear chains prior to graph construction
             updated = np.array([-1])
             while len(updated) > 0:
@@ -608,7 +607,7 @@ cdef class Locus:
                 self.collapse_linear_chains()
         
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len)
-
+    
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
         cdef float total_coverage
@@ -1177,11 +1176,6 @@ cdef class Locus:
         readObject.attributes['transcript_id'] = transcript_id
         readObject.attributes['cov'] = round(readObject.weight, 2)
         return readObject
-    
-    def dump_json(self):
-        """Returns a string in JSON format that fully describes the locus,
-        its input data and its solution."""
-        locusname = 'bookend.{}'.format(self.chunk_number)
 
 ##########################################
 

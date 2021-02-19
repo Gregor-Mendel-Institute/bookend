@@ -11,28 +11,38 @@ inf = float('Inf')
 
 cdef class ElementGraph:
     cdef public list elements, paths
-    cdef public np.ndarray assignments
-    cdef readonly int number_of_elements
+    cdef public np.ndarray assignments, overlap
+    cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
     cdef public float bases
+    cdef public set SP, SM, EP, EM
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
-        self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]))
+        self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
         cdef Element e, path, part
         cdef int e_index, path_index, i
-        self.number_of_elements = overlap_matrix.shape[0]
+        self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
+        self.overlap = overlap_matrix
+        self.number_of_elements = self.overlap.shape[0]
+        self.maxIC = membership_matrix.shape[1]
         self.elements = [Element(
             i, weights[i,:], strands[i],
-            membership_matrix, overlap_matrix, lengths
+            membership_matrix[i,:], self.overlap, lengths, self.maxIC
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
         self.bases = sum([e.bases for e in self.elements])
         # Assign all reads to any existing complete paths
         for e in self.elements:
+            if e.strand == 1:
+                if e.s_tag: SP.add(e.index)
+                if e.e_tag: EP.add(e.index)
+            elif e.strand == -1:
+                if e.s_tag: SM.add(e.index)
+                if e.e_tag: EM.add(e.index)
             if e.complete: # A full-length path exists in the input elements
                 path = copy.deepcopy(e)
                 path_index = len(self.paths)
@@ -45,15 +55,15 @@ cdef class ElementGraph:
                         path.weights += self.available_weight(path, part)
                         part.assigned_to.append(path_index)
                         self.assignments[i] += 1
-                        part.update()
+                        # part.update()
                     else: # Only update assignments
                         self.assignments[i] += 1
                         part = self.elements[i]
                         part.assigned_to.append(path_index)
-                        part.update()
+                        # part.update()
                 
                 path.update()
-
+    
     cpdef void assemble(self, float minimum_proportion, bint naive):
         """Iteratively perform find_optimal_path() on the graph
         until the number of novel reads fails to exceed minimum_proportion
@@ -76,27 +86,26 @@ cdef class ElementGraph:
             else:
                 total_bases_assigned += self.add_path(path)
 
-    cpdef np.ndarray available_weight(self, Element path, Element part):
+    cpdef np.ndarray available_weight(self, Element path, Element element):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
         # Get the total cov of all already assigned paths
-        if len(part.assigned_to) == 0: # No competition, all reads are available
-            return part.weights
+        cdef:
+            np.ndarray assigned_weights, proportion
+            int i
+        if len(element.assigned_to) == 0: # No competition, all reads are available
+            return copy.copy(element.weights)
         
-        cdef float assigned_cov = path.cov
-        for i in part.assigned_to:
-            assigned_cov += self.paths[i].cov
+        assigned_weights = copy.copy(path.weights)
+        proportion = np.ones(path.weights.shape[0], dtype=np.float32)
+        for i in element.assigned_to:
+            assigned_weights += self.paths[i].weights
         
-        proportion = path.cov / assigned_cov
-        return proportion * part.weights
+        for i in np.where(assigned_weights > 0)[0]:
+            proportion[i] = path.weights[i]/assigned_weights[i]
+        
+        return proportion * element.weights
     
-    cpdef int max_info_gained(self, Element fromElement, Element throughElement):
-        """Returns the amount of unique information in the throughElement."""
-        new_members = len(throughElement.members.difference(fromElement.members))
-        new_nonmembers = len(throughElement.nonmembers.difference(fromElement.nonmembers))
-        
-        return new_members+new_nonmembers
-
     cpdef void take_from_competitors(self, Element e, float proportion, bint naive):
         """Remove the proportion of weight from competing paths."""
         cdef float total_cov, c
@@ -119,80 +128,21 @@ cdef class ElementGraph:
                 for i in range(num_competitors):
                     self.paths[e.assigned_to[i]].weights -= reads_to_remove*competitor_proportion[i]
     
-    cpdef void add_edge_to_path(self, Element path, dict edge, bint naive):
+    cpdef void extend_path(self, Element path, list extension, bint naive):
         """Merges the proper 
         """
-        cdef float proportion = sum(edge['available']) / sum(edge['total'])
+        cdef Element extpath
+        cdef int i
+        extpath = copy.deepcopy(self.elements[extension[0]])
+        extpath.weight = self.available_weight(path, extpath)
+        if len(extension) > 1:
+            for i in range(1,len(extension)):
+                extpath.merge(self.elements[extension[0]])
+            extpath.merge(self.elements[])
+        proportion = sum(edge['available']) / sum(edge['total'])
         path.merge(edge['element'], proportion)
         self.take_from_competitors(edge['element'], proportion, naive)  
-
-    cpdef list pick_best_edge(self, Element path, dict edge_dict):
-        """When one or more mutually incompatible edges are available to traverse,
-        the path branches and a decision must be made about which branch to follow.
-        For each edge, a score is calculated:
-            
-        """
-        cdef Element element, other_element, e
-        cdef set compatible
-        cdef int c, i, j, length_gained, info_gained, min_gained
-        cdef list best_indices, extend_list, included_elements
-        cdef dict max_extend
-        cdef float score, best_score, dead_end_penalty
-        cdef bint is_internal
-        cdef np.ndarray reads_gained
-        dead_end_penalty = 0.1
-        best_indices = []
-        best_score = 0
-        # min_gained = max(int(mean_read_length*.5),1)
-        # Choose edges by decreasing absolute distance from path.index
-        elements = [edge_dict[i]['element'] for i in edge_dict.keys()]
-        #TODO: Fix decision tree for when elements are INSIDE path (filling a gap)
-        extend_left = {}
-        extend_right = {}
-        max_extend = {}
-        for e in elements:
-            extend_left[e.index] = path.LM - e.LM 
-            extend_right[e.index] = e.RM - path.RM
-            max_extend[e.index] = max([extend_left[e.index], extend_right[e.index]])
-        
-        extend_list = sorted([(v,k) for k,v in max_extend.items()], reverse=True)
-        for m,i in extend_list:
-            is_internal = m < 0
-            element = edge_dict[i]['element']
-            # Build a list of edge indices reciprocally compatible with edge
-            compatible = set([i])
-            compatible.update([ # Populate the set of compatible elements with those that...
-                e.index for e in elements # Are in the list of elements,
-                if e.strand == element.strand # Are on the same strand,
-                and max_extend[e.index] > 0 == is_internal # Are both inside or both outside of path,
-                and extend_left[e.index] < extend_left[element.index]  # Doesn't extend past element on the left
-                and extend_right[e.index] < extend_right[element.index] # Doesn't extend past element on the right
-            ])
-            compatible.difference_update(element.excludes)
-            
-            for c in sorted(list(compatible), reverse=(i == max(compatible))):
-                e = self.elements[c]
-                if e.index in compatible:
-                    compatible.difference_update(e.excludes)
-            
-            reads_gained = sum([edge_dict[c]['available'] for c in compatible])
-            length_gained = max(edge_dict[i]['length'], 1)
-            # info_gained = 1
-            # info_gained = edge_dict[i]['newinfo']
-            # if element.is_spliced and mean_read_length < length_gained:
-                # length_gained = round(mean_read_length)
-            
-            # score = info_gained * reads_gained / ((length_gained+1) * ((len(element.assigned_to)*self.novelty_ratio)+1))
-            score = sum(reads_gained) / length_gained / (np.linalg.norm(element.weights - reads_gained)+.01)
-            if self.is_dead_end(path, element):
-                score = score * dead_end_penalty
-            
-            if score > best_score:
-                best_score = score
-                best_indices = list(compatible)
-        
-        return best_indices
-
+    
     cpdef Element get_heaviest_element(self):
         cdef Element best_element, new_element
         cdef np.ndarray available_elements = np.where(self.assignments==0)[0]
@@ -209,137 +159,161 @@ cdef class ElementGraph:
                     best_element = new_element
         
         return copy.deepcopy(best_element)
-
-    cpdef dict make_edge(self, Element path, Element e):
-        return {
-            'element':e,
-            'total':e.weights, 
-            'available':self.available_weight(path, e), 
-            'length':e.uniqueLength(path),
-            'newinfo':e.uniqueInformation(path)
-        }
     
-    cpdef bint is_dead_end(self, Element path, Element next_path):
-        """Returns True iff path merging with next_path would
-        result in no available edges in the direction(s) being extended
-        and next_path is not a valid terminator in that direction."""
-        cdef Element downstream_path
-        cdef list available_from_next_path
-        cdef bint extending_left, extending_right
-        if next_path.s_tag or next_path.e_tag: # True ends cannot be dead ends
-            return False
+    cpdef float dead_end(self, Element path, tuple extension):
+        """Returns a multiplier that indicates how many termini can be
+        reached by extending the path through extension:
+        1 = neither end can be reached
+        10 = one end can be reached
+        100 = both ends can be reached."""
+        cdef Element element
+        cdef int i, strand
+        cdef bint s_tag, e_tag
+        cdef set includes, excludes, starts, ends
+        s_tag = path.s_tag
+        e_tag = path.e_tag
+        strand = path.strand
+        excludes = copy.copy(path.excludes)
+        for i in extension:
+            element = self.elements[i]
+            excludes.update(element.excludes)
+            s_tag = s_tag or element.s_tag
+            e_tag = e_tag or element.e_tag
+            if strand == 0:
+                strand = element.strand
         
-        extending_left = extending_right = False
-        if next_path.LM < path.LM:
-            extending_left = True
+        if s_tag and e_tag: # Both ends are already found
+            return 100
         
-        if next_path.RM > path.RM:
-            extending_right = True
+        if not s_tag: # Try to extend from one of the known s_tag elements to path
+            starts = [self.SM, self.SM|self.SP, self.SP][strand].difference(excludes)
+            if len(starts) > 0: # At least one start is not excluded from the path
+                s_tag = True
         
-        #TODO: Redefine dead ends so terminating left OR right counts as a dead end when extending in two directions
-        available_from_next_path = [self.elements[i] for i in next_path.ingroup | next_path.outgroup if i != path.index]
-        for downstream_path in available_from_next_path:
-            if downstream_path.compatible(path): # At least one path connected to next_path can continue path
-                if downstream_path.s_tag or downstream_path.e_tag: # Path can continue to a terminal element
-                    return False
+        if not e_tag:
+            ends = [self.EM, self.EM|self.EP, self.EP][strand].difference(excludes)
+            if len(ends) > 0: # At least one end is not excluded from the path
+                e_tag = True
+        
+        return 1 * [1,10][s_tag] * [1,10][e_tag]
+    
+    cpdef list generate_extensions(self, Element path):
+        """Defines all combinations of mutally compatible elements in
+        the path's ingroup/outgroup that should be evaluated. Requires
+        at least one each from ingroup and outgroup if they are nonempty."""
+        cdef:
+            np.ndarray ingroup, outgroup
+            list pairs, contained
+            set ext_accounts, ext_members, ext_nonmembers, exclude, extensions
+            int i, o, c
+            Element e, e_in, e_out, e_con
+            (int, int) pair
+        ingroup = np.array(sorted(path.ingroup))
+        outgroup = np.array(sorted(path.outgroup))
+        if len(ingroup) > 0:
+            if len(outgroup) > 0:
+                pairs = list(set([(i,o) for o in outgroup for i in ingroup if self.overlap[i,o] > -1]))
+            else: # No outgroups, use path.index as other end of pair
+                pairs = [(i,path.index) for i in ingroup]
+        else: # No ingroups, use path.index as other end of pair
+            pairs = [(path.index,o) for o in outgroup]
+        
+        # Make an extension set out of each pair by adding all elements contained by path+pair
+        extensions = set()
+        for pair in pairs:
+            e_in = self.elements[pair[0]]
+            e_out = self.elements[pair[1]]
+            contained = e_in.outgroup | e_out.ingroup # Potential set of elements contained in the extension
+            # Filter 1: All elements already included or excluded in the extension itself
+            ext_accounts = e_in.includes | path.includes | e_out.includes | e_in.excludes | path.excludes | e_out.excludes
+            contained.difference_update(ext_accounts)
+            # Filter 2: All elements in the set that add information not contained in the extension
+            stranded = e_in.strand != 0 or e_out.strand !=0 or path.strand != 0
+            ext_members = e_in.members | path.members | e_out.members
+            ext_nonmembers = e_in.nonmembers | path.nonmembers | e_out.nonmembers
+            exclude = set()
+            for c in contained:
+                e_con = self.elements[c]
+                if not stranded and e_con.strand != 0:
+                    exclude.add(c)
                 
-                if extending_left and downstream_path.LM < next_path.LM: # Path can continue left
-                    return False
-                
-                if extending_right and downstream_path.RM > next_path.RM: # Path can continue right
-                    return False
-        
-        return True # At least one extension is still possible if path and next_path merge
+                if not e_con.members.issubset(ext_members) or not e_con.nonmembers.issubset(ext_nonmembers):
+                    exclude.add(c)
             
-
-    cpdef Element find_optimal_path(self, bint naive, bint step=False):
+            contained.difference_update(exclude)
+            contained.update([pair[0], pair[1]])
+            extensions.add(tuple(sorted(list(contained))))
+        
+        return sorted(list(extensions))
+    
+    cpdef tuple best_extension(self, Element path, list extensions):
+        cdef tuple ext, best_ext
+        cdef float score, best_score
+        best_ext = ()
+        best_score = -1
+        for ext in extensions:
+            score = self.calculate_extension_score(path, ext)
+            if score > best_score:
+                best_ext = ext
+        
+        return best_ext
+    
+    cpdef float calculate_extension_score(self, Element path, tuple extension):
+        """Given a path and a set of Elements to extend from it, calculate the
+        new weights of the extended path and return a score 
+        """
+        cdef:
+            Element element
+            int i
+            set new_members
+            float bases, new_cov, similarity, e_cov, e_bases
+            np.ndarray e_weights, proportions, path_proportions
+        new_members = set()
+        bases = path.bases
+        path_proportions = path.weights/path.cov
+        proportions = path_proportions*path.bases
+        for i in extension:
+            element = self.elements[i]
+            e_weights = self.available_weight(path, element)
+            e_cov = np.sum(e_weights)
+            e_bases = e_cov*element.length
+            bases += e_bases
+            proportions += e_weights/e_cov*e_bases
+            new_members.update(element.members.difference(path.members))
+        
+        proportions = proportions/bases
+        new_length = sum([path.frag_len[i] for i in new_members])
+        # Calculate the new coverage (reads/base) of the extended path
+        new_cov = bases/(path.length+new_length)
+        similarity = 2 - np.sum(np.abs(path_proportions - proportions))
+        dead_end_penalty = self.dead_end(path, extension)
+        return new_cov * similarity * dead_end_penalty
+    
+    cpdef Element find_optimal_path(self, bint naive, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
         cdef Element currentPath, e
-        cdef int i, counter
-        cdef list edges, best_indices
-        cdef set available
-        cdef dict edge_dict, edge
-        cdef np.ndarray available_elements
+        cdef tuple ext
+        cdef list extensions
         # Get the current working path (heaviest unassigned Element)
         currentPath = self.get_heaviest_element()
         if currentPath is self.emptyPath:
             return currentPath
         
-        available = currentPath.ingroup | currentPath.outgroup
-        # while len(available) > 0: # Extend as long as possible
-        for counter in range(1000):
-            if len(available) == 0:
-                break
-            
-            best_indices = []
-            if len(available) == 1: # Only one option, do not evaluate
-                i = available.pop()
-                e = self.elements[i]
-                edge = self.make_edge(currentPath, e)
-                self.add_edge_to_path(currentPath, edge, naive)
-            else: # Pick the heaviest edge
-                edges = sorted(list(available))
-                edge_dict = {i:self.make_edge(currentPath, self.elements[i]) for i in edges}
-                if all_are_compatible([edge['element'] for edge in edge_dict.values()]):
-                    best_indices = edges
-                else:
-                    free_edges = [i for i in edge_dict.keys() if edge_dict[i]['newinfo'] == 0]
-                    for i in free_edges: # Merge all edges that don't change the structure
-                        e = edge_dict[i]['element']
-                        if e.strand != 0 and currentPath.strand != e.strand: # Not actually free, would add strandedness
-                            continue
-                        
-                        self.add_edge_to_path(currentPath, edge_dict[i], naive)
-                        del edge_dict[i]
-                    
-                    if len(edge_dict) == 1:
-                        edge = list(edge_dict.values())[0]
-                        self.add_edge_to_path(currentPath, edge, naive)
-                    elif len(edge_dict) > 0:
-                        best_indices = self.pick_best_edge(currentPath, edge_dict)
-                        if len(best_indices) == 0:
-                            print("ERROR, no edge chosen!")
+        extensions = self.generate_extensions(currentPath)
+        while len(extensions) > 0: # Extend as long as possible
+            if len(extensions) == 1: # Only one option, do not evaluate
+                self.extend_path(currentPath, extensions[0], naive)
+            else:
+                ext = self.best_extension(currentPath, extensions)
+                if verbose:
+                    print("{} + {}".format(currentPath, ext))
                 
-                if step:
-                    print(currentPath)
-                    print("Merging elements {}:".format(best_indices))
-                    for i in best_indices:
-                        print(self.elements[i])
-                    
-                    input('...')
-                
-                for i in best_indices:
-                    # Add the element to the path with a proportional amount of reads
-                    if i in edge_dict:
-                        edge = edge_dict[i]
-                    else: # A compatibility was found that wasn't in the original set
-                        e = self.elements[i]
-                        edge = self.make_edge(currentPath, e)
-                    
-                    self.add_edge_to_path(currentPath, edge, naive)
+                self.extend_path(currentPath, ext, naive)
             
-            available = currentPath.ingroup | currentPath.outgroup
-        
-        if counter == 999:
-            print("ERROR: stuck in loop. Breaking.")
-        
-        # A terminating path was found. Add all compatible reads that were missed
-        for i in range(len(self.elements)):
-            e = self.elements[i]
-            if currentPath.LM <= e.LM and currentPath.RM >= e.RM: # E is contained in the bounds of currentPath
-                if e.index not in currentPath.excludes: # E not excluded by currentPath
-                    if e.index not in currentPath.includes: # E not included in currentPath
-                        if e.compatible(currentPath):
-                            edge = {
-                                'element':e,
-                                'total':e.weights, 
-                                'available':self.available_weight(currentPath, e), 
-                                'length':e.uniqueLength(currentPath)
-                            }
-                            self.add_edge_to_path(currentPath, edge, naive)
+            extensions = self.generate_extensions(currentPath)
         
         return currentPath
-
+    
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
         cdef int i
@@ -399,7 +373,7 @@ cdef class Element:
     cdef public set members, nonmembers, ingroup, outgroup, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
-    def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len):
+    def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
         cdef Py_ssize_t i
         cdef char m, overOut, overIn
         self.is_spliced = False                       # Default: the path has no discontinuities
@@ -424,10 +398,10 @@ cdef class Element:
             self.end_indices = set()
         else:
             self.empty = False
-            self.maxIC = membership.shape[1]
+            self.maxIC = maxIC
             self.end_indices = set(range(self.maxIC-4, self.maxIC))
-            for i in range(membership.shape[1]):
-                m = membership[self.index, i]
+            for i in range(self.maxIC):
+                m = membership[i]
                 if m == 1:
                     self.members.add(i)
                     self.length += self.frag_len[i]
@@ -532,16 +506,16 @@ cdef class Element:
         are only in self and not in other"""
         return self.members.difference(other.members)
     
-    cpdef set uniqueNonembers(self, Element other):
+    cpdef set uniqueNonmembers(self, Element other):
         """Given a second Element, return a set of frags that
         are only in self and not in other"""
         return self.nonmembers.difference(other.nonmembers)
-
+    
     cpdef int uniqueInformation(self, Element other):
         """Given a second Element, return a set of frags that
         are only in self and not in other"""
-        return len(self.uniqueMembers(other)|self.uniqueNonembers(other))
-
+        return len(self.uniqueMembers(other)|self.uniqueNonmembers(other))
+    
     cpdef int uniqueLength(self, Element other):
         """Given a second Element, return the total length that is unique
         to self (summed length of uniqueMembers)."""
@@ -550,7 +524,7 @@ cdef class Element:
             length += self.frag_len[m]
         
         return length
-
+    
     cpdef bint compatible(self, Element other):
         """Returns a boolean of whether or not self and other could be
         subpaths in a shared path."""
@@ -689,20 +663,3 @@ cdef class Element:
         elif self.strand == -1:
             self.outgroup = set([o for o in self.outgroup if o < self.left])
             self.ingroup = set([i for i in self.ingroup if i > self.right])
-
-#########################################            
-
-cpdef bint all_are_compatible(list element_list):
-    """Iterates over a list of elements, returning whether
-    or not all Elements are mutually compatible."""
-    cdef Element e
-    cdef set incompatible
-    cdef set excludes = set()
-    for e in element_list:
-        incompatible = e.includes.intersection(excludes)
-        if len(incompatible) > 0:
-            return False
-        
-        excludes.update(e.excludes)
-    
-    return True
