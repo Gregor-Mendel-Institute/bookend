@@ -96,7 +96,7 @@ cdef class ElementGraph:
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
                 self.paths[element.assigned_to[0]].weights += element.weights * element.length
             else: # Assigned paths must compete for element's weights
-                assignment_proportions = proportions[element.assigned_to,:]
+                assignment_proportions = proportions[np.array(element.assigned_to).astype(int),:]
                 assignment_proportions = np.apply_along_axis(normalize, 0, assignment_proportions)
                 for j in range(len(element.assigned_to)):
                     path = self.paths[element.assigned_to[j]]
