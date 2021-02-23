@@ -216,8 +216,8 @@ cdef class ElementGraph:
         at least one each from ingroup and outgroup if they are nonempty."""
         cdef:
             np.ndarray ingroup, outgroup
-            list pairs, contained
-            set ext_accounts, ext_members, ext_nonmembers, exclude, extensions
+            list pairs
+            set ext_accounts, ext_members, ext_nonmembers, exclude, extensions, contained
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
