@@ -611,7 +611,7 @@ cdef class Locus:
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
         cdef float total_coverage
-        self.graph.assemble(self.minimum_proportion, self.weight, self.mean_read_length)
+        self.graph.assemble(self.minimum_proportion)
         if complete: # Discard all paths that aren't complete
             paths_to_remove = [i for i in range(len(self.graph.paths)) if not self.graph.paths[i].complete]
         else: # Still remove paths with internal gaps

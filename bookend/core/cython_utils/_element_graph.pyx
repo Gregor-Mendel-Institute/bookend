@@ -244,7 +244,7 @@ cdef class ElementGraph:
             stranded = e_in.strand != 0 or e_out.strand !=0 or path.strand != 0
             ext_members = e_in.members | path.members | e_out.members
             ext_nonmembers = e_in.nonmembers | path.nonmembers | e_out.nonmembers
-            exclude = set()
+            exclude = set([path.index])
             for c in contained:
                 e_con = self.elements[c]
                 if not stranded and e_con.strand != 0:
@@ -253,8 +253,8 @@ cdef class ElementGraph:
                 if not e_con.members.issubset(ext_members) or not e_con.nonmembers.issubset(ext_nonmembers):
                     exclude.add(c)
             
-            contained.difference_update(exclude)
             contained.update([pair[0], pair[1]])
+            contained.difference_update(exclude)
             extensions.add(tuple(sorted(list(contained))))
         
         return sorted(list(extensions))
@@ -305,7 +305,8 @@ cdef class ElementGraph:
     
     cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
-        cdef Element currentPath, e
+        cdef Element c
+        urrentPath, e
         cdef tuple ext
         cdef list extensions
         # Get the current working path (heaviest unassigned Element)
@@ -468,12 +469,12 @@ cdef class Element:
         
         return string
     
-    def __eq__(self, other): return self.cov == other.cov
-    def __ne__(self, other): return self.cov != other.cov
-    def __gt__(self, other): return self.cov >  other.cov
-    def __ge__(self, other): return self.cov >= other.cov
-    def __lt__(self, other): return self.cov <  other.cov
-    def __le__(self, other): return self.cov <= other.cov
+    def __eq__(self, other): return self.bases == other.bases
+    def __ne__(self, other): return self.bases != other.bases
+    def __gt__(self, other): return self.bases >  other.bases
+    def __ge__(self, other): return self.bases >= other.bases
+    def __lt__(self, other): return self.bases <  other.bases
+    def __le__(self, other): return self.bases <= other.bases
 
     def __add__(self, other):
         if self.empty: # The special cast emptyPath defeats addition
