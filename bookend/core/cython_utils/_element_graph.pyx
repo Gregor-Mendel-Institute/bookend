@@ -16,6 +16,7 @@ cdef class ElementGraph:
     cdef Element emptyPath
     cdef public float bases
     cdef public set SP, SM, EP, EM
+    cdef public bint no_ends
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
@@ -35,34 +36,68 @@ cdef class ElementGraph:
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
         self.bases = sum([e.bases for e in self.elements])
-        # Assign all reads to any existing complete paths
+        self.check_for_full_paths()
+    
+    cpdef void check_for_full_paths(self):
+        """Assign all reads to any existing complete paths"""
+        cdef Element e, path, part
+        cdef np.ndarray contained
         for e in self.elements:
             if e.strand == 1:
-                if e.s_tag: SP.add(e.index)
-                if e.e_tag: EP.add(e.index)
+                if e.s_tag: self.SP.add(e.index)
+                if e.e_tag: self.EP.add(e.index)
             elif e.strand == -1:
-                if e.s_tag: SM.add(e.index)
-                if e.e_tag: EM.add(e.index)
+                if e.s_tag: self.SM.add(e.index)
+                if e.e_tag: self.EM.add(e.index)
             if e.complete: # A full-length path exists in the input elements
                 path = copy.deepcopy(e)
                 path_index = len(self.paths)
                 self.paths.append(path)
-                contained = np.where(overlap_matrix[:,e.index]==2)[0]
+                contained = np.where(self.overlap[:,e.index]==2)[0]
                 for i in contained:
-                    if i != path.index:
-                        path.includes.add(i)
-                        part = self.elements[i]
-                        path.weights += self.available_weight(path, part)
-                        part.assigned_to.append(path_index)
-                        self.assignments[i] += 1
-                        # part.update()
-                    else: # Only update assignments
-                        self.assignments[i] += 1
-                        part = self.elements[i]
-                        part.assigned_to.append(path_index)
-                        # part.update()
-                
-                path.update()
+                    path.includes.add(i)
+                    part = self.elements[i]
+                    part.assigned_to.append(path_index)
+                    self.assignments[i] += 1
+        
+        if len(self.SP)+len(self.EP)+len(self.SM)+len(self.EM) == 0:
+            self.no_ends = True
+        else:
+            self.no_ends = False
+        
+        if len(self.paths) > 0:
+            self.assign_weights()
+    
+    cpdef void assign_weights(self):
+        """One round of Expectation Maximization: 
+        Given existing weights of Paths and all Element assignments,
+        Set Path weights as sum of assigned Elements * proportion of
+        all weights of Paths that Element is assigned to.
+        Runs once at initialization and once after each round of find_optimal_path()."""
+        cdef int number_of_sources
+        cdef Py_ssize_t i, p
+        cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions
+        cdef Element path, element
+        number_of_sources = self.elements[0].weights.shape[0]
+        priors = np.zeros(shape=(len(self.paths), number_of_sources))
+        for i in range(len(self.paths)):
+            priors[i,:] = self.paths[i].weights
+        
+        path_covs = np.sum(priors, axis=1, keepdims=True)
+        cov_proportions = path_covs/np.sum(path_covs)
+        sample_totals = np.sum(priors, axis=0)
+        proportions = np.full(shape=(len(self.paths), number_of_sources), fill_value=cov_proportions)
+        for i in np.where(sample_totals > 0)[0]:
+            proportions[:,i] = priors[:,i]/sample_totals[i]
+        
+        for p in range(len(self.paths)):
+            path = self.paths[p]
+            path.weights = np.zeros(shape=(number_of_sources), dtype=np.float32)
+            for i in path.includes:
+                element = self.elements[i]
+                path.weights += element.weights * proportions[p,:] * element.length
+            
+            path.weights /= path.length
     
     cpdef void assemble(self, float minimum_proportion, bint naive):
         """Iteratively perform find_optimal_path() on the graph
@@ -86,7 +121,7 @@ cdef class ElementGraph:
             else:
                 total_bases_assigned += self.add_path(path)
 
-    cpdef np.ndarray available_weight(self, Element path, Element element):
+    cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
         # Get the total cov of all already assigned paths
@@ -94,54 +129,29 @@ cdef class ElementGraph:
             np.ndarray assigned_weights, proportion
             int i
         if len(element.assigned_to) == 0: # No competition, all reads are available
-            return copy.copy(element.weights)
+            return element.all
         
-        assigned_weights = copy.copy(path.weights)
-        proportion = np.ones(path.weights.shape[0], dtype=np.float32)
+        assigned_weights = np.copy(weights)
+        proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in element.assigned_to:
             assigned_weights += self.paths[i].weights
         
-        for i in np.where(assigned_weights > 0)[0]:
-            proportion[i] = path.weights[i]/assigned_weights[i]
+        for i in np.where(assigned_weights > weights)[0]:
+            proportion[i] = weights[i]/assigned_weights[i]
         
-        return proportion * element.weights
-    
-    cpdef void take_from_competitors(self, Element e, float proportion, bint naive):
-        """Remove the proportion of weight from competing paths."""
-        cdef float total_cov, c
-        cdef np.ndarray reads_to_remove, partial_proportion
-        cdef int i, num_competitors
-        cdef list competitor_cov, competitor_proportion
-        num_competitors = len(e.assigned_to)
-        if num_competitors > 0:
-            if naive:
-                # NAIVE: Remove an equal amount or reads from each competitor
-                partial_proportion = proportion*e.weights/num_competitors
-                for i in range(num_competitors):
-                    self.paths[e.assigned_to[i]].weights -= partial_proportion
-            else:
-                # PROPORTIONAL: Each competitor is "selfish" and holds onto a proportional number of reads
-                competitor_cov = [self.elements[i].cov for i in e.assigned_to]
-                total_cov = sum(competitor_cov)
-                competitor_proportion = [c/total_cov for c in competitor_cov]
-                reads_to_remove = e.weights*proportion
-                for i in range(num_competitors):
-                    self.paths[e.assigned_to[i]].weights -= reads_to_remove*competitor_proportion[i]
+        return proportion
     
     cpdef void extend_path(self, Element path, list extension, bint naive):
         """Merges the proper 
         """
         cdef Element extpath
         cdef int i
-        extpath = copy.deepcopy(self.elements[extension[0]])
-        extpath.weight = self.available_weight(path, extpath)
-        if len(extension) > 1:
-            for i in range(1,len(extension)):
-                extpath.merge(self.elements[extension[0]])
-            extpath.merge(self.elements[])
-        proportion = sum(edge['available']) / sum(edge['total'])
-        path.merge(edge['element'], proportion)
-        self.take_from_competitors(edge['element'], proportion, naive)  
+        cdef np.ndarray prior_weights, proportion
+        prior_weights = np.copy(path.weights)
+        for i in range(len(extension)):
+            extpath = self.elements[i]
+            proportion = self.available_proportion(prior_weights, extpath)
+            path.merge(extpath, proportion)
     
     cpdef Element get_heaviest_element(self):
         cdef Element best_element, new_element
@@ -170,6 +180,9 @@ cdef class ElementGraph:
         cdef int i, strand
         cdef bint s_tag, e_tag
         cdef set includes, excludes, starts, ends
+        if self.no_ends:
+            return 1
+        
         s_tag = path.s_tag
         e_tag = path.e_tag
         strand = path.strand
@@ -267,21 +280,21 @@ cdef class ElementGraph:
             int i
             set new_members
             float bases, new_cov, similarity, e_cov, e_bases
-            np.ndarray e_weights, proportions, path_proportions
+            np.ndarray e_prop, proportions, path_proportions
         new_members = set()
         bases = path.bases
         path_proportions = path.weights/path.cov
         proportions = path_proportions*path.bases
         for i in extension:
             element = self.elements[i]
-            e_weights = self.available_weight(path, element)
-            e_cov = np.sum(e_weights)
+            e_prop = self.available_proportion(path.weights, element)
+            e_cov = np.sum(e_prop*e.weights)
             e_bases = e_cov*element.length
             bases += e_bases
-            proportions += e_weights/e_cov*e_bases
+            proportions += e_prop*e_bases
             new_members.update(element.members.difference(path.members))
         
-        proportions = proportions/bases
+        proportions /= bases
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_cov = bases/(path.length+new_length)
@@ -329,6 +342,7 @@ cdef class ElementGraph:
         
         # Add the new path to the list of paths
         self.paths.append(path)
+        self.assign_weights()
         return novel_bases
     
     cpdef void remove_paths(self, list indices):
@@ -355,6 +369,8 @@ cdef class ElementGraph:
         for i in range(len(self.elements)): # Update each assigned_to to keep elements connected to paths
             element = self.elements[i]
             element.assigned_to = [old_indices[a].index for a in element.assigned_to]
+        
+        self.assign_weights()
 
 
 #################################################################################################################################
@@ -371,7 +387,7 @@ cdef class Element:
     cdef public char strand
     cdef public float cov, coverage, bases
     cdef public set members, nonmembers, ingroup, outgroup, excludes, includes, end_indices
-    cdef public np.ndarray frag_len, weights
+    cdef public np.ndarray frag_len, weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
         cdef Py_ssize_t i
@@ -392,6 +408,7 @@ cdef class Element:
         self.nonmembers = set()                       # Set of Members indices incompatible with this Element
         self.ingroup = set()                          # Set of compatible upstream Elements
         self.outgroup = set()                         # Set of Compatible downstream Elements
+        self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
             self.maxIC = 0
@@ -471,7 +488,7 @@ cdef class Element:
         else:
             raise Exception('Error: Element {} is not connected to Element {}'.format(other, self))
         
-        summed_element.merge(other, 1)
+        summed_element.merge(other, self.all)
         return summed_element
     
     cpdef void update(self):
@@ -588,8 +605,8 @@ cdef class Element:
             exons.append((istart,iend))
         
         return exons
-
-    cpdef void merge(self, Element other, float proportion):
+    
+    cpdef void merge(self, Element other, np.ndarray proportion=self.all):
         """Add an Element to this one, combining their membership and reads
         through in-place updates of self."""
         cdef set covered, unique
