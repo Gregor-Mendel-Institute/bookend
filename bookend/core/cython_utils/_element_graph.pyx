@@ -288,7 +288,7 @@ cdef class ElementGraph:
         for i in extension:
             element = self.elements[i]
             e_prop = self.available_proportion(path.weights, element)
-            e_cov = np.sum(e_prop*e.weights)
+            e_cov = np.sum(e_prop*element.weights)
             e_bases = e_cov*element.length
             bases += e_bases
             proportions += e_prop*e_bases
