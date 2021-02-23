@@ -317,7 +317,7 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
-        similarity = .5 * (2 - np.sum(np.abs(path_proportions - proportions)))
+        similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         score = new_bases / new_length
         score *= similarity
         score *= self.dead_end(path, extension)
