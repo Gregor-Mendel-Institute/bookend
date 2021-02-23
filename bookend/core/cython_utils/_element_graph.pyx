@@ -96,8 +96,8 @@ cdef class ElementGraph:
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
                 self.paths[element.assigned_to[0]].weights += element.weights * element.length
             else: # Assigned paths must compete for element's weights
-                assignment_proportions = proportions[np.array(element.assigned_to).astype(int),:]
-                assignment_proportions = np.apply_along_axis(normalize, 0, assignment_proportions)
+                assignment_proportions = proportions[element.assigned_to,:]
+                assignment_proportions = np.apply_along_axis(self.normalize, 0, assignment_proportions)
                 for j in range(len(element.assigned_to)):
                     path = self.paths[element.assigned_to[j]]
                     path.weights += element.weights * element.length * assignment_proportions[j,:]
@@ -380,7 +380,14 @@ cdef class ElementGraph:
             element.assigned_to = [old_indices[a].index for a in element.assigned_to]
         
         self.assign_weights()
-
+    
+    cpdef np.ndarray normalize(self, np.ndarray arr):
+        cdef float arrsum
+        arrsum = np.sum(arr)
+        if arrsum > 0:
+            return arr/arrsum
+        else:
+            return arr
 
 #################################################################################################################################
 #################################################################################################################################
@@ -690,10 +697,4 @@ cdef class Element:
             self.outgroup = set([o for o in self.outgroup if o < self.left])
             self.ingroup = set([i for i in self.ingroup if i > self.right])
 
-cpdef np.ndarray normalize(np.ndarray arr):
-    cdef float arrsum
-    arrsum = np.sum(arr)
-    if arrsum > 0:
-        return arr/arrsum
-    else:
-        return arr
+
