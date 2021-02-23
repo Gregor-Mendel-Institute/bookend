@@ -282,26 +282,26 @@ cdef class ElementGraph:
             set new_members
             float bases, new_cov, similarity, e_bases
             np.ndarray e_prop, e_weights, proportions, path_proportions
-        new_members = set()
-        bases = path.bases
-        path_proportions = path.weights/path.cov
-        proportions = path_proportions*path.bases
-        for i in extension:
-            element = self.elements[i]
-            e_prop = self.available_proportion(path.weights, element)
-            e_weights = e_prop*element.weights
-            e_bases = np.sum(e_weights)*element.length
-            bases += e_bases
-            proportions += e_weights*element.length
-            new_members.update(element.members.difference(path.members))
+            new_members = set()
+            bases = path.bases
+            path_proportions = path.weights/path.cov
+            proportions = path_proportions*path.bases
+            for i in extension:
+                element = self.elements[i]
+                e_prop = self.available_proportion(path.weights, element)
+                e_weights = e_prop*element.weights
+                e_bases = np.sum(e_weights)*element.length
+                bases += e_bases
+                proportions += e_weights*element.length
+                new_members.update(element.members.difference(path.members))
         
         proportions /= bases
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
-        new_cov = bases/(path.length+new_length)
+        new_bases = bases - path.bases
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        return new_cov * similarity * dead_end_penalty
+        return new_bases * similarity * dead_end_penalty
     
     cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
