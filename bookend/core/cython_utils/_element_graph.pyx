@@ -307,9 +307,10 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
+        new_cov = new_bases / new_length
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        return new_bases * similarity * dead_end_penalty
+        return new_cov * similarity * dead_end_penalty
     
     cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
