@@ -606,7 +606,7 @@ cdef class Element:
         
         return exons
     
-    cpdef void merge(self, Element other, np.ndarray proportion=self.all):
+    cpdef void merge(self, Element other, np.ndarray proportion):
         """Add an Element to this one, combining their membership and reads
         through in-place updates of self."""
         cdef set covered, unique
