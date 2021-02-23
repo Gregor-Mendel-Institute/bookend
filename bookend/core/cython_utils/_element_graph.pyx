@@ -279,8 +279,8 @@ cdef class ElementGraph:
             Element element
             int i
             set new_members
-            float bases, new_cov, similarity, e_cov, e_bases
-            np.ndarray e_prop, proportions, path_proportions
+            float bases, new_cov, similarity, e_bases
+            np.ndarray e_prop, e_weights, proportions, path_proportions
         new_members = set()
         bases = path.bases
         path_proportions = path.weights/path.cov
@@ -288,10 +288,10 @@ cdef class ElementGraph:
         for i in extension:
             element = self.elements[i]
             e_prop = self.available_proportion(path.weights, element)
-            e_cov = np.sum(e_prop*element.weights)
-            e_bases = e_cov*element.length
+            e_weights = e_prop*element.weights
+            e_bases = np.sum(e_weights)*element.length
             bases += e_bases
-            proportions += e_prop*e_bases
+            proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
         
         proportions /= bases
