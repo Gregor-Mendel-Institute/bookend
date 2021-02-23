@@ -305,8 +305,7 @@ cdef class ElementGraph:
     
     cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
-        cdef Element c
-        urrentPath, e
+        cdef Element currentPath, e
         cdef tuple ext
         cdef list extensions
         # Get the current working path (heaviest unassigned Element)
