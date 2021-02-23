@@ -75,13 +75,14 @@ cdef class ElementGraph:
         all weights of Paths that Element is assigned to.
         Runs once at initialization and once after each round of find_optimal_path()."""
         cdef int number_of_sources
-        cdef Py_ssize_t i, p
-        cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions
+        cdef Py_ssize_t i, p, j
+        cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions, assignment_proportions
         cdef Element path, element
         number_of_sources = self.elements[0].weights.shape[0]
         priors = np.zeros(shape=(len(self.paths), number_of_sources))
         for i in range(len(self.paths)):
             priors[i,:] = self.paths[i].weights
+            self.paths[i].weights = np.zeros(shape=(number_of_sources), dtype=np.float32)
         
         path_covs = np.sum(priors, axis=1, keepdims=True)
         cov_proportions = path_covs/np.sum(path_covs)
@@ -90,14 +91,21 @@ cdef class ElementGraph:
         for i in np.where(sample_totals > 0)[0]:
             proportions[:,i] = priors[:,i]/sample_totals[i]
         
-        for p in range(len(self.paths)):
-            path = self.paths[p]
-            path.weights = np.zeros(shape=(number_of_sources), dtype=np.float32)
-            for i in path.includes:
-                element = self.elements[i]
-                path.weights += element.weights * proportions[p,:] * element.length
-            
+        for i in np.where(self.assignments > 0): # Assign FULL weight of each assigned element
+            element = self.elements[i]
+            if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
+                self.paths[element.assigned_to[0]].weights += element.weights * element.length
+            else: # Assigned paths must compete for element's weights
+                assignment_proportions = proportions[element.assigned_to,:]
+                assignment_proportions = np.apply_along_axis(normalize, 0, assignment_proportions)
+                for j in range(len(element.assigned_to)):
+                    path = self.paths[element.assigned_to[j]]
+                    path.weights += element.weights * element.length * assignment_proportions[j,:]
+        
+        for path in self.paths: # Update path weights
             path.weights /= path.length
+            path.cov = sum(path.weights)
+            path.bases = path.cov*path.length
     
     cpdef void assemble(self, float minimum_proportion):
         """Iteratively perform find_optimal_path() on the graph
@@ -681,3 +689,11 @@ cdef class Element:
         elif self.strand == -1:
             self.outgroup = set([o for o in self.outgroup if o < self.left])
             self.ingroup = set([i for i in self.ingroup if i > self.right])
+
+cpdef np.ndarray normalize(np.ndarray arr):
+    cdef float arrsum
+    arrsum = np.sum(arr)
+    if arrsum > 0:
+        return arr/arrsum
+    else:
+        return arr
