@@ -17,14 +17,14 @@ cdef class ElementGraph:
     cdef public float bases, dead_end_penalty, novelty_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive=False, dead_end_penalty=.5, novelty_penalty=1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
         self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
-        self.dead_end_penalty = .5
-        self.novelty_penalty = .5
+        self.dead_end_penalty = dead_end_penalty
+        self.novelty_penalty = novelty_penalty
         cdef Element e, path, part
         cdef int e_index, path_index, i
         self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
