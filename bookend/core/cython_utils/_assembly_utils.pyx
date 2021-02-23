@@ -454,6 +454,7 @@ cdef class Locus:
     #         self.member_content = self.member_content[keep]
     #         self.weight = np.sum(self.weight_array)
     #         self.number_of_elements = self.membership.shape[0]
+    #         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
     #         self.information_content = get_information_content(self.membership)
     #         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
@@ -509,7 +510,8 @@ cdef class Locus:
             if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
             self.weight = np.sum(self.weight_array)
             self.number_of_elements = self.membership.shape[0]
-
+            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
+    
     cpdef void reduce_membership(self):
         """Given a matrix of membership values, 
         returns a [reduced_membership_matrix, weights] array
@@ -563,6 +565,7 @@ cdef class Locus:
             self.strand_array = self.strand_array[keep]
             self.membership = self.membership[keep,:]
             self.number_of_elements = len(keep)
+            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
             self.information_content = get_information_content(self.membership)
             if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
 
@@ -592,6 +595,7 @@ cdef class Locus:
             self.information_content = self.information_content[keep]
             self.member_content = self.member_content[keep]
             self.member_lengths = self.member_lengths[keep]
+            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
             if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void build_graph(self, reduce=True):
@@ -1175,6 +1179,7 @@ cdef class AnnotationLocus(Locus):
         self.information_content = self.information_content[keep]
         self.member_content = self.member_content[keep]
         self.transcripts = [self.transcripts[k] for k in keep]
+        self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
         if self.confidence >= 0: self.high_confidence_transcripts = list(np.where(self.rep_array >= self.confidence)[0])
 

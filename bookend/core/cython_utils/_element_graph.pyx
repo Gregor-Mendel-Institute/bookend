@@ -14,7 +14,7 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases
+    cdef public float bases, dead_end_penalty, novelty_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive):
@@ -23,6 +23,8 @@ cdef class ElementGraph:
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
         self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
+        self.dead_end_penalty = .5
+        self.novelty_penalty = .5
         cdef Element e, path, part
         cdef int e_index, path_index, i
         self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
@@ -220,7 +222,7 @@ cdef class ElementGraph:
             if len(ends) > 0: # At least one end is not excluded from the path
                 e_tag = True
         
-        return 1 * [1,10][s_tag] * [1,10][e_tag]
+        return 1 * [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
     
     cpdef list generate_extensions(self, Element path):
         """Defines all combinations of mutally compatible elements in
@@ -278,7 +280,7 @@ cdef class ElementGraph:
         best_score = -1
         for ext in extensions:
             score = self.calculate_extension_score(path, ext)
-            if score > best_score:
+            if score > best_score or (score == best_score and len(ext) > len(best_ext)):
                 best_ext = ext
                 best_score = score
         
@@ -292,13 +294,17 @@ cdef class ElementGraph:
             Element element
             int i
             set new_members
-            float bases, new_cov, similarity, e_bases
+            float bases, score, similarity, e_bases, novelty
             np.ndarray e_prop, e_weights, proportions, path_proportions
         new_members = set()
         bases = path.bases
         path_proportions = path.weights/path.cov
         proportions = path_proportions*path.bases
+        novelty = self.novelty_penalty
         for i in extension:
+            if self.assignments[i] > 0:
+                novelty = 1.
+            
             element = self.elements[i]
             e_prop = self.available_proportion(path.weights, element)
             e_weights = e_prop*element.weights
@@ -311,10 +317,12 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
-        new_cov = new_bases / new_length
-        similarity = 2 - np.sum(np.abs(path_proportions - proportions))
-        dead_end_penalty = self.dead_end(path, extension)
-        return new_cov * similarity * dead_end_penalty
+        similarity = .5 * (2 - np.sum(np.abs(path_proportions - proportions)))
+        score = new_bases / new_length
+        score *= similarity
+        score *= self.dead_end(path, extension)
+        score *= novelty
+        return score
     
     cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
