@@ -99,7 +99,7 @@ cdef class ElementGraph:
             
             path.weights /= path.length
     
-    cpdef void assemble(self, float minimum_proportion, bint naive):
+    cpdef void assemble(self, float minimum_proportion):
         """Iteratively perform find_optimal_path() on the graph
         until the number of novel reads fails to exceed minimum_proportion
         of the reads at the locus. If minimum_proportion == 0, assemble()
@@ -108,14 +108,14 @@ cdef class ElementGraph:
         cdef Element path
         
         total_bases_assigned = sum([path.bases for path in self.paths])
-        path = self.find_optimal_path(naive)
+        path = self.find_optimal_path()
         if path is self.emptyPath:
             return
         
         threshold = self.bases*(1-minimum_proportion)
         total_bases_assigned += self.add_path(path)
         while total_bases_assigned < threshold:
-            path = self.find_optimal_path(naive)
+            path = self.find_optimal_path()
             if path is self.emptyPath:
                 total_bases_assigned = threshold
             else:
@@ -141,7 +141,7 @@ cdef class ElementGraph:
         
         return proportion
     
-    cpdef void extend_path(self, Element path, list extension, bint naive):
+    cpdef void extend_path(self, Element path, list extension):
         """Merges the proper 
         """
         cdef Element extpath
@@ -302,7 +302,7 @@ cdef class ElementGraph:
         dead_end_penalty = self.dead_end(path, extension)
         return new_cov * similarity * dead_end_penalty
     
-    cpdef Element find_optimal_path(self, bint naive, bint verbose=False):
+    cpdef Element find_optimal_path(self, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
         cdef Element currentPath, e
         cdef tuple ext
@@ -315,13 +315,13 @@ cdef class ElementGraph:
         extensions = self.generate_extensions(currentPath)
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
-                self.extend_path(currentPath, extensions[0], naive)
+                self.extend_path(currentPath, extensions[0])
             else:
                 ext = self.best_extension(currentPath, extensions)
                 if verbose:
                     print("{} + {}".format(currentPath, ext))
                 
-                self.extend_path(currentPath, ext, naive)
+                self.extend_path(currentPath, ext)
             
             extensions = self.generate_extensions(currentPath)
         
