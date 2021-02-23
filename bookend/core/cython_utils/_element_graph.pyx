@@ -210,7 +210,7 @@ cdef class ElementGraph:
                 strand = element.strand
         
         if s_tag and e_tag: # Both ends are already found
-            return 100
+            return 1
         
         if not s_tag: # Try to extend from one of the known s_tag elements to path
             starts = [self.SM, self.SM|self.SP, self.SP][strand].difference(excludes)
