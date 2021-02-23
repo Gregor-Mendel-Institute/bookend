@@ -16,8 +16,8 @@ cdef class ElementGraph:
     cdef Element emptyPath
     cdef public float bases
     cdef public set SP, SM, EP, EM
-    cdef public bint no_ends
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths):
+    cdef public bint no_ends, naive
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -29,6 +29,10 @@ cdef class ElementGraph:
         self.overlap = overlap_matrix
         self.number_of_elements = self.overlap.shape[0]
         self.maxIC = membership_matrix.shape[1]
+        self.naive = naive
+        if self.naive:
+             weights = np.sum(np.copy(weights), axis=1, keepdims=True)
+        
         self.elements = [Element(
             i, weights[i,:], strands[i],
             membership_matrix[i,:], self.overlap, lengths, self.maxIC

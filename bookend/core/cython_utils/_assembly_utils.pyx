@@ -606,7 +606,7 @@ cdef class Locus:
                 updated = self.prune_unreachable_edges()
                 self.collapse_linear_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len, self.naive)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
@@ -618,7 +618,7 @@ cdef class Locus:
             paths_to_remove = [i for i in range(len(self.graph.paths)) if self.graph.paths[i].has_gaps]
         
         self.graph.remove_paths(sorted(list(set(paths_to_remove))))
-        reassigned_coverage = self.reassign_reads_to_paths()
+        reassigned_coverage = self.assign_weights()
         total_coverage = sum(reassigned_coverage)
         paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
         paths_to_remove += self.filter_truncations()
@@ -626,20 +626,15 @@ cdef class Locus:
             paths_to_remove += self.filter_retained_introns()
         
         self.graph.remove_paths(sorted(list(set(paths_to_remove))))
-        reassigned_coverage = self.reassign_reads_to_paths()
+        reassigned_coverage = self.assign_weights()
         total_coverage = sum(reassigned_coverage)
         paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
         while len(paths_to_remove) > 0:
             self.graph.remove_paths(sorted(list(set(paths_to_remove))))
-            reassigned_coverage = self.reassign_reads_to_paths()
+            reassigned_coverage = self.assign_weights()
             total_coverage = sum(reassigned_coverage)
             paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
         
-        if collapse: # Combine paths whose ends are in range of each other
-            pass
-            #TODO: Implement finding and combining ends
-            # end1.span.stop > end2.span.start
-
         for i in range(len(self.graph.paths)):
             path = self.graph.paths[i]
             self.transcripts.append(self.convert_path(path, i+1))
@@ -946,155 +941,7 @@ cdef class Locus:
         
         self.strand_array = new_strands
         return updated
-
-    cpdef list reassign_reads_to_paths(self):
-        """Reassigns reads by setting priors based on unique
-        assignments, then distributes shared reads via EM."""
-        # Initialize transcripts with uniquely-assignable Elements
-        cdef:
-            np.ndarray frag_assignment, coverage, priors, priors_count, bin_priors, bin_count
-            dict junctions, intron_assignment, intron_assign_count
-            int number_of_paths, number_assigned, path_index, i, f, count, uninitialized_count, l, r
-            float existing_coverage, f_depth, total_assigned_cov
-            (int, int) span, junction
-            list frag_assign_count, value, assigned, assigned_cov
-        
-        coverage = self.depth
-        junctions = copy.copy(self.J_plus)
-        junctions.update(self.J_minus)
-        number_of_paths = len(self.graph.paths)
-        number_of_frags = len(self.frags)
-        priors = np.zeros(number_of_paths, dtype=np.float32)
-        priors_count = np.zeros(number_of_paths, dtype=np.float32)
-        
-        # Create lookup structures for (partial) exons and introns
-        frag_assignment = np.zeros((number_of_paths,number_of_frags), dtype=np.int8)
-        intron_assignment = {}
-        for i in range(number_of_paths):
-            path = self.graph.paths[i]
-            for span in path.get_exons():
-                frag_assignment[i, span[0]:span[1]+1] = 1
-            
-            for span in path.get_introns():
-                junction = (self.frags[span[0]][0], self.frags[span[1]][1])
-                junction_hash = self.span_to_string(junction)
-                if junction_hash not in junctions:
-                    path.complete = False
-                    path.has_gaps = True
-                    continue
-                
-                intron_assignment[junction_hash] = intron_assignment.get(junction_hash, []) + [i]
-        
-        # Update priors with the coverage depth of all unique features
-        frag_assign_count = np.sum(frag_assignment, axis=0).tolist()
-        for f in range(number_of_frags):
-            count = frag_assign_count[f]
-            if count == 1: # Unique assignment
-                span = self.frags[f]
-                l = span[0] - self.leftmost
-                r = span[1] - self.leftmost
-                f_depth = np.mean(coverage[l:r])
-                for i in np.where(frag_assignment[:,f]==1)[0]:
-                    priors[i] += f_depth
-                    priors_count[i] += 1
-        
-        intron_assign_count = {junction_hash:len(value) for junction_hash,value in intron_assignment.items()}
-        for junction_hash,count in intron_assign_count.items():
-            if count == 1: # Uniquely assigned junction
-                f_depth = junctions.get(junction_hash, 0.0)
-                for i in intron_assignment[junction_hash]:
-                    priors[i] += f_depth
-                    priors_count[i] += 1
-        
-        # Average out the observations of all unique frags/introns
-        for i in range(priors.shape[0]):
-            if priors_count[i] > 0:
-                priors[i] = priors[i]/priors_count[i]
-        
-        # Update the priors with all frags/introns assigned to >1 path,
-        # applying them in bins of increasing count
-        bins = sorted(list(set(frag_assign_count)|set(intron_assign_count.values())))
-        for b in bins:
-            bin_priors = np.zeros(number_of_paths, dtype=np.float32)
-            bin_count = np.zeros(number_of_paths, dtype=np.float32)
-            for f in range(number_of_frags):
-                count = frag_assign_count[f]
-                if count == b: # Count matches the current bin
-                    span = self.frags[f]
-                    l = span[0] - self.leftmost
-                    r = span[1] - self.leftmost
-                    f_depth = np.mean(coverage[l:r])
-                    # Apportion the depth according to the ratio of the priors
-                    assigned = np.where(frag_assignment[:,f]==1)[0].tolist()
-                    assigned_cov = [priors[i] for i in assigned]
-                    uninitialized_count = assigned_cov.count(0)
-                    total_assigned_cov = sum(assigned_cov)
-                    if total_assigned_cov < f_depth and uninitialized_count > 0:
-                        # Uninitialized prior still exists; give remainder
-                        remainder = f_depth - total_assigned_cov
-                        for i in range(len(assigned_cov)):
-                            bin_count[assigned[i]] += 1
-                            if assigned_cov[i] == 0:
-                                bin_priors[assigned[i]] += remainder/uninitialized_count
-                            else:
-                                bin_priors[assigned[i]] += assigned_cov[i]
-                    elif total_assigned_cov > 0: # Assign all weight according to the ratio of priors
-                        for i in range(len(assigned_cov)):
-                            bin_priors[assigned[i]] += f_depth*assigned_cov[i]/total_assigned_cov
-                            bin_count[assigned[i]] += 1
-                    else:
-                        for i in range(len(assigned_cov)): # Assign 0 to all
-                            bin_count[assigned[i]] += 1
-
-            for junction_hash,count in intron_assign_count.items():
-                if count == b: # Count matches the current bin
-                    f_depth = junctions.get(junction_hash, 0.0)
-                    # Apportion the depth according to the ratio of the priors
-                    assigned = intron_assignment[junction_hash]
-                    assigned_cov = [priors[i] for i in assigned] 
-                    uninitialized_count = assigned_cov.count(0)
-                    total_assigned_cov = sum(assigned_cov)
-                    if total_assigned_cov < f_depth and uninitialized_count > 0:
-                        # Uninitialized prior still exists; give remainder
-                        remainder = f_depth - total_assigned_cov
-                        for i in range(len(assigned_cov)):
-                            bin_count[assigned[i]] += 1
-                            if assigned_cov[i] == 0:
-                                bin_priors[assigned[i]] += remainder/uninitialized_count
-                            else:
-                                bin_priors[assigned[i]] += assigned_cov[i]
-                    elif total_assigned_cov > 0: # Assign all weight according to the ratio of priors
-                        for i in range(len(assigned_cov)):
-                            bin_priors[assigned[i]] += f_depth*assigned_cov[i]/total_assigned_cov
-                            bin_count[assigned[i]] += 1
-                    else:
-                        for i in range(len(assigned_cov)): # Assign 0 to all
-                            bin_count[assigned[i]] += 1
-            
-            # Average out the current bin's values with existing priors
-            for i in range(priors.shape[0]):
-                if bin_count[i] > 0:
-                    bin_priors[i] = bin_priors[i]/bin_count[i]
-                    priors[i] = (priors[i] + bin_priors[i]) * .5
-        
-        # After all frags/introns were considered, priors are fully updated.
-        # Reassign all elements of the Graph proportionally to the prior ratios.
-        for i in range(priors.shape[0]):
-            path = self.graph.paths[i]
-            path.weights = np.zeros(path.weights.shape[0])
-            path.coverage = priors[i]
-        
-        for e in self.graph.elements:
-            assigned = e.assigned_to
-            assigned_cov = [priors[i] for i in assigned] 
-            total_assigned_cov = sum(assigned_cov)
-            if total_assigned_cov > 0:
-                for i in range(len(assigned_cov)):
-                    self.graph.paths[assigned[i]].weights += e.weights*assigned_cov[i]/total_assigned_cov
-        
-        # return list(priors)
-        return list([sum(path.weights) for path in self.graph.paths])
-
+    
     cpdef convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
         by converting it first to an RNAseqMapping object."""
