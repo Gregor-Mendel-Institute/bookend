@@ -149,7 +149,7 @@ cdef class ElementGraph:
         cdef np.ndarray prior_weights, proportion
         prior_weights = np.copy(path.weights)
         for i in range(len(extension)):
-            extpath = self.elements[i]
+            extpath = self.elements[extension[i]]
             proportion = self.available_proportion(prior_weights, extpath)
             path.merge(extpath, proportion)
     
@@ -268,6 +268,7 @@ cdef class ElementGraph:
             score = self.calculate_extension_score(path, ext)
             if score > best_score:
                 best_ext = ext
+                best_score = score
         
         return best_ext
     
