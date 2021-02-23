@@ -141,7 +141,7 @@ cdef class ElementGraph:
         
         return proportion
     
-    cpdef void extend_path(self, Element path, list extension):
+    cpdef void extend_path(self, Element path, tuple extension):
         """Merges the proper 
         """
         cdef Element extpath
