@@ -444,7 +444,7 @@ cdef class Locus:
         self.membership = membership
         self.weight_array = weight_array
         self.strand_array = strand_array
-        self.reduce_membership()
+        # self.reduce_membership()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
