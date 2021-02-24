@@ -1047,7 +1047,7 @@ cdef class Locus:
                     gap_is_splice = False
                 
                 splice.append(gap_is_splice)
-                exon = (l, r)
+                exon = (l+self.leftmost, r+self.leftmost)
                 ranges.append(exon)
                 l, r = frag
             
