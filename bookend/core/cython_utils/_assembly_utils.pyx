@@ -437,14 +437,14 @@ cdef class Locus:
         if threshold > 0:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
-                frag_depth = self.depth[l-self.leftmost:r-self.leftmost]
+                frag_depth = self.depth[l:r]
                 if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
                     MEMBERSHIP[:,i] = -1
         
         self.membership = membership
         self.weight_array = weight_array
         self.strand_array = strand_array
-        # self.reduce_membership()
+        self.reduce_membership()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
