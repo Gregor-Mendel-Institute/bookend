@@ -42,7 +42,7 @@ cdef class Locus:
     cdef public object BP, graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=0, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.02, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.transcripts = []
         self.traceback = []
@@ -91,6 +91,9 @@ cdef class Locus:
     def __len__(self):
         return self.rightmost - self.leftmost
     
+    def __add__(self, other):
+        return self.weight + other.weight
+
     def __repr__(self):
         symbols = {-1:'-', 0:' ', 1:'+', 2:'^'}
         summary_string = '<{} ({})>\n'.format(str(type(self)).split("'")[-2], self.number_of_elements)
@@ -108,7 +111,7 @@ cdef class Locus:
         cdef:
             np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
             Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
-            float threshold_depth
+            float threshold_depth, cumulative_depth, cutoff
             int l, r, p
             EndRange rng
             set prohibited_positions
@@ -122,6 +125,7 @@ cdef class Locus:
         self.cov_minus = self.depth_matrix[covm,] + self.depth_matrix[covn,]*(1-strandratio)
         self.depth = self.cov_plus + self.cov_minus
         self.end_ranges = dict()
+        prohibited_positions = set()
         for endtype in [Sp, Ep, Sm, Em]:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
@@ -130,6 +134,9 @@ cdef class Locus:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
+            for e in self.end_ranges[endtype]:
+                prohibited_positions.update(range(e.left, e.right+1))
+            
             self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         for j in self.J_plus.keys():
@@ -137,15 +144,22 @@ cdef class Locus:
         
         for j in self.J_minus.keys():
             self.branchpoints.update(list(self.string_to_span(j)))
-
-        prohibited_positions = set()
+        
         for p in self.branchpoints:
             prohibited_positions.update(range(p-self.min_overhang, p+self.min_overhang+1))
         
-        threshold_depth = np.max(self.depth)*self.minimum_proportion
-        gaps = ru.get_gaps(self.depth, self.extend, max(threshold_depth,1))
+        threshold_depth = np.sum(self.depth)*(1-self.minimum_proportion)
+        cumulative_depth = 0
+        cutoff = 1
+        for i in np.argsort(-self.depth):
+            cumulative_depth += self.depth[i]
+            if cumulative_depth >= threshold_depth:
+                cutoff = max(cutoff, self.depth[i])
+                break
+        
+        gaps = ru.get_gaps(self.depth, self.extend, cutoff)
         for block in gaps: 
-            l, r = block[0]+self.leftmost, block[1]+self.leftmost
+            l, r = block[0], block[1]
             if l not in prohibited_positions:
                 self.branchpoints.add(l)
             
@@ -158,6 +172,7 @@ cdef class Locus:
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
         cdef:
             np.ndarray value_order
+            EndRange e
             int p, maxp
             float cumulative, threshold, v, maxv, weight
             list filtered_pos, end_ranges
@@ -190,13 +205,16 @@ cdef class Locus:
                 if v > maxv or (v == maxv and endtype in [1,2]):
                     maxv, maxp = v, p
             else:
-                end_ranges.append(EndRange(current_range[0], current_range[1], maxp, weight, endtype))
+                e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
+                end_ranges.append(e)
                 current_range = (p, p+1)
                 maxp = p
                 maxv = v
                 weight = v
         
-        end_ranges.append(EndRange(current_range[0], current_range[1], maxp, weight, endtype))
+        e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
+        end_ranges.append(e)
+        end_ranges = [e for e in end_ranges if e.weight >= self.minimum_proportion*cumulative]
         return end_ranges
     
     cdef int end_of_cluster(self, int pos, list end_ranges):
