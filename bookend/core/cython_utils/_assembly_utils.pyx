@@ -73,6 +73,7 @@ cdef class Locus:
             self.extend = extend
             self.end_extend = end_extend
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
+            self.prune_junctions()
             self.generate_branchpoints()
             # if type(self) is AnnotationLocus:
             #     self.traceback = [set([i]) for i in range(len(self.reads))]
@@ -104,7 +105,45 @@ cdef class Locus:
             summary_string += '{} |{}|\t|{}|\n'.format(indices, members, overlap)
         
         return summary_string
-
+    
+    cpdef void prune_junctions(self):
+        """If a splice junction represents < minimum_proportion of junction-spanning reads
+        that either share its donor or its acceptor site, remove it."""
+        cdef dict jdict, leftsides, rightsides
+        cdef list keys, spans
+        cdef str k
+        cdef int i,l,r
+        cdef set prune
+        cdef np.ndarray counts
+        cdef float total
+        cdef bint passes
+        for jdict in [self.J_plus, self.J_minus]:
+            if jdict:
+                prune = set()
+                keys = sorted(list(jdict.keys()))
+                spans = [string_to_span(k) for k in keys]
+                leftsides = {}
+                rightsides = {}
+                for i in range(len(keys)):
+                    l,r = spans[i]
+                    leftsides[l] = leftsides.get(l, [])+[keys[i]]
+                    rightsides[r] = rightsides.get(r, [])+[keys[i]]
+                
+                for l in leftsides.keys():
+                    if len(leftsides[l]) > 1:
+                        counts = np.array([jdict[k] for k in leftsides[l]], dtype=np.float32)
+                        total = np.sum(counts)
+                        prune.update([k for k,fails in zip(leftsides[l], counts/total < self.minimum_proportion) if fails])
+                    
+                for r in rightsides.keys():
+                    if len(rightsides[r]) > 1:
+                        counts = np.array([jdict[k] for k in rightsides[r]], dtype=np.float32)
+                        total = np.sum(counts)
+                        prune.update([k for k,fails in zip(rightsides[r], counts/total < self.minimum_proportion) if fails])
+                
+                for k in prune:
+                    del jdict[k]
+    
     cpdef void generate_branchpoints(self):
         """Estimate strand-specific coverage, then use it to generate an ordered array of
         positions where branching could occur in the overlap graph."""
