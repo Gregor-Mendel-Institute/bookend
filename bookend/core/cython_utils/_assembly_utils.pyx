@@ -32,18 +32,19 @@ cdef class EndRange:
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
 cdef class Locus:
-    cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number
+    cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len
     cdef public bint naive, infer_starts, infer_ends, use_attributes
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
     cdef public dict adj, J_plus, J_minus, end_ranges, source_lookup
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources
-    cdef public object BP, graph
+    cdef public object graph
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, mean_read_length, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
+        self.oligo_len = 20
         self.transcripts = []
         self.traceback = []
         self.branchpoints = set()
@@ -64,11 +65,6 @@ cdef class Locus:
             self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
-            self.mean_read_length = np.zeros(len(self.source_lookup), dtype=np.float32)
-            length_by_source = list(zip(self.read_lengths, self.sources))
-            for k in self.source_lookup.keys():
-                self.mean_read_length[self.source_lookup[k]] = np.mean([l for l,s in length_by_source if s==k])
-            
             self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
@@ -315,7 +311,7 @@ cdef class Locus:
             temp_frags.append(block)
         
         self.frags = tuple(temp_frags) # Immutable after init, makes a vertex between all pairs of nonterminal branchpoint positions
-        self.frag_len = np.array([b-a for a,b in self.frags]+[np.mean(self.mean_read_length*.5)]*4, dtype=np.int32)
+        self.frag_len = np.array([b-a for a,b in self.frags]+[self.oligo_len]*4, dtype=np.int32)
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
         self.member_lengths = np.zeros(shape=len(self.reads), dtype=np.int32)
@@ -324,12 +320,12 @@ cdef class Locus:
             if i == 0:
                 a = i
             else:
-                a = self.frags[i][0] - self.leftmost
+                a = self.frags[i][0]
             
             if i == len(self.frags) - 1:
                 b = len(self.frag_by_pos)
             else:
-                b = self.frags[i][1] - self.leftmost
+                b = self.frags[i][1]
                 
             self.frag_by_pos[a:b] = i
         
@@ -362,17 +358,11 @@ cdef class Locus:
                 lfrag = self.frag_by_pos[l]
                 rfrag = self.frag_by_pos[r-1]
                 if self.min_overhang > 0:
-                    if self.frag_len[lfrag] > self.min_overhang:
-                        if l+self.min_overhang < locus_length:
-                            l_overhang = self.frag_by_pos[l+self.min_overhang-1]
-                            if l_overhang != lfrag: # The left overhang is too short
-                                lfrag = l_overhang
+                    if self.frag_len[lfrag] > self.min_overhang and l+self.min_overhang < locus_length:
+                        lfrag = self.frag_by_pos[l+self.min_overhang-1]
                     
-                    if self.frag_len[rfrag] > self.min_overhang:
-                        if r-self.min_overhang >= 0:
-                            r_overhang = self.frag_by_pos[r-self.min_overhang]
-                            if r_overhang != rfrag: # The left overhang is too short
-                                rfrag = r_overhang
+                    if self.frag_len[rfrag] > self.min_overhang and r-self.min_overhang >= 0:
+                        rfrag = self.frag_by_pos[r-self.min_overhang]
                 
                 if j == 0: # Starting block
                     if s == 1 and read.s_tag: # Left position is a 5' end
@@ -434,14 +424,15 @@ cdef class Locus:
                         elif s == -1 and junction_hash not in self.J_minus:
                             MEMBERSHIP[i,:] = -1 # Read contains a filtered junction, remove
                             break
-                        
-                        MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
+                        else:
+                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
                 
                 last_rfrag = rfrag
             
             # WEIGHT: partial coverage of the representative MEMBER by the current READ
             self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
-            weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
+            if self.member_lengths[i] > 0:
+                weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
         if threshold > 0:
             for i in range(len(self.frags)):
