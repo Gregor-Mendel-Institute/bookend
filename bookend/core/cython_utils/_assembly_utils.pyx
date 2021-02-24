@@ -126,19 +126,6 @@ cdef class Locus:
         self.depth = self.cov_plus + self.cov_minus
         self.end_ranges = dict()
         prohibited_positions = set()
-        for endtype in [Sp, Ep, Sm, Em]:
-            pos = np.where(self.depth_matrix[endtype,]>0)[0]
-            if endtype in [Sp, Ep]:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
-            else:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
-            
-            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
-            for e in self.end_ranges[endtype]:
-                prohibited_positions.update(range(e.left, e.right+1))
-            
-            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
-        
         for j in self.J_plus.keys():
             self.branchpoints.update(list(self.string_to_span(j)))
         
@@ -147,6 +134,20 @@ cdef class Locus:
         
         for p in self.branchpoints:
             prohibited_positions.update(range(p-self.min_overhang, p+self.min_overhang+1))
+        
+        for endtype in [Sp, Ep, Sm, Em]:
+            pos = np.where(self.depth_matrix[endtype,]>0)[0]
+            if endtype in [Sp, Ep]:
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
+            else:
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
+            
+            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
+            self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.terminal not in prohibited_positions]
+            for rng in self.end_ranges[endtype]:
+                prohibited_positions.update(range(rng.left, rng.right+1))
+            
+            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         threshold_depth = np.sum(self.depth)*(1-self.minimum_proportion)
         cumulative_depth = 0
