@@ -121,7 +121,7 @@ cdef class Locus:
             if jdict:
                 prune = set()
                 keys = sorted(list(jdict.keys()))
-                spans = [string_to_span(k) for k in keys]
+                spans = [self.string_to_span(k) for k in keys]
                 leftsides = {}
                 rightsides = {}
                 for i in range(len(keys)):
