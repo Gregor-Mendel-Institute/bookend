@@ -237,7 +237,7 @@ cdef class ElementGraph:
             (int, int) pair
         ingroup = np.array(sorted(path.ingroup))
         outgroup = np.array(sorted(path.outgroup))
-        freebies = tuple([i for i in currentPath.ingroup | currentPath.outgroup if self.elements[i].uniqueInformation(currentPath)==0])
+        freebies = tuple([i for i in path.ingroup | path.outgroup if self.elements[i].uniqueInformation(path)==0])
         if len(freebies) > 0:
             self.extend_path(path, freebies)
             ingroup = np.array(sorted(path.ingroup))
