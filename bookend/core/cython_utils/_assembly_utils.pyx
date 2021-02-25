@@ -299,9 +299,10 @@ cdef class Locus:
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
         cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
-        cdef np.ndarray membership, strand_array, weight_array
+        cdef np.ndarray membership, strand_array, weight_array, discard
         cdef char s
         cdef list temp_frags, bp_positions
+        cdef set discard_frags
         cdef (int, int) block, span
         cdef str junction_hash
         
@@ -435,12 +436,17 @@ cdef class Locus:
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
+        discard_frags = set()
         if threshold > 0:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
                 frag_depth = self.depth[l:r]
                 if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
-                    MEMBERSHIP[:,i] = -1
+                    discard_frags.add(i)
+        
+        discard = np.array(sorted(list(discard_frags)))
+        membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1
+        membership[:,discard] = -1
         
         self.membership = membership
         self.weight_array = weight_array
@@ -512,14 +518,18 @@ cdef class Locus:
         """Examines the membership of each frag. If coverage within a frag
         is < minimum_proportion of coverage around the frag, count the
         overlapping reads as false positive and remove them from the locus."""
-        cdef np.ndarray contains_frag, subtable, includes_c, excludes_c, keep
-        cdef tuple connections
-        cdef Py_ssize_t frag, c_frag
-        cdef float includes_weight, excludes_weight, total_weight
-        cdef set connected_frags, to_delete
+        cdef float cumulative_bases, removed_weight, threshold
+        cdef set to_delete
+        cdef np.ndarray bases_per_element
         to_delete = set()
-        cdef float removed_weight = 0
-        for frag in range(self.membership.shape[1]):
+        cumulative_bases = 0
+        removed_weight = 0
+        threshold = self.bases * self.minimum_proportion
+        bases_per_element = np.sum(self.weight_array, axis=1)*self.member_lengths
+        for i in np.argsort(bases_per_element):
+            cumulative_bases += bases_per_element
+            
+            if cumulative_bases >= threshold:break
             contains_frag = np.where(self.membership[:,frag]==1)[0]
             if contains_frag.shape[0] > 0:
                 # Get a sub-table of reads that include frag
