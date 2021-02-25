@@ -179,10 +179,11 @@ cdef class Locus:
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
             self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.terminal not in prohibited_positions]
+            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
+        
+        for endtype in [Sp, Ep, Sm, Em]:
             for rng in self.end_ranges[endtype]:
                 prohibited_positions.update(range(rng.left, rng.right+1))
-            
-            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         threshold_depth = np.sum(self.depth)*(1-self.minimum_proportion)
         cumulative_depth = 0
