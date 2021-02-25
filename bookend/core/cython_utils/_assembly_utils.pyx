@@ -1509,18 +1509,20 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
             np.all(overlap_matrix[:,containers]==-1, axis=1),
             overlap_matrix[i, ] >= 0
         ))[0]
+        compatible = np.where(np.logical_and(
+            np.any(overlap_matrix[:,containers] > 0, axis=1),
+            np.all(overlap_matrix[:,incompatible]==-1, axis=1)
+        ))[0]
         if len(incompatible) > 0:
             # Calculate the proportion of i to merge into i's containers and the proportion to separate
-            compatible = np.where(np.logical_and(
-                np.any(overlap_matrix[:,containers] > 0, axis=1),
-                np.all(overlap_matrix[:,incompatible]==-1, axis=1)
-            ))[0]
             incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
             compatible_weight = np.sum(new_weights[compatible,:],axis=0)
             retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
             incompatible_exists = incompatible_weight > 0
             retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
             retain_proportion[retain_proportion < minimum_proportion] = 0
+        else:
+            incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
         
         nonzero = np.where(new_weights[i,:] > 0)[0]
         weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
