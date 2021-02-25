@@ -1512,7 +1512,7 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
             # Calculate the proportion of i to merge into i's containers and the proportion to separate
             compatible = np.where(np.logical_and(
                 np.any(overlap_matrix[:,containers] > 0, axis=1),
-                np.all(overlap_matrix[:,incompatible_indices]==-1, axis=1)
+                np.all(overlap_matrix[:,incompatible]==-1, axis=1)
             ))[0]
             incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
             compatible_weight = np.sum(new_weights[compatible,:],axis=0)
