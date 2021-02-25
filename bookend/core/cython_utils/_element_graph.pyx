@@ -121,7 +121,7 @@ cdef class ElementGraph:
         cdef float threshold, total_bases_assigned
         cdef Element path
         
-        total_bases_assigned = sum([path.bases for path in self.paths])
+        total_bases_assigned = sum([self.elements[i].bases for i in np.where(self.assignments>0)[0]])
         path = self.find_optimal_path()
         if path is self.emptyPath:
             return
@@ -230,13 +230,19 @@ cdef class ElementGraph:
         at least one each from ingroup and outgroup if they are nonempty."""
         cdef:
             np.ndarray ingroup, outgroup
-            list pairs
+            list pairs, freebies
             set ext_accounts, ext_members, ext_nonmembers, exclude, extensions, contained
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
         ingroup = np.array(sorted(path.ingroup))
         outgroup = np.array(sorted(path.outgroup))
+        freebies = tuple([i for i in currentPath.ingroup | currentPath.outgroup if self.elements[i].uniqueInformation(currentPath)==0])
+        if len(freebies) > 0:
+            self.extend_path(path, freebies)
+            ingroup = np.array(sorted(path.ingroup))
+            outgroup = np.array(sorted(path.outgroup))
+        
         if len(ingroup) > 0:
             if len(outgroup) > 0:
                 pairs = list(set([(i,o) for o in outgroup for i in ingroup if self.overlap[i,o] > -1]))
