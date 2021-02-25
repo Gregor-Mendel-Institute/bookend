@@ -61,7 +61,7 @@ cdef class Locus:
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             self.reads = tuple(list_of_reads) # Cannot be mutated
-            self.read_lengths = np.array([r.get_length() for r in self.reads], dtype=np.int32)
+            self.read_lengths = np.array([r.get_length()+self.oligo_len*r.s_tag+self.oligo_len*r.e_tag for r in self.reads], dtype=np.int32)
             self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
