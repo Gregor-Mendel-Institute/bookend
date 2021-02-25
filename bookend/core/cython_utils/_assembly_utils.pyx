@@ -445,8 +445,8 @@ cdef class Locus:
                     discard_frags.add(i)
         
         discard = np.array(sorted(list(discard_frags)))
-        membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1
-        membership[:,discard] = -1
+        membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
+        membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
         
         self.membership = membership
         self.weight_array = weight_array
@@ -513,64 +513,6 @@ cdef class Locus:
     #         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
     #         self.information_content = get_information_content(self.membership)
     #         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
-    
-    cpdef void denoise(self, verbose=False):
-        """Examines the membership of each frag. If coverage within a frag
-        is < minimum_proportion of coverage around the frag, count the
-        overlapping reads as false positive and remove them from the locus."""
-        cdef float cumulative_bases, removed_weight, threshold
-        cdef set to_delete
-        cdef np.ndarray bases_per_element
-        to_delete = set()
-        cumulative_bases = 0
-        removed_weight = 0
-        threshold = self.bases * self.minimum_proportion
-        bases_per_element = np.sum(self.weight_array, axis=1)*self.member_lengths
-        for i in np.argsort(bases_per_element):
-            cumulative_bases += bases_per_element
-            
-            if cumulative_bases >= threshold:break
-            contains_frag = np.where(self.membership[:,frag]==1)[0]
-            if contains_frag.shape[0] > 0:
-                # Get a sub-table of reads that include frag
-                subtable = self.membership[contains_frag,:]
-                subtable[:,frag] = 0
-                # Get a table of connected frags that are also members
-                connections = np.where(subtable==1)
-                connected_frags = set(connections[1])
-                for c_frag in connected_frags:
-                    # Get all rows where the connected frag was found (1)
-                    includes_c = contains_frag[connections[0][connections[1]==c_frag]]
-                    # Get all rows where the connected frag is excluded (-1)
-                    excludes_c = contains_frag[np.where(subtable[:,c_frag] == -1)[0]]
-                    # Compare the weights of the two branches
-                    includes_weight = np.sum(self.weight_array[includes_c,:])
-                    excludes_weight = np.sum(self.weight_array[excludes_c,:])
-                    total_weight = includes_weight + excludes_weight
-                    if includes_weight < self.minimum_proportion * total_weight: # Excludes strongly outweighs
-                        to_delete.update(includes_c)
-                        removed_weight += includes_weight
-                    elif excludes_weight < self.minimum_proportion * total_weight: # Includes strongly outweighs
-                        to_delete.update(excludes_c)
-                        removed_weight += excludes_weight
-
-        # Remove all frags that make up < minimum_proportion of their branch
-        if verbose:
-            if len(to_delete) > 0:
-                print('\tDenoising reads: ({} / {}, {}%)'.format(removed_weight, self.weight, round(removed_weight/self.weight*100,1)))
-        
-        keep = np.array(list(set(range(self.membership.shape[0])).difference(to_delete)))
-        if len(keep) > 0:
-            self.weight_array = self.weight_array[keep,:]
-            self.rep_array = self.rep_array[keep]
-            self.strand_array = self.strand_array[keep]
-            self.information_content = self.information_content[keep]
-            self.member_content = self.member_content[keep]
-            self.membership = self.membership[keep,:]   
-            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
-            self.weight = np.sum(self.weight_array)
-            self.number_of_elements = self.membership.shape[0]
-            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
     
     cpdef void reduce_membership(self):
         """Given a matrix of membership values, 
@@ -644,7 +586,7 @@ cdef class Locus:
         
         if reduce:
             maxIC = self.membership.shape[1]
-            new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC)
+            new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC, self.minimum_proportion)
             keep = np.where(np.sum(new_weights, axis=1) > 0.1)[0]
             self.number_of_elements = len(keep)
             self.overlap = self.overlap[keep,:][:,keep]
@@ -1542,45 +1484,60 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC):
+cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC, float minimum_proportion):
     """Given a overlap matrix, 'bubble up' the weight of
     all reads that have one or more 'contained by' relationships
     to other reads. Pass from highest complexity reads down, assigning
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible_with_containers, incompatible, nonzero, incompatible_weight, weight_transform
+        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions
         Py_ssize_t full_path, i, n
         float total, weight
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-    for full_path in np.where(information_content == maxIC)[0]: # Ignore full paths here
-        containment[:,full_path] = False
-    
     contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
     IC_order = contained[np.lexsort((-information_content[contained], -member_content[contained]))] # Rank them by decreasing number of members
     new_weights = np.copy(read_weights)
     for i in IC_order:
         containers = np.where(containment[i,:])[0]
+        retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
         # Get the set of reads incompatible with all containers but that do not exclude i
-        incompatible_with_containers =  np.where(np.all(overlap_matrix[:,containers]==-1, axis=1))[0]
-        incompatible = incompatible_with_containers[overlap_matrix[i, incompatible_with_containers] >= 0]
-        # Calculate the proportion of i to merge into i's containers and the proportion to separate
-        incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
+        incompatible =  np.where(np.logical_and(
+            np.all(overlap_matrix[:,containers]==-1, axis=1),
+            overlap_matrix[i, ] >= 0
+        ))[0]
+        if len(incompatible) > 0:
+            # Calculate the proportion of i to merge into i's containers and the proportion to separate
+            compatible = np.where(np.logical_and(
+                np.any(overlap_matrix[:,containers] > 0, axis=1),
+                np.all(overlap_matrix[:,incompatible_indices]==-1, axis=1)
+            ))[0]
+            incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
+            compatible_weight = np.sum(new_weights[compatible,:],axis=0)
+            retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
+            incompatible_exists = incompatible_weight > 0
+            retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
+            retain_proportion[retain_proportion < minimum_proportion] = 0
+        
         nonzero = np.where(new_weights[i,:] > 0)[0]
         weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
         weight_transform = member_lengths[i]/member_lengths[containers]
+        total_container_weights = np.sum(new_weights[containers,:], axis=1)
+        container_proportions = total_container_weights / np.sum(total_container_weights)
         for n in nonzero: # Each source that has reads of i is evaluated separately
             container_weights = new_weights[containers,:][:,n]
             total = np.sum(container_weights) + incompatible_weight[n]
             weight = new_weights[i,n]
             if total > 0:
-                weight_to_add[:,n] += (weight * container_weights / total) * weight_transform
-                new_weights[i,n] *= (incompatible_weight[n] / total) # Residual weight
+                weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_weights / total * weight_transform
+            else:
+                weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_proportions * weight_transform
         
         new_weights[containers,:] += weight_to_add
-        if sum(incompatible_weight) == 0:
+        new_weights[i,] *= retain_proportion # Residual weight
+        if sum(new_weights[i,:]) == 0:
             containment[:,i] = False
     
     return new_weights
