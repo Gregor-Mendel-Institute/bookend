@@ -1492,8 +1492,8 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions
-        Py_ssize_t full_path, i, n
+        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions, compatibilities, informative, n_weights
+        Py_ssize_t full_path, i, c, n
         float total, weight
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
@@ -1507,13 +1507,16 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
         # Get the set of reads incompatible with all containers but that do not exclude i
         incompatible =  np.where(np.logical_and(
             np.all(overlap_matrix[:,containers]==-1, axis=1),
-            overlap_matrix[i, ] >= 0
+            overlap_matrix[:,i] >= 0
         ))[0]
         if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
             weight_to_add = new_weights[i,:] * member_lengths[i]/member_lengths[containers]
         else:
             compatible = np.where(np.logical_and(
-                np.any(overlap_matrix[:,containers] > 0, axis=1),
+                np.logical_or(
+                    np.any(overlap_matrix[:,containers] > 0, axis=1),
+                    np.any(overlap_matrix[containers,:] > 0, axis=0)
+                ),
                 np.all(overlap_matrix[:,incompatible]==-1, axis=1)
             ))[0]
             if len(incompatible) > 0:
@@ -1529,14 +1532,20 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
             nonzero = np.where(new_weights[i,:] > 0)[0]
             weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
             weight_transform = member_lengths[i]/member_lengths[containers]
-            total_container_weights = np.sum(new_weights[containers,:], axis=1)
+            compatibilities = overlap_matrix[:,containers][compatible,:] > -1
+            informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
+            container_weights = np.zeros(shape=(len(containers), new_weights.shape[1]), dtype=np.float32)
+            for c in range(len(containers)):
+                container_weights[c,] = np.sum(new_weights[compatible[informative][compatibilities[informative,c]],:],axis=0)
+
+            total_container_weights = np.sum(container_weights, axis=1)
             container_proportions = total_container_weights / np.sum(total_container_weights)
             for n in nonzero: # Each source that has reads of i is evaluated separately
-                container_weights = new_weights[containers,:][:,n]
-                total = np.sum(container_weights) + incompatible_weight[n]
+                n_weights = container_weights[:,n]
+                total = np.sum(n_weights) + incompatible_weight[n]
                 weight = new_weights[i,n]
                 if total > 0:
-                    weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_weights / total * weight_transform
+                    weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * n_weights / total * weight_transform
                 else:
                     weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_proportions * weight_transform
         
