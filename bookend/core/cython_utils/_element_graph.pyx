@@ -230,11 +230,12 @@ cdef class ElementGraph:
         at least one each from ingroup and outgroup if they are nonempty."""
         cdef:
             np.ndarray ingroup, outgroup
-            list pairs, freebies
+            list pairs
             set ext_accounts, ext_members, ext_nonmembers, exclude, extensions, contained
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
+            tuple freebies
         ingroup = np.array(sorted(path.ingroup))
         outgroup = np.array(sorted(path.outgroup))
         freebies = tuple([i for i in path.ingroup | path.outgroup if self.elements[i].uniqueInformation(path)==0])
