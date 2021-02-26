@@ -1495,6 +1495,91 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
+# cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC, float minimum_proportion):
+#     """Given a overlap matrix, 'bubble up' the weight of
+#     all reads that have one or more 'contained by' relationships
+#     to other reads. Pass from highest complexity reads down, assigning
+#     weight proportional to the existing weight.
+#     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
+#     cdef:
+#         np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions, compatibilities, informative, n_weights
+#         Py_ssize_t i, c, n, f
+#         float total, weight, proportion_incompatible
+    
+#     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
+#     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+#     contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
+#     IC_order = contained[np.lexsort((-information_content[contained], -member_content[contained]))] # Rank them by decreasing number of members
+#     new_weights = np.copy(read_weights)
+#     for i in IC_order:
+#         containers = np.where(containment[i,:])[0]
+#         retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
+#         # Get the set of reads incompatible with all containers but that do not exclude i
+#         incompatible =  np.where(np.logical_and(
+#             np.all(overlap_matrix[:,containers]==-1, axis=1),
+#             overlap_matrix[:,i] > 0
+#         ))[0]
+#         if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
+#             weight_to_add = new_weights[i,:] * member_lengths[i]/member_lengths[containers]
+#         else:
+#             compatible = np.where(np.logical_and(
+#                 np.logical_or(
+#                     np.any(overlap_matrix[:,containers] > 0, axis=1),
+#                     np.any(overlap_matrix[containers,:] > 0, axis=0)
+#                 ),
+#                 np.all(overlap_matrix[:,incompatible]==-1, axis=1)
+#             ))[0]
+#             if len(incompatible) > 0:
+#                 # Calculate the proportion of i to merge into i's containers and the proportion to separate
+#                 incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
+#                 compatible_weight = np.sum(new_weights[compatible,:],axis=0)
+#                 proportion_incompatible = np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight)
+#                 if proportion_incompatible < minimum_proportion:
+#                     incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
+#                 elif proportion_incompatible > (1 - minimum_proportion):
+#                     incompatible_weight = np.ones(shape=(new_weights.shape[1]), dtype=np.float32)    
+#                 else:
+#                     incompatible_exists = incompatible_weight > 0
+#                     retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
+#                     retain_proportion[retain_proportion < minimum_proportion] = 0
+#                     retain_proportion[retain_proportion > (1-minimum_proportion)] = 1
+#             else:
+#                 incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
+            
+#             if len(containers) == 1:
+#                 weight_to_add = (1 - retain_proportion) * new_weights[i,:] * member_lengths[i]/member_lengths[containers]
+#             else:
+#                 nonzero = np.where(new_weights[i,:] > 0)[0]
+#                 weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
+#                 weight_transform = member_lengths[i]/member_lengths[containers]
+                
+#                 compatibilities = overlap_matrix[:,containers][compatible,:] > -1
+#                 informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
+#                 container_weights = new_weights[containers,:]
+#                 for f in informative:
+#                     container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
+#                     if compatible[f] in containers:
+#                         container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
+                
+#                 total_container_weights = np.sum(container_weights, axis=1)
+#                 container_proportions = total_container_weights / np.sum(total_container_weights)
+#                 for n in nonzero: # Each source that has reads of i is evaluated separately
+#                     n_weights = container_weights[:,n]
+#                     total = np.sum(n_weights) + incompatible_weight[n]
+#                     weight = new_weights[i,n]
+#                     if total > 0:
+#                         weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * n_weights / total * weight_transform
+#                     else:
+#                         weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_proportions * weight_transform
+        
+#         new_weights[containers,:] += weight_to_add
+#         new_weights[i,] *= retain_proportion # Residual weight
+#         if sum(new_weights[i,:]) == 0:
+#             containment[:,i] = False
+#             containment[i,:] = False
+    
+#     return new_weights
+
 cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC, float minimum_proportion):
     """Given a overlap matrix, 'bubble up' the weight of
     all reads that have one or more 'contained by' relationships
@@ -1513,72 +1598,21 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     new_weights = np.copy(read_weights)
     for i in IC_order:
         containers = np.where(containment[i,:])[0]
-        retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
+        containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
         # Get the set of reads incompatible with all containers but that do not exclude i
         incompatible =  np.where(np.logical_and(
             np.all(overlap_matrix[:,containers]==-1, axis=1),
             overlap_matrix[:,i] > 0
         ))[0]
+        incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
         if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
-            weight_to_add = new_weights[i,:] * member_lengths[i]/member_lengths[containers]
-        else:
-            compatible = np.where(np.logical_and(
-                np.logical_or(
-                    np.any(overlap_matrix[:,containers] > 0, axis=1),
-                    np.any(overlap_matrix[containers,:] > 0, axis=0)
-                ),
-                np.all(overlap_matrix[:,incompatible]==-1, axis=1)
-            ))[0]
-            if len(incompatible) > 0:
-                # Calculate the proportion of i to merge into i's containers and the proportion to separate
-                incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
-                compatible_weight = np.sum(new_weights[compatible,:],axis=0)
-                proportion_incompatible = np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight)
-                if proportion_incompatible < minimum_proportion:
-                    incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
-                elif proportion_incompatible > (1 - minimum_proportion):
-                    incompatible_weight = np.ones(shape=(new_weights.shape[1]), dtype=np.float32)    
-                else:
-                    incompatible_exists = incompatible_weight > 0
-                    retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
-                    retain_proportion[retain_proportion < minimum_proportion] = 0
-                    retain_proportion[retain_proportion > (1-minimum_proportion)] = 1
-            else:
-                incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
-            
-            if len(containers) == 1:
-                weight_to_add = (1 - retain_proportion) * new_weights[i,:] * member_lengths[i]/member_lengths[containers]
-            else:
-                nonzero = np.where(new_weights[i,:] > 0)[0]
-                weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
-                weight_transform = member_lengths[i]/member_lengths[containers]
-                
-                compatibilities = overlap_matrix[:,containers][compatible,:] > -1
-                informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-                container_weights = new_weights[containers,:]
-                for f in informative:
-                    container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
-                    if compatible[f] in containers:
-                        container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
-                
-                total_container_weights = np.sum(container_weights, axis=1)
-                container_proportions = total_container_weights / np.sum(total_container_weights)
-                for n in nonzero: # Each source that has reads of i is evaluated separately
-                    n_weights = container_weights[:,n]
-                    total = np.sum(n_weights) + incompatible_weight[n]
-                    weight = new_weights[i,n]
-                    if total > 0:
-                        weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * n_weights / total * weight_transform
-                    else:
-                        weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_proportions * weight_transform
-        
-        new_weights[containers,:] += weight_to_add
-        new_weights[i,] *= retain_proportion # Residual weight
-        if sum(new_weights[i,:]) == 0:
+            new_weights[containers,:] += new_weights[i,:] * member_lengths[i]/member_lengths[containers]
+            new_weights[i,] = 0
             containment[:,i] = False
             containment[i,:] = False
     
     return new_weights
+
 
 cpdef set dictBFS(dict adjacency, source):
     """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
