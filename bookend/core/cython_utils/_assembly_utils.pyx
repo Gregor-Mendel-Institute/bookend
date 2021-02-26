@@ -1501,7 +1501,7 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     cdef:
         np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions, compatibilities, informative, n_weights
         Py_ssize_t i, c, n
-        float total, weight
+        float total, weight, proportion_incompatible
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
@@ -1530,12 +1530,16 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
                 # Calculate the proportion of i to merge into i's containers and the proportion to separate
                 incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
                 compatible_weight = np.sum(new_weights[compatible,:],axis=0)
-                if np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight) >= minimum_proportion:
+                proportion_incompatible = np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight)
+                if proportion_incompatible < minimum_proportion:
+                    incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
+                elif proportion_incompatible > (1 - minimum_proportion):
+                    incompatible_weight = np.ones(shape=(new_weights.shape[1]), dtype=np.float32)    
+                else:
                     incompatible_exists = incompatible_weight > 0
                     retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
                     retain_proportion[retain_proportion < minimum_proportion] = 0
-                else:
-                    incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
+                    retain_proportion[retain_proportion > (1-minimum_proportion)] = 1
             else:
                 incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
             
