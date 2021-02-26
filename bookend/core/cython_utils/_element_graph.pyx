@@ -235,7 +235,7 @@ cdef class ElementGraph:
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
-            tuple freebies
+            tuple freebies, ext
         ingroup = np.array(sorted(path.ingroup))
         outgroup = np.array(sorted(path.outgroup))
         freebies = tuple([i for i in path.ingroup | path.outgroup if self.elements[i].uniqueInformation(path)==0])
@@ -276,7 +276,9 @@ cdef class ElementGraph:
             
             contained.update([pair[0], pair[1]])
             contained.difference_update(exclude)
-            extensions.add(tuple(sorted(list(contained))))
+            ext = tuple(sorted(list(contained)))
+            if len(ext) > 1 or self.elements[i].uniqueMembers(path) > 0:
+                extensions.add(ext)
         
         return sorted(list(extensions))
     
