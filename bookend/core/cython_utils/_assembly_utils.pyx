@@ -452,7 +452,7 @@ cdef class Locus:
                 if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
                     discard_frags.add(i)
         
-        discard = np.array(sorted(list(discard_frags)))
+        discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
         membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
         membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
         
@@ -1587,9 +1587,8 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
     weight proportional to the existing weight.
     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
     cdef:
-        np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions, compatibilities, informative, n_weights
-        Py_ssize_t i, c, n, f
-        float total, weight, proportion_incompatible
+        np.ndarray containment, contained, IC_order, new_weights, containers, incompatible
+        Py_ssize_t i
     
     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
