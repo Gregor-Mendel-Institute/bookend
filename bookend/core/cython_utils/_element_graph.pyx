@@ -277,7 +277,7 @@ cdef class ElementGraph:
             contained.update([pair[0], pair[1]])
             contained.difference_update(exclude)
             ext = tuple(sorted(list(contained)))
-            if len(ext) > 1 or self.elements[i].uniqueMembers(path) > 0:
+            if len(ext) > 1 or self.elements[ext[0]].uniqueMembers(path) > 0:
                 extensions.add(ext)
         
         return sorted(list(extensions))
