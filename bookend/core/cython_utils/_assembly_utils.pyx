@@ -456,6 +456,9 @@ cdef class Locus:
         membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
         membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
         
+        if self.naive:
+            weight_array = np.sum(weight_array,axis=1)
+        
         self.membership = membership
         self.weight_array = weight_array
         self.strand_array = strand_array
