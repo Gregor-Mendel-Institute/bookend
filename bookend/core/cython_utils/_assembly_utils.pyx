@@ -1514,7 +1514,7 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
         # Get the set of reads incompatible with all containers but that do not exclude i
         incompatible =  np.where(np.logical_and(
             np.all(overlap_matrix[:,containers]==-1, axis=1),
-            overlap_matrix[:,i] >= 0
+            overlap_matrix[:,i] > 0
         ))[0]
         if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
             weight_to_add = new_weights[i,:] * member_lengths[i]/member_lengths[containers]
@@ -1530,9 +1530,12 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
                 # Calculate the proportion of i to merge into i's containers and the proportion to separate
                 incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
                 compatible_weight = np.sum(new_weights[compatible,:],axis=0)
-                incompatible_exists = incompatible_weight > 0
-                retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
-                retain_proportion[retain_proportion < minimum_proportion] = 0
+                if np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight) >= minimum_proportion:
+                    incompatible_exists = incompatible_weight > 0
+                    retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
+                    retain_proportion[retain_proportion < minimum_proportion] = 0
+                else:
+                    incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
             else:
                 incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
             
