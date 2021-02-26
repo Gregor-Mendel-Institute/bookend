@@ -376,6 +376,8 @@ cdef class Locus:
                             l = tl
                             lfrag = self.frag_by_pos[l]
                             MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond source
+                        else:
+                            self.read_lengths[i] -= self.oligo_len
                     elif s == -1 and read.e_tag: # Left position is a 3' end
                         tl = self.end_of_cluster(l, self.end_ranges[3])
                         if tl >= 0:
@@ -383,6 +385,8 @@ cdef class Locus:
                             l = tl
                             lfrag = self.frag_by_pos[l]
                             MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond sink
+                        else:
+                            self.read_lengths[i] -= self.oligo_len
                 
                 if j == len(read.ranges)-1: # Ending block
                     if s == 1 and read.e_tag: # Right position is a 3' end
@@ -392,6 +396,8 @@ cdef class Locus:
                             r = tr
                             rfrag = self.frag_by_pos[r-1]
                             MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond sink
+                        else:
+                            self.read_lengths[i] -= self.oligo_len
                     elif s == -1 and read.s_tag: # Right position is a 5' end
                         tr = self.end_of_cluster(r, self.end_ranges[2])
                         if tr >= 0:
@@ -399,7 +405,8 @@ cdef class Locus:
                             r = tr
                             rfrag = self.frag_by_pos[r-1]
                             MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
-                
+                        else:
+                            self.read_lengths[i] -= self.oligo_len
                 if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
                     if len(read.ranges) > 1:
                         if j == 0 and read.splice[j]: # The right border is a splice junction, structural violation
