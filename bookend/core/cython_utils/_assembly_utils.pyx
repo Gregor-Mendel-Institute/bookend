@@ -1549,14 +1549,14 @@ cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray membe
                 nonzero = np.where(new_weights[i,:] > 0)[0]
                 weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
                 weight_transform = member_lengths[i]/member_lengths[containers]
+                
                 compatibilities = overlap_matrix[:,containers][compatible,:] > -1
                 informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-                if len(informative) == 0: # All containers are mutually compatible
-                    container_weights = new_weights[containers,:]
-                else:
-                    container_weights = np.zeros(shape=(len(containers), new_weights.shape[1]), dtype=np.float32)
-                    for c in range(len(containers)):
-                        container_weights[c,] = np.sum(new_weights[compatible[informative][compatibilities[informative,c]],:],axis=0)
+                container_weights = new_weights[containers,:]
+                for f in informative:
+                    container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
+                    if compatible[f] in containers:
+                        container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
                 
                 total_container_weights = np.sum(container_weights, axis=1)
                 container_proportions = total_container_weights / np.sum(total_container_weights)
