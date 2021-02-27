@@ -427,6 +427,7 @@ cdef class Element:
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
     cdef public list assigned_to
     cdef public char strand
+    cdef public dict junction_cov
     cdef public float cov, coverage, bases
     cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights, all
@@ -452,6 +453,7 @@ cdef class Element:
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
         self.contained = set()
+        self.junction_cov = {}
         self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
@@ -471,7 +473,6 @@ cdef class Element:
                 else:
                     continue
             
-            self.update()
             for i in range(self.number_of_elements):
                 if i == self.index:
                     continue
@@ -490,6 +491,10 @@ cdef class Element:
                     self.ingroup.add(i)
                     if overIn == 2:
                         self.contains.add(i)
+            
+            self.update()
+            for junction in self.get_junctions():
+                self.junction_cov[junction] = self.cov
     
     def __repr__(self):
         chars = [' ']*self.maxIC
@@ -501,6 +506,28 @@ cdef class Element:
             chars[n] = '_'
         
         return '|{}| {}-{} ({})'.format(''.join(chars),self.left,self.right,strand)
+    
+    cpdef list get_junctions(self):
+        """Returns a list of (lm, rm) tuples that define all 'filled gaps'
+        in Element.members (nonadjacent members with nonmembership between)."""
+        cdef int member, last_member
+        cdef list junctions
+        last_member = -1
+        for member in sorted(list(self.members)): # Convert membership into ranges
+            if member >= self.maxIC-4: # Ignore starts/ends
+                break
+            
+            if last_member > -1 and member > last_member + 1:
+                if all([m in self.nonmembers for m in range(last_member+1, member)]):
+                    junctions.append(self.span_to_string((last_member, member)))
+            
+            last_member = member
+        
+        return junctions
+    
+    cdef str span_to_string(self, (int, int) span):
+        """Converts a tuple of two ints to a string connected by ':'"""
+        return '{}:{}'.format(span[0], span[1])
     
     cpdef str as_string(self):
         cdef str string = ''
@@ -661,6 +688,7 @@ cdef class Element:
         cdef bint extendedLeft, extendedRight
         cdef int o, i, leftMember, rightMember
         cdef float old_length
+        cdef str junction
         if self.empty:
             return
         
@@ -723,6 +751,9 @@ cdef class Element:
             self.left = min(self.left, other.left)
         
         self.weights = (other.weights*other.length*proportion + self.weights*old_length)/self.length
+        for junction in other.get_junctions():
+            self.junction_cov[junction] = self.junction_cov.get(junction, 0.) + other.cov*proportion
+        
         self.update()
         if self.strand == 1: # Enforce directionality of edges
             self.outgroup = set([o for o in self.outgroup if o > self.right])
