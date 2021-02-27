@@ -257,7 +257,7 @@ cdef class ElementGraph:
         for pair in pairs:
             e_in = self.elements[pair[0]]
             e_out = self.elements[pair[1]]
-            contained = e_in.outgroup | e_out.ingroup # Potential set of elements contained in the extension
+            contained = e_in.outgroup | e_out.ingroup | e_in.contains | e_out.contains # Potential set of elements contained in the extension
             # Filter 1: All elements already included or excluded in the extension itself
             ext_accounts = e_in.includes | path.includes | e_out.includes | e_in.excludes | path.excludes | e_out.excludes
             contained.difference_update(ext_accounts)
@@ -424,7 +424,7 @@ cdef class Element:
     cdef public list assigned_to
     cdef public char strand
     cdef public float cov, coverage, bases
-    cdef public set members, nonmembers, ingroup, outgroup, excludes, includes, end_indices
+    cdef public set members, nonmembers, ingroup, outgroup, contains, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
@@ -446,6 +446,7 @@ cdef class Element:
         self.nonmembers = set()                       # Set of Members indices incompatible with this Element
         self.ingroup = set()                          # Set of compatible upstream Elements
         self.outgroup = set()                         # Set of Compatible downstream Elements
+        self.contains = set()
         self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
@@ -476,10 +477,13 @@ cdef class Element:
                     continue
                 elif overOut >= 1:
                     self.outgroup.add(i)
+                        
                 
                 overIn = overlap[i, self.index]
                 if overIn >= 1:
                     self.ingroup.add(i)
+                    if overIn == 2:
+                        self.contains.add(i)
     
     def __repr__(self):
         chars = [' ']*self.maxIC
