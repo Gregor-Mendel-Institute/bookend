@@ -17,7 +17,7 @@ cdef class ElementGraph:
     cdef public float bases, dead_end_penalty, novelty_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive=False, dead_end_penalty=.5, novelty_penalty=1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -307,8 +307,10 @@ cdef class ElementGraph:
             Element element
             int i
             set new_members
-            float bases, score, similarity, e_bases, novelty
+            float bases, score, similarity, e_cov, e_bases, novelty, jcov, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions
+            dict junction_cov
+        junction_cov = dict()
         new_members = set()
         bases = path.bases
         path_proportions = path.weights/path.cov
@@ -321,8 +323,12 @@ cdef class ElementGraph:
             element = self.elements[i]
             e_prop = self.available_proportion(path.weights, element)
             e_weights = e_prop*element.weights
-            e_bases = np.sum(e_weights)*element.length
+            e_cov = np.sum(e_weights)
+            e_bases = e_cov*element.length
             bases += e_bases
+            for junction in element.junction_cov.keys():
+                junction_cov[junction] = junction_cov.get(junction, 0.) + e_cov
+            
             proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
         
@@ -332,9 +338,9 @@ cdef class ElementGraph:
         new_bases = bases - path.bases
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         score = new_bases / new_length
-        score *= similarity
-        score *= self.dead_end(path, extension)
-        score *= novelty
+        jcov = np.mean(list(junction_cov.values()))/score if junction_cov else 1.
+        dead_end_penalty = self.dead_end(path, extension)
+        score *= jcov * similarity * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, bint verbose=False):
