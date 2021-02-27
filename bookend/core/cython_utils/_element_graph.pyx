@@ -231,14 +231,17 @@ cdef class ElementGraph:
         cdef:
             np.ndarray ingroup, outgroup
             list pairs
-            set ext_accounts, ext_members, ext_nonmembers, exclude, extensions, contained
+            set ext_accounts, ext_members, ext_nonmembers, exclude, contained
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
             tuple freebies, ext
+            dict extdict
+            str exthash
+        extdict = {}
         ingroup = np.array(sorted(path.ingroup))
         outgroup = np.array(sorted(path.outgroup))
-        freebies = tuple([i for i in path.ingroup | path.outgroup if self.elements[i].uniqueInformation(path)==0])
+        freebies = tuple(path.contains.difference(path.includes))
         if len(freebies) > 0:
             self.extend_path(path, freebies)
             ingroup = np.array(sorted(path.ingroup))
@@ -253,7 +256,6 @@ cdef class ElementGraph:
             pairs = [(path.index,o) for o in outgroup]
         
         # Make an extension set out of each pair by adding all elements contained by path+pair
-        extensions = set()
         for pair in pairs:
             e_in = self.elements[pair[0]]
             e_out = self.elements[pair[1]]
@@ -278,9 +280,11 @@ cdef class ElementGraph:
             contained.difference_update(exclude)
             ext = tuple(sorted(list(contained)))
             if len(ext) > 1 or len(self.elements[ext[0]].uniqueMembers(path)) > 0:
-                extensions.add(ext)
-        
-        return sorted(list(extensions))
+                exthash = '_'.join([','.join([str(i) for i in sorted(ext_members)]), ','.join([str(i) for i in sorted(ext_nonmembers)])])
+                if len(ext) > len(extdict.get(exthash, ())):
+                    extdict[exthash] = ext
+                
+        return sorted(list(extdict.values()))
     
     cpdef tuple best_extension(self, Element path, list extensions):
         cdef tuple ext, best_ext
@@ -424,7 +428,7 @@ cdef class Element:
     cdef public list assigned_to
     cdef public char strand
     cdef public float cov, coverage, bases
-    cdef public set members, nonmembers, ingroup, outgroup, contains, excludes, includes, end_indices
+    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
@@ -447,6 +451,7 @@ cdef class Element:
         self.ingroup = set()                          # Set of compatible upstream Elements
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
+        self.contained = set()
         self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
@@ -477,7 +482,8 @@ cdef class Element:
                     continue
                 elif overOut >= 1:
                     self.outgroup.add(i)
-                        
+                    if overOut == 2:
+                        self.contained.add(i)
                 
                 overIn = overlap[i, self.index]
                 if overIn >= 1:
@@ -670,6 +676,8 @@ cdef class Element:
             self.strand = other.strand
         
         old_length = self.length
+        self.contains.update(other.contains)
+        self.contained.intersection_update(other.contained)
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
