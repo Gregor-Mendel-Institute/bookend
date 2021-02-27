@@ -541,7 +541,7 @@ cdef class Locus:
                     competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
                     # Subset for competitors that span the informative member(s)
                     compmembers = np.where(self.membership[competitors,:-4]==1)
-                    competitors = competitors[np.array(sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)]))))]
+                    competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
                     in_weight = np.sum(self.weight_array[compatible,:])
                     out_weight = np.sum(self.weight_array[competitors,:])
                     proportion = in_weight / (in_weight+out_weight)
