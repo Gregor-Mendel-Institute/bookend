@@ -528,8 +528,9 @@ cdef class Locus:
         """Checks the competitors of each read. If the read (plus compatible reads)
         accumulates to <minimum_proportion of sum(compatible + incompatible), 
         remove the read."""
-        cdef np.ndarray keep, competitors, compatible, informative, compmembers
+        cdef np.ndarray keep, competitors, compatible, informative
         cdef float in_weight, out_weight, proportion
+        cdef tuple compmembers
         keep = np.ones(self.membership.shape[0], dtype=np.bool)
         for index in range(self.membership.shape[0]):
             if keep[index]:
