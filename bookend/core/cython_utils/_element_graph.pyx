@@ -307,7 +307,7 @@ cdef class ElementGraph:
             Element element
             int i
             set new_members
-            float bases, score, similarity, e_cov, e_bases, novelty, jcov, dead_end_penalty
+            float bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions
             dict junction_cov
         junction_cov = dict()
@@ -331,16 +331,18 @@ cdef class ElementGraph:
             
             proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
-        
+
         proportions /= bases
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
+        ext_cov = new_bases / new_length
+        path_jcov = np.mean(list(path.junction_cov.values())) if path.junction_cov else path.cov
+        ext_jcov = np.mean(list(junction_cov.values())) if junction_cov else ext_cov
+        junction_delta = ext_jcov / path_jcov
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
-        score = new_bases / new_length
-        jcov = np.mean(list(junction_cov.values()))/score if junction_cov else 1.
         dead_end_penalty = self.dead_end(path, extension)
-        score *= jcov * similarity * dead_end_penalty * novelty
+        score = ext_cov * junction_delta * similarity * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, bint verbose=False):
@@ -549,12 +551,12 @@ cdef class Element:
         
         return string
     
-    def __eq__(self, other): return self.bases == other.bases
-    def __ne__(self, other): return self.bases != other.bases
-    def __gt__(self, other): return self.bases >  other.bases
-    def __ge__(self, other): return self.bases >= other.bases
-    def __lt__(self, other): return self.bases <  other.bases
-    def __le__(self, other): return self.bases <= other.bases
+    def __eq__(self, other): return self.cov == other.cov
+    def __ne__(self, other): return self.cov != other.cov
+    def __gt__(self, other): return self.cov >  other.cov
+    def __ge__(self, other): return self.cov >= other.cov
+    def __lt__(self, other): return self.cov <  other.cov
+    def __le__(self, other): return self.cov <= other.cov
 
     def __add__(self, other):
         if self.empty: # The special cast emptyPath defeats addition
@@ -759,7 +761,7 @@ cdef class Element:
         
         self.weights = (other.weights*other.length*proportion + self.weights*old_length)/self.length
         for junction in other.get_junctions():
-            self.junction_cov[junction] = self.junction_cov.get(junction, 0.) + other.cov*proportion
+            self.junction_cov[junction] = self.junction_cov.get(junction, 0.) + np.sum(other.weights*proportion)
         
         self.update()
         if self.strand == 1: # Enforce directionality of edges
