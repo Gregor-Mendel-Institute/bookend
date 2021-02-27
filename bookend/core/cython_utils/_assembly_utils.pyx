@@ -538,18 +538,19 @@ cdef class Locus:
                 if len(competitors) > 0:
                     compatible = self.get_compatible(index, competitors)
                     informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
-                    # Subset for competitors that exclude the informative member(s) of the compatible set
-                    competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
-                    # Subset for competitors that span the informative member(s)
-                    compmembers = np.where(self.membership[competitors,:-4]==1)
-                    competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
-                    in_weight = np.sum(self.weight_array[compatible,:])
-                    out_weight = np.sum(self.weight_array[competitors,:])
-                    proportion = in_weight / (in_weight+out_weight)
-                    if proportion < self.minimum_proportion:
-                        keep[compatible] = False
-                    elif proportion > 1 - self.minimum_proportion:
-                        keep[competitors] = False
+                    if len(informative) > 0:
+                        # Subset for competitors that exclude the informative member(s) of the compatible set
+                        competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
+                        # Subset for competitors that span the informative member(s)
+                        compmembers = np.where(self.membership[competitors,:-4]==1)
+                        competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
+                        in_weight = np.sum(self.weight_array[compatible,:])
+                        out_weight = np.sum(self.weight_array[competitors,:])
+                        proportion = in_weight / (in_weight+out_weight)
+                        if proportion < self.minimum_proportion:
+                            keep[compatible] = False
+                        elif proportion > 1 - self.minimum_proportion:
+                            keep[competitors] = False
         
         self.subset_elements(keep)
     
