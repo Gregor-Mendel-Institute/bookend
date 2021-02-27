@@ -552,7 +552,7 @@ cdef class Locus:
                         elif proportion > 1 - self.minimum_proportion:
                             keep[competitors] = False
         
-        self.subset_elements(keep)
+        self.subset_elements(np.where(keep)[0])
     
     cpdef np.ndarray get_competitors(self, int index):
         """Given an element index, return a list of all elements that 
@@ -641,9 +641,8 @@ cdef class Locus:
         if reduce:
             self.denoise()
             maxIC = self.membership.shape[1]
-            new_weights = self.resolve_containment()
-            keep = np.where(np.sum(new_weights, axis=1) > 0)[0]
-            self.weight_array = new_weights
+            self.resolve_containment()
+            keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
             self.subset_elements(keep)
     
     cpdef void subset_elements(self, np.ndarray keep):
