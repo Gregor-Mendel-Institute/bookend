@@ -513,6 +513,7 @@ cdef class Element:
         cdef int member, last_member
         cdef list junctions
         last_member = -1
+        junctions = list()
         for member in sorted(list(self.members)): # Convert membership into ranges
             if member >= self.maxIC-4: # Ignore starts/ends
                 break
