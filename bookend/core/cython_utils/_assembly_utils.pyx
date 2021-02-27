@@ -65,7 +65,6 @@ cdef class Locus:
             self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
-            self.weight = float(0)
             self.extend = extend
             self.end_extend = end_extend
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
@@ -89,8 +88,8 @@ cdef class Locus:
         return self.rightmost - self.leftmost
     
     def __add__(self, other):
-        return self.weight + other.weight
-
+        return self.raw_bases + other.raw_bases
+    
     def __repr__(self):
         symbols = {-1:'-', 0:' ', 1:'+', 2:'^'}
         summary_string = '<{} ({})>\n'.format(str(type(self)).split("'")[-2], self.number_of_elements)
@@ -525,6 +524,49 @@ cdef class Locus:
     #         self.information_content = get_information_content(self.membership)
     #         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
+    cpdef void denoise(self):
+        """Checks the competitors of each read. If the read (plus compatible reads)
+        accumulates to <minimum_proportion of sum(compatible + incompatible), 
+        remove the read."""
+        cdef np.ndarray keep, competitors, compatible
+        cdef float in_weight, out_weight, proportion
+        keep = np.ones(self.membership.shape[0], dtype=np.bool)
+        for index in range(self.membership.shape[0]):
+            if keep[index]:
+                competitors = self.get_competitors(index)
+                if len(competitors) > 0:
+                    compatible = self.get_compatible(index, competitors)
+                    in_weight = np.sum(self.weight_array[np.append(compatible, index),:])
+                    out_weight = np.sum(self.weight_array[competitors,:])
+                    proportion = in_weight / (in_weight+out_weight)
+                    if proportion < self.minimum_proportion:
+                        keep[index] = False
+                        keep[compatible] = False
+                    elif proportion > 1 - self.minimum_proportion:
+                        keep[competitors] = False
+        
+        self.subset_elements(keep)
+    
+    cpdef np.ndarray get_competitors(self, int index):
+        """Given an element index, return a list of all elements that 
+        (1) share at least one member and 
+        (2) are incompatible."""
+        cdef np.ndarray incompatible, competitors
+        incompatible =  np.where(self.overlap[:,index]==-1)[0]
+        competitors = incompatible[np.where(np.sum(self.membership[incompatible,:][:,self.membership[index,:]==1]==1, axis=1)>0)[0]]
+        return competitors
+        
+    cdef np.ndarray get_compatible(self, int index, np.ndarray competitors):
+        cdef np.ndarray compatible
+        compatible = np.where(np.logical_and(
+            np.logical_or(
+                self.overlap[:,index] > 0,
+                self.overlap[index,:] > 0,
+            ),
+            np.all(self.overlap[:,competitors]==-1, axis=1)
+        ))[0]
+        return compatible
+    
     cpdef void reduce_membership(self):
         """Given a matrix of membership values, 
         returns a [reduced_membership_matrix, weights] array
@@ -573,15 +615,8 @@ cdef class Locus:
         cdef np.ndarray keep
         if minreps > 1:
             keep = np.where(self.rep_array >= minreps)[0]
-            self.rep_array = self.rep_array[keep]
-            self.weight_array = self.weight_array[keep,:]
-            self.strand_array = self.strand_array[keep]
-            self.membership = self.membership[keep,:]
-            self.number_of_elements = len(keep)
-            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
-            self.information_content = get_information_content(self.membership)
-            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
-
+            self.subset_elements(keep)
+    
     cpdef void build_overlap_matrix(self, bint reduce=True, bint ignore_ends=False):
         """Builds reduced-representation matrix where every read is (-1) incompatible,
         (1) overlapping, or (0) non-overlapping with every other read. Any read completely
@@ -596,20 +631,25 @@ cdef class Locus:
             self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
         
         if reduce:
+            self.denoise()
             maxIC = self.membership.shape[1]
             new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC, self.minimum_proportion)
-            keep = np.where(np.sum(new_weights, axis=1) > 0.1)[0]
-            self.number_of_elements = len(keep)
-            self.overlap = self.overlap[keep,:][:,keep]
-            self.membership = self.membership[keep,:]
-            self.weight_array = new_weights[keep,:]
-            self.rep_array = self.rep_array[keep]
-            self.strand_array = self.strand_array[keep]
-            self.information_content = self.information_content[keep]
-            self.member_content = self.member_content[keep]
-            self.member_lengths = self.member_lengths[keep]
-            self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
-            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
+            keep = np.where(np.sum(new_weights, axis=1) > 0)[0]
+            self.weight_array = new_weights
+            self.subset_elements(keep)
+    
+    cpdef void subset_elements(self, np.ndarray keep):
+        self.overlap = self.overlap[keep,:][:,keep]
+        self.membership = self.membership[keep,:]
+        self.weight_array = self.weight_array[keep,:]
+        self.rep_array = self.rep_array[keep]
+        self.strand_array = self.strand_array[keep]
+        self.information_content = self.information_content[keep]
+        self.member_content = self.member_content[keep]
+        self.member_lengths = self.member_lengths[keep]
+        self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
+        self.number_of_elements = self.membership.shape[0]
+        if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void build_graph(self, reduce=True):
         """Constructs one or more graphs from 
@@ -661,7 +701,7 @@ cdef class Locus:
     cdef list filter_low_coverage(self, list reassigned_coverage, float total_coverage):
         cdef list low_coverage_paths = [i for i in range(len(reassigned_coverage)) if reassigned_coverage[i] < total_coverage*self.minimum_proportion]
         return low_coverage_paths
-
+    
     cdef list filter_retained_introns(self):
         """Removes paths from the list of assembled paths if they
         contain at least one 'exonic' region that accumulates to
@@ -843,22 +883,7 @@ cdef class Locus:
                     keep.append(i)
     
         if len(keep) < self.number_of_elements:
-            keep.sort()
-            self.number_of_elements = len(keep)
-            self.overlap = self.overlap[keep, :][:, keep]
-            self.membership = self.membership[keep, :]
-            self.strand_array = self.strand_array[keep]
-            self.weight_array = self.weight_array[keep,:]
-            self.information_content = self.information_content[keep]
-            self.member_content = self.member_content[keep]
-            self.member_lengths = self.member_lengths[keep]
-            self.reduce_membership()
-            self.weight = np.sum(self.weight_array)
-            self.number_of_elements = self.membership.shape[0]
-            self.information_content = get_information_content(self.membership)
-            self.member_content = get_member_content(self.membership)
-            self.build_overlap_matrix(True)
-            if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
+            self.subset_elements(np.array(keep.sort()))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
