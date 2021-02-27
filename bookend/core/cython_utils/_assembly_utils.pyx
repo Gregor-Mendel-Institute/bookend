@@ -283,7 +283,7 @@ cdef class Locus:
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
     
-    cpdef build_membership_matrix(self, threshold=1):
+    cpdef void build_membership_matrix(self, float threshold=1):
         """After branchpoints are identified, populate a table that stores information about
         each read's membership within each frag:
             (1) read overlaps with frag
@@ -528,7 +528,7 @@ cdef class Locus:
         """Checks the competitors of each read. If the read (plus compatible reads)
         accumulates to <minimum_proportion of sum(compatible + incompatible), 
         remove the read."""
-        cdef np.ndarray keep, competitors, compatible
+        cdef np.ndarray keep, competitors, compatible, informative, compmembers
         cdef float in_weight, out_weight, proportion
         keep = np.ones(self.membership.shape[0], dtype=np.bool)
         for index in range(self.membership.shape[0]):
@@ -536,11 +536,16 @@ cdef class Locus:
                 competitors = self.get_competitors(index)
                 if len(competitors) > 0:
                     compatible = self.get_compatible(index, competitors)
-                    in_weight = np.sum(self.weight_array[np.append(compatible, index),:])
+                    informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
+                    # Subset for competitors that exclude the informative member(s) of the compatible set
+                    competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
+                    # Subset for competitors that span the informative member(s)
+                    compmembers = np.where(self.membership[competitors,:-4]==1)
+                    competitors = competitors[np.array(sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)]))))]
+                    in_weight = np.sum(self.weight_array[compatible,:])
                     out_weight = np.sum(self.weight_array[competitors,:])
                     proportion = in_weight / (in_weight+out_weight)
                     if proportion < self.minimum_proportion:
-                        keep[index] = False
                         keep[compatible] = False
                     elif proportion > 1 - self.minimum_proportion:
                         keep[competitors] = False
@@ -551,19 +556,20 @@ cdef class Locus:
         """Given an element index, return a list of all elements that 
         (1) share at least one member and 
         (2) are incompatible."""
-        cdef np.ndarray incompatible, competitors
+        cdef np.ndarray incompatible, members, competitors
         incompatible =  np.where(self.overlap[:,index]==-1)[0]
-        competitors = incompatible[np.where(np.sum(self.membership[incompatible,:][:,self.membership[index,:]==1]==1, axis=1)>0)[0]]
+        members = np.where(self.membership[index,:-4]==1)[0]
+        competitors = incompatible[np.where(np.sum(self.membership[incompatible,:][:,members]==1, axis=1)>0)[0]]
         return competitors
         
-    cdef np.ndarray get_compatible(self, int index, np.ndarray competitors):
+    cpdef np.ndarray get_compatible(self, int index, np.ndarray competitors):
         cdef np.ndarray compatible
         compatible = np.where(np.logical_and(
             np.logical_or(
                 self.overlap[:,index] > 0,
                 self.overlap[index,:] > 0,
             ),
-            np.all(self.overlap[:,competitors]==-1, axis=1)
+            np.all(self.overlap[:,competitors]<=0, axis=1)
         ))[0]
         return compatible
     
