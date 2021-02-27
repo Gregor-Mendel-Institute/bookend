@@ -641,7 +641,7 @@ cdef class Locus:
         if reduce:
             self.denoise()
             maxIC = self.membership.shape[1]
-            new_weights = resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC, self.minimum_proportion)
+            new_weights = self.resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC, self.minimum_proportion)
             keep = np.where(np.sum(new_weights, axis=1) > 0)[0]
             self.weight_array = new_weights
             self.subset_elements(keep)
@@ -816,6 +816,65 @@ cdef class Locus:
 
         return paths_to_remove
     
+    cpdef void resolve_containment(self):
+        """Given a overlap matrix, 'bubble up' the weight of
+        all reads that have one or more 'contained by' relationships
+        to other reads. Pass from highest complexity reads down, assigning
+        weight proportional to the existing weight.
+        The resulting matrix should contain only overlaps, exclusions, and unknowns."""
+        cdef:
+            np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
+            Py_ssize_t i
+        
+        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
+        np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+        contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
+        IC_order = contained[np.lexsort((-self.information_content[contained], -self.member_content[contained]))] # Rank them by decreasing number of members
+        new_weights = np.copy(self.weight_array)
+        for i in IC_order:
+            containers = np.where(containment[i,:])[0]
+            containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
+            # Get the set of reads incompatible with all containers but that do not exclude i
+            incompatible =  np.where(np.logical_and(
+                np.all(self.overlap[:,containers]==-1, axis=1),
+                self.overlap[:,i] > 0
+            ))[0]
+            incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
+            if len(incompatible) == 0: # Special case, all weight goes to containers
+                if len(containers) == 1:
+                    new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
+                else: # Evaluate how much weight goes to each container
+                    nonzero = np.where(new_weights[i,:] > 0)[0]
+                    weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
+                    weight_transform = self.member_lengths[i]/self.member_lengths[containers]
+                    
+                    compatibilities = self.overlap[:,containers][compatible,:] > -1
+                    informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
+                    container_weights = new_weights[containers,:]
+                    for f in informative:
+                        container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
+                        if compatible[f] in containers:
+                            container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
+                    
+                    total_container_weights = np.sum(container_weights, axis=1)
+                    container_proportions = total_container_weights / np.sum(total_container_weights)
+                    for n in nonzero: # Each source that has reads of i is evaluated separately
+                        n_weights = container_weights[:,n]
+                        total = np.sum(n_weights)
+                        weight = new_weights[i,n]
+                        if total > 0:
+                            weight_to_add[:,n] += weight * n_weights / total * weight_transform
+                        else:
+                            weight_to_add[:,n] += weight * container_proportions * weight_transform
+                    
+                    new_weights[containers,:] += weight_to_add
+                
+                new_weights[i,] = 0
+                containment[:,i] = False
+                containment[i,:] = False
+        
+        return new_weights
+
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
         to store in the GTF attributes column."""
@@ -1612,39 +1671,6 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
 #             containment[i,:] = False
     
 #     return new_weights
-
-cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC, float minimum_proportion):
-    """Given a overlap matrix, 'bubble up' the weight of
-    all reads that have one or more 'contained by' relationships
-    to other reads. Pass from highest complexity reads down, assigning
-    weight proportional to the existing weight.
-    The resulting matrix should contain only overlaps, exclusions, and unknowns."""
-    cdef:
-        np.ndarray containment, contained, IC_order, new_weights, containers, incompatible
-        Py_ssize_t i
-    
-    containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
-    np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-    contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
-    IC_order = contained[np.lexsort((-information_content[contained], -member_content[contained]))] # Rank them by decreasing number of members
-    new_weights = np.copy(read_weights)
-    for i in IC_order:
-        containers = np.where(containment[i,:])[0]
-        containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
-        # Get the set of reads incompatible with all containers but that do not exclude i
-        incompatible =  np.where(np.logical_and(
-            np.all(overlap_matrix[:,containers]==-1, axis=1),
-            overlap_matrix[:,i] > 0
-        ))[0]
-        incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
-        if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
-            new_weights[containers,:] += new_weights[i,:] * member_lengths[i]/member_lengths[containers]
-            new_weights[i,] = 0
-            containment[:,i] = False
-            containment[i,:] = False
-    
-    return new_weights
-
 
 cpdef set dictBFS(dict adjacency, source):
     """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
