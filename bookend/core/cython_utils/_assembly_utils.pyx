@@ -872,9 +872,7 @@ cdef class Locus:
                 new_weights[i,] = 0
                 containment[:,i] = False
                 containment[i,:] = False
-        
-        return new_weights
-
+    
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
         to store in the GTF attributes column."""
