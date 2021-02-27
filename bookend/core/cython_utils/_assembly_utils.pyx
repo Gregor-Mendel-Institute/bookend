@@ -641,7 +641,7 @@ cdef class Locus:
         if reduce:
             self.denoise()
             maxIC = self.membership.shape[1]
-            new_weights = self.resolve_containment(self.overlap, self.member_content, self.information_content, self.weight_array, self.member_lengths, maxIC, self.minimum_proportion)
+            new_weights = self.resolve_containment()
             keep = np.where(np.sum(new_weights, axis=1) > 0)[0]
             self.weight_array = new_weights
             self.subset_elements(keep)
@@ -844,6 +844,13 @@ cdef class Locus:
                 if len(containers) == 1:
                     new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
                 else: # Evaluate how much weight goes to each container
+                    compatible = np.where(np.logical_and(
+                        np.logical_or(
+                            np.any(self.overlap[:,containers] > 0, axis=1),
+                            np.any(self.overlap[containers,:] > 0, axis=0)
+                        ),
+                        np.all(self.overlap[:,incompatible]==-1, axis=1)
+                    ))[0]
                     nonzero = np.where(new_weights[i,:] > 0)[0]
                     weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
                     weight_transform = self.member_lengths[i]/self.member_lengths[containers]
