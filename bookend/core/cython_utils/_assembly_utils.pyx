@@ -254,7 +254,6 @@ cdef class Locus:
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
         end_ranges.append(e)
-        end_ranges = [e for e in end_ranges if e.weight >= self.minimum_proportion*cumulative]
         return end_ranges
     
     cdef int end_of_cluster(self, int pos, list end_ranges):
