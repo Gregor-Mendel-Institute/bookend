@@ -178,7 +178,7 @@ cdef class Locus:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
-            self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.terminal not in prohibited_positions]
+            self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.peak not in prohibited_positions]
             self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         for endtype in [Sp, Ep, Sm, Em]:
