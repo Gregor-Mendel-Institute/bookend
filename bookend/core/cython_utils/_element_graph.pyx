@@ -327,7 +327,7 @@ cdef class ElementGraph:
             
             proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
-
+        
         proportions /= bases
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
@@ -335,7 +335,7 @@ cdef class ElementGraph:
         ext_cov = new_bases / new_length
         path_jcov = np.mean(list(path.junction_cov.values())) if path.junction_cov else path.cov
         ext_jcov = np.mean(list(junction_cov.values())) if junction_cov else ext_cov
-        junction_delta = ext_jcov / path_jcov
+        junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
         score = ext_cov * junction_delta * similarity * dead_end_penalty * novelty
