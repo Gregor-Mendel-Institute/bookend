@@ -122,12 +122,7 @@ cdef class ElementGraph:
         cdef Element path
         
         total_bases_assigned = sum([self.elements[i].bases for i in np.where(self.assignments>0)[0]])
-        path = self.find_optimal_path()
-        if path is self.emptyPath:
-            return
-        
         threshold = self.bases*(1-minimum_proportion)
-        total_bases_assigned += self.add_path(path)
         while total_bases_assigned < threshold:
             path = self.find_optimal_path()
             if path is self.emptyPath:
