@@ -220,15 +220,18 @@ cdef class Locus:
         elif len(pos) == 1:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
-        value_order = np.argsort(-vals)
-        threshold = (1 - self.minimum_proportion) * np.sum(vals)
-        cumulative = 0
-        i = 0
-        while cumulative < threshold:
-            cumulative += vals[value_order[i]]
-            i += 1
+        # value_order = np.argsort(-vals)
+        # i = 
+        # threshold = (1 - self.minimum_proportion) * np.sum(vals)
+        # cumulative = 0
+        # i = 0
+        # while cumulative < threshold:
+        #     cumulative += vals[value_order[i]]
+        #     i += 1
         
-        filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
+        passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
+        filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
         p,v = filtered_pos[0]
         maxv = v
         maxp = p
