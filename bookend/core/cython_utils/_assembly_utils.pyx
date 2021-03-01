@@ -15,12 +15,10 @@ cdef class EndRange:
     cdef public int left, right, peak, terminal, strand
     cdef public float weight
     cdef public str tag
-    cdef public bint inferred
     """Represents a reference point for a Start or End site."""
-    def __init__(self, left, right, peak, weight, endtype, inferred=False):
+    def __init__(self, left, right, peak, weight, endtype):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
         self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
-        self.inferred = inferred
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
@@ -35,7 +33,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len
-    cdef public bint naive, infer_starts, infer_ends, use_attributes, ignore_ends
+    cdef public bint naive,  use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
     cdef public dict adj, J_plus, J_minus, end_ranges, source_lookup
@@ -57,8 +55,6 @@ cdef class Locus:
         self.min_overhang = min_overhang
         self.chrom = chrom
         self.cap_bonus = cap_bonus
-        self.infer_starts = infer_starts
-        self.infer_ends = infer_ends
         self.use_attributes = use_attributes
         self.ignore_ends = ignore_ends
         if len(list_of_reads) > 0:
