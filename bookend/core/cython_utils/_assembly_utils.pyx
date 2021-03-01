@@ -42,7 +42,7 @@ cdef class Locus:
     cdef public object graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False, oligo_len=20):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, infer_starts=False, infer_ends=False, use_attributes=False, oligo_len=20, ignore_ends=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -60,7 +60,12 @@ cdef class Locus:
         self.use_attributes = use_attributes
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
-            self.reads = tuple(list_of_reads) # Cannot be mutated
+            if self.ignore_ends:
+                for read in list_of_reads:
+                    read.s_tag, read.e_tag = False, False
+                    if len(read.splice)==0:read.strand = 0
+            
+            self.reads = tuple(list_of_reads) # Cannot be mutated            
             self.read_lengths = np.array([r.get_length()+self.oligo_len*r.s_tag+self.oligo_len*r.e_tag for r in self.reads], dtype=np.int32)
             self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
@@ -70,19 +75,18 @@ cdef class Locus:
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             self.prune_junctions()
             self.generate_branchpoints()
-            # if type(self) is AnnotationLocus:
-            #     self.traceback = [set([i]) for i in range(len(self.reads))]
-            #     self.build_membership_matrix(0)
-            #     self.filter_by_reps(self.minreps)
-            #     if self.membership.shape[0] > 0:
-            #         self.build_overlap_matrix(reduce=False, ignore_ends=True)
-            # else:
-            #     self.build_membership_matrix()
-            #     self.denoise(verbose)
-            #     # self.filter_run_on_frags()
-            #     if self.membership.shape[0] > 0:
-            #         self.build_overlap_matrix(reduce)
-            #         self.build_graph(reduce)
+            if type(self) is AnnotationLocus:
+                self.traceback = [set([i]) for i in range(len(self.reads))]
+                self.build_membership_matrix(0)
+                self.filter_by_reps(self.minreps)
+                if self.membership.shape[0] > 0:
+                    self.build_overlap_matrix(reduce=False, ignore_ends=True)
+            else:
+                self.build_membership_matrix()
+                # self.filter_run_on_frags()
+                if self.membership.shape[0] > 0:
+                    self.build_overlap_matrix(reduce)
+                    self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -149,15 +153,16 @@ cdef class Locus:
             int l, r, p
             EndRange rng
             set prohibited_positions
+            list gaps
         
         Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
-        strandratio = np.full(self.depth_matrix.shape[1], 0.5, dtype=np.float32)
         covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
         strandedpositions = np.where(covstranded > 0)[0]
-        strandratio[strandedpositions] = self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]
+        strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
         self.cov_plus = self.depth_matrix[covp,] + self.depth_matrix[covn,]*strandratio
         self.cov_minus = self.depth_matrix[covm,] + self.depth_matrix[covn,]*(1-strandratio)
         self.depth = self.cov_plus + self.cov_minus
+        self.branchpoints = set()
         self.end_ranges = dict()
         prohibited_positions = set()
         for j in self.J_plus.keys():
@@ -184,24 +189,34 @@ cdef class Locus:
         for endtype in [Sp, Ep, Sm, Em]:
             for rng in self.end_ranges[endtype]:
                 prohibited_positions.update(range(rng.left, rng.right+1))
+                
+        gaps = self.get_coverage_gaps()
+        for block in gaps[0]: # Iterate over plus-stranded gaps
+            l, r = block[0], block[1]
+            if l not in prohibited_positions:
+                self.branchpoints.add(l)
+                if self.infer_ends:
+                    
+            
+            if r not in prohibited_positions:
+                self.branchpoints.add(r)
         
-        threshold_depth = np.sum(self.depth)*(1-self.minimum_proportion)
-        cumulative_depth = 0
-        cutoff = 1
-        for i in np.argsort(-self.depth):
-            cumulative_depth += self.depth[i]
-            if cumulative_depth >= threshold_depth:
-                cutoff = max(cutoff, self.depth[i])
-                break
-        
-        gaps = ru.get_gaps(self.depth, self.extend, cutoff)
-        for block in gaps: 
+        for block in gaps[1]: # Iterate over minus-stranded gaps
             l, r = block[0], block[1]
             if l not in prohibited_positions:
                 self.branchpoints.add(l)
             
             if r not in prohibited_positions:
                 self.branchpoints.add(r)
+    
+    cpdef list get_coverage_gaps(self):
+        cdef float cutoff
+        cdef list gaps_plus, gaps_minus
+        cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
+        gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
+        cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
+        gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
+        return [gaps_plus, gaps_minus]
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
@@ -470,62 +485,6 @@ cdef class Locus:
         self.member_content = get_member_content(self.membership)
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
     
-    # cpdef void filter_run_on_frags(self):
-    #     """Iterates over frags looking for those putatively connecting the ends
-    #     of two transcripts together. Applies the stringent filter (intron_filter)
-    #     to frags with the following pairs:
-    #         E>E<, S<S> - converging, diverging
-    #         E>S>, S<E< - consecutive
-    #     Coverage of this frag must exceed intron_filter*coverage of the heavier side.
-    #     If not, membership of this frag is set to all -1's.
-    #     Reads that lose all their members are thrown out.
-    #     """
-    #     cdef:
-    #         Py_ssize_t frag_index, bp_index, number_of_frags, number_of_bps, i
-    #         int l, r
-    #         tuple valid_end_pairs
-    #         str end_pair
-    #         bint removed_a_frag
-    #         np.ndarray has_frag
-        
-    #     removed_a_frag = False
-    #     #TODO: Check upstream of EVERY S and downstream of EVERY E
-    #     valid_end_pairs = ('S<S>', 'E>E<', 'E>S>', 'S<E<')
-    #     frag_index = bp_index = 0
-    #     number_of_frags = len(self.frags)
-    #     number_of_bps = len(self.BP.branchpoints)
-    #     for frag_index in range(1,number_of_frags-1):
-    #         l, r = self.frags[frag_index]
-    #         lbp = self.bp_lookup[l]
-    #         rbp = self.bp_lookup[r]
-    #         end_pair = lbp.endtype
-    #         end_pair += '>' if lbp.strand == 1 else '<'
-    #         end_pair += rbp.endtype
-    #         end_pair += '>' if rbp.strand == 1 else '<'
-    #         if end_pair in valid_end_pairs:
-    #             ll,lr = self.frags[frag_index-1]
-    #             rl,rr = self.frags[frag_index+1]
-    #             weight_with_frag = np.mean(self.depth[l-self.leftmost:r-self.leftmost])
-    #             flank_left = np.mean(self.depth[ll-self.leftmost:lr-self.leftmost])
-    #             flank_right = np.mean(self.depth[rl-self.leftmost:rr-self.leftmost])
-    #             if weight_with_frag < max(flank_left, flank_right)*self.intron_filter:
-    #                 has_frag = np.where(self.membership[:,frag_index]==1)[0]
-    #                 self.membership[has_frag,:] = -1
-    #                 self.membership[:,frag_index] = -1
-    #                 removed_a_frag = True
-        
-    #     if removed_a_frag:
-    #         keep = np.where(np.sum(self.membership==1,axis=1)>0)[0]
-    #         self.membership = self.membership[keep,:]
-    #         self.weight_array = self.weight_array[keep,:]
-    #         self.strand_array = self.strand_array[keep]
-    #         self.member_content = self.member_content[keep]
-    #         self.weight = np.sum(self.weight_array)
-    #         self.number_of_elements = self.membership.shape[0]
-    #         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
-    #         self.information_content = get_information_content(self.membership)
-    #         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
-    
     cpdef void denoise(self):
         """Checks the competitors of each read. If the read (plus compatible reads)
         accumulates to <minimum_proportion of sum(compatible + incompatible), 
@@ -683,20 +642,20 @@ cdef class Locus:
         else: # Still remove paths with internal gaps
             paths_to_remove = [i for i in range(len(self.graph.paths)) if self.graph.paths[i].has_gaps]
         
-        self.graph.remove_paths(sorted(list(set(paths_to_remove))))
-        reassigned_coverage = self.assign_weights()
+        self.graph.remove_paths(sorted(set(paths_to_remove)))
+        self.assign_weights()
         total_coverage = sum(reassigned_coverage)
         paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
         paths_to_remove += self.filter_truncations()
         if self.intron_filter > 0:
             paths_to_remove += self.filter_retained_introns()
         
-        self.graph.remove_paths(sorted(list(set(paths_to_remove))))
+        self.graph.remove_paths(sorted(set(paths_to_remove)))
         reassigned_coverage = self.assign_weights()
         total_coverage = sum(reassigned_coverage)
         paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
         while len(paths_to_remove) > 0:
-            self.graph.remove_paths(sorted(list(set(paths_to_remove))))
+            self.graph.remove_paths(sorted(set(paths_to_remove)))
             reassigned_coverage = self.assign_weights()
             total_coverage = sum(reassigned_coverage)
             paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
@@ -937,6 +896,18 @@ cdef class Locus:
             T.attributes.update(S_info)
             T.attributes.update(E_info)
     
+    cpdef int max_relative_delta(self, np.ndarray arr, int endtype):
+        """If start sites are not available, fall back on an estimate of
+        transcript start sites using max(diff(cov)/cov) inside likely terminal frags."""
+        cdef np.ndarray diffs, pos, vals
+        if not self.infer_starts or self.infer_ends:
+            return
+        
+        diffs = np.diff(np.append(self.cov_minus,0))
+        pos = np.where(diffs < 0)[0]
+        vals = -np.power(diffs[pos],2)/self.cov_minus[pos]
+        return pos[np.argsort(vals)[0]]
+    
     cpdef void collapse_linear_chains(self):
         """Collapses chains of vertices connected with a single edge.
         """
@@ -956,7 +927,7 @@ cdef class Locus:
                     keep.append(i)
     
         if len(keep) < self.number_of_elements:
-            self.subset_elements(np.array(keep.sort()))
+            self.subset_elements(np.array(sorted(keep))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
@@ -1071,7 +1042,7 @@ cdef class Locus:
         cdef EndRange S, E
         gene_id = 'bookend.{}'.format(self.chunk_number)
         transcript_id = 'bookend.{}.{}'.format(self.chunk_number, transcript_number)
-        members = sorted(list(element.members))
+        members = sorted(element.members)
         nonmembers = element.nonmembers
         N = element.maxIC
         chrom = self.chrom
@@ -1543,6 +1514,11 @@ cpdef bint passes_threshold(np.ndarray array, int max_gap, float threshold=1):
                 passed = True
     
     return passed
+
+cpdef np.ndarray lerp(np.ndarray array, float null_value):
+    """Given an array with some null values, in-fill null ranges by
+    linear interpolation from the flanking values."""
+
 
 cpdef np.ndarray remove_ends(np.ndarray[char, ndim=2] membership_matrix):
     """Given a full membership matrix, return a reduced version in which
