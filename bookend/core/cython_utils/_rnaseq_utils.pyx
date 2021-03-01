@@ -2034,6 +2034,9 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         
         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
         current_bases += read_bases
+        for exon in read.ranges:
+            covered_positions.update(range(exon[0],exon[1]))
+        
         mean_cov = current_bases / len(covered_positions)
         if r > rightmost: rightmost = r
         old_chrom, old_l, old_r = read.chrom, l, r
