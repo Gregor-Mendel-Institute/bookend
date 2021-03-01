@@ -195,8 +195,6 @@ cdef class Locus:
             l, r = block[0], block[1]
             if l not in prohibited_positions:
                 self.branchpoints.add(l)
-                if self.infer_ends:
-                    
             
             if r not in prohibited_positions:
                 self.branchpoints.add(r)
