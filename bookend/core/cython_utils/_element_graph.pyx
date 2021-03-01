@@ -348,6 +348,8 @@ cdef class ElementGraph:
         cdef list extensions
         # Get the current working path (heaviest unassigned Element)
         currentPath = self.get_heaviest_element()
+        self.extend_path(currentPath, tuple(sorted(currentPath.contains)))
+        
         if currentPath is self.emptyPath:
             return currentPath
         
@@ -711,6 +713,8 @@ cdef class Element:
         old_length = self.length
         self.contains.update(other.contains)
         self.contained.intersection_update(other.contained)
+        self.outgroup.difference_update(self.contains)
+        self.ingroup.difference_update(self.contains)
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
