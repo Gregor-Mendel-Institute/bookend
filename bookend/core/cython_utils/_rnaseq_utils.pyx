@@ -2023,6 +2023,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             if current_cov < minimum_proportion * mean_cov: # Current cov is sufficiently low to cause a break
                 yield dataset.read_list[:-1]
                 dataset.read_list = [read]
+                covered_positions = set()
+                for exon in read.ranges:
+                    covered_positions.update(range(exon[0],exon[1]))
+                
                 current_bases = 0
                 current_cov = read.weight
                 end_positions = Counter()
