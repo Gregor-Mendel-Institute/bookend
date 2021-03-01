@@ -41,7 +41,6 @@ class Assembler:
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
-        self.genome = args['GENOME']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
         self.end_cluster = args['END_CLUSTER']
