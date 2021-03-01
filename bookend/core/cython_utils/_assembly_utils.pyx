@@ -925,7 +925,7 @@ cdef class Locus:
                     keep.append(i)
     
         if len(keep) < self.number_of_elements:
-            self.subset_elements(np.array(sorted(keep))
+            self.subset_elements(np.array(sorted(keep)))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
