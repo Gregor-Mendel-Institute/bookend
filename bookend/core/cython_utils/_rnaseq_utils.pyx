@@ -1966,9 +1966,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     separated on either side by a gaps > max_gap"""
     cdef RNAseqMapping last_read
     cdef int l, r, old_chrom, old_l, old_r, rightmost, k
-    cdef float max_cov, current_cov
+    cdef (int, int) exon
+    cdef float read_bases, current_bases, mean_cov, current_cov, total_cov
+    cdef set covered_positions
     cdef list passed_positions
-    cdef bint append_read, dump_read_list
     if file_type == 'elr':
         add_read = dataset.add_read_from_ELR
     elif file_type == 'bed':
@@ -1981,6 +1982,9 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
     old_chrom, old_l, old_r, rightmost = -1, -1, -1, -1
     current_cov = 0
+    current_bases = 0
+    mean_cov = 0
+    covered_positions = set()
     for line in fileconn:
         if type(line) is str:
             if line[0] == '#':
@@ -1994,6 +1998,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         
         add_read(line)
         read = dataset.read_list[-1]
+        read_bases = read.get_length()*read.weight
         l, r = read.span
         current_cov += read.weight
         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
@@ -2001,21 +2006,31 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
             yield dataset.read_list[:-1]
             dataset.read_list = [read]
-            current_cov, max_cov, end_positions = read.weight, read.weight, Counter()
+            covered_positions = set()
+            for exon in read.ranges:
+                covered_positions.update(range(exon[0],exon[1]))
+            
+            current_bases = 0
+            current_cov = read.weight
+            mean_cov = current_cov
+            end_positions = Counter()
             rightmost = r
         elif l > old_l: # Read advanced, but not by enough to automatically cut
             passed_positions = [k for k in end_positions.keys() if k <= l]
             for k in passed_positions:
                 current_cov -= end_positions.pop(k)
             
-            if current_cov < minimum_proportion * max_cov: # Current cov is sufficiently low to cause a break
+            if current_cov < minimum_proportion * mean_cov: # Current cov is sufficiently low to cause a break
                 yield dataset.read_list[:-1]
                 dataset.read_list = [read]
-                current_cov, max_cov, end_positions = read.weight, read.weight, Counter()
+                current_bases = 0
+                current_cov = read.weight
+                end_positions = Counter()
                 rightmost = r
         
         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
-        if current_cov > max_cov: max_cov = current_cov
+        current_bases += read_bases
+        mean_cov = current_bases / len(covered_positions)
         if r > rightmost: rightmost = r
         old_chrom, old_l, old_r = read.chrom, l, r
     
