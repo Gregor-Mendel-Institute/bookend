@@ -11,30 +11,6 @@ if __name__ == '__main__':
     sys.path.append('../../bookend')
 
 
-# assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)")
-# assemble_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend_assembly.gtf', help="Destination file for assembly. File extension (bed, elr, gtf) determines output type.")
-# assemble_parser.add_argument('--source', dest='SOURCE', type=str, default='bookend', help="String to write in the source column of output GTF/ELR")
-# assemble_parser.add_argument('--genome', dest='GENOME', type=str, default=None, help="Genome FASTA file. Used for end label filtering only if input is BAM/SAM.")
-# assemble_parser.add_argument('--max_gap', dest='MAX_GAP', type=int, default=50, help="Largest gap size to tolerate (number of nucleotides).")
-# assemble_parser.add_argument('--min_overhang', dest='MIN_OVERHANG', type=int, default=3, help="Smallest overhang to count for a read overlapping two exon fragments (number of nucleotides).")
-# assemble_parser.add_argument('--allow_incomplete', dest='INCOMPLETE', default=False, action='store_true', help="Keep assembled transcripts even if they are not end-to-end complete.")
-# assemble_parser.add_argument('--infer_starts', dest='INFER_STARTS', default=False, action='store_true', help="If S tags are missing, calculate the most likely start site based on coverage changes.")
-# assemble_parser.add_argument('--infer_ends', dest='INFER_ENDS', default=False, action='store_true', help="If E tags are missing, calculate the most likely end site based on coverage changes.")
-# assemble_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=100, help="Largest distance between ends to consider in one cluster (number of nucleotides).")
-# assemble_parser.add_argument('--min_cov', dest='MIN_COV', type=float, default=1.5, help="Minimum coverage filter to remove low-evidence transcript models.")
-# assemble_parser.add_argument('--min_unstranded_cov', dest='MIN_UNSTRANDED', type=float, default=20, help="(Only used if --allow_incomplete) Set a more stringent threshold for keeping nonstranded frags.")
-# assemble_parser.add_argument('--min_start', dest='MIN_S', type=float, default=1, help="Minimum number of start reads to accept as a start site.")
-# assemble_parser.add_argument('--min_end', dest='MIN_E', type=float, default=1, help="Minimum number of end reads to accept as an end site")
-# assemble_parser.add_argument('--minlen', dest='MINLEN', type=int, default=50, help="Minimum output transcript length (nucleotides).")
-# assemble_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude ends, juctions, or transcripts that contribute < this proportion. (Used as a signal threshold)")
-# assemble_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
-# assemble_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
-# assemble_parser.add_argument("--ignore_labels", dest='IGNORE_LABELS', default=False, action='store_true', help="(overrides other options) Ignore all 5' and 3' end labels.")
-# assemble_parser.add_argument("--ignore_source", dest='IGNORE_SOURCE', default=False, action='store_true', help="Do not separate read weights by source.")
-# assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")
-# assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepath. MUST be a single coordinate-sorted file.")
-# assemble_parser.set_defaults(object='Assembler')
-
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
@@ -60,12 +36,7 @@ class Assembler:
         
         self.naive = not self.ignore_source
         if self.incomplete: # Some settings are incompatible with writing incomplete transcripts.
-            self.infer_starts = self.infer_ends = True
-        
-        if self.infer_starts:
             self.min_start = 0
-        
-        if self.infer_ends:
             self.min_end = 0
         
         if self.input_is_valid(self.input):
