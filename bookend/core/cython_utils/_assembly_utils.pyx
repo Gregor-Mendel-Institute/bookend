@@ -161,10 +161,16 @@ cdef class Locus:
         Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
         covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
         strandedpositions = np.where(covstranded > 0)[0]
-        strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
-        self.cov_plus = self.depth_matrix[covp,] + self.depth_matrix[covn,]*strandratio
-        self.cov_minus = self.depth_matrix[covm,] + self.depth_matrix[covn,]*(1-strandratio)
-        self.depth = self.cov_plus + self.cov_minus
+        if strandedpositions.shape[0] > 0: # Some reads to inform the strand
+            strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
+            self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*strandratio
+            self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-strandratio)
+            self.depth = self.cov_plus + self.cov_minus
+        else:
+            self.cov_plus = self.depth_matrix[covn,:]*.5
+            self.cov_minus = self.depth_matrix[covn,:]*.5
+            self.depth = self.depth_matrix[covn,:]
+        
         self.branchpoints = set()
         self.end_ranges = dict()
         prohibited_positions = set()
