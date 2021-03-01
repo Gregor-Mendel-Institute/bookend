@@ -274,12 +274,14 @@ cdef class ElementGraph:
             contained.update([pair[0], pair[1]])
             contained.difference_update(exclude)
             ext = tuple(sorted(list(contained)))
-            if len(ext) == 0:continue
+            if len(ext) == 0 or ext_members.issubset(path.members):continue
             if len(ext) > 1 or len(self.elements[ext[0]].uniqueMembers(path)) > 0:
                 exthash = '_'.join([','.join([str(i) for i in sorted(ext_members)]), ','.join([str(i) for i in sorted(ext_nonmembers)])])
                 if len(ext) > len(extdict.get(exthash, ())):
                     extdict[exthash] = ext
-                
+        
+        # Final check: If >0 extensions go both ways, remove the extensions that don't
+        
         return sorted(list(extdict.values()))
     
     cpdef tuple best_extension(self, Element path, list extensions):
