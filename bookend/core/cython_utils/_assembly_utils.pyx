@@ -15,10 +15,12 @@ cdef class EndRange:
     cdef public int left, right, peak, terminal, strand
     cdef public float weight
     cdef public str tag
+    cdef public bint inferred
     """Represents a reference point for a Start or End site."""
-    def __init__(self, left, right, peak, weight, endtype):
+    def __init__(self, left, right, peak, weight, endtype, inferred=False):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
         self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
+        self.inferred = inferred
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
@@ -189,32 +191,40 @@ cdef class Locus:
         for endtype in [Sp, Ep, Sm, Em]:
             for rng in self.end_ranges[endtype]:
                 prohibited_positions.update(range(rng.left, rng.right+1))
-                
-        gaps = self.get_coverage_gaps()
-        for block in gaps[0]: # Iterate over plus-stranded gaps
-            l, r = block[0], block[1]
-            if l not in prohibited_positions:
-                self.branchpoints.add(l)
-            
-            if r not in prohibited_positions:
-                self.branchpoints.add(r)
         
-        for block in gaps[1]: # Iterate over minus-stranded gaps
-            l, r = block[0], block[1]
-            if l not in prohibited_positions:
-                self.branchpoints.add(l)
-            
-            if r not in prohibited_positions:
-                self.branchpoints.add(r)
+        self.add_gaps(prohibited_positions)
     
-    cpdef list get_coverage_gaps(self):
+    cpdef void add_gaps(self, set prohibited_positions):
+        """Updates branchpoints to include the starts and ends of coverage gaps"""
         cdef float cutoff
         cdef list gaps_plus, gaps_minus
+        cdef (int, int) block, maxdelta
         cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
         gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
+        # diffs = np.diff(np.append(np.append(0,self.cov_plus),0))
+        # start_pos = np.where(diffs > 0)[0]
+        # start_vals = np.power(diffs[start_pos],2)/self.cov_plus[start_pos]
+        # end_pos = np.where(diffs < 0)[0]-1
+        # end_vals = np.power(diffs[end_pos+1],2)/self.cov_plus[end_pos]
+        for block in gaps_plus: # Iterate over plus-stranded gaps
+            l, r = block
+            if l not in prohibited_positions: # Potential unlabeled e_plus
+                self.branchpoints.add(l)
+            
+            if r not in prohibited_positions: # Potential unlabeled s_plus
+                self.branchpoints.add(r)
+        
         cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
         gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
-        return [gaps_plus, gaps_minus]
+        # pos = np.where(diffs < 0)[0]
+        # vals = -np.power(diffs[pos],2)/self.cov_minus[pos]
+        for block in gaps_minus: # Iterate over minus-stranded gaps
+            l, r = block
+            if l not in prohibited_positions:
+                self.branchpoints.add(l)
+            
+            if r not in prohibited_positions:
+                self.branchpoints.add(r)
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
@@ -640,33 +650,24 @@ cdef class Locus:
         else: # Still remove paths with internal gaps
             paths_to_remove = [i for i in range(len(self.graph.paths)) if self.graph.paths[i].has_gaps]
         
-        self.graph.remove_paths(sorted(set(paths_to_remove)))
-        self.assign_weights()
-        total_coverage = sum(reassigned_coverage)
-        paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
-        paths_to_remove += self.filter_truncations()
         if self.intron_filter > 0:
             paths_to_remove += self.filter_retained_introns()
         
         self.graph.remove_paths(sorted(set(paths_to_remove)))
-        reassigned_coverage = self.assign_weights()
-        total_coverage = sum(reassigned_coverage)
-        paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
-        while len(paths_to_remove) > 0:
-            self.graph.remove_paths(sorted(set(paths_to_remove)))
-            reassigned_coverage = self.assign_weights()
-            total_coverage = sum(reassigned_coverage)
-            paths_to_remove = self.filter_low_coverage(reassigned_coverage, total_coverage)
+        assigned_bases = np.array([path.bases for path in self.graph.paths])
+        assigned_sum = np.sum(assigned_bases)
+        self.assign_weights()
+        updated_bases = np.array([path.bases for path in self.graph.paths])
+        while np.sum(np.abs(updated_bases-assigned_bases)) < self.minimum_proportion * assigned_sum:
+            assigned_bases = updated_bases
+            self.assign_weights()
+            updated_bases = np.array([path.bases for path in self.graph.paths])
         
         for i in range(len(self.graph.paths)):
             path = self.graph.paths[i]
             self.transcripts.append(self.convert_path(path, i+1))
         
         self.add_transcript_attributes()
-    
-    cdef list filter_low_coverage(self, list reassigned_coverage, float total_coverage):
-        cdef list low_coverage_paths = [i for i in range(len(reassigned_coverage)) if reassigned_coverage[i] < total_coverage*self.minimum_proportion]
-        return low_coverage_paths
     
     cdef list filter_retained_introns(self):
         """Removes paths from the list of assembled paths if they
@@ -893,18 +894,6 @@ cdef class Locus:
             
             T.attributes.update(S_info)
             T.attributes.update(E_info)
-    
-    cpdef int max_relative_delta(self, np.ndarray arr, int endtype):
-        """If start sites are not available, fall back on an estimate of
-        transcript start sites using max(diff(cov)/cov) inside likely terminal frags."""
-        cdef np.ndarray diffs, pos, vals
-        if not self.infer_starts or self.infer_ends:
-            return
-        
-        diffs = np.diff(np.append(self.cov_minus,0))
-        pos = np.where(diffs < 0)[0]
-        vals = -np.power(diffs[pos],2)/self.cov_minus[pos]
-        return pos[np.argsort(vals)[0]]
     
     cpdef void collapse_linear_chains(self):
         """Collapses chains of vertices connected with a single edge.
