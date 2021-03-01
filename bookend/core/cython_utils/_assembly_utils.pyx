@@ -654,7 +654,7 @@ cdef class Locus:
             paths_to_remove = [i for i in range(len(self.graph.paths)) if self.graph.paths[i].has_gaps]
         
         self.graph.remove_paths(sorted(set(paths_to_remove)))
-        self.assign_weights()
+        self.graph.assign_weights()
         paths_to_remove = self.filter_truncations()
         if self.intron_filter > 0:
             paths_to_remove += self.filter_retained_introns()
@@ -664,7 +664,7 @@ cdef class Locus:
         updated_bases = np.array([path.bases for path in self.graph.paths])
         while np.sum(np.abs(updated_bases-assigned_bases)) < self.minimum_proportion * assigned_sum:
             assigned_bases = updated_bases
-            self.assign_weights()
+            self.graph.assign_weights()
             updated_bases = np.array([path.bases for path in self.graph.paths])
         
         for i in range(len(self.graph.paths)):
