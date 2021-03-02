@@ -39,10 +39,69 @@ cdef class ElementGraph:
             i, weights[i,:], strands[i],
             membership_matrix[i,:], self.overlap, lengths, self.maxIC
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
+        self.penalize_dead_ends()
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
         self.bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
+
+    cdef void penalize_dead_ends(self):
+        """Perform a breadth-first search from all starts and all ends.
+        The weight of all elements unreachable by each search is multiplied
+        by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
+        cdef Element element
+        cdef np.ndarray reached_from_start, reached_from_end
+        cdef list starts, ends
+        cdef float original_bases
+        cdef int i
+        starts, ends = [], []
+        for element in self.elements:
+            if element.s_tag:starts.append(element.index)
+            if element.e_tag:ends.append(element.index)
+        
+        reached_from_start = np.zeros(len(self.elements), dtype=np.bool)
+        queue = deque(maxlen=len(self.elements))
+        for i in starts: # Begin BFS from starts
+            strand = set([0,self.elements[i].strand])
+            queue.append(i)
+            while queue:
+                v = queue.popleft()
+                for w in self.elements[v].outgroup:
+                    if not reached_from_start[w]:
+                        if self.elements[w].strand in strand:
+                            reached_from_start[w] = True
+                            queue.append(w)
+        
+        reached_from_end = np.zeros(len(self.elements), dtype=np.bool)
+        queue = deque(maxlen=len(self.elements))
+        for i in ends: # Begin BFS from starts
+            strand = set([0,self.elements[i].strand])
+            queue.append(i)
+            while queue:
+                v = queue.popleft()
+                for w in self.elements[v].ingroup:
+                    if not reached_from_end[w]:
+                        if self.elements[w].strand in strand:
+                            reached_from_end[w] = True
+                            queue.append(w)
+        
+        for i in range(len(self.elements)):
+            element = self.elements[i]
+            if not reached_from_start[i]:
+                element.weights *= self.dead_end_penalty
+                element.cov *= self.dead_end_penalty
+                element.junction_cov = {k:v*self.dead_end_penalty for k,v in element.junction_cov.items()}
+                original_bases = element.bases
+                element.bases *= self.dead_end_penalty
+                self.bases -= original_bases-element.bases
+            
+            if not reached_from_end[i]:
+                element.weights *= self.dead_end_penalty
+                element.cov *= self.dead_end_penalty
+                element.junction_cov = {k:v*self.dead_end_penalty for k,v in element.junction_cov.items()}
+                original_bases = element.bases
+                element.bases *= self.dead_end_penalty
+                self.bases -= original_bases-element.bases
     
     cpdef void check_for_full_paths(self):
         """Assign all reads to any existing complete paths"""
@@ -441,7 +500,7 @@ cdef class Element:
     cdef public list assigned_to
     cdef public char strand
     cdef public dict junction_cov
-    cdef public float cov, coverage, bases
+    cdef public float cov, bases
     cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
     cdef public np.ndarray frag_len, weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
