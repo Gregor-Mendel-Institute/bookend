@@ -585,40 +585,41 @@ cdef class Locus:
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
         cdef Py_ssize_t i,v
-        reduced_membership, reverse_lookup = np.unique(self.membership, axis=0, return_inverse=True)
-        new_weights = np.zeros(shape=(reduced_membership.shape[0], self.weight_array.shape[1]), dtype=np.float32)
-        new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
-        new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-        new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-        
-        if type(self) is AnnotationLocus:
-            new_traceback = []
-            for i in range(reduced_membership.shape[0]):
-                new_traceback += [set()]
+        if self.membership.shape[0] > 1:
+            reduced_membership, reverse_lookup = np.unique(self.membership, axis=0, return_inverse=True)
+            new_weights = np.zeros(shape=(reduced_membership.shape[0], self.weight_array.shape[1]), dtype=np.float32)
+            new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
+            new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
+            new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             
-            for i,v in enumerate(reverse_lookup):
-                new_traceback[v].add(i)
+            if type(self) is AnnotationLocus:
+                new_traceback = []
+                for i in range(reduced_membership.shape[0]):
+                    new_traceback += [set()]
+                
+                for i,v in enumerate(reverse_lookup):
+                    new_traceback[v].add(i)
 
-        for i,v in enumerate(reverse_lookup):
-            new_weights[v] += self.weight_array[i]
-            new_strands[v] = self.strand_array[i]
-            new_lengths[v] = self.member_lengths[i]
-            new_reps[v] += self.rep_array[i]
-        
-        members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
-        number_of_members = np.sum(members_bool[:,2:-2],axis=1)
-        left_member = np.argmax(members_bool, axis=1).tolist()
-        right_member = (members_bool.shape[1]-1-np.argmax(members_bool[:,::-1], axis=1)).tolist()
-        index = list(range(members_bool.shape[0]))
-        sort_triples = sorted(list(zip(left_member, right_member, index)))
-        sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
-        self.membership = reduced_membership[sorted_indices,:]
-        self.weight_array = new_weights[sorted_indices,:]
-        self.member_lengths = new_lengths[sorted_indices]
-        self.strand_array = new_strands[sorted_indices]
-        self.rep_array = new_reps[sorted_indices]
-        if len(self.traceback) > 0:
-            self.traceback = [new_traceback[i] for i in sorted_indices]
+            for i,v in enumerate(reverse_lookup):
+                new_weights[v] += self.weight_array[i]
+                new_strands[v] = self.strand_array[i]
+                new_lengths[v] = self.member_lengths[i]
+                new_reps[v] += self.rep_array[i]
+            
+            members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
+            number_of_members = np.sum(members_bool[:,2:-2],axis=1)
+            left_member = np.argmax(members_bool, axis=1).tolist()
+            right_member = (members_bool.shape[1]-1-np.argmax(members_bool[:,::-1], axis=1)).tolist()
+            index = list(range(members_bool.shape[0]))
+            sort_triples = sorted(list(zip(left_member, right_member, index)))
+            sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
+            self.membership = reduced_membership[sorted_indices,:]
+            self.weight_array = new_weights[sorted_indices,:]
+            self.member_lengths = new_lengths[sorted_indices]
+            self.strand_array = new_strands[sorted_indices]
+            self.rep_array = new_reps[sorted_indices]
+            if len(self.traceback) > 0:
+                self.traceback = [new_traceback[i] for i in sorted_indices]
 
     cpdef void filter_by_reps(self, int minreps=1):
         """Enforce that elements in the membership"""
@@ -1765,9 +1766,9 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
 
 cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
     cdef:
-        np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment, parent_chains
+        np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment
         int chain, v, next_v, c
-        set contained
+        set contained, parent_chains
     
     edges = overlap_matrix == 1
     edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
