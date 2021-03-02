@@ -327,7 +327,6 @@ cdef class Locus:
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
         cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
-        cdef float strand_ratio
         cdef np.ndarray membership, strand_array, weight_array, discard, lengths
         cdef char s
         cdef list temp_frags, bp_positions
@@ -477,25 +476,9 @@ cdef class Locus:
                 last_rfrag = rfrag
             
             # Calculate the length (bases) of the element
-            lengths = self.frag_len[membership[i,:] == 1]
-            self.member_lengths[i] = np.sum(lengths)
+            self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
-                strand_ratio = np.sum(self.frag_strand_ratios[membership[i,:]==1]*lengths)/self.member_lengths[i]
-                if strand_ratio < self.minimum_proportion: # Minus-stranded region
-                    if strand_array[i] == 0:
-                        strand_array[i] = -1
-                        MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
-                        MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
-                    elif strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
-                        membership[i,:] = -1
-                elif strand_ratio > 1-self.minimum_proportion: # Plus-stranded region
-                    if strand_array[i] == 0:
-                        strand_array[i] = 1
-                        MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
-                        MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
-                    elif strand_array[i] == -1:
-                        membership[i,:] = -1
         
         discard_frags = set()
         if threshold > 0:
@@ -515,11 +498,38 @@ cdef class Locus:
         self.weight_array = weight_array
         self.strand_array = strand_array
         self.reduce_membership()
+        self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
+    
+    cdef void filter_members_by_strand(self):
+        """If a read is in a region a region with >1-minimum_proportion coverage
+        of a specific strand, assign this strand to the read. If the read is
+        the opposite strand, discard it."""
+        cdef float strand_ratio
+        cdef np.ndarray lengths
+        for i in self.membership.shape[0]:
+            lengths = self.frag_len[self.membership[i,:] == 1]
+            self.member_lengths[i] = np.sum(lengths)
+            if self.member_lengths[i] > 0:
+                strand_ratio = np.sum(self.frag_strand_ratios[self.membership[i,:]==1]*lengths)/self.member_lengths[i]
+                if strand_ratio < self.minimum_proportion: # Minus-stranded region
+                    if strand_array[i] == 0:
+                        strand_array[i] = -1
+                        self.membership[i, -4:-2] = -1 # Read cannot have plus-stranded features
+                    elif strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
+                        self.membership[i,:] = -1
+                elif strand_ratio > 1-self.minimum_proportion: # Plus-stranded region
+                    if strand_array[i] == 0:
+                        strand_array[i] = 1
+                        self.membership[i, -2:] = -1 # Read cannot have minus-stranded features
+                    elif strand_array[i] == -1:
+                        self.membership[i,:] = -1
+        
+        self.reduce_membership()
     
     cpdef void denoise(self):
         """Checks the competitors of each read. If the read (plus compatible reads)
@@ -926,8 +936,10 @@ cdef class Locus:
         """
         cdef int i, chain, parent
         cdef list keep = []
-        cdef np.ndarray linear_chains = find_linear_chains(self.overlap)
+        cdef np.ndarray linear_chains, resolve_order
         cdef dict chain_parent = {}
+        resolve_order = np.lexsort((-self.information_content, -self.member_content))
+        linear_chains = find_linear_chains(self.overlap, resolve_order)
         for i,chain in enumerate(linear_chains):
             if chain == 0:
                 keep.append(i)
@@ -1756,15 +1768,19 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
 #     return output_strand_array
 
-cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix):
+cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
     cdef:
-        np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts
-        int chain, v, next_v
+        np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment, parent_chains
+        int chain, v, next_v, c
+        set contained
     
-    edges = overlap_matrix >= 1
-    np.put(edges, range(0,edges.shape[0]**2,edges.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+    edges = overlap_matrix == 1
+    edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
     ingroup = np.sum(edges, axis=0, dtype=np.int32)
     outgroup = np.sum(edges, axis=1, dtype=np.int32)
+    containment = overlap_matrix == 2
+    np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+    contained = set(np.where(np.sum(containment,axis=1)>0)[0])
     in_chain = np.zeros(len(ingroup), dtype=np.int32)
     putative_chain_starts = np.where(outgroup == 1)[0]
     chain = 0
@@ -1781,12 +1797,17 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix):
                     break
                 
                 in_chain[next_v] = chain
-                if outgroup[next_v] != 1:
-                    break
-                
+                if outgroup[next_v] != 1:break
                 next_v = np.where(edges[next_v,:])[0][0]
-                if in_chain[next_v] == chain: # Already traversed
-                    break
+                if in_chain[next_v] == chain: break
+    
+    # If all a contained element's containers are in the same chain, add it to this chain
+    for c in resolve_order:
+        if c in contained:
+            parent_chains = np.unique(in_chain[containment[c,:]])
+            if len(parent_chains) == 1:
+                in_chain[c] = parent_chains[0]
+
     
     return in_chain
 
