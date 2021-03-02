@@ -517,16 +517,16 @@ cdef class Locus:
             if self.member_lengths[i] > 0:
                 strand_ratio = np.sum(self.frag_strand_ratios[self.membership[i,:]==1]*lengths)/self.member_lengths[i]
                 if strand_ratio < self.minimum_proportion: # Minus-stranded region
-                    if strand_array[i] == 0:
-                        strand_array[i] = -1
+                    if self.strand_array[i] == 0:
+                        self.strand_array[i] = -1
                         self.membership[i, -4:-2] = -1 # Read cannot have plus-stranded features
-                    elif strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
+                    elif self.strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
                         self.membership[i,:] = -1
                 elif strand_ratio > 1-self.minimum_proportion: # Plus-stranded region
-                    if strand_array[i] == 0:
-                        strand_array[i] = 1
+                    if self.strand_array[i] == 0:
+                        self.strand_array[i] = 1
                         self.membership[i, -2:] = -1 # Read cannot have minus-stranded features
-                    elif strand_array[i] == -1:
+                    elif self.strand_array[i] == -1:
                         self.membership[i,:] = -1
         
         self.reduce_membership()
