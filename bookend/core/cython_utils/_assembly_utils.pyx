@@ -76,14 +76,14 @@ cdef class Locus:
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
                 self.traceback = [set([i]) for i in range(len(self.reads))]
-                self.build_membership_matrix(0)
-                self.filter_by_reps(self.minreps)
-                if self.membership.shape[0] > 0:
-                    self.build_overlap_matrix(reduce=False, ignore_ends=True)
+                empty = self.build_membership_matrix(0)
+                if not empty:
+                    self.filter_by_reps(self.minreps)
+                    if self.membership.shape[0] > 0:
+                        self.build_overlap_matrix(reduce=False, ignore_ends=True)
             else:
-                self.build_membership_matrix()
-                # self.filter_run_on_frags()
-                if self.membership.shape[0] > 0:
+                empty = self.build_membership_matrix()
+                if not empty:
                     self.build_overlap_matrix(reduce)
                     self.build_graph(reduce)
     
@@ -306,7 +306,7 @@ cdef class Locus:
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
     
-    cpdef void build_membership_matrix(self, float threshold=1):
+    cpdef bint build_membership_matrix(self, float threshold=1):
         """After branchpoints are identified, populate a table that stores information about
         each read's membership within each frag:
             (1) read overlaps with frag
@@ -322,7 +322,7 @@ cdef class Locus:
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
         cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
-        cdef np.ndarray membership, strand_array, weight_array, discard, lengths
+        cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep
         cdef char s
         cdef list temp_frags, bp_positions
         cdef set discard_frags
@@ -489,9 +489,15 @@ cdef class Locus:
         if self.naive:
             weight_array = np.sum(weight_array,axis=1)
         
-        self.membership = membership
-        self.weight_array = weight_array
-        self.strand_array = strand_array
+        keep = np.sum(self.membership[:,:-4]==1,axis=1)>0
+        if not np.any(keep):
+            return True
+        
+        self.membership = membership[keep]
+        self.weight_array = weight_array[keep]
+        self.strand_array = strand_array[keep]
+        self.rep_array = self.rep_array[keep]
+        self.member_lengths = self.member_lengths[keep]
         self.reduce_membership()
         self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
@@ -499,6 +505,7 @@ cdef class Locus:
         self.information_content = get_information_content(self.membership)
         self.member_content = get_member_content(self.membership)
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
+        return False
     
     cdef void filter_members_by_strand(self):
         """If a read is in a region a region with >1-minimum_proportion coverage
@@ -554,7 +561,7 @@ cdef class Locus:
                         elif proportion > 1 - self.minimum_proportion:
                             keep[competitors] = False
         
-        self.subset_elements(np.where(keep)[0])
+        self.subset_elements(keep)
     
     cpdef np.ndarray get_competitors(self, int index):
         """Given an element index, return a list of all elements that 
