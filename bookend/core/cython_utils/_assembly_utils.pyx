@@ -489,7 +489,7 @@ cdef class Locus:
         if self.naive:
             weight_array = np.sum(weight_array,axis=1)
         
-        keep = np.sum(self.membership[:,:-4]==1,axis=1)>0
+        keep = np.sum(membership[:,:-4]==1,axis=1)>0
         self.membership = membership[keep]
         self.weight_array = weight_array[keep]
         self.strand_array = strand_array[keep]
