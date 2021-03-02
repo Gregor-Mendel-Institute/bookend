@@ -481,21 +481,21 @@ cdef class Locus:
             self.member_lengths[i] = np.sum(lengths)
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
-                strand_ratio = np.sum(self.frag_strand_ratios[self.membership[i,:]==1]*lengths)/self.member_lengths[i]
+                strand_ratio = np.sum(self.frag_strand_ratios[membership[i,:]==1]*lengths)/self.member_lengths[i]
                 if strand_ratio < self.minimum_proportion: # Minus-stranded region
                     if strand_array[i] == 0:
                         strand_array[i] = -1
                         MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
                         MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
                     elif strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
-                        self.membership[i,:] = -1
+                        membership[i,:] = -1
                 elif strand_ratio > 1-self.minimum_proportion: # Plus-stranded region
                     if strand_array[i] == 0:
                         strand_array[i] = 1
                         MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
                         MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
                     elif strand_array[i] == -1:
-                        self.membership[i,:] = -1
+                        membership[i,:] = -1
         
         discard_frags = set()
         if threshold > 0:
@@ -662,7 +662,6 @@ cdef class Locus:
         """
         cdef np.ndarray updated
         if reduce: # Collapse linear chains prior to graph construction
-            updated = self.prune_unreachable_edges()
             self.collapse_linear_chains()
         
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len, self.naive)
