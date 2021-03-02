@@ -709,7 +709,7 @@ cdef class Element:
             other.ingroup.discard(self.index)
             return
         
-        if self.strand == 0:
+        if self.strand == 0 and other.strand != 0:
             self.strand = other.strand
         
         old_length = self.length

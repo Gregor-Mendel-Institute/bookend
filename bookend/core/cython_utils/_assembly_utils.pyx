@@ -637,10 +637,8 @@ cdef class Locus:
         """
         cdef np.ndarray updated
         if reduce: # Collapse linear chains prior to graph construction
-            updated = np.array([-1])
-            while len(updated) > 0:
-                updated = self.prune_unreachable_edges()
-                self.collapse_linear_chains()
+            updated = self.prune_unreachable_edges()
+            self.collapse_linear_chains()
         
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len, self.naive)
     
@@ -695,8 +693,8 @@ cdef class Locus:
             for junction_hash, junction_count in junctions.items():
                 # Convert all intron pair positions to frag indices
                 block = self.string_to_span(junction_hash)
-                l = block[0] - self.leftmost
-                r = block[1] - self.leftmost
+                l = block[0]
+                r = block[1]
                 frag_pair = (self.frag_by_pos[l], self.frag_by_pos[r-1])
                 junctions_as_frags[self.span_to_string(frag_pair)] = junction_count      
             
@@ -964,8 +962,7 @@ cdef class Locus:
         cdef dict BFS_from_ends, PF, PR, MF, MR
         cdef set from_sink_minus, from_sink_plus, from_source_minus, from_source_plus, in_plus_path, in_minus_path
         cdef np.ndarray new_strands, updated
-        cdef char [:, :] COMPATIBILITY = self.overlap
-        vertices = COMPATIBILITY.shape[0]
+        vertices = self.overlap.shape[0]
         self.adj = build_adjacencies(self.overlap)
         PF = self.adj['PF']
         PR = self.adj['PR']
@@ -979,42 +976,42 @@ cdef class Locus:
                 for w in MF[v]:
                     if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
                         # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        COMPATIBILITY[v,w] = -1
-                        COMPATIBILITY[w,v] = -1
+                        self.overlap[v,w] = -1
+                        self.overlap[w,v] = -1
                     else:
-                        C = COMPATIBILITY[v, w]
+                        C = self.overlap[v, w]
                         if C == 1:
-                            COMPATIBILITY[v, w] = 0
+                            self.overlap[v, w] = 0
                 
                 for w in MR[v]:
                     if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-                        COMPATIBILITY[v,w] = -1
-                        COMPATIBILITY[w,v] = -1
+                        self.overlap[v,w] = -1
+                        self.overlap[w,v] = -1
                     else:
-                        C = COMPATIBILITY[w, v]
+                        C = self.overlap[w, v]
                         if C == 1:
-                            COMPATIBILITY[w, v] = 0
+                            self.overlap[w, v] = 0
             elif new_strands[v] == -1: # Strand inferred as minus; remove all plus edges
                 self.membership[v,-4:-2] = -1
                 for w in PF[v]:
                     if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
                         # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        COMPATIBILITY[v,w] = -1
-                        COMPATIBILITY[w,v] = -1
+                        self.overlap[v,w] = -1
+                        self.overlap[w,v] = -1
                     else:
-                        C = COMPATIBILITY[v, w]
+                        C = self.overlap[v, w]
                         if C == 1:
-                            COMPATIBILITY[v, w] = 0
+                            self.overlap[v, w] = 0
                 
                 for w in PR[v]:
                     if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
                         # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        COMPATIBILITY[v,w] = -1
-                        COMPATIBILITY[w,v] = -1
+                        self.overlap[v,w] = -1
+                        self.overlap[w,v] = -1
                     else:
-                        C = COMPATIBILITY[w, v]
+                        C = self.overlap[w, v]
                         if C == 1:
-                            COMPATIBILITY[w, v] = 0
+                            self.overlap[w, v] = 0
         
         self.strand_array = new_strands
         return updated
