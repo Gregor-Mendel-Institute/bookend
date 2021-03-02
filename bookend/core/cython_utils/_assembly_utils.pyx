@@ -167,7 +167,7 @@ cdef class Locus:
             self.cov_minus = self.depth_matrix[covn,:]*.5
             self.depth = self.depth_matrix[covn,:]
         
-        self.branchpoints = set([0, self.rightmost-self.leftmost])
+        self.branchpoints = set()
         self.end_ranges = dict()
         prohibited_positions = set()
         for j in self.J_plus.keys():
@@ -196,6 +196,8 @@ cdef class Locus:
                 prohibited_positions.update(range(rng.left, rng.right+1))
         
         self.add_gaps(prohibited_positions)
+        if 0 not in prohibited_positions:self.branchpoints.add(0)
+        if len(self) not in prohibited_positions:self.branchpoints.add(len(self))
     
     cpdef void add_gaps(self, set prohibited_positions):
         """Updates branchpoints to include the starts and ends of coverage gaps"""
