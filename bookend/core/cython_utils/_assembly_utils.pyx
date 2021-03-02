@@ -202,32 +202,27 @@ cdef class Locus:
         cdef float cutoff
         cdef list gaps_plus, gaps_minus
         cdef (int, int) block, maxdelta
-        cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
-        gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
-        # diffs = np.diff(np.append(np.append(0,self.cov_plus),0))
-        # start_pos = np.where(diffs > 0)[0]
-        # start_vals = np.power(diffs[start_pos],2)/self.cov_plus[start_pos]
-        # end_pos = np.where(diffs < 0)[0]-1
-        # end_vals = np.power(diffs[end_pos+1],2)/self.cov_plus[end_pos]
-        for block in gaps_plus: # Iterate over plus-stranded gaps
-            l, r = block
-            if l not in prohibited_positions: # Potential unlabeled e_plus
-                self.branchpoints.add(l)
-            
-            if r not in prohibited_positions: # Potential unlabeled s_plus
-                self.branchpoints.add(r)
+        if np.sum(self.cov_plus)>0:
+            cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
+            gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
+            for block in gaps_plus: # Iterate over plus-stranded gaps
+                l, r = block
+                if l not in prohibited_positions: # Potential unlabeled e_plus
+                    self.branchpoints.add(l)
+                
+                if r not in prohibited_positions: # Potential unlabeled s_plus
+                    self.branchpoints.add(r)
         
-        cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
-        gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
-        # pos = np.where(diffs < 0)[0]
-        # vals = -np.power(diffs[pos],2)/self.cov_minus[pos]
-        for block in gaps_minus: # Iterate over minus-stranded gaps
-            l, r = block
-            if l not in prohibited_positions:
-                self.branchpoints.add(l)
-            
-            if r not in prohibited_positions:
-                self.branchpoints.add(r)
+        if np.sum(self.cov_minus)>0:
+            cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
+            gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
+            for block in gaps_minus: # Iterate over minus-stranded gaps
+                l, r = block
+                if l not in prohibited_positions:
+                    self.branchpoints.add(l)
+                
+                if r not in prohibited_positions:
+                    self.branchpoints.add(r)
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
@@ -511,7 +506,7 @@ cdef class Locus:
         the opposite strand, discard it."""
         cdef float strand_ratio
         cdef np.ndarray lengths
-        for i in self.membership.shape[0]:
+        for i in range(self.membership.shape[0]):
             lengths = self.frag_len[self.membership[i,:] == 1]
             self.member_lengths[i] = np.sum(lengths)
             if self.member_lengths[i] > 0:
