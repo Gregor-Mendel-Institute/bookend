@@ -1799,7 +1799,7 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.
     # If all a contained element's containers are in the same chain, add it to this chain
     for c in resolve_order:
         if c in contained:
-            parent_chains = set(in_chain[containment[c,:])
+            parent_chains = set(in_chain[containment[c,:]])
             if len(parent_chains) == 1:
                 in_chain[c] = parent_chains.pop()
     
