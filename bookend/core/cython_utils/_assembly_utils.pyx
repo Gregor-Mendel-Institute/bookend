@@ -167,7 +167,7 @@ cdef class Locus:
             self.cov_minus = self.depth_matrix[covn,:]*.5
             self.depth = self.depth_matrix[covn,:]
         
-        self.branchpoints = set([0, locus.rightmost-locus.leftmost])
+        self.branchpoints = set([0, self.rightmost-self.leftmost])
         self.end_ranges = dict()
         prohibited_positions = set()
         for j in self.J_plus.keys():
