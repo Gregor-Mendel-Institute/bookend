@@ -124,7 +124,7 @@ cdef class ElementGraph:
         total_bases_assigned = sum([self.elements[i].bases for i in np.where(self.assignments>0)[0]])
         threshold = self.bases*(1-minimum_proportion)
         while total_bases_assigned < threshold:
-            path = self.find_optimal_path()
+            path = self.find_optimal_path(minimum_proportion)
             if path is self.emptyPath:
                 total_bases_assigned = threshold
             else:
@@ -288,7 +288,7 @@ cdef class ElementGraph:
         cdef tuple ext, best_ext
         cdef float score, best_score
         best_ext = ()
-        best_score = -1
+        best_score = 0
         for ext in extensions:
             score = self.calculate_extension_score(path, ext)
             if score > best_score or (score == best_score and len(ext) > len(best_ext)):
@@ -297,7 +297,7 @@ cdef class ElementGraph:
         
         return best_ext
     
-    cpdef float calculate_extension_score(self, Element path, tuple extension):
+    cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion):
         """Given a path and a set of Elements to extend from it, calculate the
         new weights of the extended path and return a score 
         """
@@ -305,7 +305,7 @@ cdef class ElementGraph:
             Element element
             int i
             set new_members
-            float bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
+            float bases, new_bases, extension_bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions
             dict junction_cov
         junction_cov = dict()
@@ -314,6 +314,7 @@ cdef class ElementGraph:
         path_proportions = path.weights/path.cov
         proportions = path_proportions*path.bases
         novelty = self.novelty_penalty
+        extension_bases = 0
         for i in extension:
             if self.assignments[i] > 0:
                 novelty = 1.
@@ -323,6 +324,7 @@ cdef class ElementGraph:
             e_weights = e_prop*element.weights
             e_cov = np.sum(e_weights)
             e_bases = e_cov*element.length
+            extension_bases += element.length*np.sum(element.weights)
             bases += e_bases
             for junction in element.junction_cov.keys():
                 junction_cov[junction] = junction_cov.get(junction, 0.) + e_cov
@@ -334,6 +336,9 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
+        if new_bases < minimum_proportion * extension_bases:
+            return 0
+        
         ext_cov = new_bases / new_length
         path_jcov = np.mean(list(path.junction_cov.values())) if path.junction_cov else path.cov
         ext_jcov = np.mean(list(junction_cov.values())) if junction_cov else ext_cov
@@ -343,7 +348,7 @@ cdef class ElementGraph:
         score = ext_cov * junction_delta * similarity * dead_end_penalty * novelty
         return score
     
-    cpdef Element find_optimal_path(self, bint verbose=False):
+    cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
         """Traverses the path in a greedy fashion from the heaviest element."""
         cdef Element currentPath, e
         cdef tuple ext
@@ -358,12 +363,12 @@ cdef class ElementGraph:
         extensions = self.generate_extensions(currentPath)
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
+                if self.calculate_extension_score(currentPath, extensions[0]) == 0:break
                 self.extend_path(currentPath, extensions[0])
             else:
-                ext = self.best_extension(currentPath, extensions)
-                if verbose:
-                    print("{} + {}".format(currentPath, ext))
-                
+                ext = self.best_extension(currentPath, extensions, minimum_proportion)
+                if verbose:print("{} + {}".format(currentPath, ext))
+                if len(ext) == 0:break
                 self.extend_path(currentPath, ext)
             
             extensions = self.generate_extensions(currentPath)
