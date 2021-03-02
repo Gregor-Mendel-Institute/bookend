@@ -284,13 +284,13 @@ cdef class ElementGraph:
         
         return sorted(list(extdict.values()))
     
-    cpdef tuple best_extension(self, Element path, list extensions):
+    cpdef tuple best_extension(self, Element path, list extensions, float minimum_proportion):
         cdef tuple ext, best_ext
         cdef float score, best_score
         best_ext = ()
         best_score = 0
         for ext in extensions:
-            score = self.calculate_extension_score(path, ext)
+            score = self.calculate_extension_score(path, ext, minimum_proportion)
             if score > best_score or (score == best_score and len(ext) > len(best_ext)):
                 best_ext = ext
                 best_score = score
@@ -363,7 +363,7 @@ cdef class ElementGraph:
         extensions = self.generate_extensions(currentPath)
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
-                if self.calculate_extension_score(currentPath, extensions[0]) == 0:break
+                if self.calculate_extension_score(currentPath, extensions[0], minimum_proportion) == 0:break
                 self.extend_path(currentPath, extensions[0])
             else:
                 ext = self.best_extension(currentPath, extensions, minimum_proportion)
