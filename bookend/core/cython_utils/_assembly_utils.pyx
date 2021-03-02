@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources
     cdef public object graph
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content
+    cdef public np.ndarray depth_matrix, strandscaled, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, use_attributes=False, oligo_len=20, ignore_ends=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
@@ -327,7 +327,8 @@ cdef class Locus:
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
         cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
-        cdef np.ndarray membership, strand_array, weight_array, discard
+        cdef float strand_ratio
+        cdef np.ndarray membership, strand_array, weight_array, discard, lengths
         cdef char s
         cdef list temp_frags, bp_positions
         cdef set discard_frags
@@ -342,10 +343,19 @@ cdef class Locus:
         
         self.frags = tuple(temp_frags) # Immutable after init, makes a vertex between all pairs of nonterminal branchpoint positions
         self.frag_len = np.array([b-a for a,b in self.frags]+[self.oligo_len]*4, dtype=np.int32)
+        self.frag_strand_ratios = np.full(self.frag_len.shape[0], -1, dtype=np.float32)
+        self.frag_strand_ratios[-4:-2] = 1.
+        self.frag_strand_ratios[-2:] = 0.
+        for i in range(len(self.frags)):
+            span = self.frags[i]
+            fragcov_plus = np.sum(self.cov_plus[span[0]:span[1]])
+            fragcov_minus = np.sum(self.cov_minus[span[0]:span[1]])
+            if fragcov_plus + fragcov_minus > 0:
+                self.frag_strand_ratios[i] = fragcov_plus/(fragcov_plus+fragcov_minus)
+        
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
         self.member_lengths = np.zeros(shape=len(self.reads), dtype=np.int32)
-        
         for i in range(len(self.frags)):
             if i == 0:
                 a = i
@@ -466,10 +476,26 @@ cdef class Locus:
                 
                 last_rfrag = rfrag
             
-            # WEIGHT: partial coverage of the representative MEMBER by the current READ
-            self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
+            # Calculate the length (bases) of the element
+            lengths = self.frag_len[membership[i,:] == 1]
+            self.member_lengths[i] = np.sum(lengths)
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
+                strand_ratio = np.sum(self.frag_strand_ratios[self.membership[i,:]==1]*lengths)/self.member_lengths[i]
+                if strand_ratio < self.minimum_proportion: # Minus-stranded region
+                    if strand_array[i] == 0:
+                        strand_array[i] = -1
+                        MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
+                        MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
+                    elif strand_array[i] == 1: # Plus-stranded read in minus-stranded region; discard
+                        self.membership[i,:] = -1
+                elif strand_ratio > 1-self.minimum_proportion: # Plus-stranded region
+                    if strand_array[i] == 0:
+                        strand_array[i] = 1
+                        MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
+                        MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
+                    elif strand_array[i] == -1:
+                        self.membership[i,:] = -1
         
         discard_frags = set()
         if threshold > 0:
@@ -482,7 +508,6 @@ cdef class Locus:
         discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
         membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
         membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
-        
         if self.naive:
             weight_array = np.sum(weight_array,axis=1)
         
@@ -953,68 +978,68 @@ cdef class Locus:
         self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
     
-    cpdef np.ndarray prune_unreachable_edges(self):
-        """Given a overlap matrix, determine which directed edges are unreachable
-        from an s-t path on that strand. Removes edges in-place in the matrix.
-        """
-        cdef int sink_plus, source_minus, source_plus, sink_minus, SOURCE, SINK, a, b, v, w
-        cdef char p, m, strand, C
-        cdef dict BFS_from_ends, PF, PR, MF, MR
-        cdef set from_sink_minus, from_sink_plus, from_source_minus, from_source_plus, in_plus_path, in_minus_path
-        cdef np.ndarray new_strands, updated
-        vertices = self.overlap.shape[0]
-        self.adj = build_adjacencies(self.overlap)
-        PF = self.adj['PF']
-        PR = self.adj['PR']
-        MF = self.adj['MF']
-        MR = self.adj['MR']
-        new_strands = infer_strands_by_reachability(self.strand_array, self.adj)
-        updated = np.where(new_strands != self.strand_array)[0]
-        for v in updated: #Check if any strands were updated
-            if new_strands[v] == 1: # Strand inferred as plus; remove all minus edges
-                self.membership[v,-2:] = -1 
-                for w in MF[v]:
-                    if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-                        # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        self.overlap[v,w] = -1
-                        self.overlap[w,v] = -1
-                    else:
-                        C = self.overlap[v, w]
-                        if C == 1:
-                            self.overlap[v, w] = 0
+    # cpdef np.ndarray prune_unreachable_edges(self):
+    #     """Given a overlap matrix, determine which directed edges are unreachable
+    #     from an s-t path on that strand. Removes edges in-place in the matrix.
+    #     """
+    #     cdef int sink_plus, source_minus, source_plus, sink_minus, SOURCE, SINK, a, b, v, w
+    #     cdef char p, m, strand, C
+    #     cdef dict BFS_from_ends, PF, PR, MF, MR
+    #     cdef set from_sink_minus, from_sink_plus, from_source_minus, from_source_plus, in_plus_path, in_minus_path
+    #     cdef np.ndarray new_strands, updated
+    #     vertices = self.overlap.shape[0]
+    #     self.adj = build_adjacencies(self.overlap)
+    #     PF = self.adj['PF']
+    #     PR = self.adj['PR']
+    #     MF = self.adj['MF']
+    #     MR = self.adj['MR']
+    #     new_strands = infer_strands_by_reachability(self.strand_array, self.adj)
+    #     updated = np.where(new_strands != self.strand_array)[0]
+    #     for v in updated: #Check if any strands were updated
+    #         if new_strands[v] == 1: # Strand inferred as plus; remove all minus edges
+    #             self.membership[v,-2:] = -1 
+    #             for w in MF[v]:
+    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
+    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
+    #                     self.overlap[v,w] = -1
+    #                     self.overlap[w,v] = -1
+    #                 else:
+    #                     C = self.overlap[v, w]
+    #                     if C == 1:
+    #                         self.overlap[v, w] = 0
                 
-                for w in MR[v]:
-                    if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-                        self.overlap[v,w] = -1
-                        self.overlap[w,v] = -1
-                    else:
-                        C = self.overlap[w, v]
-                        if C == 1:
-                            self.overlap[w, v] = 0
-            elif new_strands[v] == -1: # Strand inferred as minus; remove all plus edges
-                self.membership[v,-4:-2] = -1
-                for w in PF[v]:
-                    if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-                        # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        self.overlap[v,w] = -1
-                        self.overlap[w,v] = -1
-                    else:
-                        C = self.overlap[v, w]
-                        if C == 1:
-                            self.overlap[v, w] = 0
+    #             for w in MR[v]:
+    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
+    #                     self.overlap[v,w] = -1
+    #                     self.overlap[w,v] = -1
+    #                 else:
+    #                     C = self.overlap[w, v]
+    #                     if C == 1:
+    #                         self.overlap[w, v] = 0
+    #         elif new_strands[v] == -1: # Strand inferred as minus; remove all plus edges
+    #             self.membership[v,-4:-2] = -1
+    #             for w in PF[v]:
+    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
+    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
+    #                     self.overlap[v,w] = -1
+    #                     self.overlap[w,v] = -1
+    #                 else:
+    #                     C = self.overlap[v, w]
+    #                     if C == 1:
+    #                         self.overlap[v, w] = 0
                 
-                for w in PR[v]:
-                    if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-                        # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-                        self.overlap[v,w] = -1
-                        self.overlap[w,v] = -1
-                    else:
-                        C = self.overlap[w, v]
-                        if C == 1:
-                            self.overlap[w, v] = 0
+    #             for w in PR[v]:
+    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
+    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
+    #                     self.overlap[v,w] = -1
+    #                     self.overlap[w,v] = -1
+    #                 else:
+    #                     C = self.overlap[w, v]
+    #                     if C == 1:
+    #                         self.overlap[w, v] = 0
         
-        self.strand_array = new_strands
-        return updated
+    #     self.strand_array = new_strands
+    #     return updated
     
     cpdef convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
@@ -1642,95 +1667,95 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
 #     return new_weights
 
-cpdef set dictBFS(dict adjacency, source):
-    """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
-    visited = { v:False for v in adjacency.keys() }
-    visited[source] = True
-    queue = deque(maxlen=len(visited))
-    queue.append(source)
-    while queue:
-        v = queue.popleft()
-        for w in adjacency[v]:
-            if not visited[w]:
-                visited[w] = True
-                queue.append(w)
+# cpdef set dictBFS(dict adjacency, source):
+#     """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
+#     visited = { v:False for v in adjacency.keys() }
+#     visited[source] = True
+#     queue = deque(maxlen=len(visited))
+#     queue.append(source)
+#     while queue:
+#         v = queue.popleft()
+#         for w in adjacency[v]:
+#             if not visited[w]:
+#                 visited[w] = True
+#                 queue.append(w)
     
-    return set([v for v in visited.keys() if visited[v]])
+#     return set([v for v in visited.keys() if visited[v]])
 
-cpdef dict build_adjacencies(np.ndarray[char, ndim=2] overlap):
-    """Returns a dictionary of four adjacency-list graphs,
-    a forward and reverse for each strand."""
-    cdef Py_ssize_t vertices, a, b
-    cdef char p, m
-    cdef char [:, :] COMPATIBILITY = overlap
-    vertices = COMPATIBILITY.shape[0]
-    cdef dict plus_forward = { v:[] for v in range(vertices+4) }
-    cdef dict minus_forward = { v:[] for v in range(vertices+4) }
-    cdef dict plus_reverse = { v:[] for v in range(vertices+4) }
-    cdef dict minus_reverse = { v:[] for v in range(vertices+4) }
-    for a in range(vertices-1):
-        for b in range(a+1, vertices):
-            p = COMPATIBILITY[a, b] # plus edge
-            m = COMPATIBILITY[b, a] # minus edge
-            if p >= 1:
-                plus_forward[a].append(b)
-                plus_reverse[b].append(a)
+# cpdef dict build_adjacencies(np.ndarray[char, ndim=2] overlap):
+#     """Returns a dictionary of four adjacency-list graphs,
+#     a forward and reverse for each strand."""
+#     cdef Py_ssize_t vertices, a, b
+#     cdef char p, m
+#     cdef char [:, :] COMPATIBILITY = overlap
+#     vertices = COMPATIBILITY.shape[0]
+#     cdef dict plus_forward = { v:[] for v in range(vertices+4) }
+#     cdef dict minus_forward = { v:[] for v in range(vertices+4) }
+#     cdef dict plus_reverse = { v:[] for v in range(vertices+4) }
+#     cdef dict minus_reverse = { v:[] for v in range(vertices+4) }
+#     for a in range(vertices-1):
+#         for b in range(a+1, vertices):
+#             p = COMPATIBILITY[a, b] # plus edge
+#             m = COMPATIBILITY[b, a] # minus edge
+#             if p >= 1:
+#                 plus_forward[a].append(b)
+#                 plus_reverse[b].append(a)
             
-            if m >= 1:
-                minus_forward[b].append(a)
-                minus_reverse[a].append(b)
+#             if m >= 1:
+#                 minus_forward[b].append(a)
+#                 minus_reverse[a].append(b)
 
-    return {'PF':plus_forward, 'PR':plus_reverse, 'MF':minus_forward, 'MR':minus_reverse}
+#     return {'PF':plus_forward, 'PR':plus_reverse, 'MF':minus_forward, 'MR':minus_reverse}
 
-cpdef np.ndarray infer_strands_by_reachability(np.ndarray[char, ndim=1] strand_array, dict adj):
-    """Given a set of adjacency matrices from prune_unreachable_edges(),
-    assigns strands to all nonstranded elements that are only reachable
-    from unambiguously stranded reads of a single direction."""
-    cdef set reachable_from_plus, reachable_from_minus
-    cdef int PSN, MSN, node, min_plus, min_minus, max_plus, max_minus, r
-    cdef np.ndarray plus_stranded_nodes = np.where(strand_array == 1)[0]
-    cdef np.ndarray minus_stranded_nodes = np.where(strand_array == -1)[0]
-    cdef np.ndarray output_strand_array = np.copy(strand_array)
-    # Special case: Strands beyond the boundaries of the stranded elements
-    # must be reachable from the last stranded element
-    cdef dict PF, PR, MF, MR
-    PF = adj['PF']
-    PR = adj['PR']
-    MF = adj['MF']
-    MR = adj['MR']
-    reachable_from_plus = set()
-    reachable_from_minus = set()
-    if len(plus_stranded_nodes) > 0:
-        min_plus = min(plus_stranded_nodes)
-        max_plus = max(plus_stranded_nodes)
-        left_of_plus = dictBFS(PR, min_plus)
-        right_of_plus = dictBFS(PF, max_plus)
-        for PSN in plus_stranded_nodes:
-            if PSN not in reachable_from_plus:
-                if PSN > min_plus and PSN < max_plus:
-                    reachable_from_plus.update(dictBFS(PF, PSN) | dictBFS(PR, PSN))
+# cpdef np.ndarray infer_strands_by_reachability(np.ndarray[char, ndim=1] strand_array, dict adj):
+#     """Given a set of adjacency matrices from prune_unreachable_edges(),
+#     assigns strands to all nonstranded elements that are only reachable
+#     from unambiguously stranded reads of a single direction."""
+#     cdef set reachable_from_plus, reachable_from_minus
+#     cdef int PSN, MSN, node, min_plus, min_minus, max_plus, max_minus, r
+#     cdef np.ndarray plus_stranded_nodes = np.where(strand_array == 1)[0]
+#     cdef np.ndarray minus_stranded_nodes = np.where(strand_array == -1)[0]
+#     cdef np.ndarray output_strand_array = np.copy(strand_array)
+#     # Special case: Strands beyond the boundaries of the stranded elements
+#     # must be reachable from the last stranded element
+#     cdef dict PF, PR, MF, MR
+#     PF = adj['PF']
+#     PR = adj['PR']
+#     MF = adj['MF']
+#     MR = adj['MR']
+#     reachable_from_plus = set()
+#     reachable_from_minus = set()
+#     if len(plus_stranded_nodes) > 0:
+#         min_plus = min(plus_stranded_nodes)
+#         max_plus = max(plus_stranded_nodes)
+#         left_of_plus = dictBFS(PR, min_plus)
+#         right_of_plus = dictBFS(PF, max_plus)
+#         for PSN in plus_stranded_nodes:
+#             if PSN not in reachable_from_plus:
+#                 if PSN > min_plus and PSN < max_plus:
+#                     reachable_from_plus.update(dictBFS(PF, PSN) | dictBFS(PR, PSN))
         
-        reachable_from_plus = set([r for r in reachable_from_plus if (r > min_plus or r in left_of_plus) and (r < max_plus or r in right_of_plus)])
+#         reachable_from_plus = set([r for r in reachable_from_plus if (r > min_plus or r in left_of_plus) and (r < max_plus or r in right_of_plus)])
     
-    if len(minus_stranded_nodes) > 0:
-        min_minus = min(minus_stranded_nodes)
-        max_minus = max(minus_stranded_nodes)
-        left_of_minus = dictBFS(MF, min_minus)
-        right_of_minus = dictBFS(MR, max_minus)
-        for MSN in minus_stranded_nodes:
-            if MSN not in reachable_from_minus:
-                if MSN > min_minus and MSN < max_minus:
-                    reachable_from_minus.update(dictBFS(MF, MSN) | dictBFS(MR, MSN))
+#     if len(minus_stranded_nodes) > 0:
+#         min_minus = min(minus_stranded_nodes)
+#         max_minus = max(minus_stranded_nodes)
+#         left_of_minus = dictBFS(MF, min_minus)
+#         right_of_minus = dictBFS(MR, max_minus)
+#         for MSN in minus_stranded_nodes:
+#             if MSN not in reachable_from_minus:
+#                 if MSN > min_minus and MSN < max_minus:
+#                     reachable_from_minus.update(dictBFS(MF, MSN) | dictBFS(MR, MSN))
         
-        reachable_from_minus = set([r for r in reachable_from_minus if (r > min_minus or r in left_of_minus) and (r < max_minus or r in right_of_minus)])
+#         reachable_from_minus = set([r for r in reachable_from_minus if (r > min_minus or r in left_of_minus) and (r < max_minus or r in right_of_minus)])
     
-    for node in reachable_from_plus.difference(reachable_from_minus):
-        output_strand_array[node] = 1
+#     for node in reachable_from_plus.difference(reachable_from_minus):
+#         output_strand_array[node] = 1
     
-    for node in reachable_from_minus.difference(reachable_from_plus):
-        output_strand_array[node] = -1
+#     for node in reachable_from_minus.difference(reachable_from_plus):
+#         output_strand_array[node] = -1
     
-    return output_strand_array
+#     return output_strand_array
 
 cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix):
     cdef:
