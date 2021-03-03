@@ -473,43 +473,42 @@ cdef class ElementGraph:
     cpdef void trim_ends(self, Element path):
         """If a path has malformed ends, check if it is possible to back up to a
         bypassed start/end site without crossing a splice junction."""
-        cdef Element bypassed_element
-        cdef list junctions
-        cdef int left_exon_border, right_exon_border, bypassed
-        if path.complete or path.strand==0:return
-        junctions = path.get_junctions()
-        left_exon_border = int(junctions[0].split(':')[0])
-        right_exon_border = int(junctions[-1].split(':')[1])
-        end_to_repair = list()
-        if not path.s_tag: # Check if there is a bypassed start in the first exon
-            for bypassed in sorted(path.excludes, reverse=path.strand==-1):
-                bypassed_element = self.elements[bypassed]
-                print(bypassed_element)
+        pass
+        # cdef Element bypassed_element
+        # cdef list junctions
+        # cdef int left_exon_border, right_exon_border, bypassed
+        # if path.complete or path.strand==0:return
+        # junctions = path.get_junctions()
+        # left_exon_border = int(junctions[0].split(':')[0])
+        # right_exon_border = int(junctions[-1].split(':')[1])
+        # end_to_repair = list()
+        # if not path.s_tag: # Check if there is a bypassed start in the first exon
+        #     for bypassed in sorted(path.excludes, reverse=path.strand==-1):
+        #         bypassed_element = self.elements[bypassed]
+        
+        # if not path.e_tag: # Check if there is a bypassed end in the first exon
+        #     for bypassed in sorted(path.excludes, reverse=path.strand==1):
+        #         bypassed_element = self.elements[bypassed]
+        #         if path.strand == 1:
+        #             if bypassed_element.LM < right_exon_border:break
+        #             if bypassed_element.e_tag and bypassed_element.RM < path.RM:
 
         
-        if not path.e_tag: # Check if there is a bypassed end in the first exon
-            for bypassed in sorted(path.excludes, reverse=path.strand==1):
-                bypassed_element = self.elements[bypassed]
-                if path.strand == 1:
-                    if bypassed_element.LM < right_exon_border:break
-                    if bypassed_element.e_tag and bypassed_element.RM < path.RM:
-                        
+        # elements_to_trim = path.includes.intersection(bypassed_element.excludes)
+        # members_to_trim = set()
+        # nonmembers_to_trim = set()
+        # for e in elements_to_trim:
+        #     trim_element = self.elements[e]
+        #     members_to_trim.update(trim_element.members.intersection(bypassed_element.nonmembers))
+        #     nonmembers_to_trim.update(trim_element.nonmembers.intersection(bypassed_element.members))
+        #     path.includes.remove(e)
         
-        elements_to_trim = path.includes.intersection(bypassed_element.excludes)
-        members_to_trim = set()
-        nonmembers_to_trim = set()
-        for e in elements_to_trim:
-            trim_element = self.elements[e]
-            members_to_trim.update(trim_element.members.intersection(bypassed_element.nonmembers))
-            nonmembers_to_trim.update(trim_element.nonmembers.intersection(bypassed_element.members))
-            path.includes.remove(e)
-        
-        path.members.difference_update(members_to_trim)
-        path.nonmembers.difference_update(nonmembers_to_trim)
-        path.includes.difference_update(elements_to_trim)
-        path.contains.difference_update(elements_to_trim)
-        path.excludes.remove(bypassed)
-        path.merge(bypassed_element, self.available_proportion(path.weights, bypassed_element))
+        # path.members.difference_update(members_to_trim)
+        # path.nonmembers.difference_update(nonmembers_to_trim)
+        # path.includes.difference_update(elements_to_trim)
+        # path.contains.difference_update(elements_to_trim)
+        # path.excludes.remove(bypassed)
+        # path.merge(bypassed_element, self.available_proportion(path.weights, bypassed_element))
     
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
