@@ -691,12 +691,12 @@ cdef class Element:
         
         return string
     
-    def __eq__(self, other): return self.cov == other.cov
-    def __ne__(self, other): return self.cov != other.cov
-    def __gt__(self, other): return self.cov >  other.cov
-    def __ge__(self, other): return self.cov >= other.cov
-    def __lt__(self, other): return self.cov <  other.cov
-    def __le__(self, other): return self.cov <= other.cov
+    def __eq__(self, other): return self.bases == other.bases
+    def __ne__(self, other): return self.bases != other.bases
+    def __gt__(self, other): return self.bases >  other.bases
+    def __ge__(self, other): return self.bases >= other.bases
+    def __lt__(self, other): return self.bases <  other.bases
+    def __le__(self, other): return self.bases <= other.bases
 
     def __add__(self, other):
         if self.empty: # The special cast emptyPath defeats addition
