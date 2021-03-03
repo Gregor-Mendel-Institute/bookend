@@ -401,7 +401,7 @@ cdef class ElementGraph:
             Element element
             int i, outgroup_bases
             set new_members, extension_outgroup, extension_excludes
-            float bases, new_bases, extension_bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
+            float bases, new_bases, extension_bases, score, source_similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions, new_junctions
         new_members = set()
         bases = path.bases
@@ -446,12 +446,16 @@ cdef class ElementGraph:
             return 0
         
         ext_cov = new_bases / new_length
-        path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else path.cov
-        ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else ext_cov
-        junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
-        similarity = 2 - np.sum(np.abs(path_proportions - proportions))
+        path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else 0
+        ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else 0
+        if path_jcov == 0 or ext_jcov == 0:
+            junction_delta = 1 - (abs(ext_cov-path.cov) / (ext_cov+path.cov))
+        else:
+            junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
+        
+        source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * junction_delta * similarity * dead_end_penalty * novelty
+        score = ext_cov * junction_delta * source_similarity * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
@@ -665,25 +669,6 @@ cdef class Element:
             chars[n] = '_'
         
         return '|{}| {}-{} ({})'.format(''.join(chars),self.left,self.right,strand)
-    
-    cpdef list get_junctions(self):
-        """Returns a list of (lm, rm) tuples that define all 'filled gaps'
-        in Element.members (nonadjacent members with nonmembership between)."""
-        cdef int member, last_member
-        cdef list junctions
-        last_member = -1
-        junctions = list()
-        for member in sorted(list(self.members)): # Convert membership into ranges
-            if member >= self.maxIC-4: # Ignore starts/ends
-                break
-            
-            if last_member > -1 and member > last_member + 1:
-                if all([m in self.nonmembers for m in range(last_member+1, member)]):
-                    junctions.append(self.span_to_string((last_member, member)))
-            
-            last_member = member
-        
-        return junctions
     
     cdef str span_to_string(self, (int, int) span):
         """Converts a tuple of two ints to a string connected by ':'"""
