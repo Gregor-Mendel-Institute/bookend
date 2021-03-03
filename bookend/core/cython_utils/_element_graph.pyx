@@ -17,7 +17,7 @@ cdef class ElementGraph:
     cdef public float bases, dead_end_penalty, novelty_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weights, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weight_array, junction_array, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -33,10 +33,10 @@ cdef class ElementGraph:
         self.maxIC = membership_matrix.shape[1]
         self.naive = naive
         if self.naive:
-             weights = np.sum(np.copy(weights), axis=1, keepdims=True)
+             weight_array = np.sum(np.copy(weight_array), axis=1, keepdims=True)
         
         self.elements = [Element(
-            i, weights[i,:], strands[i],
+            i, weight_array[i,:], junction_array[i,:], strands[i],
             membership_matrix[i,:], self.overlap, lengths, self.maxIC
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.penalize_dead_ends()
@@ -312,6 +312,9 @@ cdef class ElementGraph:
         
         return 1 * [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
     
+    cpdef tuple maxDFS(self, Element path, tuple extension):
+        """Depth-first search that maximizes the number of """
+    
     cpdef list generate_extensions(self, Element path):
         """Defines all combinations of mutally compatible elements in
         the path's ingroup/outgroup that should be evaluated. Requires
@@ -396,8 +399,8 @@ cdef class ElementGraph:
         """
         cdef:
             Element element
-            int i
-            set new_members
+            int i, outgroup_bases
+            set new_members, extension_outgroup, extension_excludes
             float bases, new_bases, extension_bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions
             dict junction_cov
@@ -408,16 +411,20 @@ cdef class ElementGraph:
         proportions = path_proportions*path.bases
         novelty = self.novelty_penalty
         extension_bases = 0
+        extension_outgroup = set()
+        extension_excludes = set()
         for i in extension:
             if self.assignments[i] > 0:
                 novelty = 1.
             
             element = self.elements[i]
+            extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
+            extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.weights, element)
             e_weights = e_prop*element.weights
             e_cov = np.sum(e_weights)
             e_bases = e_cov*element.length
-            extension_bases += element.length*np.sum(element.weights)
+            extension_bases += element.bases
             bases += e_bases
             for junction in element.junction_cov.keys():
                 junction_cov[junction] = junction_cov.get(junction, 0.) + e_cov
@@ -429,6 +436,15 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
+        extension_outgroup.difference_update(set(extension)|extension_excludes)
+        for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
+            element = self.elements[i]
+            e_prop = self.available_proportion(path.weights, element)
+            shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
+            outgroup_bases = np.sum(element.weights*e_prop)*shared_length
+            new_bases += outgroup_bases
+            extension_bases += np.sum(element.weights)*shared_length
+        
         if new_bases < minimum_proportion * extension_bases:
             return 0
         
@@ -578,9 +594,9 @@ cdef class Element:
     cdef public dict junction_cov
     cdef public float cov, bases
     cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
-    cdef public np.ndarray frag_len, weights, all
+    cdef public np.ndarray frag_len, weights, junctions, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
-    def __init__(self, int index, np.ndarray weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
+    def __init__(self, int index, np.ndarray weights, np.ndarray junctions, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
         cdef Py_ssize_t i
         cdef char m, overOut, overIn
         self.is_spliced = False                       # Default: the path has no discontinuities
@@ -590,6 +606,7 @@ cdef class Element:
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
         self.weights = np.copy(weights)               # Array of read coverage per Source
+        self.junctions = np.copy(junctions)           # Array of read coverage of all locus junctions
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
         self.assigned_to = []                         # List of Path indices this Element is a part of
