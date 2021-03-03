@@ -433,17 +433,17 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
-        extension_outgroup.difference_update(set(extension)|extension_excludes)
-        for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
-            element = self.elements[i]
-            e_prop = self.available_proportion(path.weights, element)
-            shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
-            outgroup_bases = np.sum(element.weights*e_prop)*shared_length
-            new_bases += outgroup_bases
-            extension_bases += np.sum(element.weights)*shared_length
+        # extension_outgroup.difference_update(set(extension)|extension_excludes)
+        # for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
+        #     element = self.elements[i]
+        #     e_prop = self.available_proportion(path.weights, element)
+        #     shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
+        #     outgroup_bases = np.sum(element.weights*e_prop)*shared_length
+        #     new_bases += outgroup_bases
+        #     extension_bases += np.sum(element.weights)*shared_length
         
-        if new_bases < minimum_proportion * extension_bases:
-            return 0
+        # if new_bases < minimum_proportion * extension_bases:
+        #     return 0
         
         ext_cov = new_bases / new_length
         path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else path.cov
