@@ -50,41 +50,75 @@ cdef class ElementGraph:
         The weight of all elements unreachable by each search is multiplied
         by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
         cdef Element element
-        cdef np.ndarray reached_from_start, reached_from_end
-        cdef list starts, ends
+        cdef np.ndarray reached_from_start, reached_from_start_plus, reached_from_start_minus, reached_from_end, reached_from_end_plus, reached_from_end_minus
+        cdef list starts_plus, starts_minus, ends_plus, ends_minus
         cdef float original_bases
         cdef int i
-        starts, ends = [], []
+        starts_plus, starts_minus, ends_plus, ends_minus = [], [], [], []
         for element in self.elements:
-            if element.s_tag:starts.append(element.index)
-            if element.e_tag:ends.append(element.index)
+            if element.strand == 1:
+                if element.s_tag:
+                    starts_plus.append(element.index)
+                if element.e_tag:
+                    ends_plus.append(element.index)
+            elif element.strand == -1:
+                if element.s_tag:
+                    starts_minus.append(element.index)
+                if element.e_tag:
+                    ends_minus.append(element.index)  
         
-        reached_from_start = np.zeros(len(self.elements), dtype=np.bool)
+        reached_from_start_plus = np.zeros(len(self.elements), dtype=np.bool)
+        reached_from_start_minus = np.zeros(len(self.elements), dtype=np.bool)
+        reached_from_end_plus = np.zeros(len(self.elements), dtype=np.bool)
+        reached_from_end_minus = np.zeros(len(self.elements), dtype=np.bool)
         queue = deque(maxlen=len(self.elements))
-        for i in starts: # Begin BFS from starts
-            strand = set([0,self.elements[i].strand])
-            queue.append(i)
-            while queue:
-                v = queue.popleft()
-                for w in self.elements[v].outgroup:
-                    if not reached_from_start[w]:
-                        if self.elements[w].strand in strand:
-                            reached_from_start[w] = True
-                            queue.append(w)
+        strand = set([0,1])
+        queue.extend(starts_plus)
+        while queue:
+            v = queue.popleft()
+            reached_from_start_plus[v] = True
+            for w in self.elements[v].outgroup:
+                if not reached_from_start_plus[w]:
+                    if self.elements[w].strand in strand:
+                        reached_from_start_plus[w] = True
+                        queue.append(w)
         
-        reached_from_end = np.zeros(len(self.elements), dtype=np.bool)
-        queue = deque(maxlen=len(self.elements))
-        for i in ends: # Begin BFS from starts
-            strand = set([0,self.elements[i].strand])
-            queue.append(i)
-            while queue:
-                v = queue.popleft()
-                for w in self.elements[v].ingroup:
-                    if not reached_from_end[w]:
-                        if self.elements[w].strand in strand:
-                            reached_from_end[w] = True
-                            queue.append(w)
+        queue.clear()
+        queue.extend(ends_plus)
+        while queue:
+            v = queue.popleft()
+            reached_from_end_plus[v] = True
+            for w in self.elements[v].ingroup:
+                if not reached_from_end_plus[w]:
+                    if self.elements[w].strand in strand:
+                        reached_from_end_plus[w] = True
+                        queue.append(w)
         
+        queue.clear()
+        queue.extend(starts_minus)
+        strand = set([0,-1])
+        while queue:
+            v = queue.popleft()
+            reached_from_start_minus[v] = True
+            for w in self.elements[v].outgroup:
+                if not reached_from_start_minus[w]:
+                    if self.elements[w].strand in strand:
+                        reached_from_start_minus[w] = True
+                        queue.append(w)
+        
+        queue.clear()
+        queue.extend(ends_minus)
+        while queue:
+            v = queue.popleft()
+            reached_from_end_minus[v] = True
+            for w in self.elements[v].ingroup:
+                if not reached_from_end_minus[w]:
+                    if self.elements[w].strand in strand:
+                        reached_from_end_minus[w] = True
+                        queue.append(w)
+        
+        reached_from_start = np.logical_or(reached_from_start_plus, reached_from_start_minus)
+        reached_from_end = np.logical_or(reached_from_end_plus, reached_from_end_minus)
         for i in range(len(self.elements)):
             element = self.elements[i]
             if not reached_from_start[i]:
@@ -432,7 +466,50 @@ cdef class ElementGraph:
             
             extensions = self.generate_extensions(currentPath)
         
+        if verbose:print(currentPath)
+        self.trim_ends(currentPath)
         return currentPath
+    
+    cpdef void trim_ends(self, Element path):
+        """If a path has malformed ends, check if it is possible to back up to a
+        bypassed start/end site without crossing a splice junction."""
+        cdef Element bypassed_element
+        cdef list junctions
+        cdef int left_exon_border, right_exon_border, bypassed
+        if path.complete or path.strand==0:return
+        junctions = path.get_junctions()
+        left_exon_border = int(junctions[0].split(':')[0])
+        right_exon_border = int(junctions[-1].split(':')[1])
+        end_to_repair = list()
+        if not path.s_tag: # Check if there is a bypassed start in the first exon
+            for bypassed in sorted(path.excludes, reverse=path.strand==-1):
+                bypassed_element = self.elements[bypassed]
+                print(bypassed_element)
+
+        
+        if not path.e_tag: # Check if there is a bypassed end in the first exon
+            for bypassed in sorted(path.excludes, reverse=path.strand==1):
+                bypassed_element = self.elements[bypassed]
+                if path.strand == 1:
+                    if bypassed_element.LM < right_exon_border:break
+                    if bypassed_element.e_tag and bypassed_element.RM < path.RM:
+                        
+        
+        elements_to_trim = path.includes.intersection(bypassed_element.excludes)
+        members_to_trim = set()
+        nonmembers_to_trim = set()
+        for e in elements_to_trim:
+            trim_element = self.elements[e]
+            members_to_trim.update(trim_element.members.intersection(bypassed_element.nonmembers))
+            nonmembers_to_trim.update(trim_element.nonmembers.intersection(bypassed_element.members))
+            path.includes.remove(e)
+        
+        path.members.difference_update(members_to_trim)
+        path.nonmembers.difference_update(nonmembers_to_trim)
+        path.includes.difference_update(elements_to_trim)
+        path.contains.difference_update(elements_to_trim)
+        path.excludes.remove(bypassed)
+        path.merge(bypassed_element, self.available_proportion(path.weights, bypassed_element))
     
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
@@ -513,7 +590,7 @@ cdef class Element:
         self.frag_len = frag_len                      # Length of the fragment is provided
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
-        self.weights = weights                        # Array of read coverage per Source
+        self.weights = np.copy(weights)               # Array of read coverage per Source
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
         self.assigned_to = []                         # List of Path indices this Element is a part of
