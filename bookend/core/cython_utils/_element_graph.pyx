@@ -124,7 +124,7 @@ cdef class ElementGraph:
             if not reached_from_start[i]:
                 element.weights *= self.dead_end_penalty
                 element.cov *= self.dead_end_penalty
-                element.junction_cov = {k:v*self.dead_end_penalty for k,v in element.junction_cov.items()}
+                element.junctions *= self.dead_end_penalty
                 original_bases = element.bases
                 element.bases *= self.dead_end_penalty
                 self.bases -= original_bases-element.bases
@@ -132,7 +132,7 @@ cdef class ElementGraph:
             if not reached_from_end[i]:
                 element.weights *= self.dead_end_penalty
                 element.cov *= self.dead_end_penalty
-                element.junction_cov = {k:v*self.dead_end_penalty for k,v in element.junction_cov.items()}
+                element.junctions *= self.dead_end_penalty
                 original_bases = element.bases
                 element.bases *= self.dead_end_penalty
                 self.bases -= original_bases-element.bases
@@ -402,13 +402,12 @@ cdef class ElementGraph:
             int i, outgroup_bases
             set new_members, extension_outgroup, extension_excludes
             float bases, new_bases, extension_bases, score, similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
-            np.ndarray e_prop, e_weights, proportions, path_proportions
-            dict junction_cov
-        junction_cov = dict()
+            np.ndarray e_prop, e_weights, proportions, path_proportions, new_junctions
         new_members = set()
         bases = path.bases
         path_proportions = path.weights/path.cov
         proportions = path_proportions*path.bases
+        new_junctions = np.zeros(path.junctions.shape[0], dtype=np.float32)
         novelty = self.novelty_penalty
         extension_bases = 0
         extension_outgroup = set()
@@ -426,9 +425,7 @@ cdef class ElementGraph:
             e_bases = e_cov*element.length
             extension_bases += element.bases
             bases += e_bases
-            for junction in element.junction_cov.keys():
-                junction_cov[junction] = junction_cov.get(junction, 0.) + e_cov
-            
+            new_junctions += element.junctions*e_cov/element.cov
             proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
         
@@ -449,8 +446,8 @@ cdef class ElementGraph:
             return 0
         
         ext_cov = new_bases / new_length
-        path_jcov = np.mean(list(path.junction_cov.values())) if path.junction_cov else path.cov
-        ext_jcov = np.mean(list(junction_cov.values())) if junction_cov else ext_cov
+        path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else path.cov
+        ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else ext_cov
         junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
         similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
@@ -618,7 +615,6 @@ cdef class Element:
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
         self.contained = set()
-        self.junction_cov = {}
         self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
@@ -658,8 +654,6 @@ cdef class Element:
                         self.contains.add(i)
             
             self.update()
-            for junction in self.get_junctions():
-                self.junction_cov[junction] = self.cov
     
     def __repr__(self):
         chars = [' ']*self.maxIC
@@ -919,8 +913,7 @@ cdef class Element:
             self.left = min(self.left, other.left)
         
         self.weights = (other.weights*other.length*proportion + self.weights*old_length)/self.length
-        for junction in other.get_junctions():
-            self.junction_cov[junction] = self.junction_cov.get(junction, 0.) + np.sum(other.weights*proportion)
+        self.junctions += other.junctions*np.sum(other.weights*proportion)/np.sum(other.weights)
         
         self.update()
         if self.strand == 1: # Enforce directionality of edges
