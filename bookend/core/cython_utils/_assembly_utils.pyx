@@ -462,7 +462,7 @@ cdef class Locus:
                             break
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                            self.junction_array[i,self.JA_index[junction_hash+['+','-'][s]]] = read.weight
+                            self.junction_array[i,self.JA_index[junction_hash+['-','.','+'][s+1]]] = read.weight
                 
                 last_rfrag = rfrag
             
