@@ -462,7 +462,7 @@ cdef class Locus:
                             break
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                            self.junction_array[i,self.JA_index[junction_hash+['+','-'][s]]] += read.weight
+                            self.junction_array[i,self.JA_index[junction_hash+['+','-'][s]]] = read.weight
                 
                 last_rfrag = rfrag
             
@@ -677,7 +677,7 @@ cdef class Locus:
         if reduce: # Collapse linear chains prior to graph construction
             self.collapse_linear_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.strand_array, self.frag_len, self.naive)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.junction_array, self.strand_array, self.frag_len, self.naive)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
