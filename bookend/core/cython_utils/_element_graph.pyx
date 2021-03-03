@@ -435,26 +435,23 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
-        # extension_outgroup.difference_update(set(extension)|extension_excludes)
-        # for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
-        #     element = self.elements[i]
-        #     e_prop = self.available_proportion(path.weights, element)
-        #     shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
-        #     outgroup_bases = np.sum(element.weights*e_prop)*shared_length
-        #     new_bases += outgroup_bases
-        #     extension_bases += np.sum(element.weights)*shared_length
+        extension_outgroup.difference_update(set(extension)|extension_excludes)
+        for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
+            element = self.elements[i]
+            e_prop = self.available_proportion(path.weights, element)
+            shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
+            outgroup_bases = np.sum(element.weights*e_prop)*shared_length
+            new_bases += outgroup_bases
+            extension_bases += np.sum(element.weights)*shared_length
         
-        # if new_bases < minimum_proportion * extension_bases:
-        #     return 0
+        if new_bases < minimum_proportion * extension_bases:
+            return 0
         
         ext_cov = new_bases / new_length
         path_jcov = np.mean(path.junctions[sorted(list(path.junction_indices))]) if path.junction_indices else path.cov
         ext_jcov = np.mean(path.junctions[sorted(list(new_junction_indices))]) if np.any(new_junctions>0) else ext_cov
-        # if path_jcov == 0 or ext_jcov == 0:
-        #     junction_delta = 1 - (abs(ext_cov-path.cov) / (ext_cov+path.cov))
-        # else:
-        #     junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
-        junction_delta = ext_jcov / ext_cov  if ext_cov > 0 else 0 # How close in coverage the spliced portion of the path is to the unspliced
+        junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
+        # junction_delta = ext_jcov / ext_cov  if ext_cov > 0 else 0 # How close in coverage the spliced portion of the path is to the unspliced
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
         score = ext_cov * source_similarity * junction_delta * dead_end_penalty * novelty
