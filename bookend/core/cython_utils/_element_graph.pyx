@@ -449,7 +449,7 @@ cdef class ElementGraph:
         
         ext_cov = new_bases / new_length
         path_jcov = np.mean(path.junctions[sorted(list(path.junction_indices))]) if path.junction_indices else path.cov
-        ext_jcov = np.mean(path.junctions[sorted(list(new_junction_indices))]) if np.any(new_junctions>0) else ext_cov
+        ext_jcov = np.mean(new_junctions[sorted(list(new_junction_indices))]) if np.any(new_junctions>0) else ext_cov
         junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
         # junction_delta = ext_jcov / ext_cov  if ext_cov > 0 else 0 # How close in coverage the spliced portion of the path is to the unspliced
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
