@@ -446,13 +446,13 @@ cdef class ElementGraph:
             return 0
         
         ext_cov = new_bases / new_length
-        # path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else 0
-        # ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else 0
+        path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else path.cov
+        ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else ext_cov
         # if path_jcov == 0 or ext_jcov == 0:
         #     junction_delta = 1 - (abs(ext_cov-path.cov) / (ext_cov+path.cov))
         # else:
         #     junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
-        
+        junction_delta = ext_jcov / ext_cov # How close in coverage the spliced portion of the path is to the unspliced
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
         score = ext_cov * source_similarity * dead_end_penalty * novelty
