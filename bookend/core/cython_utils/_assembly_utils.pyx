@@ -659,6 +659,7 @@ cdef class Locus:
         self.overlap = self.overlap[keep,:][:,keep]
         self.membership = self.membership[keep,:]
         self.weight_array = self.weight_array[keep,:]
+        self.junction_array = self.junction_array[keep,:]
         self.rep_array = self.rep_array[keep]
         self.strand_array = self.strand_array[keep]
         self.information_content = self.information_content[keep]
