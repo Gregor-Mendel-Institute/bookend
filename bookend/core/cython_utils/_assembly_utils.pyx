@@ -243,15 +243,6 @@ cdef class Locus:
         elif len(pos) == 1:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
-        # value_order = np.argsort(-vals)
-        # i = 
-        # threshold = (1 - self.minimum_proportion) * np.sum(vals)
-        # cumulative = 0
-        # i = 0
-        # while cumulative < threshold:
-        #     cumulative += vals[value_order[i]]
-        #     i += 1
-        
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
         # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
         filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
@@ -351,7 +342,6 @@ cdef class Locus:
         
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
-        self.member_lengths = np.zeros(shape=len(self.reads), dtype=np.int32)
         for i in range(len(self.frags)):
             if i == 0:
                 a = i
@@ -367,13 +357,14 @@ cdef class Locus:
         
         number_of_reads = len(self.reads)
         number_of_frags = len(self.frags)
-        self.rep_array = np.ones(number_of_reads, dtype=np.int32)
         membership = np.zeros((number_of_reads, number_of_frags+4), dtype=np.int8) # Container for membership of each vertex in each read (-1 False, 1 True, 0 Unmeasured)
         strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
         weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
-        cdef char [:, :] MEMBERSHIP = membership
+        self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
+        self.rep_array = np.ones(number_of_reads, dtype=np.int32)
         source_plus, sink_plus, source_minus, sink_minus = range(number_of_frags, number_of_frags+4)
         locus_length = len(self.frag_by_pos)
+        cdef char [:, :] MEMBERSHIP = membership
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             last_rfrag = 0
             read = self.reads[i]
@@ -489,11 +480,11 @@ cdef class Locus:
         membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
         membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
         if self.naive:
-            weight_array = np.sum(weight_array,axis=1)
+            weight_array = np.sum(weight_array,axis=1,keepdims=True)
         
         keep = np.sum(membership[:,:-4]==1,axis=1)>0
-        self.membership = membership[keep]
-        self.weight_array = weight_array[keep]
+        self.membership = membership[keep,:]
+        self.weight_array = weight_array[keep,:]
         self.strand_array = strand_array[keep]
         self.rep_array = self.rep_array[keep]
         self.member_lengths = self.member_lengths[keep]
@@ -993,69 +984,6 @@ cdef class Locus:
         self.weight_array[parent_index,:] = (self.weight_array[child_index,:]*self.member_lengths[child_index] + self.weight_array[parent_index,:]*self.member_lengths[parent_index])/combined_length
         self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
-    
-    # cpdef np.ndarray prune_unreachable_edges(self):
-    #     """Given a overlap matrix, determine which directed edges are unreachable
-    #     from an s-t path on that strand. Removes edges in-place in the matrix.
-    #     """
-    #     cdef int sink_plus, source_minus, source_plus, sink_minus, SOURCE, SINK, a, b, v, w
-    #     cdef char p, m, strand, C
-    #     cdef dict BFS_from_ends, PF, PR, MF, MR
-    #     cdef set from_sink_minus, from_sink_plus, from_source_minus, from_source_plus, in_plus_path, in_minus_path
-    #     cdef np.ndarray new_strands, updated
-    #     vertices = self.overlap.shape[0]
-    #     self.adj = build_adjacencies(self.overlap)
-    #     PF = self.adj['PF']
-    #     PR = self.adj['PR']
-    #     MF = self.adj['MF']
-    #     MR = self.adj['MR']
-    #     new_strands = infer_strands_by_reachability(self.strand_array, self.adj)
-    #     updated = np.where(new_strands != self.strand_array)[0]
-    #     for v in updated: #Check if any strands were updated
-    #         if new_strands[v] == 1: # Strand inferred as plus; remove all minus edges
-    #             self.membership[v,-2:] = -1 
-    #             for w in MF[v]:
-    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-    #                     self.overlap[v,w] = -1
-    #                     self.overlap[w,v] = -1
-    #                 else:
-    #                     C = self.overlap[v, w]
-    #                     if C == 1:
-    #                         self.overlap[v, w] = 0
-                
-    #             for w in MR[v]:
-    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-    #                     self.overlap[v,w] = -1
-    #                     self.overlap[w,v] = -1
-    #                 else:
-    #                     C = self.overlap[w, v]
-    #                     if C == 1:
-    #                         self.overlap[w, v] = 0
-    #         elif new_strands[v] == -1: # Strand inferred as minus; remove all plus edges
-    #             self.membership[v,-4:-2] = -1
-    #             for w in PF[v]:
-    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-    #                     self.overlap[v,w] = -1
-    #                     self.overlap[w,v] = -1
-    #                 else:
-    #                     C = self.overlap[v, w]
-    #                     if C == 1:
-    #                         self.overlap[v, w] = 0
-                
-    #             for w in PR[v]:
-    #                 if new_strands[w] != 0 and new_strands[w] != new_strands[v]:
-    #                     # If the reads are inferred to be on opposite strands, all overlaps are invalidated
-    #                     self.overlap[v,w] = -1
-    #                     self.overlap[w,v] = -1
-    #                 else:
-    #                     C = self.overlap[w, v]
-    #                     if C == 1:
-    #                         self.overlap[w, v] = 0
-        
-    #     self.strand_array = new_strands
-    #     return updated
     
     cpdef convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
@@ -1597,181 +1525,6 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
                 breaks.append(g)
     
     return breaks
-
-# cpdef np.ndarray resolve_containment(np.ndarray overlap_matrix, np.ndarray member_content, np.ndarray information_content, np.ndarray read_weights, np.ndarray member_lengths, int maxIC, float minimum_proportion):
-#     """Given a overlap matrix, 'bubble up' the weight of
-#     all reads that have one or more 'contained by' relationships
-#     to other reads. Pass from highest complexity reads down, assigning
-#     weight proportional to the existing weight.
-#     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
-#     cdef:
-#         np.ndarray containment, contained, IC_order, new_weights, container_weights, containers, incompatible, nonzero, incompatible_weight, weight_transform, compatible, retain_proportion, incompatible_exists, total_container_weights, container_proportions, compatibilities, informative, n_weights
-#         Py_ssize_t i, c, n, f
-#         float total, weight, proportion_incompatible
-    
-#     containment = overlap_matrix==2 # Make a boolean matrix of which reads are contained in other reads
-#     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-#     contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
-#     IC_order = contained[np.lexsort((-information_content[contained], -member_content[contained]))] # Rank them by decreasing number of members
-#     new_weights = np.copy(read_weights)
-#     for i in IC_order:
-#         containers = np.where(containment[i,:])[0]
-#         retain_proportion = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
-#         # Get the set of reads incompatible with all containers but that do not exclude i
-#         incompatible =  np.where(np.logical_and(
-#             np.all(overlap_matrix[:,containers]==-1, axis=1),
-#             overlap_matrix[:,i] > 0
-#         ))[0]
-#         if len(containers) == 1 and len(incompatible) == 0: # Special case, all weight goes to container
-#             weight_to_add = new_weights[i,:] * member_lengths[i]/member_lengths[containers]
-#         else:
-#             compatible = np.where(np.logical_and(
-#                 np.logical_or(
-#                     np.any(overlap_matrix[:,containers] > 0, axis=1),
-#                     np.any(overlap_matrix[containers,:] > 0, axis=0)
-#                 ),
-#                 np.all(overlap_matrix[:,incompatible]==-1, axis=1)
-#             ))[0]
-#             if len(incompatible) > 0:
-#                 # Calculate the proportion of i to merge into i's containers and the proportion to separate
-#                 incompatible_weight = np.sum(new_weights[incompatible,:],axis=0)
-#                 compatible_weight = np.sum(new_weights[compatible,:],axis=0)
-#                 proportion_incompatible = np.sum(incompatible_weight)/np.sum(incompatible_weight+compatible_weight)
-#                 if proportion_incompatible < minimum_proportion:
-#                     incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)    
-#                 elif proportion_incompatible > (1 - minimum_proportion):
-#                     incompatible_weight = np.ones(shape=(new_weights.shape[1]), dtype=np.float32)    
-#                 else:
-#                     incompatible_exists = incompatible_weight > 0
-#                     retain_proportion[incompatible_exists] = incompatible_weight[incompatible_exists] / np.add(incompatible_weight[incompatible_exists], compatible_weight[incompatible_exists])
-#                     retain_proportion[retain_proportion < minimum_proportion] = 0
-#                     retain_proportion[retain_proportion > (1-minimum_proportion)] = 1
-#             else:
-#                 incompatible_weight = np.zeros(shape=(new_weights.shape[1]), dtype=np.float32)
-            
-#             if len(containers) == 1:
-#                 weight_to_add = (1 - retain_proportion) * new_weights[i,:] * member_lengths[i]/member_lengths[containers]
-#             else:
-#                 nonzero = np.where(new_weights[i,:] > 0)[0]
-#                 weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
-#                 weight_transform = member_lengths[i]/member_lengths[containers]
-                
-#                 compatibilities = overlap_matrix[:,containers][compatible,:] > -1
-#                 informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-#                 container_weights = new_weights[containers,:]
-#                 for f in informative:
-#                     container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
-#                     if compatible[f] in containers:
-#                         container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
-                
-#                 total_container_weights = np.sum(container_weights, axis=1)
-#                 container_proportions = total_container_weights / np.sum(total_container_weights)
-#                 for n in nonzero: # Each source that has reads of i is evaluated separately
-#                     n_weights = container_weights[:,n]
-#                     total = np.sum(n_weights) + incompatible_weight[n]
-#                     weight = new_weights[i,n]
-#                     if total > 0:
-#                         weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * n_weights / total * weight_transform
-#                     else:
-#                         weight_to_add[:,n] += (1 - retain_proportion[n]) * weight * container_proportions * weight_transform
-        
-#         new_weights[containers,:] += weight_to_add
-#         new_weights[i,] *= retain_proportion # Residual weight
-#         if sum(new_weights[i,:]) == 0:
-#             containment[:,i] = False
-#             containment[i,:] = False
-    
-#     return new_weights
-
-# cpdef set dictBFS(dict adjacency, source):
-#     """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
-#     visited = { v:False for v in adjacency.keys() }
-#     visited[source] = True
-#     queue = deque(maxlen=len(visited))
-#     queue.append(source)
-#     while queue:
-#         v = queue.popleft()
-#         for w in adjacency[v]:
-#             if not visited[w]:
-#                 visited[w] = True
-#                 queue.append(w)
-    
-#     return set([v for v in visited.keys() if visited[v]])
-
-# cpdef dict build_adjacencies(np.ndarray[char, ndim=2] overlap):
-#     """Returns a dictionary of four adjacency-list graphs,
-#     a forward and reverse for each strand."""
-#     cdef Py_ssize_t vertices, a, b
-#     cdef char p, m
-#     cdef char [:, :] COMPATIBILITY = overlap
-#     vertices = COMPATIBILITY.shape[0]
-#     cdef dict plus_forward = { v:[] for v in range(vertices+4) }
-#     cdef dict minus_forward = { v:[] for v in range(vertices+4) }
-#     cdef dict plus_reverse = { v:[] for v in range(vertices+4) }
-#     cdef dict minus_reverse = { v:[] for v in range(vertices+4) }
-#     for a in range(vertices-1):
-#         for b in range(a+1, vertices):
-#             p = COMPATIBILITY[a, b] # plus edge
-#             m = COMPATIBILITY[b, a] # minus edge
-#             if p >= 1:
-#                 plus_forward[a].append(b)
-#                 plus_reverse[b].append(a)
-            
-#             if m >= 1:
-#                 minus_forward[b].append(a)
-#                 minus_reverse[a].append(b)
-
-#     return {'PF':plus_forward, 'PR':plus_reverse, 'MF':minus_forward, 'MR':minus_reverse}
-
-# cpdef np.ndarray infer_strands_by_reachability(np.ndarray[char, ndim=1] strand_array, dict adj):
-#     """Given a set of adjacency matrices from prune_unreachable_edges(),
-#     assigns strands to all nonstranded elements that are only reachable
-#     from unambiguously stranded reads of a single direction."""
-#     cdef set reachable_from_plus, reachable_from_minus
-#     cdef int PSN, MSN, node, min_plus, min_minus, max_plus, max_minus, r
-#     cdef np.ndarray plus_stranded_nodes = np.where(strand_array == 1)[0]
-#     cdef np.ndarray minus_stranded_nodes = np.where(strand_array == -1)[0]
-#     cdef np.ndarray output_strand_array = np.copy(strand_array)
-#     # Special case: Strands beyond the boundaries of the stranded elements
-#     # must be reachable from the last stranded element
-#     cdef dict PF, PR, MF, MR
-#     PF = adj['PF']
-#     PR = adj['PR']
-#     MF = adj['MF']
-#     MR = adj['MR']
-#     reachable_from_plus = set()
-#     reachable_from_minus = set()
-#     if len(plus_stranded_nodes) > 0:
-#         min_plus = min(plus_stranded_nodes)
-#         max_plus = max(plus_stranded_nodes)
-#         left_of_plus = dictBFS(PR, min_plus)
-#         right_of_plus = dictBFS(PF, max_plus)
-#         for PSN in plus_stranded_nodes:
-#             if PSN not in reachable_from_plus:
-#                 if PSN > min_plus and PSN < max_plus:
-#                     reachable_from_plus.update(dictBFS(PF, PSN) | dictBFS(PR, PSN))
-        
-#         reachable_from_plus = set([r for r in reachable_from_plus if (r > min_plus or r in left_of_plus) and (r < max_plus or r in right_of_plus)])
-    
-#     if len(minus_stranded_nodes) > 0:
-#         min_minus = min(minus_stranded_nodes)
-#         max_minus = max(minus_stranded_nodes)
-#         left_of_minus = dictBFS(MF, min_minus)
-#         right_of_minus = dictBFS(MR, max_minus)
-#         for MSN in minus_stranded_nodes:
-#             if MSN not in reachable_from_minus:
-#                 if MSN > min_minus and MSN < max_minus:
-#                     reachable_from_minus.update(dictBFS(MF, MSN) | dictBFS(MR, MSN))
-        
-#         reachable_from_minus = set([r for r in reachable_from_minus if (r > min_minus or r in left_of_minus) and (r < max_minus or r in right_of_minus)])
-    
-#     for node in reachable_from_plus.difference(reachable_from_minus):
-#         output_strand_array[node] = 1
-    
-#     for node in reachable_from_minus.difference(reachable_from_plus):
-#         output_strand_array[node] = -1
-    
-#     return output_strand_array
 
 cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
     cdef:
