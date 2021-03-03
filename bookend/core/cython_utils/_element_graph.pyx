@@ -455,7 +455,7 @@ cdef class ElementGraph:
         junction_delta = ext_jcov / ext_cov # How close in coverage the spliced portion of the path is to the unspliced
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * source_similarity * dead_end_penalty * novelty
+        score = ext_cov * source_similarity * junction_delta * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
