@@ -446,16 +446,16 @@ cdef class ElementGraph:
             return 0
         
         ext_cov = new_bases / new_length
-        path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else 0
-        ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else 0
-        if path_jcov == 0 or ext_jcov == 0:
-            junction_delta = 1 - (abs(ext_cov-path.cov) / (ext_cov+path.cov))
-        else:
-            junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
+        # path_jcov = np.mean(path.junctions[path.junctions>0]) if np.any(path.junctions>0) else 0
+        # ext_jcov = np.mean(new_junctions[new_junctions>0]) if np.any(new_junctions>0) else 0
+        # if path_jcov == 0 or ext_jcov == 0:
+        #     junction_delta = 1 - (abs(ext_cov-path.cov) / (ext_cov+path.cov))
+        # else:
+        #     junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
         
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * junction_delta * source_similarity * dead_end_penalty * novelty
+        score = ext_cov * source_similarity * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
