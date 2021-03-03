@@ -22,7 +22,7 @@ cdef class ElementGraph:
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
-        self.emptyPath = Element(-1, np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
+        self.emptyPath = Element(-1, np.array([0]), np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
         self.dead_end_penalty = dead_end_penalty
         self.novelty_penalty = novelty_penalty
         cdef Element e, path, part
