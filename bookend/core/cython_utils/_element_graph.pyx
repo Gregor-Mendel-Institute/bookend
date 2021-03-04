@@ -635,7 +635,7 @@ cdef class Element:
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
         self.contained = set()
-        self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
+        self.all = np.ones(shape=self.source_weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
             self.maxIC = 0
