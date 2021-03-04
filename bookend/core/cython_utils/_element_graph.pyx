@@ -123,16 +123,16 @@ cdef class ElementGraph:
             element = self.elements[i]
             if not reached_from_start[i]:
                 element.source_weights *= self.dead_end_penalty
-                element.cov *= self.dead_end_penalty
                 element.member_weights *= self.dead_end_penalty
+                element.cov *= self.dead_end_penalty
                 original_bases = element.bases
                 element.bases *= self.dead_end_penalty
                 self.bases -= original_bases-element.bases
             
             if not reached_from_end[i]:
                 element.source_weights *= self.dead_end_penalty
+                element.member_weights *= self.dead_end_penalty
                 element.cov *= self.dead_end_penalty
-                element.junctions *= self.dead_end_penalty
                 original_bases = element.bases
                 element.bases *= self.dead_end_penalty
                 self.bases -= original_bases-element.bases
@@ -610,7 +610,7 @@ cdef class Element:
     cdef public list assigned_to
     cdef public char strand
     cdef public float cov, bases
-    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
+    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices
     cdef public np.ndarray frag_len, source_weights, member_weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray source_weights, np.ndarray member_weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
@@ -749,7 +749,7 @@ cdef class Element:
         else:
             self.complete = False
         
-        self.covered_indices = self.members.difference(range(self.maxIC-4,self.maxIC+1)) # Covered regions (excluding starts/ends)
+        self.covered_indices = self.members.difference(self.end_indices) # Covered regions (excluding starts/ends)
         for n in sorted(self.nonmembers):
             lastn = -1
             if n > self.LM and n < self.RM:

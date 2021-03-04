@@ -48,6 +48,7 @@ cdef class Locus:
         self.transcripts = []
         self.traceback = []
         self.branchpoints = set()
+        self.member_weights = np.empty(0)
         self.chunk_number = chunk_number
         self.naive = naive
         self.minimum_proportion = minimum_proportion
@@ -591,7 +592,7 @@ cdef class Locus:
             new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
             new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-            if not self.member_weights:
+            if self.member_weights.shape[0] == 0:
                 member_weights_exists = False
             else:
                 member_weights_exists = True
