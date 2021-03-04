@@ -596,6 +596,7 @@ cdef class ElementGraph:
             elif path.strand == 1:
                 candidates = self.ends_plus
                 for bypassed in candidates:
+                    element = self.elements[bypassed]
                     if element.LM < right_exon_border:continue
                     if element.e_tag and element.RM < path.RM:
                         if end_to_repair is self.emptyPath:
