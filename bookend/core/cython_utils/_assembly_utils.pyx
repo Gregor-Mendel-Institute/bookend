@@ -997,6 +997,7 @@ cdef class Locus:
         
         combined_length = np.sum(self.frag_len[self.membership[parent_index,:]==1])
         self.weight_array[parent_index,:] = (self.weight_array[child_index,:]*self.member_lengths[child_index] + self.weight_array[parent_index,:]*self.member_lengths[parent_index])/combined_length
+        self.member_weights[parent_index,:] += self.member_weights[child_index,:]
         self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
     
