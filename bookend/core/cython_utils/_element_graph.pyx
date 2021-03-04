@@ -11,6 +11,7 @@ inf = float('Inf')
 
 cdef class ElementGraph:
     cdef public list elements, paths
+    cdef public list starts_plus, starts_minus, ends_plus, ends_minus
     cdef public np.ndarray assignments, overlap
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
@@ -50,21 +51,20 @@ cdef class ElementGraph:
         by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
         cdef Element element
         cdef np.ndarray reached_from_start, reached_from_start_plus, reached_from_start_minus, reached_from_end, reached_from_end_plus, reached_from_end_minus
-        cdef list starts_plus, starts_minus, ends_plus, ends_minus
         cdef float original_bases
         cdef int i
-        starts_plus, starts_minus, ends_plus, ends_minus = [], [], [], []
+        self.starts_plus, self.starts_minus, self.ends_plus, self.ends_minus = [], [], [], []
         for element in self.elements:
             if element.strand == 1:
                 if element.s_tag:
-                    starts_plus.append(element.index)
+                    self.starts_plus.append(element.index)
                 if element.e_tag:
-                    ends_plus.append(element.index)
+                    self.ends_plus.append(element.index)
             elif element.strand == -1:
                 if element.s_tag:
-                    starts_minus.append(element.index)
+                    self.starts_minus.append(element.index)
                 if element.e_tag:
-                    ends_minus.append(element.index)  
+                    self.ends_minus.append(element.index)
         
         reached_from_start_plus = np.zeros(len(self.elements), dtype=np.bool)
         reached_from_start_minus = np.zeros(len(self.elements), dtype=np.bool)
@@ -72,7 +72,7 @@ cdef class ElementGraph:
         reached_from_end_minus = np.zeros(len(self.elements), dtype=np.bool)
         queue = deque(maxlen=len(self.elements))
         strand = set([0,1])
-        queue.extend(starts_plus)
+        queue.extend(self.starts_plus)
         while queue:
             v = queue.popleft()
             reached_from_start_plus[v] = True
@@ -83,7 +83,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(ends_plus)
+        queue.extend(self.ends_plus)
         while queue:
             v = queue.popleft()
             reached_from_end_plus[v] = True
@@ -94,7 +94,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(starts_minus)
+        queue.extend(self.starts_minus)
         strand = set([0,-1])
         while queue:
             v = queue.popleft()
@@ -106,7 +106,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(ends_minus)
+        queue.extend(self.ends_minus)
         while queue:
             v = queue.popleft()
             reached_from_end_minus[v] = True
@@ -350,9 +350,6 @@ cdef class ElementGraph:
         
         return 1 * [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
     
-    cpdef tuple maxDFS(self, Element path, tuple extension):
-        """Depth-first search that maximizes the number of """
-    
     cpdef list generate_extensions(self, Element path):
         """Defines all combinations of mutally compatible elements in
         the path's ingroup/outgroup that should be evaluated. Requires
@@ -541,10 +538,11 @@ cdef class ElementGraph:
         """If a path has malformed ends, check if it is possible to back up to a
         bypassed start/end site without crossing a splice junction."""
         pass
-        cdef Element element, trim_element
+        cdef Element element, trim_element, start_element, end_element
         cdef np.ndarray members
         cdef int left_exon_border, right_exon_border, bypassed, m, lastm
         cdef set elements_to_trim
+        cdef list candidates, repair_elements
         if path.complete or path.strand==0:return
         left_exon_border = -1
         right_exon_border = -1
@@ -560,39 +558,56 @@ cdef class ElementGraph:
         
         if left_exon_border == -1:left_exon_border=path.RM # single-exon path
         if right_exon_border == -1:right_exon_border=path.LM # single-exon path
-        end_to_repair = list()
+        start_to_repair = self.emptyPath
         if not path.s_tag: # Check if there is a bypassed start in the first exon
-            for bypassed in sorted(path.excludes, reverse=path.strand==-1):
-                element = self.elements[bypassed]
-                if path.strand == 1:
-                    if element.RM > left_exon_border:break
-                    if element.s_tag and element.LM > path.LM:
-                        end_to_repair.append(element)
-                        break
-                elif path.strand == -1:
-                    if element.LM < right_exon_border:break
+            if path.strand == 1:
+                candidates = self.starts_plus
+                for bypassed in candidates:
+                    element = self.elements[bypassed]
+                    if element.RM > left_exon_border:continue
+                    if element.s_tag and element.LM > path.LM: # Start is in the bypassed range
+                        if start_to_repair is self.emptyPath:
+                            start_to_repair = element
+                        elif element.LM < start_to_repair.LM: # New start is upstream of the start already found
+                            start_to_repair = element
+            elif path.strand == -1:
+                candidates = self.starts_minus
+                for bypassed in candidates:
+                    element = self.elements[bypassed]
+                    if element.LM < right_exon_border:continue
                     if element.s_tag and element.RM < path.RM:
-                        end_to_repair.append(element)
-                        break
+                        if start_to_repair is self.emptyPath:
+                            start_to_repair = element
+                        elif element.RM > start_to_repair.RM: # New start is upstream of the start already found
+                            start_to_repair = element
         
+        end_to_repair = self.emptyPath
         if not path.e_tag: # Check if there is a bypassed end in the first exon
-            for bypassed in sorted(path.excludes, reverse=path.strand==1):
-                element = self.elements[bypassed]
-                if path.strand == -1:
-                    if element.RM > left_exon_border:break
+            if path.strand == -1:
+                candidates = self.ends_minus
+                for bypassed in candidates:
+                    element = self.elements[bypassed]
+                    if element.RM > left_exon_border:continue
                     if element.e_tag and element.LM > path.LM:
-                        end_to_repair.append(element)
-                        break
-                elif path.strand == 1:
-                    if element.LM < right_exon_border:break
+                        if end_to_repair is self.emptyPath:
+                            end_to_repair = element
+                        elif element.LM < end_to_repair.LM: # New end is downstream
+                            end_to_repair = element
+            elif path.strand == 1:
+                candidates = self.ends_plus
+                for bypassed in candidates:
+                    if element.LM < right_exon_border:continue
                     if element.e_tag and element.RM < path.RM:
-                        end_to_repair.append(element)
-                        break
+                        if end_to_repair is self.emptyPath:
+                            end_to_repair = element
+                        elif element.RM > end_to_repair.RM: # New end is downstream
+                            end_to_repair = element
         
         # Remove all included/excluded elements from path to make room for the repaired ends
+        repair_elements = [element for element in [start_to_repair, end_to_repair] if element is not self.emptyPath]
         members_to_trim = set()
         nonmembers_to_trim = set()
-        for element in end_to_repair:
+        for element in repair_elements:
             elements_to_trim = path.includes.intersection(element.excludes)
             for e in elements_to_trim:
                 trim_element = self.elements[e]
