@@ -17,7 +17,7 @@ cdef class ElementGraph:
     cdef public float bases, dead_end_penalty, novelty_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, weight_array, junction_array, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -33,10 +33,10 @@ cdef class ElementGraph:
         self.maxIC = membership_matrix.shape[1]
         self.naive = naive
         if self.naive:
-             weight_array = np.sum(np.copy(weight_array), axis=1, keepdims=True)
+             source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
         
         self.elements = [Element(
-            i, weight_array[i,:], junction_array[i,:], strands[i],
+            i, source_weight_array[i,:], member_weight_array[i,:], strands[i],
             membership_matrix[i,:], self.overlap, lengths, self.maxIC
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.penalize_dead_ends()
@@ -122,15 +122,15 @@ cdef class ElementGraph:
         for i in range(len(self.elements)):
             element = self.elements[i]
             if not reached_from_start[i]:
-                element.weights *= self.dead_end_penalty
+                element.source_weights *= self.dead_end_penalty
                 element.cov *= self.dead_end_penalty
-                element.junctions *= self.dead_end_penalty
+                element.member_weights *= self.dead_end_penalty
                 original_bases = element.bases
                 element.bases *= self.dead_end_penalty
                 self.bases -= original_bases-element.bases
             
             if not reached_from_end[i]:
-                element.weights *= self.dead_end_penalty
+                element.source_weights *= self.dead_end_penalty
                 element.cov *= self.dead_end_penalty
                 element.junctions *= self.dead_end_penalty
                 original_bases = element.bases
@@ -177,11 +177,11 @@ cdef class ElementGraph:
         cdef Py_ssize_t i, p, j
         cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions, assignment_proportions
         cdef Element path, element
-        number_of_sources = self.elements[0].weights.shape[0]
+        number_of_sources = self.elements[0].source_weights.shape[0]
         priors = np.zeros(shape=(len(self.paths), number_of_sources))
         for i in range(len(self.paths)):
-            priors[i,:] = self.paths[i].weights
-            self.paths[i].weights = np.zeros(shape=(number_of_sources), dtype=np.float32)
+            priors[i,:] = self.paths[i].source_weights
+            self.paths[i].source_weights = np.zeros(shape=(number_of_sources), dtype=np.float32)
         
         path_covs = np.sum(priors, axis=1, keepdims=True)
         cov_proportions = path_covs/np.sum(path_covs)
@@ -193,17 +193,17 @@ cdef class ElementGraph:
         for i in np.where(self.assignments > 0)[0]: # Assign FULL weight of each assigned element
             element = self.elements[i]
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
-                self.paths[element.assigned_to[0]].weights += element.weights * element.length
-            else: # Assigned paths must compete for element's weights
+                self.paths[element.assigned_to[0]].source_weights += element.source_weights * element.length
+            else: # Assigned paths must compete for element's source_weights
                 assignment_proportions = proportions[element.assigned_to,:]
                 assignment_proportions = np.apply_along_axis(self.normalize, 0, assignment_proportions)
                 for j in range(len(element.assigned_to)):
                     path = self.paths[element.assigned_to[j]]
-                    path.weights += element.weights * element.length * assignment_proportions[j,:]
+                    path.source_weights += element.source_weights * element.length * assignment_proportions[j,:]
         
-        for path in self.paths: # Update path weights
-            path.weights /= path.length
-            path.cov = sum(path.weights)
+        for path in self.paths: # Update path source_weights
+            path.source_weights /= path.length
+            path.cov = sum(path.source_weights)
             path.bases = path.cov*path.length
     
     cpdef void assemble(self, float minimum_proportion):
@@ -236,7 +236,7 @@ cdef class ElementGraph:
         assigned_weights = np.copy(weights)
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in element.assigned_to:
-            assigned_weights += self.paths[i].weights
+            assigned_weights += self.paths[i].source_weights
         
         for i in np.where(assigned_weights > weights)[0]:
             proportion[i] = weights[i]/assigned_weights[i]
@@ -247,7 +247,7 @@ cdef class ElementGraph:
         """Given a path to merge, calculate the number of bases available for merging"""
         cdef float proportion
         proportion = self.available_proportion(weights, element)
-        return np.sum(element.weights*proportion)*element.length
+        return np.sum(element.source_weights*proportion)*element.length
     
     cpdef void extend_path(self, Element path, tuple extension):
         """Merges the proper 
@@ -255,7 +255,7 @@ cdef class ElementGraph:
         cdef Element extpath
         cdef int i
         cdef np.ndarray prior_weights, proportion
-        prior_weights = np.copy(path.weights)
+        prior_weights = np.copy(path.source_weights)
         for i in range(len(extension)):
             extpath = self.elements[extension[i]]
             proportion = self.available_proportion(prior_weights, extpath)
@@ -272,14 +272,14 @@ cdef class ElementGraph:
         best_element = self.elements[available_elements[0]]
         most_cov = best_element.bases
         for c in best_element.contains:
-            most_cov += self.available_bases(best_element.weights, self.elements[c])
+            most_cov += self.available_bases(best_element.source_weights, self.elements[c])
         
         most_cov /= best_element.length
         for i in available_elements:
             new_element = self.elements[i]
             new_cov = new_element.bases
             for c in new_element.contains:
-                new_cov += self.available_bases(new_element.weights, self.elements[c])
+                new_cov += self.available_bases(new_element.source_weights, self.elements[c])
             
             new_cov /= new_element.length
             if new_cov > most_cov:
@@ -420,34 +420,34 @@ cdef class ElementGraph:
         cdef:
             Element element
             int i, outgroup_bases
-            set new_members, extension_outgroup, extension_excludes, new_junction_indices
+            set new_members, extension_outgroup, extension_excludes, new_covered_indices
             float bases, new_bases, extension_bases, score, source_similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
-            np.ndarray e_prop, e_weights, proportions, path_proportions, new_junctions
+            np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
         new_members = set()
         bases = path.bases
-        path_proportions = path.weights/path.cov
+        path_proportions = path.source_weights/path.cov
         proportions = path_proportions*path.bases
-        new_junctions = np.zeros(path.junctions.shape[0], dtype=np.float32)
+        new_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
         novelty = self.novelty_penalty
         extension_bases = 0
         extension_outgroup = set()
         # extension_excludes = set()
-        new_junction_indices = set()
+        new_covered_indices = set()
         for i in extension:
             if self.assignments[i] > 0:
                 novelty = 1.
             
             element = self.elements[i]
-            new_junction_indices.update(element.junction_indices)
+            new_covered_indices.update(element.covered_indices)
             # extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
             # extension_excludes.update(element.excludes)
-            e_prop = self.available_proportion(path.weights, element)
-            e_weights = e_prop*element.weights
+            e_prop = self.available_proportion(path.source_weights, element)
+            e_weights = e_prop*element.source_weights
             e_cov = np.sum(e_weights)
             e_bases = e_cov*element.length
             extension_bases += element.bases
             bases += e_bases
-            new_junctions += element.junctions*e_cov/element.cov
+            new_member_weights += element.member_weights*e_cov/element.cov
             proportions += e_weights*element.length
             new_members.update(element.members.difference(path.members))
         
@@ -458,23 +458,21 @@ cdef class ElementGraph:
         # extension_outgroup.difference_update(set(extension)|extension_excludes)
         # for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
         #     element = self.elements[i]
-        #     e_prop = self.available_proportion(path.weights, element)
+        #     e_prop = self.available_proportion(path.source_weights, element)
         #     shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
-        #     outgroup_bases = np.sum(element.weights*e_prop)*shared_length
+        #     outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
         #     new_bases += outgroup_bases
-        #     extension_bases += np.sum(element.weights)*shared_length
+        #     extension_bases += np.sum(element.source_weights)*shared_length
         
         if new_bases < minimum_proportion * extension_bases:
             return 0
         
         ext_cov = new_bases / new_length
-        path_jcov = np.mean(path.junctions[sorted(list(path.junction_indices))]) if path.junction_indices else path.cov
-        ext_jcov = np.mean(new_junctions[sorted(list(new_junction_indices))]) if np.any(new_junctions>0) else ext_cov
-        junction_delta = 1 - (abs(ext_jcov-path_jcov) / (ext_jcov+path_jcov))
-        # junction_delta = ext_jcov / ext_cov  if ext_cov > 0 else 0 # How close in coverage the spliced portion of the path is to the unspliced
+        combined_member_coverage = np.add(path.member_weights,new_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
+        weakest_link_penalty = np.min(combined_member_coverage)/np.mean(combined_member_coverage)
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * source_similarity * junction_delta * dead_end_penalty * novelty
+        score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * novelty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
@@ -611,12 +609,11 @@ cdef class Element:
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
     cdef public list assigned_to
     cdef public char strand
-    cdef public dict junction_cov
     cdef public float cov, bases
-    cdef public set members, nonmembers, junction_indices, ingroup, outgroup, contains, contained, excludes, includes, end_indices
-    cdef public np.ndarray frag_len, weights, junctions, all
+    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices
+    cdef public np.ndarray frag_len, source_weights, member_weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
-    def __init__(self, int index, np.ndarray weights, np.ndarray junctions, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
+    def __init__(self, int index, np.ndarray source_weights, np.ndarray member_weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
         cdef Py_ssize_t i
         cdef char m, overOut, overIn
         self.is_spliced = False                       # Default: the path has no discontinuities
@@ -625,8 +622,8 @@ cdef class Element:
         self.frag_len = frag_len                      # Length of the fragment is provided
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
-        self.weights = np.copy(weights)               # Array of read coverage per Source
-        self.junctions = np.copy(junctions)           # Array of read coverage of all locus junctions
+        self.source_weights = np.copy(source_weights)               # Array of read coverage per Source
+        self.member_weights = np.copy(member_weights)           # Array of read coverage of all members
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
         self.assigned_to = []                         # List of Path indices this Element is a part of
@@ -638,7 +635,6 @@ cdef class Element:
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
         self.contained = set()
-        self.junction_indices = set(np.where(self.junctions>0)[0])
         self.all = np.ones(shape=self.weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
@@ -732,7 +728,7 @@ cdef class Element:
         return summed_element
     
     cpdef void update(self):
-        cdef int n
+        cdef int n, lastn
         if self.empty:
             return
         
@@ -753,10 +749,13 @@ cdef class Element:
         else:
             self.complete = False
         
-        for n in self.nonmembers:
+        self.covered_indices = self.members.difference(range(self.maxIC-4,self.maxIC+1)) # Covered regions (excluding starts/ends)
+        for n in sorted(self.nonmembers):
+            lastn = -1
             if n > self.LM and n < self.RM:
                 self.is_spliced = True
-                break
+                if n > lastn+1: # Only add one representative nonmember per intron
+                    self.covered_indices.add(n)
     
     cpdef set uniqueMembers(self, Element other):
         """Given a second Element, return a set of frags that
@@ -853,7 +852,6 @@ cdef class Element:
         cdef bint extendedLeft, extendedRight
         cdef int o, i, leftMember, rightMember
         cdef float old_length
-        cdef str junction
         if self.empty:
             return
         
@@ -917,9 +915,9 @@ cdef class Element:
             self.right = max(self.right, other.right)
             self.left = min(self.left, other.left)
         
-        self.weights = (other.weights*other.length*proportion + self.weights*old_length)/self.length
-        self.junctions += other.junctions*np.sum(other.weights*proportion)/np.sum(other.weights)
-        self.junction_indices.update(other.junction_indices)
+        
+        self.source_weights = (other.source_weights*other.length*proportion + self.source_weights*old_length)/self.length
+        self.member_weights += other.member_weights*np.sum(other.source_weights*proportion)/np.sum(other.source_weights)
         self.update()
         if self.strand == 1: # Enforce directionality of edges
             self.outgroup = set([o for o in self.outgroup if o > self.right])

@@ -36,12 +36,12 @@ cdef class Locus:
     cdef public bint naive,  use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
-    cdef public dict J_plus, J_minus, JA_index, end_ranges, source_lookup
+    cdef public dict J_plus, J_minus, end_ranges, source_lookup
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources
     cdef public object graph
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, junction_array
+    cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, use_attributes=False, oligo_len=20, ignore_ends=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
@@ -73,7 +73,6 @@ cdef class Locus:
             self.end_extend = end_extend
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             self.prune_junctions()
-            self.JA_index = {v:k for k,v in enumerate(sorted([k+'+' for k in self.J_plus.keys()]+[k+'-' for k in self.J_minus.keys()]))}
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
                 self.traceback = [set([i]) for i in range(len(self.reads))]
@@ -363,7 +362,6 @@ cdef class Locus:
         weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
         self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
         self.rep_array = np.ones(number_of_reads, dtype=np.int32)
-        self.junction_array = np.zeros((number_of_reads,len(self.JA_index)), dtype=np.float32)
         source_plus, sink_plus, source_minus, sink_minus = range(number_of_frags, number_of_frags+4)
         locus_length = len(self.frag_by_pos)
         cdef char [:, :] MEMBERSHIP = membership
@@ -462,7 +460,6 @@ cdef class Locus:
                             break
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                            self.junction_array[i,self.JA_index[junction_hash+['-','.','+'][s+1]]] = read.weight
                 
                 last_rfrag = rfrag
             
@@ -481,7 +478,6 @@ cdef class Locus:
         
         discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
         membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
-        membership[:,discard] = -1 # Set the discarded frag to -1 across all elements
         if self.naive:
             weight_array = np.sum(weight_array,axis=1,keepdims=True)
         
@@ -489,13 +485,14 @@ cdef class Locus:
         self.membership = membership[keep,:]
         self.weight_array = weight_array[keep,:]
         self.strand_array = strand_array[keep]
-        self.junction_array = self.junction_array[keep,:]
         self.rep_array = self.rep_array[keep]
         self.member_lengths = self.member_lengths[keep]
         if not np.any(keep):
             return True
         
         self.reduce_membership()
+        self.member_weights = np.full(self.membership.shape, np.sum(self.weight_array,axis=1,keepdims=True))
+        self.member_weights[self.membership==0] = 0
         self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
@@ -595,7 +592,7 @@ cdef class Locus:
             new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
             new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-            new_junctions = np.zeros(shape=(reduced_membership.shape[0],self.junction_array.shape[1]), dtype=np.float32)
+            new_member_weights = np.zeros(shape=(reduced_membership.shape[0],self.member_weights.shape[1]), dtype=np.float32)
             
             if type(self) is AnnotationLocus:
                 new_traceback = []
@@ -610,7 +607,7 @@ cdef class Locus:
                 new_strands[v] = self.strand_array[i]
                 new_lengths[v] = self.member_lengths[i]
                 new_reps[v] += self.rep_array[i]
-                new_junctions[v,:] += self.junction_array[i,:]
+                new_member_weights[v,:] += self.member_weights[i,:]
             
             members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
             number_of_members = np.sum(members_bool[:,2:-2],axis=1)
@@ -621,7 +618,7 @@ cdef class Locus:
             sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
             self.membership = reduced_membership[sorted_indices,:]
             self.weight_array = new_weights[sorted_indices,:]
-            self.junction_array = new_junctions[sorted_indices,:]
+            self.member_weights = new_member_weights[sorted_indices,:]
             self.member_lengths = new_lengths[sorted_indices]
             self.strand_array = new_strands[sorted_indices]
             self.rep_array = new_reps[sorted_indices]
@@ -659,7 +656,7 @@ cdef class Locus:
         self.overlap = self.overlap[keep,:][:,keep]
         self.membership = self.membership[keep,:]
         self.weight_array = self.weight_array[keep,:]
-        self.junction_array = self.junction_array[keep,:]
+        self.member_weights = self.member_weights[keep,:]
         self.rep_array = self.rep_array[keep]
         self.strand_array = self.strand_array[keep]
         self.information_content = self.information_content[keep]
@@ -678,7 +675,7 @@ cdef class Locus:
         if reduce: # Collapse linear chains prior to graph construction
             self.collapse_linear_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.junction_array, self.strand_array, self.frag_len, self.naive)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
