@@ -245,7 +245,7 @@ cdef class ElementGraph:
     
     cpdef float available_bases(self, np.ndarray weights, Element element):
         """Given a path to merge, calculate the number of bases available for merging"""
-        cdef float proportion
+        cdef np.ndarray proportion
         proportion = self.available_proportion(weights, element)
         return np.sum(element.source_weights*proportion)*element.length
     
