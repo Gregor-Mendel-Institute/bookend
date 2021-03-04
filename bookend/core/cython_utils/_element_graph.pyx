@@ -522,98 +522,98 @@ cdef class ElementGraph:
             extensions = self.generate_extensions(currentPath)
         
         if verbose:print(currentPath)
-        self.trim_ends(currentPath)
+        # self.trim_ends(currentPath)
         return currentPath
     
-    cpdef void trim_ends(self, Element path):
-        """If a path has malformed ends, check if it is possible to back up to a
-        bypassed start/end site without crossing a splice junction."""
-        pass
-        cdef Element element, trim_element, start_element, end_element
-        cdef np.ndarray members
-        cdef int left_exon_border, right_exon_border, bypassed, m, lastm
-        cdef set elements_to_trim
-        cdef list candidates, repair_elements
-        if path.complete or path.strand==0:return
-        left_exon_border = -1
-        right_exon_border = -1
-        lastm = -1
-        members = np.array(sorted(path.members.difference(path.end_indices)), dtype=np.int32)
-        for m in members:
-            if lastm == -1:lastm = m
-            if m > lastm+1:
-                if left_exon_border==-1:left_exon_border = lastm
-                right_exon_border = m
+    # cpdef void trim_ends(self, Element path):
+    #     """If a path has malformed ends, check if it is possible to back up to a
+    #     bypassed start/end site without crossing a splice junction."""
+    #     pass
+    #     cdef Element element, trim_element, start_element, end_element
+    #     cdef np.ndarray members
+    #     cdef int left_exon_border, right_exon_border, bypassed, m, lastm
+    #     cdef set elements_to_trim
+    #     cdef list candidates, repair_elements
+    #     if path.complete or path.strand==0:return
+    #     left_exon_border = -1
+    #     right_exon_border = -1
+    #     lastm = -1
+    #     members = np.array(sorted(path.members.difference(path.end_indices)), dtype=np.int32)
+    #     for m in members:
+    #         if lastm == -1:lastm = m
+    #         if m > lastm+1:
+    #             if left_exon_border==-1:left_exon_border = lastm
+    #             right_exon_border = m
             
-            lastm = m
+    #         lastm = m
         
-        if left_exon_border == -1:left_exon_border=path.RM # single-exon path
-        if right_exon_border == -1:right_exon_border=path.LM # single-exon path
-        start_to_repair = self.emptyPath
-        if not path.s_tag: # Check if there is a bypassed start in the first exon
-            if path.strand == 1:
-                candidates = self.starts_plus
-                for bypassed in candidates:
-                    element = self.elements[bypassed]
-                    if element.LM > left_exon_border:continue
-                    if element.s_tag and element.LM > path.LM: # Start is in the bypassed range
-                        if start_to_repair is self.emptyPath:
-                            start_to_repair = element
-                        elif element.LM < start_to_repair.LM: # New start is upstream of the start already found
-                            start_to_repair = element
-            elif path.strand == -1:
-                candidates = self.starts_minus
-                for bypassed in candidates:
-                    element = self.elements[bypassed]
-                    if element.RM < right_exon_border:continue
-                    if element.s_tag and element.RM < path.RM:
-                        if start_to_repair is self.emptyPath:
-                            start_to_repair = element
-                        elif element.RM > start_to_repair.RM: # New start is upstream of the start already found
-                            start_to_repair = element
+    #     if left_exon_border == -1:left_exon_border=path.RM # single-exon path
+    #     if right_exon_border == -1:right_exon_border=path.LM # single-exon path
+    #     start_to_repair = self.emptyPath
+    #     if not path.s_tag: # Check if there is a bypassed start in the first exon
+    #         if path.strand == 1:
+    #             candidates = self.starts_plus
+    #             for bypassed in candidates:
+    #                 element = self.elements[bypassed]
+    #                 if element.LM > left_exon_border:continue
+    #                 if element.s_tag and element.LM > path.LM: # Start is in the bypassed range
+    #                     if start_to_repair is self.emptyPath:
+    #                         start_to_repair = element
+    #                     elif element.LM < start_to_repair.LM: # New start is upstream of the start already found
+    #                         start_to_repair = element
+    #         elif path.strand == -1:
+    #             candidates = self.starts_minus
+    #             for bypassed in candidates:
+    #                 element = self.elements[bypassed]
+    #                 if element.RM < right_exon_border:continue
+    #                 if element.s_tag and element.RM < path.RM:
+    #                     if start_to_repair is self.emptyPath:
+    #                         start_to_repair = element
+    #                     elif element.RM > start_to_repair.RM: # New start is upstream of the start already found
+    #                         start_to_repair = element
         
-        end_to_repair = self.emptyPath
-        if not path.e_tag: # Check if there is a bypassed end in the first exon
-            if path.strand == -1:
-                candidates = self.ends_minus
-                for bypassed in candidates:
-                    element = self.elements[bypassed]
-                    if element.LM > left_exon_border:continue
-                    if element.e_tag and element.LM > path.LM:
-                        if end_to_repair is self.emptyPath:
-                            end_to_repair = element
-                        elif element.LM < end_to_repair.LM: # New end is downstream
-                            end_to_repair = element
-            elif path.strand == 1:
-                candidates = self.ends_plus
-                for bypassed in candidates:
-                    element = self.elements[bypassed]
-                    if element.RM < right_exon_border:continue
-                    if element.e_tag and element.RM < path.RM:
-                        if end_to_repair is self.emptyPath:
-                            end_to_repair = element
-                        elif element.RM > end_to_repair.RM: # New end is downstream
-                            end_to_repair = element
+    #     end_to_repair = self.emptyPath
+    #     if not path.e_tag: # Check if there is a bypassed end in the first exon
+    #         if path.strand == -1:
+    #             candidates = self.ends_minus
+    #             for bypassed in candidates:
+    #                 element = self.elements[bypassed]
+    #                 if element.LM > left_exon_border:continue
+    #                 if element.e_tag and element.LM > path.LM:
+    #                     if end_to_repair is self.emptyPath:
+    #                         end_to_repair = element
+    #                     elif element.LM < end_to_repair.LM: # New end is downstream
+    #                         end_to_repair = element
+    #         elif path.strand == 1:
+    #             candidates = self.ends_plus
+    #             for bypassed in candidates:
+    #                 element = self.elements[bypassed]
+    #                 if element.RM < right_exon_border:continue
+    #                 if element.e_tag and element.RM < path.RM:
+    #                     if end_to_repair is self.emptyPath:
+    #                         end_to_repair = element
+    #                     elif element.RM > end_to_repair.RM: # New end is downstream
+    #                         end_to_repair = element
         
-        # Remove all included/excluded elements from path to make room for the repaired ends
-        repair_elements = [element for element in [start_to_repair, end_to_repair] if element is not self.emptyPath]
-        members_to_trim = set()
-        nonmembers_to_trim = set()
-        for element in repair_elements:
-            elements_to_trim = path.includes.intersection(element.excludes)
-            for e in elements_to_trim:
-                trim_element = self.elements[e]
-                members_to_trim.update(trim_element.members.intersection(element.nonmembers))
-                nonmembers_to_trim.update(trim_element.nonmembers.intersection(element.members))
+    #     # Remove all included/excluded elements from path to make room for the repaired ends
+    #     repair_elements = [element for element in [start_to_repair, end_to_repair] if element is not self.emptyPath]
+    #     members_to_trim = set()
+    #     nonmembers_to_trim = set()
+    #     for element in repair_elements:
+    #         elements_to_trim = path.includes.intersection(element.excludes)
+    #         for e in elements_to_trim:
+    #             trim_element = self.elements[e]
+    #             members_to_trim.update(trim_element.members.intersection(element.nonmembers))
+    #             nonmembers_to_trim.update(trim_element.nonmembers.intersection(element.members))
             
-            path.members.difference_update(members_to_trim)
-            path.nonmembers.difference_update(nonmembers_to_trim)
-            path.includes.difference_update(elements_to_trim)
-            path.contains.difference_update(elements_to_trim)
-            path.excludes.remove(element.index)
-            path.merge(element, self.available_proportion(path.source_weights, element))
+    #         path.members.difference_update(members_to_trim)
+    #         path.nonmembers.difference_update(nonmembers_to_trim)
+    #         path.includes.difference_update(elements_to_trim)
+    #         path.contains.difference_update(elements_to_trim)
+    #         path.excludes.remove(element.index)
+    #         path.merge(element, self.available_proportion(path.source_weights, element))
 
-        path.update()
+    #     path.update()
     
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
