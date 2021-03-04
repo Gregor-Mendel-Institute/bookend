@@ -741,7 +741,7 @@ cdef class Element:
             self.s_tag = self.maxIC - 2 in self.members # has + start
             self.e_tag = self.maxIC - 1 in self.members # has + end
         
-        self.cov = sum(self.weights)
+        self.cov = sum(self.source_weights)
         self.bases = self.cov*self.length
         self.IC = len(self.members) + len(self.nonmembers)
         if self.IC == self.maxIC:
