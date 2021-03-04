@@ -491,8 +491,6 @@ cdef class Locus:
             return True
         
         self.reduce_membership()
-        self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
-        self.member_weights[self.membership==0] = 0
         self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
@@ -586,13 +584,18 @@ cdef class Locus:
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
         cdef Py_ssize_t i,v
+        cdef bint member_weights_exists
         if self.membership.shape[0] > 1:
             reduced_membership, reverse_lookup = np.unique(self.membership, axis=0, return_inverse=True)
             new_weights = np.zeros(shape=(reduced_membership.shape[0], self.weight_array.shape[1]), dtype=np.float32)
             new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
             new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-            new_member_weights = np.zeros(shape=(reduced_membership.shape[0],self.member_weights.shape[1]), dtype=np.float32)
+            if not self.member_weights:
+                member_weights_exists = False
+            else:
+                member_weights_exists = True
+                new_member_weights = np.zeros(shape=(reduced_membership.shape[0],reduced_membership.shape[1]), dtype=np.float32)
             
             if type(self) is AnnotationLocus:
                 new_traceback = []
@@ -607,7 +610,8 @@ cdef class Locus:
                 new_strands[v] = self.strand_array[i]
                 new_lengths[v] = self.member_lengths[i]
                 new_reps[v] += self.rep_array[i]
-                new_member_weights[v,:] += self.member_weights[i,:]
+                if member_weights_exists:
+                    new_member_weights[v,:] += self.member_weights[i,:]
             
             members_bool = reduced_membership[:,[-4,-1]+list(range(0,reduced_membership.shape[1]-4))+[-3,-2]]==1
             number_of_members = np.sum(members_bool[:,2:-2],axis=1)
@@ -618,7 +622,12 @@ cdef class Locus:
             sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
             self.membership = reduced_membership[sorted_indices,:]
             self.weight_array = new_weights[sorted_indices,:]
-            if self.member_weights:self.member_weights = new_member_weights[sorted_indices,:]
+            if not member_weights_exists:
+                self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
+                self.member_weights[self.membership==0] = 0
+            else:
+                self.member_weights = new_member_weights[sorted_indices,:]
+            
             self.member_lengths = new_lengths[sorted_indices]
             self.strand_array = new_strands[sorted_indices]
             self.rep_array = new_reps[sorted_indices]
