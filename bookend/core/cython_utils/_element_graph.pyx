@@ -231,6 +231,7 @@ cdef class ElementGraph:
             int i
             float free_weight, min_weight, coverage_over_element, coverage_outside_element
             Element path
+            set outside_element
         if len(element.assigned_to) == 0: # No competition, all reads are available
             return element.all
         
@@ -241,7 +242,12 @@ cdef class ElementGraph:
         for i in element.assigned_to:
             path = self.paths[i]
             coverage_over_element += np.mean(path.member_weights[sorted(element.covered_indices)])
-            coverage_outside_element += np.mean(path.member_weights[sorted(path.covered_indices.difference(element.covered_indices))])
+            outside_element = path.covered_indices.difference(element.covered_indices)
+            if len(outside_element) > 0:
+                coverage_outside_element += np.mean(path.member_weights[sorted(outside_element)])
+            else:
+                coverage_outside_element = path.cov
+            
             assigned_weights += path.source_weights
         
         free_weight = max(0, (coverage_over_element - coverage_outside_element)/coverage_over_element)
