@@ -432,7 +432,7 @@ cdef class ElementGraph:
         novelty = self.novelty_penalty
         extension_bases = 0
         extension_outgroup = set()
-        # extension_excludes = set()
+        extension_excludes = set()
         new_covered_indices = set()
         for i in extension:
             if self.assignments[i] > 0:
@@ -440,8 +440,8 @@ cdef class ElementGraph:
             
             element = self.elements[i]
             new_covered_indices.update(element.covered_indices)
-            # extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
-            # extension_excludes.update(element.excludes)
+            extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
+            extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
             e_weights = e_prop*element.source_weights
             e_cov = np.sum(e_weights)
