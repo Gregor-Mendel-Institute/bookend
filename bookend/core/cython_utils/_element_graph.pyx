@@ -558,6 +558,8 @@ cdef class ElementGraph:
             
             lastm = m
         
+        if left_exon_border == -1:left_exon_border=path.RM # single-exon path
+        if right_exon_border == -1:left_exon_border=path.LM # single-exon path
         end_to_repair = list()
         if not path.s_tag: # Check if there is a bypassed start in the first exon
             for bypassed in sorted(path.excludes, reverse=path.strand==-1):
