@@ -423,6 +423,7 @@ cdef class ElementGraph:
             set new_members, extension_outgroup, extension_excludes, new_covered_indices
             float bases, new_bases, extension_bases, score, source_similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
             np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
+            list shared_members
         new_members = set()
         bases = path.bases
         path_proportions = path.source_weights/path.cov
@@ -455,14 +456,16 @@ cdef class ElementGraph:
         new_length = sum([path.frag_len[i] for i in new_members])
         # Calculate the new coverage (reads/base) of the extended path
         new_bases = bases - path.bases
-        # extension_outgroup.difference_update(set(extension)|extension_excludes)
-        # for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
-        #     element = self.elements[i]
-        #     e_prop = self.available_proportion(path.source_weights, element)
-        #     shared_length = np.sum(path.frag_len[list(element.members.intersection(new_members|path.members))])
-        #     outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
-        #     new_bases += outgroup_bases
-        #     extension_bases += np.sum(element.source_weights)*shared_length
+        extension_outgroup.difference_update(set(extension)|extension_excludes)
+        for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
+            element = self.elements[i]
+            e_prop = self.available_proportion(path.source_weights, element)
+            shared_members = sorted(element.members.intersection(new_members|path.members))
+            shared_length = np.sum(path.frag_len[shared_members])
+            outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
+            new_bases += outgroup_bases
+            extension_bases += np.sum(element.source_weights)*shared_length
+            new_member_weights[shared_members] += element.member_weights[shared_members]*np.sum(element.source_weights*e_prop)
         
         if new_bases < minimum_proportion * extension_bases:
             return 0
