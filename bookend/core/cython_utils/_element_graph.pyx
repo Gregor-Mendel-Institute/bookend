@@ -243,6 +243,12 @@ cdef class ElementGraph:
         
         return proportion
     
+    cpdef float available_bases(self, np.ndarray weights, Element element):
+        """Given a path to merge, calculate the number of bases available for merging"""
+        cdef float proportion
+        proportion = self.available_proportion(weights, element)
+        return np.sum(element.weights*proportion)*element.length
+    
     cpdef void extend_path(self, Element path, tuple extension):
         """Merges the proper 
         """
@@ -257,18 +263,32 @@ cdef class ElementGraph:
     
     cpdef Element get_heaviest_element(self):
         cdef Element best_element, new_element
+        cdef float most_bases
+        cdef int c
         cdef np.ndarray available_elements = np.where(self.assignments==0)[0]
         if len(available_elements) == 0:
             return self.emptyPath
         
         best_element = self.elements[available_elements[0]]
+        most_cov = best_element.bases
+        for c in best_element.contains:
+            most_cov += self.available_bases(best_element.weights, self.elements[c])
+        
+        most_cov /= best_element.length
         for i in available_elements:
             new_element = self.elements[i]
-            if new_element > best_element:
+            new_cov = new_element.bases
+            for c in new_element.contains:
+                new_cov += self.available_bases(new_element.weights, self.elements[c])
+            
+            new_cov /= new_element.length
+            if new_cov > most_bases:
                 best_element = new_element
-            elif new_element == best_element: # Break ties by complexity
+                best_bases = new_cov
+            elif new_cov == best_bases: # Break ties by complexity
                 if new_element.IC > best_element.IC:
                     best_element = new_element
+                    best_bases = new_cov
         
         return copy.deepcopy(best_element)
     
