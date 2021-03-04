@@ -14,17 +14,16 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases, dead_end_penalty, novelty_penalty
+    cdef public float bases, dead_end_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1, novelty_penalty=1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
         self.emptyPath = Element(-1, np.array([0]), np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
         self.dead_end_penalty = dead_end_penalty
-        self.novelty_penalty = novelty_penalty
         cdef Element e, path, part
         cdef int e_index, path_index, i
         self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
@@ -419,9 +418,9 @@ cdef class ElementGraph:
         """
         cdef:
             Element element
-            int i, outgroup_bases
-            set new_members, extension_outgroup, extension_excludes, new_covered_indices
-            float bases, new_bases, extension_bases, score, source_similarity, e_cov, e_bases, novelty, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty
+            int i, outgroup_bases, excluded
+            set new_members, extension_outgroup, excluded_members, extension_excludes, new_covered_indices
+            float bases, new_bases, extension_bases, excluded_bases, score, source_similarity, e_cov, e_bases, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty, excluded_cov
             np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
             list shared_members
         new_members = set()
@@ -429,15 +428,11 @@ cdef class ElementGraph:
         path_proportions = path.source_weights/path.cov
         proportions = path_proportions*path.bases
         new_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
-        novelty = self.novelty_penalty
         extension_bases = 0
         extension_outgroup = set()
         extension_excludes = set()
         new_covered_indices = set()
         for i in extension:
-            if self.assignments[i] > 0:
-                novelty = 1.
-            
             element = self.elements[i]
             new_covered_indices.update(element.covered_indices)
             extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
@@ -471,11 +466,27 @@ cdef class ElementGraph:
             return 0
         
         ext_cov = new_bases / new_length
+        extension_excludes.difference_update(path.excludes)
+        if len(extension_excludes) > 0:
+            excluded_bases = 0
+            excluded_members = set()
+            for excluded in extension_excludes:
+                element = self.elements[excluded]
+                excluded_bases += self.available_bases(path.source_weights, element)
+                excluded_members.update(element.members)
+        
+            excluded_length = np.sum(path.frag_len[sorted(excluded_members)])
+            excluded_cov = excluded_bases/excluded_length
+            exclusion_penalty = ext_cov/(ext_cov+excluded_cov)
+        else:
+            excluded_cov = 0
+            exclusion_penalty = 1
+        
         combined_member_coverage = np.add(path.member_weights,new_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
         weakest_link_penalty = np.min(combined_member_coverage)/np.mean(combined_member_coverage)
         source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * novelty
+        score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * exclusion_penalty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
@@ -880,6 +891,7 @@ cdef class Element:
         # Update Overlaps
         self.excludes.update(other.excludes) # Sum of exclusions
         self.includes.update(other.includes) # Sum of inclusions
+        self.contains.update(self.includes)
         self.outgroup.difference_update(self.excludes)
         self.ingroup.difference_update(self.excludes)
         if len(unique) > 0: 
