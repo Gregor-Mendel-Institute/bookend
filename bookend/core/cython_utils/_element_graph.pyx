@@ -18,7 +18,7 @@ cdef class ElementGraph:
     cdef public float bases, dead_end_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1, partial_coverage=False):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1, partial_coverage=True):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
