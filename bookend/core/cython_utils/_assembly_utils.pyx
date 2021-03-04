@@ -592,7 +592,7 @@ cdef class Locus:
             new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
             new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
-            if self.member_weights.shape[0] == 0:
+            if not np.any(self.member_weights):
                 member_weights_exists = False
             else:
                 member_weights_exists = True
@@ -634,7 +634,11 @@ cdef class Locus:
             self.rep_array = new_reps[sorted_indices]
             if len(self.traceback) > 0:
                 self.traceback = [new_traceback[i] for i in sorted_indices]
-
+        
+        if not np.any(self.member_weights): # member_weights still uninitialized
+            self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
+            self.member_weights[self.membership==0] = 0
+    
     cpdef void filter_by_reps(self, int minreps=1):
         """Enforce that elements in the membership"""
         cdef np.ndarray keep
