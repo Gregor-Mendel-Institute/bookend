@@ -613,8 +613,8 @@ cdef class ElementGraph:
         cdef Element existing_path
         # Assign each included element to the path
         for existing_path in self.paths:
-            if path.compatible(existing_path)
-            return 0
+            if path.compatible(existing_path):
+                return 0
         
         for i in path.includes:
             if self.assignments[i] == 0:
