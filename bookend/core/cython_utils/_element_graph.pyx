@@ -252,7 +252,8 @@ cdef class ElementGraph:
         # free_weight = max(0, (coverage_over_element - coverage_outside_element)/coverage_over_element)
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
-            proportion[i] = max(weights[i]/assigned_weights[i], free_weight)
+            # proportion[i] = max(weights[i]/assigned_weights[i], free_weight)
+            proportion[i] = weights[i]/assigned_weights[i]
         
         return proportion
     
