@@ -221,7 +221,7 @@ cdef class ElementGraph:
                 total_bases_assigned = threshold
             else:
                 novel_bases = self.add_path(path)
-                if novel_bases = 0:
+                if novel_bases == 0:
                     total_bases_assigned = threshold
                 else:
                     total_bases_assigned += novel_bases
