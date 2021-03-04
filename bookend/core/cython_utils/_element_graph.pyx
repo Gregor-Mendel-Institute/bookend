@@ -555,7 +555,7 @@ cdef class ElementGraph:
                 candidates = self.starts_plus
                 for bypassed in candidates:
                     element = self.elements[bypassed]
-                    if element.RM > left_exon_border:continue
+                    if element.LM > left_exon_border:continue
                     if element.s_tag and element.LM > path.LM: # Start is in the bypassed range
                         if start_to_repair is self.emptyPath:
                             start_to_repair = element
@@ -565,7 +565,7 @@ cdef class ElementGraph:
                 candidates = self.starts_minus
                 for bypassed in candidates:
                     element = self.elements[bypassed]
-                    if element.LM < right_exon_border:continue
+                    if element.RM < right_exon_border:continue
                     if element.s_tag and element.RM < path.RM:
                         if start_to_repair is self.emptyPath:
                             start_to_repair = element
@@ -578,7 +578,7 @@ cdef class ElementGraph:
                 candidates = self.ends_minus
                 for bypassed in candidates:
                     element = self.elements[bypassed]
-                    if element.RM > left_exon_border:continue
+                    if element.LM > left_exon_border:continue
                     if element.e_tag and element.LM > path.LM:
                         if end_to_repair is self.emptyPath:
                             end_to_repair = element
@@ -588,7 +588,7 @@ cdef class ElementGraph:
                 candidates = self.ends_plus
                 for bypassed in candidates:
                     element = self.elements[bypassed]
-                    if element.LM < right_exon_border:continue
+                    if element.RM < right_exon_border:continue
                     if element.e_tag and element.RM < path.RM:
                         if end_to_repair is self.emptyPath:
                             end_to_repair = element
