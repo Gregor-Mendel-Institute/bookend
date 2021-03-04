@@ -282,13 +282,13 @@ cdef class ElementGraph:
                 new_cov += self.available_bases(new_element.weights, self.elements[c])
             
             new_cov /= new_element.length
-            if new_cov > most_bases:
+            if new_cov > most_cov:
                 best_element = new_element
-                best_bases = new_cov
-            elif new_cov == best_bases: # Break ties by complexity
+                most_cov = new_cov
+            elif new_cov == most_cov: # Break ties by complexity
                 if new_element.IC > best_element.IC:
                     best_element = new_element
-                    best_bases = new_cov
+                    most_cov = new_cov
         
         return copy.deepcopy(best_element)
     
