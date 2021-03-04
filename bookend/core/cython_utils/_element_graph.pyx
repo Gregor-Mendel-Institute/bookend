@@ -231,26 +231,25 @@ cdef class ElementGraph:
             int i
             float free_weight, min_weight, coverage_over_element, coverage_outside_element
             Element path
-            set outside_element
+            # set outside_element
         if len(element.assigned_to) == 0: # No competition, all reads are available
             return element.all
         
         assigned_weights = np.copy(weights)
         # Calculate free weight in excess of the assignments
-        coverage_over_element = 0
-        coverage_outside_element = 0
+        # coverage_over_element = 0
+        # coverage_outside_element = 0
         for i in element.assigned_to:
             path = self.paths[i]
-            coverage_over_element += np.mean(path.member_weights[sorted(element.covered_indices)])
-            outside_element = path.covered_indices.difference(element.covered_indices)
-            if len(outside_element) > 0:
-                coverage_outside_element += np.mean(path.member_weights[sorted(outside_element)])
-            else:
-                coverage_outside_element = path.cov
-            
             assigned_weights += path.source_weights
-        
-        free_weight = max(0, (coverage_over_element - coverage_outside_element)/coverage_over_element)
+            # coverage_over_element += np.mean(path.member_weights[sorted(element.covered_indices)])
+            # outside_element = path.covered_indices.difference(element.covered_indices)
+            # if len(outside_element) > 0:
+            #     coverage_outside_element += np.mean(path.member_weights[sorted(outside_element)])
+            # else:
+            #     coverage_outside_element = path.cov
+            
+        # free_weight = max(0, (coverage_over_element - coverage_outside_element)/coverage_over_element)
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
             proportion[i] = max(weights[i]/assigned_weights[i], free_weight)
