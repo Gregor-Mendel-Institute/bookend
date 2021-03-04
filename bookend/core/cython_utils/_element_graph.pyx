@@ -210,7 +210,7 @@ cdef class ElementGraph:
         until the number of novel reads fails to exceed minimum_proportion
         of the reads at the locus. If minimum_proportion == 0, assemble()
         only terminates when every read is in a path."""
-        cdef float threshold, total_bases_assigned
+        cdef float threshold, total_bases_assigned, novel_bases
         cdef Element path
         
         total_bases_assigned = sum([self.elements[i].bases for i in np.where(self.assignments>0)[0]])
@@ -220,7 +220,11 @@ cdef class ElementGraph:
             if path is self.emptyPath:
                 total_bases_assigned = threshold
             else:
-                total_bases_assigned += self.add_path(path)
+                novel_bases = self.add_path(path)
+                if novel_bases = 0:
+                    total_bases_assigned = threshold
+                else:
+                    total_bases_assigned += novel_bases
     
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
@@ -537,47 +541,81 @@ cdef class ElementGraph:
         """If a path has malformed ends, check if it is possible to back up to a
         bypassed start/end site without crossing a splice junction."""
         pass
-        # cdef Element bypassed_element
-        # cdef list junctions
-        # cdef int left_exon_border, right_exon_border, bypassed
-        # if path.complete or path.strand==0:return
-        # junctions = path.get_junctions()
-        # left_exon_border = int(junctions[0].split(':')[0])
-        # right_exon_border = int(junctions[-1].split(':')[1])
-        # end_to_repair = list()
-        # if not path.s_tag: # Check if there is a bypassed start in the first exon
-        #     for bypassed in sorted(path.excludes, reverse=path.strand==-1):
-        #         bypassed_element = self.elements[bypassed]
+        cdef Element element, trim_element
+        cdef np.ndarray members
+        cdef int left_exon_border, right_exon_border, bypassed, m, lastm
+        cdef set elements_to_trim
+        if path.complete or path.strand==0:return
+        left_exon_border = -1
+        right_exon_border = -1
+        lastm = -1
+        members = np.array(sorted(path.members.difference(path.end_indices)), dtype=np.int32)
+        for m in members:
+            if lastm == -1:lastm = m
+            if m > lastm+1:
+                if left_exon_border==-1:left_exon_border = lastm
+                right_exon_border = m
+            
+            lastm = m
         
-        # if not path.e_tag: # Check if there is a bypassed end in the first exon
-        #     for bypassed in sorted(path.excludes, reverse=path.strand==1):
-        #         bypassed_element = self.elements[bypassed]
-        #         if path.strand == 1:
-        #             if bypassed_element.LM < right_exon_border:break
-        #             if bypassed_element.e_tag and bypassed_element.RM < path.RM:
+        end_to_repair = list()
+        if not path.s_tag: # Check if there is a bypassed start in the first exon
+            for bypassed in sorted(path.excludes, reverse=path.strand==-1):
+                element = self.elements[bypassed]
+                if path.strand == 1:
+                    if element.RM > left_exon_border:break
+                    if element.s_tag and element.LM > path.LM:
+                        end_to_repair.append(element)
+                        break
+                elif path.strand == -1:
+                    if element.LM < right_exon_border:break
+                    if element.s_tag and element.RM < path.RM:
+                        end_to_repair.append(element)
+                        break
+        
+        if not path.e_tag: # Check if there is a bypassed end in the first exon
+            for bypassed in sorted(path.excludes, reverse=path.strand==1):
+                element = self.elements[bypassed]
+                if path.strand == -1:
+                    if element.RM > left_exon_border:break
+                    if element.e_tag and element.LM > path.LM:
+                        end_to_repair.append(element)
+                        break
+                elif path.strand == 1:
+                    if element.LM < right_exon_border:break
+                    if element.e_tag and element.RM < path.RM:
+                        end_to_repair.append(element)
+                        break
+        
+        # Remove all included/excluded elements from path to make room for the repaired ends
+        members_to_trim = set()
+        nonmembers_to_trim = set()
+        for element in end_to_repair:
+            elements_to_trim = path.includes.intersection(element.excludes)
+            for e in elements_to_trim:
+                trim_element = self.elements[e]
+                members_to_trim.update(trim_element.members.intersection(element.nonmembers))
+                nonmembers_to_trim.update(trim_element.nonmembers.intersection(element.members))
+            
+            path.members.difference_update(members_to_trim)
+            path.nonmembers.difference_update(nonmembers_to_trim)
+            path.includes.difference_update(elements_to_trim)
+            path.contains.difference_update(elements_to_trim)
+            path.excludes.remove(element.index)
+            path.merge(element, self.available_proportion(path.source_weights, element))
 
-        
-        # elements_to_trim = path.includes.intersection(bypassed_element.excludes)
-        # members_to_trim = set()
-        # nonmembers_to_trim = set()
-        # for e in elements_to_trim:
-        #     trim_element = self.elements[e]
-        #     members_to_trim.update(trim_element.members.intersection(bypassed_element.nonmembers))
-        #     nonmembers_to_trim.update(trim_element.nonmembers.intersection(bypassed_element.members))
-        #     path.includes.remove(e)
-        
-        # path.members.difference_update(members_to_trim)
-        # path.nonmembers.difference_update(nonmembers_to_trim)
-        # path.includes.difference_update(elements_to_trim)
-        # path.contains.difference_update(elements_to_trim)
-        # path.excludes.remove(bypassed)
-        # path.merge(bypassed_element, self.available_proportion(path.weights, bypassed_element))
+        path.update()
     
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
         cdef int i
         cdef float novel_bases = 0
+        cdef Element existing_path
         # Assign each included element to the path
+        for existing_path in self.paths:
+            if path.compatible(existing_path)
+            return 0
+        
         for i in path.includes:
             if self.assignments[i] == 0:
                 novel_bases += self.elements[i].bases
