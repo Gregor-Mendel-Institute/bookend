@@ -491,7 +491,7 @@ cdef class Locus:
             return True
         
         self.reduce_membership()
-        self.member_weights = np.full(self.membership.shape, np.sum(self.weight_array,axis=1,keepdims=True))
+        self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
         self.member_weights[self.membership==0] = 0
         self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
