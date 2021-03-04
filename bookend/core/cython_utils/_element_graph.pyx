@@ -221,7 +221,7 @@ cdef class ElementGraph:
                 total_bases_assigned = threshold
             else:
                 total_bases_assigned += self.add_path(path)
-
+    
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
@@ -229,16 +229,25 @@ cdef class ElementGraph:
         cdef:
             np.ndarray assigned_weights, proportion
             int i
+            float free_weight, min_weight, coverage_over_element, coverage_outside_element
+            Element path
         if len(element.assigned_to) == 0: # No competition, all reads are available
             return element.all
         
         assigned_weights = np.copy(weights)
-        proportion = np.ones(weights.shape[0], dtype=np.float32)
+        # Calculate free weight in excess of the assignments
+        coverage_over_element = 0
+        coverage_outside_element = 0
         for i in element.assigned_to:
-            assigned_weights += self.paths[i].source_weights
+            path = self.paths[i]
+            coverage_over_element += np.mean(path.member_weights[sorted(element.covered_indices)])
+            coverage_outside_element += np.mean(path.member_weights[sorted(path.covered_indices.difference(element.covered_indices))])
+            assigned_weights += path.source_weights
         
+        free_weight = max(0, (coverage_over_element - coverage_outside_element)/coverage_over_element)
+        proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
-            proportion[i] = weights[i]/assigned_weights[i]
+            proportion[i] = max(weights[i]/assigned_weights[i], free_weight)
         
         return proportion
     
