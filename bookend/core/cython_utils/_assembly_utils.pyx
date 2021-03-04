@@ -618,7 +618,7 @@ cdef class Locus:
             sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
             self.membership = reduced_membership[sorted_indices,:]
             self.weight_array = new_weights[sorted_indices,:]
-            self.member_weights = new_member_weights[sorted_indices,:]
+            if self.member_weights:self.member_weights = new_member_weights[sorted_indices,:]
             self.member_lengths = new_lengths[sorted_indices]
             self.strand_array = new_strands[sorted_indices]
             self.rep_array = new_reps[sorted_indices]
