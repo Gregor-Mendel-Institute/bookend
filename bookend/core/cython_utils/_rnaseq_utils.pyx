@@ -1975,7 +1975,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         return
     
     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
-    old_chrom, old_l, old_r, rightmost = -1, -1, -1, -1
+    old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1
     current_cov = 0
     span_weight = 0
     for line in fileconn:
@@ -1995,10 +1995,12 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         read_weight = read.weight * (r-l)
         current_cov += read.weight
         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
-            pass
+            span_start = l
+            span_length = r - span_start
         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
             yield dataset.read_list[:-1]
             dataset.read_list = [read]
+            span_start = l
             span_weight = 0
             current_cov = read.weight
             end_positions = Counter()
@@ -2011,6 +2013,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
                 yield dataset.read_list[:-1]
                 dataset.read_list = [read]
+                span_start = l
                 span_weight = 0
                 current_cov = read.weight
                 end_positions = Counter()
@@ -2018,6 +2021,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         
         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
         span_weight += read_weight
+        span_length = r - span_start
         if r > rightmost: rightmost = r
         old_chrom, old_l, old_r = read.chrom, l, r
     
