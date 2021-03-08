@@ -1960,7 +1960,7 @@ cdef class BAMobject:
 def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):
     """Yields a contiguous chunk of reads from the input file
     separated on either side by a gaps > max_gap"""
-    cdef RNAseqMapping read
+    cdef RNAseqMapping read, outread
     cdef int l, r, old_chrom, old_l, old_r, rightmost, k
     cdef float read_weight, span_weight, current_cov
     cdef set covered_positions
@@ -1999,7 +1999,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             span_length = r - span_start
             rightmost = r
         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
-            yield dataset.read_list[:-1]
+            yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
             dataset.read_list = [read]
             span_start = l
             span_weight = 0
@@ -2012,7 +2012,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
                 current_cov -= end_positions.pop(k)
             
             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
-                yield dataset.read_list[:-1]
+                yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
                 dataset.read_list = [read]
                 span_start = l
                 span_weight = 0
