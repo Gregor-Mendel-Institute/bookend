@@ -1204,7 +1204,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
         RNAseqMapping read
         np.ndarray depth_matrix
     
-    Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+    Sp, Ep, Sm, Em, covp, covm, covn = range(11)
     array_length = rightmost - leftmost
     depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}
@@ -1222,8 +1222,6 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
             for span in read.junctions():
                 l = span[0] - leftmost
                 r = span[1] - leftmost
-                depth_matrix[Dp, l] += weight
-                depth_matrix[Ap, r] += weight
                 block = (l,r)
                 junction_hash = span_to_string(block)
                 J_plus[junction_hash] = J_plus.get(junction_hash, 0) + weight
@@ -1243,8 +1241,6 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
             for span in read.junctions():
                 l = span[0] - leftmost
                 r = span[1] - leftmost
-                depth_matrix[Am, l] += weight
-                depth_matrix[Dm, r] += weight
                 block = (l,r)
                 junction_hash = span_to_string(block)
                 J_minus[junction_hash] = J_minus.get(junction_hash, 0) + weight
@@ -1964,10 +1960,9 @@ cdef class BAMobject:
 def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):
     """Yields a contiguous chunk of reads from the input file
     separated on either side by a gaps > max_gap"""
-    cdef RNAseqMapping last_read
+    cdef RNAseqMapping read
     cdef int l, r, old_chrom, old_l, old_r, rightmost, k
-    cdef (int, int) exon
-    cdef float read_bases, current_bases, mean_cov, current_cov, total_cov
+    cdef float read_weight, span_weight, current_cov
     cdef set covered_positions
     cdef list passed_positions
     if file_type == 'elr':
@@ -1982,9 +1977,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
     old_chrom, old_l, old_r, rightmost = -1, -1, -1, -1
     current_cov = 0
-    current_bases = 0
-    mean_cov = 0
-    covered_positions = set()
+    span_weight = 0
     for line in fileconn:
         if type(line) is str:
             if line[0] == '#':
@@ -1998,21 +1991,16 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         
         add_read(line)
         read = dataset.read_list[-1]
-        read_bases = read.get_length()*read.weight
         l, r = read.span
+        read_weight = read.weight * (r-l)
         current_cov += read.weight
         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
             pass
         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
             yield dataset.read_list[:-1]
             dataset.read_list = [read]
-            covered_positions = set()
-            for exon in read.ranges:
-                covered_positions.update(range(exon[0],exon[1]))
-            
-            current_bases = 0
+            span_weight = 0
             current_cov = read.weight
-            mean_cov = current_cov
             end_positions = Counter()
             rightmost = r
         elif l > old_l: # Read advanced, but not by enough to automatically cut
@@ -2020,24 +2008,16 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             for k in passed_positions:
                 current_cov -= end_positions.pop(k)
             
-            if current_cov < minimum_proportion * mean_cov: # Current cov is sufficiently low to cause a break
+            if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
                 yield dataset.read_list[:-1]
                 dataset.read_list = [read]
-                covered_positions = set()
-                for exon in read.ranges:
-                    covered_positions.update(range(exon[0],exon[1]))
-                
-                current_bases = 0
+                span_weight = 0
                 current_cov = read.weight
                 end_positions = Counter()
                 rightmost = r
         
         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
-        current_bases += read_bases
-        for exon in read.ranges:
-            covered_positions.update(range(exon[0],exon[1]))
-        
-        mean_cov = current_bases / len(covered_positions)
+        span_weight += read_weight
         if r > rightmost: rightmost = r
         old_chrom, old_l, old_r = read.chrom, l, r
     
