@@ -1997,6 +1997,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
             span_start = l
             span_length = r - span_start
+            rightmost = r
         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
             yield dataset.read_list[:-1]
             dataset.read_list = [read]
