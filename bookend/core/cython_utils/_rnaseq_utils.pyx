@@ -1204,7 +1204,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
         RNAseqMapping read
         np.ndarray depth_matrix
     
-    Sp, Ep, Sm, Em, covp, covm, covn = range(11)
+    Sp, Ep, Sm, Em, covp, covm, covn = range(7)
     array_length = rightmost - leftmost
     depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}

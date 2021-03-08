@@ -155,7 +155,7 @@ cdef class Locus:
             set prohibited_positions
             list gaps
         
-        Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
         strandedpositions = np.where(covstranded > 0)[0]
         if strandedpositions.shape[0] > 0: # Some reads to inform the strand
