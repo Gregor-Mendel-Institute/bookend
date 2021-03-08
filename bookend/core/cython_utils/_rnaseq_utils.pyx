@@ -2022,8 +2022,8 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
         
         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
         span_weight += read_weight
-        span_length = r - span_start
         if r > rightmost: rightmost = r
+        span_length = rightmost - span_start
         old_chrom, old_l, old_r = read.chrom, l, r
     
     # Dump the remaining reads
