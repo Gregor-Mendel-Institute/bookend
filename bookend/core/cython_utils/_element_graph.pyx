@@ -964,19 +964,19 @@ cdef class Element:
             for f in unique: # Append each frag from other to self
                 self.members.add(f)
                 self.length += self.frag_len[f]
-                if f not in self.end_indices:
-                    if f > rightMember: 
-                        extendedRight = True
-                    elif f < leftMember:
-                        extendedLeft = True
+                # if f not in self.end_indices:
+                #     if f > rightMember: 
+                #         extendedRight = True
+                #     elif f < leftMember:
+                #         extendedLeft = True
             
-            if extendedRight: # Replace the rightward edges with those of Other
-                self.outgroup = set([o for o in self.outgroup if o < self.left])
-                self.ingroup = set([i for i in self.ingroup if i < self.left])
+            # if extendedRight: # Replace the rightward edges with those of Other
+            #     self.outgroup = set([o for o in self.outgroup if o < self.left])
+            #     self.ingroup = set([i for i in self.ingroup if i < self.left])
             
-            if extendedLeft: # Replace the leftward edges with those of Other
-                self.outgroup = set([o for o in self.outgroup if o > self.right])
-                self.ingroup = set([i for i in self.ingroup if i > self.right])
+            # if extendedLeft: # Replace the leftward edges with those of Other
+            #     self.outgroup = set([o for o in self.outgroup if o > self.right])
+            #     self.ingroup = set([i for i in self.ingroup if i > self.right])
             
             self.outgroup.update(other.outgroup.difference(self.excludes))
             self.ingroup.update(other.ingroup.difference(self.excludes))
