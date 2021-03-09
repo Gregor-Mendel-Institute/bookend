@@ -411,14 +411,14 @@ cdef class ElementGraph:
         best_ext = ()
         best_score = 0
         for ext in extensions:
-            score = self.calculate_extension_score(path, ext, minimum_proportion)
+            score = self.calculate_extension_score(path, ext, minimum_proportion, best_score)
             if score > best_score or (score == best_score and len(ext) > len(best_ext)):
                 best_ext = ext
                 best_score = score
         
         return best_ext
     
-    cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion):
+    cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion, float prune):
         """Given a path and a set of Elements to extend from it, calculate the
         new weights of the extended path and return a score 
         """
@@ -698,8 +698,8 @@ cdef class Element:
         self.frag_len = frag_len                      # Length of the fragment is provided
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
-        self.source_weights = np.copy(source_weights)               # Array of read coverage per Source
-        self.member_weights = np.copy(member_weights)           # Array of read coverage of all members
+        self.source_weights = np.copy(source_weights) # Array of read coverage per Source
+        self.member_weights = np.copy(member_weights) # Array of read coverage of all members
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
         self.assigned_to = []                         # List of Path indices this Element is a part of
@@ -984,9 +984,9 @@ cdef class Element:
             # Update the left and right borders of the Element
             self.right = max(self.right, other.right)
             self.left = min(self.left, other.left)
-            covered = set(range(self.left,self.right))
-            self.outgroup.difference_update(covered)
-            self.ingroup.difference_update(covered)
+            # covered = set(range(self.left,self.right))
+            # self.outgroup.difference_update(covered)
+            # self.ingroup.difference_update(covered)
         else:
             # Update the left and right borders of the Element
             self.right = max(self.right, other.right)
