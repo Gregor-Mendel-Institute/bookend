@@ -945,8 +945,6 @@ cdef class Element:
         old_length = self.length
         self.contains.update(other.contains)
         self.contained.intersection_update(other.contained)
-        self.outgroup.difference_update(self.contains)
-        self.ingroup.difference_update(self.contains)
         unique = other.uniqueMembers(self)
         # Update Membership
         self.nonmembers.update(other.nonmembers)
@@ -954,53 +952,29 @@ cdef class Element:
         self.excludes.update(other.excludes) # Sum of exclusions
         self.includes.update(other.includes) # Sum of inclusions
         self.contains.update(self.includes)
-        self.outgroup.difference_update(self.excludes)
-        self.ingroup.difference_update(self.excludes)
         if len(unique) > 0: 
-            leftMember = min(self.members.difference(self.end_indices))
-            rightMember = max(self.members.difference(self.end_indices))
-            extendedLeft = False
-            extendedRight = False
+            self.outgroup.update(other.outgroup.difference(self.excludes))
+            self.ingroup.update(other.ingroup.difference(self.excludes))
             for f in unique: # Append each frag from other to self
                 self.members.add(f)
                 self.length += self.frag_len[f]
-                # if f not in self.end_indices:
-                #     if f > rightMember: 
-                #         extendedRight = True
-                #     elif f < leftMember:
-                #         extendedLeft = True
-            
-            # if extendedRight: # Replace the rightward edges with those of Other
-            #     self.outgroup = set([o for o in self.outgroup if o < self.left])
-            #     self.ingroup = set([i for i in self.ingroup if i < self.left])
-            
-            # if extendedLeft: # Replace the leftward edges with those of Other
-            #     self.outgroup = set([o for o in self.outgroup if o > self.right])
-            #     self.ingroup = set([i for i in self.ingroup if i > self.right])
-            
-            self.outgroup.update(other.outgroup.difference(self.excludes))
-            self.ingroup.update(other.ingroup.difference(self.excludes))
             
             # Update the left and right borders of the Element
             self.right = max(self.right, other.right)
             self.left = min(self.left, other.left)
-            # covered = set(range(self.left,self.right))
-            # self.outgroup.difference_update(covered)
-            # self.ingroup.difference_update(covered)
-        else:
-            # Update the left and right borders of the Element
-            self.right = max(self.right, other.right)
-            self.left = min(self.left, other.left)
         
-        
+        self.outgroup.difference_update(self.contains|self.excludes)
+        self.ingroup.difference_update(self.contains|self.excludes)
         self.source_weights = (other.source_weights*other.length*proportion + self.source_weights*old_length)/self.length
         self.member_weights += other.member_weights*np.sum(other.source_weights*proportion)/np.sum(other.source_weights)
+        self.right = max(self.right, other.right)
+        self.left = min(self.left, other.left)
         self.update()
-        if self.strand == 1: # Enforce directionality of edges
-            self.outgroup = set([o for o in self.outgroup if o > self.right])
-            self.ingroup = set([i for i in self.ingroup if i < self.left])
-        elif self.strand == -1:
-            self.outgroup = set([o for o in self.outgroup if o < self.left])
-            self.ingroup = set([i for i in self.ingroup if i > self.right])
+        # if self.strand == 1: # Enforce directionality of edges
+        #     self.outgroup = set([o for o in self.outgroup if o > self.right])
+        #     self.ingroup = set([i for i in self.ingroup if i < self.left])
+        # elif self.strand == -1:
+        #     self.outgroup = set([o for o in self.outgroup if o < self.left])
+        #     self.ingroup = set([i for i in self.ingroup if i > self.right])
 
 
