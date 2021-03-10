@@ -461,7 +461,12 @@ cdef class Locus:
                             break
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                
+                    else: # The gap is an unspecified gap
+                        intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], s)
+                        if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
+                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1 
+
+                    
                 last_rfrag = rfrag
             
             # Calculate the length (bases) of the element
@@ -492,6 +497,7 @@ cdef class Locus:
             return True
         
         self.reduce_membership()
+        # self.fill_gaps()
         self.filter_members_by_strand()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
@@ -500,6 +506,50 @@ cdef class Locus:
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         return False
     
+    cpdef list junctions_between(self, int lpos, int rpos, char strand):
+        """Returns a list of junction hashes that fall between the two specified positions
+        on the specified strand (either strand if strand==0)."""
+        cdef list candidates, junctions_in_range
+        cdef str junction_hash
+        cdef (int, int) span
+        if strand == 1:
+            candidates = list(self.J_plus.keys())
+        elif strand == -1:
+            candidates = list(self.J_minus.keys())
+        else:
+            candidates = list(self.J_plus.keys()) + list(self.J_minus.keys())
+        
+        for junction_hash in candidates:
+            span = self.string_to_span(junction_hash)
+            if span[0] >= lpos and span[1] <= rpos:
+                junctions_in_range.append(junction_hash)
+        
+        return junctions_in_range
+    
+    # cpdef void fill_gaps(self):
+    #     """Checks each gapped read to see if sufficient information exists to complete the gap.
+    #     If so, the gap is filled and the read's weight is lightened to reflect the fact that these
+    #     reads were not actually sequenced."""
+    #     members = self.membership[:,:-4] == 1
+    #     ones = np.where(members)
+    #     gaps = np.zeros(self.membership.shape, dtype=np.bool)
+    #     lefts = np.full(self.membership.shape[0], -1)
+    #     rights = np.full(self.membership.shape[0], -1)
+    #     for i in range(len(ones[0])):
+    #         row = ones[0][i]
+    #         col = ones[1][i]
+    #         if lefts[row] == -1:lefts[row] = col
+    #         if col > rights[row]:rights[row] = col
+        
+    #     for i in range(self.membership.shape[0]):
+    #         gaps[i, np.where(self.membership[i,lefts[i]:rights[i]+1]==0)[0]+lefts[i]] = True
+        
+    #     gapsizes = np.sum(gaps,axis=1)
+    #     gaporder = np.argsort(gapsizes)
+    #     for i in self.membership.shape[0]:
+    #         g = gaporder[i]
+    #         if gapsizes[g] == 0:continue
+            
     cdef void filter_members_by_strand(self):
         """If a read is in a region a region with >1-minimum_proportion coverage
         of a specific strand, assign this strand to the read. If the read is
@@ -825,7 +875,7 @@ cdef class Locus:
                 paths_to_remove.append(index)
 
         return paths_to_remove
-    
+
     cpdef void resolve_containment(self):
         """Given a overlap matrix, 'bubble up' the weight of
         all reads that have one or more 'contained by' relationships
@@ -1491,11 +1541,6 @@ cpdef bint passes_threshold(np.ndarray array, int max_gap, float threshold=1):
                 passed = True
     
     return passed
-
-cpdef np.ndarray lerp(np.ndarray array, float null_value):
-    """Given an array with some null values, in-fill null ranges by
-    linear interpolation from the flanking values."""
-
 
 cpdef np.ndarray remove_ends(np.ndarray[char, ndim=2] membership_matrix):
     """Given a full membership matrix, return a reduced version in which
