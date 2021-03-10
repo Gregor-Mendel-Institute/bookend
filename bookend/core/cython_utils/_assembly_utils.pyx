@@ -519,6 +519,7 @@ cdef class Locus:
         else:
             candidates = list(self.J_plus.keys()) + list(self.J_minus.keys())
         
+        junctions_in_range = list()
         for junction_hash in candidates:
             span = self.string_to_span(junction_hash)
             if span[0] >= lpos and span[1] <= rpos:
