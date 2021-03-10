@@ -1606,7 +1606,8 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.
     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
     contained = set(np.where(np.sum(containment,axis=1)>0)[0])
     in_chain = np.zeros(len(ingroup), dtype=np.int32)
-    putative_chain_starts = np.where(np.logical_or(ingroup == 0, outgroup == 1))[0]
+    # putative_chain_starts = np.where(np.logical_or(ingroup == 0, outgroup == 1))[0]
+    putative_chain_starts = np.where(outgroup == 1)[0]
     chain = 0
     for v in putative_chain_starts:
         if in_chain[v] == 0: # v is unvisited
