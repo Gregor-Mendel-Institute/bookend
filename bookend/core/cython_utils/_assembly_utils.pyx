@@ -721,9 +721,10 @@ cdef class Locus:
         if reduce:
             self.denoise()
             maxIC = self.membership.shape[1]
-            self.resolve_containment()
-            keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
-            self.subset_elements(keep)
+            # self.resolve_containment()
+            # keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
+            # self.subset_elements(keep)
+            self.collapse_linear_chains()
     
     cpdef void subset_elements(self, np.ndarray keep):
         self.overlap = self.overlap[keep,:][:,keep]
@@ -744,10 +745,6 @@ cdef class Locus:
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
-        cdef np.ndarray updated
-        # if reduce: # Collapse linear chains prior to graph construction
-        #     self.collapse_linear_chains()
-        
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
@@ -885,69 +882,69 @@ cdef class Locus:
 
         return paths_to_remove
 
-    cpdef void resolve_containment(self):
-        """Given a overlap matrix, 'bubble up' the weight of
-        all reads that have one or more 'contained by' relationships
-        to other reads. Pass from highest complexity reads down, assigning
-        weight proportional to the existing weight.
-        The resulting matrix should contain only overlaps, exclusions, and unknowns."""
-        cdef:
-            np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
-            Py_ssize_t i
+    # cpdef void resolve_containment(self):
+    #     """Given a overlap matrix, 'bubble up' the weight of
+    #     all reads that have one or more 'contained by' relationships
+    #     to other reads. Pass from highest complexity reads down, assigning
+    #     weight proportional to the existing weight.
+    #     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
+    #     cdef:
+    #         np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
+    #         Py_ssize_t i
         
-        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
-        np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-        contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
-        IC_order = contained[np.lexsort((-self.information_content[contained], -self.member_content[contained]))] # Rank them by decreasing number of members
-        new_weights = np.copy(self.weight_array)
-        for i in IC_order:
-            containers = np.where(containment[i,:])[0]
-            containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
-            # Get the set of reads incompatible with all containers but that do not exclude i
-            incompatible =  np.where(np.logical_and(
-                np.all(self.overlap[:,containers]==-1, axis=1),
-                self.overlap[:,i] > 0
-            ))[0]
-            incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
-            if len(incompatible) == 0: # Special case, all weight goes to containers
-                if len(containers) == 1:
-                    new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
-                else: # Evaluate how much weight goes to each container
-                    compatible = np.where(np.logical_and(
-                        np.logical_or(
-                            np.any(self.overlap[:,containers] > 0, axis=1),
-                            np.any(self.overlap[containers,:] > 0, axis=0)
-                        ),
-                        np.all(self.overlap[:,incompatible]==-1, axis=1)
-                    ))[0]
-                    nonzero = np.where(new_weights[i,:] > 0)[0]
-                    weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
-                    weight_transform = self.member_lengths[i]/self.member_lengths[containers]
+    #     containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
+    #     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+    #     contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
+    #     IC_order = contained[np.lexsort((-self.information_content[contained], -self.member_content[contained]))] # Rank them by decreasing number of members
+    #     new_weights = np.copy(self.weight_array)
+    #     for i in IC_order:
+    #         containers = np.where(containment[i,:])[0]
+    #         containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
+    #         # Get the set of reads incompatible with all containers but that do not exclude i
+    #         incompatible =  np.where(np.logical_and(
+    #             np.all(self.overlap[:,containers]==-1, axis=1),
+    #             self.overlap[:,i] >=0
+    #         ))[0]
+    #         incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
+    #         if len(incompatible) == 0: # Special case, all weight goes to containers
+    #             if len(containers) == 1:
+    #                 new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
+    #             else: # Evaluate how much weight goes to each container
+    #                 compatible = np.where(np.logical_and(
+    #                     np.logical_or(
+    #                         np.any(self.overlap[:,containers] > 0, axis=1),
+    #                         np.any(self.overlap[containers,:] > 0, axis=0)
+    #                     ),
+    #                     np.all(self.overlap[:,incompatible]==-1, axis=1)
+    #                 ))[0]
+    #                 nonzero = np.where(new_weights[i,:] > 0)[0]
+    #                 weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
+    #                 weight_transform = self.member_lengths[i]/self.member_lengths[containers]
                     
-                    compatibilities = self.overlap[:,containers][compatible,:] > -1
-                    informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-                    container_weights = new_weights[containers,:]
-                    for f in informative:
-                        container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
-                        if compatible[f] in containers:
-                            container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
+    #                 compatibilities = self.overlap[:,containers][compatible,:] > -1
+    #                 informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
+    #                 container_weights = new_weights[containers,:]
+    #                 for f in informative:
+    #                     container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
+    #                     if compatible[f] in containers:
+    #                         container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
                     
-                    total_container_weights = np.sum(container_weights, axis=1)
-                    container_proportions = total_container_weights / np.sum(total_container_weights)
-                    for n in nonzero: # Each source that has reads of i is evaluated separately
-                        n_weights = container_weights[:,n]
-                        total = np.sum(n_weights)
-                        weight = new_weights[i,n]
-                        if total > 0:
-                            weight_to_add[:,n] += weight * n_weights / total * weight_transform
-                        else:
-                            weight_to_add[:,n] += weight * container_proportions * weight_transform
+    #                 total_container_weights = np.sum(container_weights, axis=1)
+    #                 container_proportions = total_container_weights / np.sum(total_container_weights)
+    #                 for n in nonzero: # Each source that has reads of i is evaluated separately
+    #                     n_weights = container_weights[:,n]
+    #                     total = np.sum(n_weights)
+    #                     weight = new_weights[i,n]
+    #                     if total > 0:
+    #                         weight_to_add[:,n] += weight * n_weights / total * weight_transform
+    #                     else:
+    #                         weight_to_add[:,n] += weight * container_proportions * weight_transform
                     
-                    new_weights[containers,:] += weight_to_add
+    #                 new_weights[containers,:] += weight_to_add
                 
-                new_weights[i,] = 0
-                containment[:,i] = False
-                containment[i,:] = False
+    #             new_weights[i,] = 0
+    #             containment[:,i] = False
+    #             containment[i,:] = False
     
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
@@ -1005,28 +1002,28 @@ cdef class Locus:
             T.attributes.update(S_info)
             T.attributes.update(E_info)
     
-    # cpdef void collapse_linear_chains(self):
-    #     """Collapses chains of vertices connected with a single edge.
-    #     """
-    #     cdef int i, chain, parent
-    #     cdef list keep = []
-    #     cdef np.ndarray linear_chains, resolve_order
-    #     cdef dict chain_parent = {}
-    #     resolve_order = np.lexsort((-self.information_content, -self.member_content))
-    #     linear_chains = find_linear_chains(self.overlap, resolve_order)
-    #     for i,chain in enumerate(linear_chains):
-    #         if chain == 0:
-    #             keep.append(i)
-    #         else:
-    #             if chain in chain_parent.keys(): # chain exists, merge i into the parent
-    #                 parent = chain_parent[chain]
-    #                 self.merge_reads(i, parent)
-    #             else: # chain doesn't yet exist, this is the parent
-    #                 chain_parent[chain] = i
-    #                 keep.append(i)
+    cpdef void collapse_linear_chains(self):
+        """Collapses chains of vertices connected with a single edge.
+        """
+        cdef int i, chain, parent
+        cdef list keep = []
+        cdef np.ndarray linear_chains, resolve_order
+        cdef dict chain_parent = {}
+        resolve_order = np.lexsort((-self.information_content, -self.member_content))
+        linear_chains = find_linear_chains(self.overlap, resolve_order)
+        for i,chain in enumerate(linear_chains):
+            if chain == 0:
+                keep.append(i)
+            else:
+                if chain in chain_parent.keys(): # chain exists, merge i into the parent
+                    parent = chain_parent[chain]
+                    self.merge_reads(i, parent)
+                else: # chain doesn't yet exist, this is the parent
+                    chain_parent[chain] = i
+                    keep.append(i)
     
-    #     if len(keep) < self.number_of_elements:
-    #         self.subset_elements(np.array(sorted(keep)))
+        if len(keep) < self.number_of_elements:
+            self.subset_elements(np.array(sorted(keep)))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
@@ -1601,70 +1598,65 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-# cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
-#     cdef:
-#         np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment
-#         int chain, v, next_v, c
-#         set contained, parent_chains
+cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order, verbose=False):
+    cdef:
+        np.ndarray edges, in_chain, putative_chain_starts, incomp, visited
+        int chain, v, i, o
+        list next_v
+        dict outs, ins, contained_by, contains
+        tuple edge_locations
     
-#     edges = overlap_matrix == 1
-#     edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
-#     containment = overlap_matrix == 2
-#     incomp = overlap_matrix==-1
-#     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-#     contained = np.sum(containment,axis=1)>0
-#     not_contained = np.where(np.logical_not(contained))[0]
-#     ingroup = np.sum(edges, axis=0, dtype=np.int32)
-#     outgroup = np.sum(edges, axis=1, dtype=np.int32)
-#     forks_in = ingroup==0
-#     forks_out  = outgroup==0
-#     for i in range(overlap_matrix.shape[0]):
-#         if outgroup[i] > 1:
-#             outs = edges[i,:]
-#             if np.any(incomp[outs,:][:,outs]):forks_out[i] = True
-#         if ingroup[i] > 1:
-#             ins = edges[:,i]
-#             if np.any(incomp[ins,:][:,ins]):forks_in[i] = True
+    edges = overlap_matrix >= 1
+    np.put(edges, range(0,edges.shape[0]**2,edges.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+    outs = {i:[] for i in range(overlap_matrix.shape[0])}
+    ins = {i:[] for i in range(overlap_matrix.shape[0])}
+    contained_by = {i:[] for i in range(overlap_matrix.shape[0])}
+    contains = {i:[] for i in range(overlap_matrix.shape[0])}
+    # edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
+    edge_locations = np.where(edges)
+    for a,b in zip(edge_locations[0],edge_locations[1]):
+        if overlap_matrix[a,b]==2:
+            contained_by[a].append(b)
+            contains[b].append(a)
+        else:
+            outs[a].append(b)
+            ins[b].append(a)
     
-#     putative_chain_starts = not_contained[np.logical_xor(forks_out,forks_in)[not_contained]]
-#     in_chain = np.zeros(len(ingroup), dtype=np.int32)
-#     chain = 0
-#     for v in putative_chain_starts:
-#         if in_chain[v] == 0: # v is unvisited
-#             chain += 1
-#             if forks_in[v]: # v forks in. Check outgroups
-#                 outs = edges[v,:]
-#             else: # v forks out. Check ingroups
-#                 ins = edges[:,v]
-#                 while not np.any(forks_in[ins]):
-#                     in_chain[v] = chain
-#                     in_chain[ins] = chain
-#                     next_v = not_contained[ins[not_contained]][0]
-
-
+    incomp = overlap_matrix==-1
+    putative_chain_starts = np.where(np.logical_xor([len(outs[i])>0 for i in range(overlap_matrix.shape[0])], [len(ins[i])>0 for i in range(overlap_matrix.shape[0])]))[0]
+    in_chain = np.zeros(overlap_matrix.shape[0], dtype=np.int32)
+    visited = np.zeros(overlap_matrix.shape[0], dtype=np.bool)
+    visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
+    chain = 0
+    while visit_queue:
+        if verbose:print(visit_queue)
+        v = visit_queue.popleft()
+        # if v==9:break
+        if not visited[v]:
+            visited[v] = True
+            if verbose:print("Visiting {}...".format(v))
+            if in_chain[v] == 0: # Node hasn't been visited
+                chain += 1
             
-#             next_v  = np.where(edges[v,:])[0][0]
-#             if ingroup[next_v] == 1:
-#                 in_chain[v] = chain
-            
-#             while ingroup[next_v] == 1:
-#                 if in_chain[next_v] != 0: # next_v is already visited, join v to this chain
-#                     in_chain[v] = in_chain[next_v]
-#                     break
+            if in_chain[v] in [chain, 0]: # Node continues the current chain
+                outgroup = [o for o in outs[v] if in_chain[o] in [chain,0]]
+                ingroup = [i for i in ins[v] if in_chain[i] in [chain,0]]
+                connections = sorted(list(set(ingroup + outgroup)))
+                next_v = []
+                if len(connections)>0:
+                    if not np.any(incomp[connections+contained_by[v],:][:,connections+contained_by[v]]): # Chain can't continue
+                        # Add connections that are compatible to the chain
+                        next_v = connections
                 
-#                 in_chain[next_v] = chain
-#                 if outgroup[next_v] != 1:break
-#                 next_v = np.where(edges[next_v,:])[0][0]
-#                 if in_chain[next_v] == chain: break
-
-#     # If all a contained element's containers are in the same chain, add it to this chain
-#     for c in resolve_order:
-#         if c in contained:
-#             parent_chains = set(in_chain[containment[c,:]])
-#             if len(parent_chains) == 1:
-#                 in_chain[c] = parent_chains.pop()
-
-#     return in_chain
+                next_v += contains[v]
+                if verbose:print("Connections: {}".format(connections))
+                if len(next_v) > 0:
+                    if verbose:print('Adding {} to chain {}'.format(next_v, chain))
+                    in_chain[v] = chain
+                    in_chain[next_v] = chain
+                    visit_queue.extendleft([nv for nv in next_v if not visited[nv] and nv not in visit_queue])
+    
+    return in_chain
 
 
 def sum_subset(mask, array_to_mask):
