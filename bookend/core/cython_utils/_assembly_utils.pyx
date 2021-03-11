@@ -200,32 +200,32 @@ cdef class Locus:
         if 0 not in prohibited_positions:self.branchpoints.add(0)
         if len(self) not in prohibited_positions:self.branchpoints.add(len(self))
     
-    cpdef void add_gaps(self, set prohibited_positions):
-        """Updates branchpoints to include the starts and ends of coverage gaps"""
-        cdef float cutoff
-        cdef list gaps_plus, gaps_minus
-        cdef (int, int) block, maxdelta
-        if np.sum(self.cov_plus)>0:
-            cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
-            gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
-            for block in gaps_plus: # Iterate over plus-stranded gaps
-                l, r = block
-                if l not in prohibited_positions: # Potential unlabeled e_plus
-                    self.branchpoints.add(l)
+    # cpdef void add_gaps(self, set prohibited_positions):
+    #     """Updates branchpoints to include the starts and ends of coverage gaps"""
+    #     cdef float cutoff
+    #     cdef list gaps_plus, gaps_minus
+    #     cdef (int, int) block, maxdelta
+    #     if np.sum(self.cov_plus)>0:
+    #         cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
+    #         gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
+    #         for block in gaps_plus: # Iterate over plus-stranded gaps
+    #             l, r = block
+    #             if l not in prohibited_positions: # Potential unlabeled e_plus
+    #                 self.branchpoints.add(l)
                 
-                if r not in prohibited_positions: # Potential unlabeled s_plus
-                    self.branchpoints.add(r)
+    #             if r not in prohibited_positions: # Potential unlabeled s_plus
+    #                 self.branchpoints.add(r)
         
-        if np.sum(self.cov_minus)>0:
-            cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
-            gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
-            for block in gaps_minus: # Iterate over minus-stranded gaps
-                l, r = block
-                if l not in prohibited_positions:
-                    self.branchpoints.add(l)
+    #     if np.sum(self.cov_minus)>0:
+    #         cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
+    #         gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
+    #         for block in gaps_minus: # Iterate over minus-stranded gaps
+    #             l, r = block
+    #             if l not in prohibited_positions:
+    #                 self.branchpoints.add(l)
                 
-                if r not in prohibited_positions:
-                    self.branchpoints.add(r)
+    #             if r not in prohibited_positions:
+    #                 self.branchpoints.add(r)
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
@@ -531,6 +531,8 @@ cdef class Locus:
     #     """Checks each gapped read to see if sufficient information exists to complete the gap.
     #     If so, the gap is filled and the read's weight is lightened to reflect the fact that these
     #     reads were not actually sequenced."""
+    #     cdef np.ndarray members, gaps, lefts, rights
+    #     cdef tuple ones
     #     members = self.membership[:,:-4] == 1
     #     ones = np.where(members)
     #     gaps = np.zeros(self.membership.shape, dtype=np.bool)
@@ -544,12 +546,18 @@ cdef class Locus:
         
     #     for i in range(self.membership.shape[0]):
     #         gaps[i, np.where(self.membership[i,lefts[i]:rights[i]+1]==0)[0]+lefts[i]] = True
+    #         if 
         
+    #     for frag in range(self.membership.shape[1]):
+    #         if np.any(gaps[:,frag]):
+    #             reads_that_span = np.logical_and(lefts<=frag,rights>=frag)
+
     #     gapsizes = np.sum(gaps,axis=1)
     #     gaporder = np.argsort(gapsizes)
     #     for i in self.membership.shape[0]:
     #         g = gaporder[i]
     #         if gapsizes[g] == 0:continue
+    #     self.reduce_membership()
             
     cdef void filter_members_by_strand(self):
         """If a read is in a region a region with >1-minimum_proportion coverage
@@ -737,8 +745,8 @@ cdef class Locus:
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
         cdef np.ndarray updated
-        if reduce: # Collapse linear chains prior to graph construction
-            self.collapse_linear_chains()
+        # if reduce: # Collapse linear chains prior to graph construction
+        #     self.collapse_linear_chains()
         
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive)
     
@@ -1513,13 +1521,14 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
             else:
                 if shared == INFO[a]: # All information of a is shared in b
                     COMPATIBILITY[a,b] = 2
-                elif overlapping and s >= 0:
-                    COMPATIBILITY[a,b] = 1
-                
-                if shared == INFO[b]: # All information of b is shared in a
+                elif shared == INFO[b]: # All information of b is shared in a
                     COMPATIBILITY[b,a] = 2
-                elif overlapping and s <= 0:
-                    COMPATIBILITY[b,a] = 1
+                elif overlapping:
+                    if s >= 0:
+                        COMPATIBILITY[a,b] = 1
+                    
+                    if s <= 0:
+                        COMPATIBILITY[b,a] = 1
     
     return overlap_matrix
 
@@ -1592,48 +1601,70 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
-    cdef:
-        np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment
-        int chain, v, next_v, c
-        set contained, parent_chains
+# cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order):
+#     cdef:
+#         np.ndarray edges, ingroup, outgroup, in_chain, putative_chain_starts, containment
+#         int chain, v, next_v, c
+#         set contained, parent_chains
     
-    edges = overlap_matrix == 1
-    edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
-    ingroup = np.sum(edges, axis=0, dtype=np.int32)
-    outgroup = np.sum(edges, axis=1, dtype=np.int32)
-    containment = overlap_matrix == 2
-    np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-    contained = set(np.where(np.sum(containment,axis=1)>0)[0])
-    in_chain = np.zeros(len(ingroup), dtype=np.int32)
-    # putative_chain_starts = np.where(np.logical_or(ingroup == 0, outgroup == 1))[0]
-    putative_chain_starts = np.where(outgroup == 1)[0]
-    chain = 0
-    for v in putative_chain_starts:
-        if in_chain[v] == 0: # v is unvisited
-            chain += 1
-            next_v  = np.where(edges[v,:])[0][0]
-            if ingroup[next_v] == 1:
-                in_chain[v] = chain
+#     edges = overlap_matrix == 1
+#     edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
+#     containment = overlap_matrix == 2
+#     incomp = overlap_matrix==-1
+#     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+#     contained = np.sum(containment,axis=1)>0
+#     not_contained = np.where(np.logical_not(contained))[0]
+#     ingroup = np.sum(edges, axis=0, dtype=np.int32)
+#     outgroup = np.sum(edges, axis=1, dtype=np.int32)
+#     forks_in = ingroup==0
+#     forks_out  = outgroup==0
+#     for i in range(overlap_matrix.shape[0]):
+#         if outgroup[i] > 1:
+#             outs = edges[i,:]
+#             if np.any(incomp[outs,:][:,outs]):forks_out[i] = True
+#         if ingroup[i] > 1:
+#             ins = edges[:,i]
+#             if np.any(incomp[ins,:][:,ins]):forks_in[i] = True
+    
+#     putative_chain_starts = not_contained[np.logical_xor(forks_out,forks_in)[not_contained]]
+#     in_chain = np.zeros(len(ingroup), dtype=np.int32)
+#     chain = 0
+#     for v in putative_chain_starts:
+#         if in_chain[v] == 0: # v is unvisited
+#             chain += 1
+#             if forks_in[v]: # v forks in. Check outgroups
+#                 outs = edges[v,:]
+#             else: # v forks out. Check ingroups
+#                 ins = edges[:,v]
+#                 while not np.any(forks_in[ins]):
+#                     in_chain[v] = chain
+#                     in_chain[ins] = chain
+#                     next_v = not_contained[ins[not_contained]][0]
+
+
             
-            while ingroup[next_v] == 1:
-                if in_chain[next_v] != 0: # next_v is already visited, join v to this chain
-                    in_chain[v] = in_chain[next_v]
-                    break
+#             next_v  = np.where(edges[v,:])[0][0]
+#             if ingroup[next_v] == 1:
+#                 in_chain[v] = chain
+            
+#             while ingroup[next_v] == 1:
+#                 if in_chain[next_v] != 0: # next_v is already visited, join v to this chain
+#                     in_chain[v] = in_chain[next_v]
+#                     break
                 
-                in_chain[next_v] = chain
-                if outgroup[next_v] != 1:break
-                next_v = np.where(edges[next_v,:])[0][0]
-                if in_chain[next_v] == chain: break
-    
-    # If all a contained element's containers are in the same chain, add it to this chain
-    for c in resolve_order:
-        if c in contained:
-            parent_chains = set(in_chain[containment[c,:]])
-            if len(parent_chains) == 1:
-                in_chain[c] = parent_chains.pop()
-    
-    return in_chain
+#                 in_chain[next_v] = chain
+#                 if outgroup[next_v] != 1:break
+#                 next_v = np.where(edges[next_v,:])[0][0]
+#                 if in_chain[next_v] == chain: break
+
+#     # If all a contained element's containers are in the same chain, add it to this chain
+#     for c in resolve_order:
+#         if c in contained:
+#             parent_chains = set(in_chain[containment[c,:]])
+#             if len(parent_chains) == 1:
+#                 in_chain[c] = parent_chains.pop()
+
+#     return in_chain
 
 
 def sum_subset(mask, array_to_mask):
