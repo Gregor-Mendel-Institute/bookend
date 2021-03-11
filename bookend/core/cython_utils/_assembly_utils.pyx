@@ -1005,28 +1005,28 @@ cdef class Locus:
             T.attributes.update(S_info)
             T.attributes.update(E_info)
     
-    cpdef void collapse_linear_chains(self):
-        """Collapses chains of vertices connected with a single edge.
-        """
-        cdef int i, chain, parent
-        cdef list keep = []
-        cdef np.ndarray linear_chains, resolve_order
-        cdef dict chain_parent = {}
-        resolve_order = np.lexsort((-self.information_content, -self.member_content))
-        linear_chains = find_linear_chains(self.overlap, resolve_order)
-        for i,chain in enumerate(linear_chains):
-            if chain == 0:
-                keep.append(i)
-            else:
-                if chain in chain_parent.keys(): # chain exists, merge i into the parent
-                    parent = chain_parent[chain]
-                    self.merge_reads(i, parent)
-                else: # chain doesn't yet exist, this is the parent
-                    chain_parent[chain] = i
-                    keep.append(i)
+    # cpdef void collapse_linear_chains(self):
+    #     """Collapses chains of vertices connected with a single edge.
+    #     """
+    #     cdef int i, chain, parent
+    #     cdef list keep = []
+    #     cdef np.ndarray linear_chains, resolve_order
+    #     cdef dict chain_parent = {}
+    #     resolve_order = np.lexsort((-self.information_content, -self.member_content))
+    #     linear_chains = find_linear_chains(self.overlap, resolve_order)
+    #     for i,chain in enumerate(linear_chains):
+    #         if chain == 0:
+    #             keep.append(i)
+    #         else:
+    #             if chain in chain_parent.keys(): # chain exists, merge i into the parent
+    #                 parent = chain_parent[chain]
+    #                 self.merge_reads(i, parent)
+    #             else: # chain doesn't yet exist, this is the parent
+    #                 chain_parent[chain] = i
+    #                 keep.append(i)
     
-        if len(keep) < self.number_of_elements:
-            self.subset_elements(np.array(sorted(keep)))
+    #     if len(keep) < self.number_of_elements:
+    #         self.subset_elements(np.array(sorted(keep)))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
