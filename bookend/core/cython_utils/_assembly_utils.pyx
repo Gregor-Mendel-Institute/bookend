@@ -721,9 +721,9 @@ cdef class Locus:
         if reduce:
             self.denoise()
             maxIC = self.membership.shape[1]
-            # self.resolve_containment()
-            # keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
-            # self.subset_elements(keep)
+            self.resolve_containment()
+            keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
+            self.subset_elements(keep)
             self.collapse_linear_chains()
     
     cpdef void subset_elements(self, np.ndarray keep):
@@ -882,69 +882,69 @@ cdef class Locus:
 
         return paths_to_remove
 
-    # cpdef void resolve_containment(self):
-    #     """Given a overlap matrix, 'bubble up' the weight of
-    #     all reads that have one or more 'contained by' relationships
-    #     to other reads. Pass from highest complexity reads down, assigning
-    #     weight proportional to the existing weight.
-    #     The resulting matrix should contain only overlaps, exclusions, and unknowns."""
-    #     cdef:
-    #         np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
-    #         Py_ssize_t i
+    cpdef void resolve_containment(self):
+        """Given a overlap matrix, 'bubble up' the weight of
+        all reads that have one or more 'contained by' relationships
+        to other reads. Pass from highest complexity reads down, assigning
+        weight proportional to the existing weight.
+        The resulting matrix should contain only overlaps, exclusions, and unknowns."""
+        cdef:
+            np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
+            Py_ssize_t i
         
-    #     containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
-    #     np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-    #     contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
-    #     IC_order = contained[np.lexsort((-self.information_content[contained], -self.member_content[contained]))] # Rank them by decreasing number of members
-    #     new_weights = np.copy(self.weight_array)
-    #     for i in IC_order:
-    #         containers = np.where(containment[i,:])[0]
-    #         containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
-    #         # Get the set of reads incompatible with all containers but that do not exclude i
-    #         incompatible =  np.where(np.logical_and(
-    #             np.all(self.overlap[:,containers]==-1, axis=1),
-    #             self.overlap[:,i] >=0
-    #         ))[0]
-    #         incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
-    #         if len(incompatible) == 0: # Special case, all weight goes to containers
-    #             if len(containers) == 1:
-    #                 new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
-    #             else: # Evaluate how much weight goes to each container
-    #                 compatible = np.where(np.logical_and(
-    #                     np.logical_or(
-    #                         np.any(self.overlap[:,containers] > 0, axis=1),
-    #                         np.any(self.overlap[containers,:] > 0, axis=0)
-    #                     ),
-    #                     np.all(self.overlap[:,incompatible]==-1, axis=1)
-    #                 ))[0]
-    #                 nonzero = np.where(new_weights[i,:] > 0)[0]
-    #                 weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
-    #                 weight_transform = self.member_lengths[i]/self.member_lengths[containers]
+        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
+        np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+        contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
+        IC_order = contained[np.lexsort((-self.member_content[contained], -self.information_content[contained]))] # Rank them by decreasing number of members
+        new_weights = np.copy(self.weight_array)
+        for i in IC_order:
+            containers = np.where(containment[i,:])[0]
+            containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
+            # Get the set of reads incompatible with all containers but that do not exclude i
+            incompatible =  np.where(np.logical_and(
+                np.all(self.overlap[:,containers]==-1, axis=1),
+                self.overlap[:,i] >=0
+            ))[0]
+            incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
+            if len(incompatible) == 0: # Special case, all weight goes to containers
+                if len(containers) == 1:
+                    new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
+                else: # Evaluate how much weight goes to each container
+                    compatible = np.where(np.logical_and(
+                        np.logical_or(
+                            np.any(self.overlap[:,containers] > 0, axis=1),
+                            np.any(self.overlap[containers,:] > 0, axis=0)
+                        ),
+                        np.all(self.overlap[:,incompatible]==-1, axis=1)
+                    ))[0]
+                    nonzero = np.where(new_weights[i,:] > 0)[0]
+                    weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
+                    weight_transform = self.member_lengths[i]/self.member_lengths[containers]
                     
-    #                 compatibilities = self.overlap[:,containers][compatible,:] > -1
-    #                 informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-    #                 container_weights = new_weights[containers,:]
-    #                 for f in informative:
-    #                     container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
-    #                     if compatible[f] in containers:
-    #                         container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
+                    compatibilities = self.overlap[:,containers][compatible,:] > -1
+                    informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
+                    container_weights = new_weights[containers,:]
+                    for f in informative:
+                        container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
+                        if compatible[f] in containers:
+                            container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
                     
-    #                 total_container_weights = np.sum(container_weights, axis=1)
-    #                 container_proportions = total_container_weights / np.sum(total_container_weights)
-    #                 for n in nonzero: # Each source that has reads of i is evaluated separately
-    #                     n_weights = container_weights[:,n]
-    #                     total = np.sum(n_weights)
-    #                     weight = new_weights[i,n]
-    #                     if total > 0:
-    #                         weight_to_add[:,n] += weight * n_weights / total * weight_transform
-    #                     else:
-    #                         weight_to_add[:,n] += weight * container_proportions * weight_transform
+                    total_container_weights = np.sum(container_weights, axis=1)
+                    container_proportions = total_container_weights / np.sum(total_container_weights)
+                    for n in nonzero: # Each source that has reads of i is evaluated separately
+                        n_weights = container_weights[:,n]
+                        total = np.sum(n_weights)
+                        weight = new_weights[i,n]
+                        if total > 0:
+                            weight_to_add[:,n] += weight * n_weights / total * weight_transform
+                        else:
+                            weight_to_add[:,n] += weight * container_proportions * weight_transform
                     
-    #                 new_weights[containers,:] += weight_to_add
+                    new_weights[containers,:] += weight_to_add
                 
-    #             new_weights[i,] = 0
-    #             containment[:,i] = False
-    #             containment[i,:] = False
+                new_weights[i,] = 0
+                containment[:,i] = False
+                containment[i,:] = False
     
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
@@ -1009,8 +1009,8 @@ cdef class Locus:
         cdef list keep = []
         cdef np.ndarray linear_chains, resolve_order
         cdef dict chain_parent = {}
-        resolve_order = np.lexsort((-self.information_content, -self.member_content))
-        linear_chains = find_linear_chains(self.overlap, resolve_order)
+        # resolve_order = np.lexsort((-self.information_content, -self.member_content))
+        linear_chains = find_linear_chains(self.overlap)
         for i,chain in enumerate(linear_chains):
             if chain == 0:
                 keep.append(i)
@@ -1455,7 +1455,8 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
     If an information_content vertex is not supplied, it will be calculated by the
     sum(abs(frag_membership)) of each row.
     """
-    cdef int ia, ib, shared
+    cdef int ia, ib, shared, a_to_b, b_to_a
+    cdef (bint, bint, bint, bint) info_buffer
     cdef char sa, sb, s
     cdef bint overlapping
     cdef Py_ssize_t a, b, i, maxlen, number_of_reads, number_of_frags
@@ -1471,7 +1472,6 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
     cdef char [:, :] MEMBERSHIP = membership_matrix
     cdef char [:, :] COMPATIBILITY = overlap_matrix
     maxlen = COMPATIBILITY.shape[0]
-
     for a in range(maxlen):
         for b in range(a,maxlen):
             if b == a:
@@ -1486,33 +1486,23 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                     COMPATIBILITY[b,a] = -1
                     continue
             
-            if sa > 0 or sb > 0:
-                s = 1
-            elif sa < 0 or sb < 0:
-                s = -1
-            else:
-                s = 0
-            
-            shared = 0
-            overlapping = False
+            info_buffer = (False, False, False, False)
+            shared, a_to_b, b_to_a = 0,0,0
             for i in range(MEMBERSHIP.shape[1]):
                 ia = MEMBERSHIP[a,i]
                 ib = MEMBERSHIP[b,i]
-                if ia == 0 or ib == 0: # Incomplete information
-                    continue
-                
-                if ia != ib: # A (-1, 1) pair exists
+                if (ia == 1 and ib == -1) or (ia == -1 and ib == 1): # Incompatibility found
                     COMPATIBILITY[a,b] = -1
                     COMPATIBILITY[b,a] = -1
                     shared = -1
                     break # No need to evaluate the rest of the frags
                 
-                if overlapping == False:
-                    if ia == 1 and ib == 1:
-                        overlapping = True
-                
-                shared += 1
-                
+                # If not incompatible, then they either share or do not share membership
+                shared += ia == ib
+                info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
+                a_to_b += info_buffer == (False, True, True, True) or info_buffer == (True, True, True, False)
+                b_to_a += info_buffer == (True, False, True, True) or info_buffer == (True, True, False, True)
+            
             if shared <= 0:
                 continue
             else:
@@ -1520,12 +1510,9 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                     COMPATIBILITY[a,b] = 2
                 elif shared == INFO[b]: # All information of b is shared in a
                     COMPATIBILITY[b,a] = 2
-                elif overlapping:
-                    if s >= 0:
-                        COMPATIBILITY[a,b] = 1
-                    
-                    if s <= 0:
-                        COMPATIBILITY[b,a] = 1
+                else:
+                    COMPATIBILITY[a,b] = a_to_b > 0
+                    COMPATIBILITY[b,a] = b_to_a > 0
     
     return overlap_matrix
 
@@ -1598,7 +1585,7 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.ndarray resolve_order, verbose=False):
+cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, verbose=False):
     cdef:
         np.ndarray edges, in_chain, putative_chain_starts, incomp, visited
         int chain, v, i, o
@@ -1626,7 +1613,8 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.
     putative_chain_starts = np.where(np.logical_xor([len(outs[i])>0 for i in range(overlap_matrix.shape[0])], [len(ins[i])>0 for i in range(overlap_matrix.shape[0])]))[0]
     in_chain = np.zeros(overlap_matrix.shape[0], dtype=np.int32)
     visited = np.zeros(overlap_matrix.shape[0], dtype=np.bool)
-    visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
+    # visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
+    visit_queue = deque(putative_chain_starts[np.lexsort((-locus.information_content[putative_chain_starts], -locus.member_content[putative_chain_starts]))], maxlen=overlap_matrix.shape[0])
     chain = 0
     while visit_queue:
         if verbose:print(visit_queue)
@@ -1639,8 +1627,8 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.
                 chain += 1
             
             if in_chain[v] in [chain, 0]: # Node continues the current chain
-                outgroup = [o for o in outs[v] if in_chain[o] in [chain,0]]
-                ingroup = [i for i in ins[v] if in_chain[i] in [chain,0]]
+                outgroup = [o for o in outs[v] if in_chain[o] in [chain,0] and not np.any(incomp[contained_by[o],v])]
+                ingroup = [i for i in ins[v] if in_chain[i] in [chain,0] and not np.any(incomp[contained_by[i],v])]
                 connections = sorted(list(set(ingroup + outgroup)))
                 next_v = []
                 if len(connections)>0:
@@ -1648,7 +1636,7 @@ cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, np.
                         # Add connections that are compatible to the chain
                         next_v = connections
                 
-                next_v += contains[v]
+                next_v += [o for o in contains[v] if not np.any(incomp[contained_by[o],v])]
                 if verbose:print("Connections: {}".format(connections))
                 if len(next_v) > 0:
                     if verbose:print('Adding {} to chain {}'.format(next_v, chain))
