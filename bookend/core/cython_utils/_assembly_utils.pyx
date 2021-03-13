@@ -1507,8 +1507,13 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
             if shared <= 0:
                 continue
             
-            COMPATIBILITY[a,b] = 2 if shared == INFO[a] else int(overlapping and a_to_b > 0)
-            COMPATIBILITY[b,a] = 2 if shared == INFO[b] else int(overlapping and b_to_a > 0)
+            if shared == INFO[a]:
+                COMPATIBILITY[a,b] = 2
+            elif shared == INFO[b]:
+                COMPATIBILITY[b,a] = 2
+            else:
+                COMPATIBILITY[a,b] = int(overlapping and a_to_b > 0)
+                COMPATIBILITY[b,a] = int(overlapping and b_to_a > 0)
     
     return overlap_matrix
 
