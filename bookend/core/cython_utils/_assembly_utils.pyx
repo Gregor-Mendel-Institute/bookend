@@ -1488,6 +1488,7 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
             
             info_buffer = (False, False, False, False)
             shared, a_to_b, b_to_a = 0,0,0
+            overlapping = False
             for i in range(MEMBERSHIP.shape[1]):
                 ia = MEMBERSHIP[a,i]
                 ib = MEMBERSHIP[b,i]
@@ -1498,21 +1499,17 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                     break # No need to evaluate the rest of the frags
                 
                 # If not incompatible, then they either share or do not share membership
-                shared += ia == ib
+                shared += ia == ib # Shared information (inclusion or exclusion)
+                overlapping == overlapping or ia + ib == 2 # At least one member is shared
                 info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
                 a_to_b += info_buffer == (False, True, True, True) or info_buffer == (True, True, True, False)
                 b_to_a += info_buffer == (True, False, True, True) or info_buffer == (True, True, False, True)
-            
+
             if shared <= 0:
                 continue
-            else:
-                if shared == INFO[a]: # All information of a is shared in b
-                    COMPATIBILITY[a,b] = 2
-                elif shared == INFO[b]: # All information of b is shared in a
-                    COMPATIBILITY[b,a] = 2
-                else:
-                    COMPATIBILITY[a,b] = a_to_b > 0
-                    COMPATIBILITY[b,a] = b_to_a > 0
+            
+            COMPATIBILITY[a,b] = 2 if shared == INFO[a] else int(overlapping and a_to_b > 0)
+            COMPATIBILITY[b,a] = 2 if shared == INFO[b] else int(overlapping and b_to_a > 0)
     
     return overlap_matrix
 
