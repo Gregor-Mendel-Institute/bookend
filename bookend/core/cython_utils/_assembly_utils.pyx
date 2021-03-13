@@ -724,7 +724,7 @@ cdef class Locus:
             self.resolve_containment()
             keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
             self.subset_elements(keep)
-            self.collapse_linear_chains()
+            # self.collapse_linear_chains()
     
     cpdef void subset_elements(self, np.ndarray keep):
         self.overlap = self.overlap[keep,:][:,keep]
@@ -1002,28 +1002,28 @@ cdef class Locus:
             T.attributes.update(S_info)
             T.attributes.update(E_info)
     
-    cpdef void collapse_linear_chains(self):
-        """Collapses chains of vertices connected with a single edge.
-        """
-        cdef int i, chain, parent
-        cdef list keep = []
-        cdef np.ndarray linear_chains, resolve_order
-        cdef dict chain_parent = {}
-        # resolve_order = np.lexsort((-self.information_content, -self.member_content))
-        linear_chains = find_linear_chains(self.overlap)
-        for i,chain in enumerate(linear_chains):
-            if chain == 0:
-                keep.append(i)
-            else:
-                if chain in chain_parent.keys(): # chain exists, merge i into the parent
-                    parent = chain_parent[chain]
-                    self.merge_reads(i, parent)
-                else: # chain doesn't yet exist, this is the parent
-                    chain_parent[chain] = i
-                    keep.append(i)
+    # cpdef void collapse_linear_chains(self):
+    #     """Collapses chains of vertices connected with a single edge.
+    #     """
+    #     cdef int i, chain, parent
+    #     cdef list keep = []
+    #     cdef np.ndarray linear_chains, resolve_order
+    #     cdef dict chain_parent = {}
+    #     # resolve_order = np.lexsort((-self.information_content, -self.member_content))
+    #     linear_chains = find_linear_chains(self.overlap)
+    #     for i,chain in enumerate(linear_chains):
+    #         if chain == 0:
+    #             keep.append(i)
+    #         else:
+    #             if chain in chain_parent.keys(): # chain exists, merge i into the parent
+    #                 parent = chain_parent[chain]
+    #                 self.merge_reads(i, parent)
+    #             else: # chain doesn't yet exist, this is the parent
+    #                 chain_parent[chain] = i
+    #                 keep.append(i)
     
-        if len(keep) < self.number_of_elements:
-            self.subset_elements(np.array(sorted(keep)))
+    #     if len(keep) < self.number_of_elements:
+    #         self.subset_elements(np.array(sorted(keep)))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
@@ -1585,66 +1585,66 @@ cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_e
     
     return breaks
 
-cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, verbose=False):
-    cdef:
-        np.ndarray edges, in_chain, putative_chain_starts, incomp, visited
-        int chain, v, i, o
-        list next_v
-        dict outs, ins, contained_by, contains
-        tuple edge_locations
+# cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, verbose=False):
+#     cdef:
+#         np.ndarray edges, in_chain, putative_chain_starts, incomp, visited
+#         int chain, v, i, o
+#         list next_v
+#         dict outs, ins, contained_by, contains
+#         tuple edge_locations
     
-    edges = overlap_matrix >= 1
-    np.put(edges, range(0,edges.shape[0]**2,edges.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-    outs = {i:[] for i in range(overlap_matrix.shape[0])}
-    ins = {i:[] for i in range(overlap_matrix.shape[0])}
-    contained_by = {i:[] for i in range(overlap_matrix.shape[0])}
-    contains = {i:[] for i in range(overlap_matrix.shape[0])}
-    # edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
-    edge_locations = np.where(edges)
-    for a,b in zip(edge_locations[0],edge_locations[1]):
-        if overlap_matrix[a,b]==2:
-            contained_by[a].append(b)
-            contains[b].append(a)
-        else:
-            outs[a].append(b)
-            ins[b].append(a)
+#     edges = overlap_matrix >= 1
+#     np.put(edges, range(0,edges.shape[0]**2,edges.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
+#     outs = {i:[] for i in range(overlap_matrix.shape[0])}
+#     ins = {i:[] for i in range(overlap_matrix.shape[0])}
+#     contained_by = {i:[] for i in range(overlap_matrix.shape[0])}
+#     contains = {i:[] for i in range(overlap_matrix.shape[0])}
+#     # edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
+#     edge_locations = np.where(edges)
+#     for a,b in zip(edge_locations[0],edge_locations[1]):
+#         if overlap_matrix[a,b]==2:
+#             contained_by[a].append(b)
+#             contains[b].append(a)
+#         else:
+#             outs[a].append(b)
+#             ins[b].append(a)
     
-    incomp = overlap_matrix==-1
-    putative_chain_starts = np.where(np.logical_xor([len(outs[i])>0 for i in range(overlap_matrix.shape[0])], [len(ins[i])>0 for i in range(overlap_matrix.shape[0])]))[0]
-    in_chain = np.zeros(overlap_matrix.shape[0], dtype=np.int32)
-    visited = np.zeros(overlap_matrix.shape[0], dtype=np.bool)
-    # visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
-    visit_queue = deque(putative_chain_starts[np.lexsort((-locus.information_content[putative_chain_starts], -locus.member_content[putative_chain_starts]))], maxlen=overlap_matrix.shape[0])
-    chain = 0
-    while visit_queue:
-        if verbose:print(visit_queue)
-        v = visit_queue.popleft()
-        # if v==9:break
-        if not visited[v]:
-            visited[v] = True
-            if verbose:print("Visiting {}...".format(v))
-            if in_chain[v] == 0: # Node hasn't been visited
-                chain += 1
+#     incomp = overlap_matrix==-1
+#     putative_chain_starts = np.where(np.logical_xor([len(outs[i])>0 for i in range(overlap_matrix.shape[0])], [len(ins[i])>0 for i in range(overlap_matrix.shape[0])]))[0]
+#     in_chain = np.zeros(overlap_matrix.shape[0], dtype=np.int32)
+#     visited = np.zeros(overlap_matrix.shape[0], dtype=np.bool)
+#     # visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
+#     visit_queue = deque(putative_chain_starts[np.lexsort((-locus.information_content[putative_chain_starts], -locus.member_content[putative_chain_starts]))], maxlen=overlap_matrix.shape[0])
+#     chain = 0
+#     while visit_queue:
+#         if verbose:print(visit_queue)
+#         v = visit_queue.popleft()
+#         # if v==9:break
+#         if not visited[v]:
+#             visited[v] = True
+#             if verbose:print("Visiting {}...".format(v))
+#             if in_chain[v] == 0: # Node hasn't been visited
+#                 chain += 1
             
-            if in_chain[v] in [chain, 0]: # Node continues the current chain
-                outgroup = [o for o in outs[v] if in_chain[o] in [chain,0] and not np.any(incomp[contained_by[o],v])]
-                ingroup = [i for i in ins[v] if in_chain[i] in [chain,0] and not np.any(incomp[contained_by[i],v])]
-                connections = sorted(list(set(ingroup + outgroup)))
-                next_v = []
-                if len(connections)>0:
-                    if not np.any(incomp[connections+contained_by[v],:][:,connections+contained_by[v]]): # Chain can't continue
-                        # Add connections that are compatible to the chain
-                        next_v = connections
+#             if in_chain[v] in [chain, 0]: # Node continues the current chain
+#                 outgroup = [o for o in outs[v] if in_chain[o] in [chain,0] and not np.any(incomp[contained_by[o],v])]
+#                 ingroup = [i for i in ins[v] if in_chain[i] in [chain,0] and not np.any(incomp[contained_by[i],v])]
+#                 connections = sorted(list(set(ingroup + outgroup)))
+#                 next_v = []
+#                 if len(connections)>0:
+#                     if not np.any(incomp[connections+contained_by[v],:][:,connections+contained_by[v]]): # Chain can't continue
+#                         # Add connections that are compatible to the chain
+#                         next_v = connections
                 
-                next_v += [o for o in contains[v] if not np.any(incomp[contained_by[o],v])]
-                if verbose:print("Connections: {}".format(connections))
-                if len(next_v) > 0:
-                    if verbose:print('Adding {} to chain {}'.format(next_v, chain))
-                    in_chain[v] = chain
-                    in_chain[next_v] = chain
-                    visit_queue.extendleft([nv for nv in next_v if not visited[nv] and nv not in visit_queue])
+#                 next_v += [o for o in contains[v] if not np.any(incomp[contained_by[o],v])]
+#                 if verbose:print("Connections: {}".format(connections))
+#                 if len(next_v) > 0:
+#                     if verbose:print('Adding {} to chain {}'.format(next_v, chain))
+#                     in_chain[v] = chain
+#                     in_chain[next_v] = chain
+#                     visit_queue.extendleft([nv for nv in next_v if not visited[nv] and nv not in visit_queue])
     
-    return in_chain
+#     return in_chain
 
 
 def sum_subset(mask, array_to_mask):
