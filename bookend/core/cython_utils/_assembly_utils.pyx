@@ -1480,11 +1480,10 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
             
             sa = STRAND_ARRAY[a]
             sb = STRAND_ARRAY[b]
-            if sa != 0 and sb != 0:
-                if sa != sb: # Reads are on different strands, 
-                    COMPATIBILITY[a,b] = -1
-                    COMPATIBILITY[b,a] = -1
-                    continue
+            if (sa == 1 and sb == -1) or (sa == -1 and sb == 1):
+                COMPATIBILITY[a,b] = -1
+                COMPATIBILITY[b,a] = -1
+                continue
             
             info_buffer = (False, False, False, False)
             shared, a_to_b, b_to_a = 0,0,0
@@ -1499,7 +1498,7 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                     break # No need to evaluate the rest of the frags
                 
                 # If not incompatible, then they either share or do not share membership
-                shared += ia == ib # Shared information (inclusion or exclusion)
+                shared += ia == ib and ia != 0 # Shared information (inclusion or exclusion)
                 overlapping = overlapping or ia + ib == 2 # At least one member is shared
                 info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
                 a_to_b += info_buffer == (False, True, True, True) or info_buffer == (True, True, True, False)
