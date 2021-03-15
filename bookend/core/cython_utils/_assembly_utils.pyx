@@ -1501,8 +1501,8 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                 shared += ia == ib and ia != 0 # Shared information (inclusion or exclusion)
                 overlapping = overlapping or ia + ib == 2 # At least one member is shared
                 info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
-                a_to_b += info_buffer == (False, True, True, True) or info_buffer == (True, True, True, False)
-                b_to_a += info_buffer == (True, False, True, True) or info_buffer == (True, True, False, True)
+                a_to_b += info_buffer == (False, True, True, True)
+                b_to_a += info_buffer == (True, True, False, True)
 
             if shared <= 0:
                 continue
