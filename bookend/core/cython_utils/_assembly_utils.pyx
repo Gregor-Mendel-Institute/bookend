@@ -1475,7 +1475,6 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
     for a in range(maxlen):
         for b in range(a,maxlen):
             if b == a:
-                COMPATIBILITY[a,b] = 2 # A read is necessarily identical to itself
                 continue
             
             sa = STRAND_ARRAY[a]
