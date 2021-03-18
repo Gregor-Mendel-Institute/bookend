@@ -633,6 +633,9 @@ cdef class Locus:
         (2) are incompatible."""
         cdef np.ndarray incompatible, members, competitors
         incompatible =  np.where(self.overlap[:,index]==-1)[0]
+        if len(incompatible) == 0:
+            return incompatible
+        
         members = np.where(self.membership[index,:-4]==1)[0]
         competitors = incompatible[np.where(np.sum(self.membership[incompatible,:][:,members]==1, axis=1)>0)[0]]
         return competitors
