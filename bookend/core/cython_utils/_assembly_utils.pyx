@@ -468,7 +468,6 @@ cdef class Locus:
         
         self.reduce_membership()
         self.filter_members_by_strand()
-        self.denoise()
         self.apply_intron_filter()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
@@ -733,7 +732,8 @@ cdef class Locus:
         else:
             self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
         
-        # if reduce:
+        if reduce:
+            self.denoise()
         #     maxIC = self.membership.shape[1]
         #     # self.resolve_containment()
         #     keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
