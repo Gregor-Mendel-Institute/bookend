@@ -741,7 +741,9 @@ cdef class Locus:
         #     # self.collapse_linear_chains()
     
     cpdef void subset_elements(self, np.ndarray keep):
-        self.overlap = self.overlap[keep,:][:,keep]
+        if not self.overlap is None:
+            self.overlap = self.overlap[keep,:][:,keep]
+        
         self.membership = self.membership[keep,:]
         self.weight_array = self.weight_array[keep,:]
         self.member_weights = self.member_weights[keep,:]
