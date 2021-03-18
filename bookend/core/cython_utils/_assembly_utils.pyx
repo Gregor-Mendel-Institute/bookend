@@ -38,7 +38,7 @@ cdef class Locus:
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints
-    cdef public list transcripts, traceback, sources, graphs
+    cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False):
@@ -800,11 +800,9 @@ cdef class Locus:
         for c in range(component_bool.shape[1]):
             if np.any(component_bool[:,c]):
                 indices = np.where(component_bool[:,c])[0]
-                dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
-                
-                
-                self.merge_reads(child_index, parent_index)
-                indices = simplified_indices
+                # dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
+                # self.merge_reads(child_index, parent_index)
+                # indices = simplified_indices
                 subproblems += [indices]
         
         
@@ -816,12 +814,12 @@ cdef class Locus:
         Each graph is an _element_graph.ElementGraph() object with a built-in assembly method.
         """
         if reduce: # Split graph into connected components and solve each on its own
-            subproblem_indices = self.get_subproblems()
+            self.subproblem_indices = self.get_subproblems()
         else:
-            subproblem_indices = (list(range(self.membership.shape[0])))
+            self.subproblem_indices = [list(range(self.membership.shape[0]))]
 
         self.graphs = list()
-        for indices in subproblem_indices:
+        for indices in self.subproblem_indices:
             self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive))
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
@@ -1422,7 +1420,7 @@ cdef class strandedComponents():
 cdef class simplifyDFS():
     cdef public dict G, X
     cdef public int vertices, c
-    cdef np.ndarray visited, component, pre, post
+    cdef public np.ndarray visited, component, pre, post
     def __init__(self, overlap_matrix, search_order):
         self.G = {i:[] for i in range(overlap_matrix.shape[0])}
         edge_locations = np.where(overlap_matrix >= 1)
@@ -1472,12 +1470,12 @@ cdef class simplifyDFS():
         self.visited[v] = True
         clock = self.Previsit(v, clock)
         for w in self.G[v]:
-            # print('{}->{} ({})'.format('ABCDEFGHIJKLM'[v],'ABCDEFGHIJKLM'[w],self.visited[w]))
+            # print('{}->{} ({})'.format(v,w,self.visited[w]))
             if not self.visited[w]:
-                # print("Visiting {}".format('ABCDEFGHIJKLM'[w]))
+                # print("Visiting {}".format(w))
                 clock = self.Explore(w, clock)
         
-        # print("Closing {}".format('ABCDEFGHIJKLM'[v]))
+        # print("Closing {}".format(v))
         clock = self.Postvisit(v, clock)
         # print(self.component)
         return clock
