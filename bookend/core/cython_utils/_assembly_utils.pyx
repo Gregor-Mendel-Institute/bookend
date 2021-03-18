@@ -621,7 +621,7 @@ cdef class Locus:
         self.strand_array[flipstrand_minus] = 1
         self.membership[flipstrand_minus,-4:-2] = -1
         if np.any(np.logical_not(keep)):
-            self.subset_elements(keep)
+            self.subset_elements(np.where(keep)[0])
         
         if np.any(flipstrand_plus) or np.any(flipstrand_minus):
             self.reduce_membership()
@@ -741,16 +741,14 @@ cdef class Locus:
         #     # self.collapse_linear_chains()
     
     cpdef void subset_elements(self, np.ndarray keep):
-        if not self.overlap is None:
-            self.overlap = self.overlap[keep,:][:,keep]
-        
+        if not self.overlap is None: self.overlap = self.overlap[keep,:][:,keep]
         self.membership = self.membership[keep,:]
         self.weight_array = self.weight_array[keep,:]
         self.member_weights = self.member_weights[keep,:]
         self.rep_array = self.rep_array[keep]
         self.strand_array = self.strand_array[keep]
-        self.information_content = self.information_content[keep]
-        self.member_content = self.member_content[keep]
+        if not self.information_content is None: self.information_content = self.information_content[keep]
+        if not self.member_content is None: self.member_content = self.member_content[keep]
         self.member_lengths = self.member_lengths[keep]
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         self.number_of_elements = self.membership.shape[0]
