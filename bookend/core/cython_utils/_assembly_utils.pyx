@@ -759,7 +759,7 @@ cdef class Locus:
         cdef strandedComponents cc
         cdef simplifyDFS dfs
         cdef list subproblems
-        cdef np.ndarray component_bool indices
+        cdef np.ndarray component_bool, indices
         subproblems = []
         self.adj = {i:[] for i in range(self.overlap.shape[0])}
         edge_locations = np.where(self.overlap >= 1)
