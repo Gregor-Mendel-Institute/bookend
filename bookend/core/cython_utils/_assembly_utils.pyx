@@ -36,19 +36,17 @@ cdef class Locus:
     cdef public bint naive,  use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
-    cdef public dict J_plus, J_minus, end_ranges, source_lookup
+    cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints
-    cdef public list transcripts, traceback, sources
-    cdef public object graph
+    cdef public list transcripts, traceback, sources, graphs
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.15, use_attributes=False, oligo_len=20, ignore_ends=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
         self.traceback = []
         self.branchpoints = set()
-        self.member_weights = np.empty(0)
         self.chunk_number = chunk_number
         self.naive = naive
         self.minimum_proportion = minimum_proportion
@@ -196,36 +194,8 @@ cdef class Locus:
             for rng in self.end_ranges[endtype]:
                 prohibited_positions.update(range(rng.left, rng.right+1))
         
-        # self.add_gaps(prohibited_positions)
         if 0 not in prohibited_positions:self.branchpoints.add(0)
         if len(self) not in prohibited_positions:self.branchpoints.add(len(self))
-    
-    # cpdef void add_gaps(self, set prohibited_positions):
-    #     """Updates branchpoints to include the starts and ends of coverage gaps"""
-    #     cdef float cutoff
-    #     cdef list gaps_plus, gaps_minus
-    #     cdef (int, int) block, maxdelta
-    #     if np.sum(self.cov_plus)>0:
-    #         cutoff = max(1., np.mean(self.cov_plus[self.cov_plus>0])*self.minimum_proportion)
-    #         gaps_plus = ru.get_gaps(self.cov_plus, self.extend, cutoff)
-    #         for block in gaps_plus: # Iterate over plus-stranded gaps
-    #             l, r = block
-    #             if l not in prohibited_positions: # Potential unlabeled e_plus
-    #                 self.branchpoints.add(l)
-                
-    #             if r not in prohibited_positions: # Potential unlabeled s_plus
-    #                 self.branchpoints.add(r)
-        
-    #     if np.sum(self.cov_minus)>0:
-    #         cutoff = max(1., np.mean(self.cov_minus[self.cov_minus>0])*self.minimum_proportion)
-    #         gaps_minus = ru.get_gaps(self.cov_minus, self.extend, cutoff)
-    #         for block in gaps_minus: # Iterate over minus-stranded gaps
-    #             l, r = block
-    #             if l not in prohibited_positions:
-    #                 self.branchpoints.add(l)
-                
-    #             if r not in prohibited_positions:
-    #                 self.branchpoints.add(r)
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
@@ -322,7 +292,7 @@ cdef class Locus:
         cdef set discard_frags
         cdef (int, int) block, span
         cdef str junction_hash
-        
+        self.member_weights = np.empty(0)
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -475,7 +445,7 @@ cdef class Locus:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
         discard_frags = set()
-        if threshold > 0:
+        if threshold >= 0:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
                 frag_depth = self.depth[l:r]
@@ -497,8 +467,9 @@ cdef class Locus:
             return True
         
         self.reduce_membership()
-        # self.fill_gaps()
         self.filter_members_by_strand()
+        self.denoise()
+        self.apply_intron_filter()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
@@ -527,40 +498,8 @@ cdef class Locus:
         
         return junctions_in_range
     
-    # cpdef void fill_gaps(self):
-    #     """Checks each gapped read to see if sufficient information exists to complete the gap.
-    #     If so, the gap is filled and the read's weight is lightened to reflect the fact that these
-    #     reads were not actually sequenced."""
-    #     cdef np.ndarray members, gaps, lefts, rights
-    #     cdef tuple ones
-    #     members = self.membership[:,:-4] == 1
-    #     ones = np.where(members)
-    #     gaps = np.zeros(self.membership.shape, dtype=np.bool)
-    #     lefts = np.full(self.membership.shape[0], -1)
-    #     rights = np.full(self.membership.shape[0], -1)
-    #     for i in range(len(ones[0])):
-    #         row = ones[0][i]
-    #         col = ones[1][i]
-    #         if lefts[row] == -1:lefts[row] = col
-    #         if col > rights[row]:rights[row] = col
-        
-    #     for i in range(self.membership.shape[0]):
-    #         gaps[i, np.where(self.membership[i,lefts[i]:rights[i]+1]==0)[0]+lefts[i]] = True
-    #         if 
-        
-    #     for frag in range(self.membership.shape[1]):
-    #         if np.any(gaps[:,frag]):
-    #             reads_that_span = np.logical_and(lefts<=frag,rights>=frag)
-
-    #     gapsizes = np.sum(gaps,axis=1)
-    #     gaporder = np.argsort(gapsizes)
-    #     for i in self.membership.shape[0]:
-    #         g = gaporder[i]
-    #         if gapsizes[g] == 0:continue
-    #     self.reduce_membership()
-            
     cdef void filter_members_by_strand(self):
-        """If a read is in a region a region with >1-minimum_proportion coverage
+        """If a read is in a region with >1-minimum_proportion coverage
         of a specific strand, assign this strand to the read. If the read is
         the opposite strand, discard it."""
         cdef float strand_ratio
@@ -615,6 +554,81 @@ cdef class Locus:
         
         self.subset_elements(keep)
     
+    cpdef void apply_intron_filter(self):
+        """Removes reads if they are inferred to belong to an unprocessed transcript,
+        i.e. a retained intron, run-on transcription downstream of a 3' end, or
+        transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
+        cdef EndRange endrange
+        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal
+        cdef int strand, number_of_frags
+        cdef str junction
+        cdef (int, int) span
+        # Check flowthrough across all starts/ends
+        # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
+        remove_plus = np.zeros(self.membership.shape[0], dtype=np.bool)
+        remove_minus = np.zeros(self.membership.shape[0], dtype=np.bool)
+        number_of_frags = self.membership.shape[1]
+        for endtype in range(4):
+            for endrange in self.end_ranges[endtype]:
+                frag = self.frag_by_pos[endrange.terminal - (endtype in [1,2])]
+                if endtype == 0 and frag > 0: # S+, check plus-stranded left flowthrough
+                    strand, overrun_frag = 1, frag-1
+                elif endtype == 1 and frag < number_of_frags: # E+, check plus-stranded right flowthrough
+                    strand, overrun_frag = 1, frag+1
+                elif endtype == 2 and frag < number_of_frags: # S-, check minus-stranded right flowthrough
+                    strand, overrun_frag = -1, frag+1
+                elif endtype == 3 and frag > 0: # E-, check minus-stranded left flowthrough
+                    strand, overrun_frag = -1, frag-1
+                else:
+                    continue
+                
+                overlappers = np.where(np.logical_and(np.sum(self.membership[:,[frag,overrun_frag]]==1,axis=1)>0, np.abs(self.strand_array-strand)<2))[0]
+                runs_over = self.membership[overlappers,overrun_frag]==1
+                if np.any(runs_over):
+                    flowthrough = overlappers[runs_over]
+                    terminal = overlappers[np.logical_not(runs_over)]
+                    # if np.any(self.membership[terminal,endtype-4]==1) and not np.any(self.membership[flowthrough,endtype-4]==1): # At least one read actually stops here
+                    if np.any(self.membership[terminal,endtype-4]==1): # At least one read actually stops here
+                        terminal_weight = np.sum(self.weight_array[terminal,:],axis=1)
+                        terminal_weight[self.strand_array[terminal]==0] *= abs(-strand-self.frag_strand_ratios[frag])-(strand>0)
+                        flowthrough_weight = np.sum(self.weight_array[flowthrough,:],axis=1)
+                        flowthrough_weight[self.strand_array[flowthrough]==0] *= abs(-strand-self.frag_strand_ratios[overrun_frag])-(strand>0)
+                        if np.sum(flowthrough_weight) < self.intron_filter * np.sum(terminal_weight):
+                            # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
+                            if strand == 1:
+                                remove_plus[flowthrough] = True
+                            else:
+                                remove_minus[flowthrough] = True
+
+        # Check same-stranded intron retention
+        strand = 1
+        for junction in self.J_plus.keys():
+            span = self.string_to_span(junction)
+        
+        strand = -1
+        for junction in self.J_minus.keys():
+            span = self.string_to_span(junction)
+        
+        # Remove reads that were cut by at least one of the filters above.
+        # A stranded read will be removed entirely
+        keep = np.ones(self.membership.shape[0], dtype=np.bool)
+        keep[np.logical_and(self.strand_array==1, remove_plus)] = False
+        keep[np.logical_and(self.strand_array==-1, remove_minus)] = False
+        # If a read is in both remove_plus and remove_minus, remove it entirely regardless of strand
+        keep[np.logical_and(remove_plus, remove_minus)] = False
+        # A nonstranded read will be assigned entirely to the other strand
+        flipstrand_plus = np.logical_and(remove_plus, keep)
+        self.strand_array[flipstrand_plus] = -1
+        self.membership[flipstrand_plus,-2:] = -1
+        flipstrand_minus = np.logical_and(remove_minus, keep)
+        self.strand_array[flipstrand_minus] = 1
+        self.membership[flipstrand_minus,-4:-2] = -1
+        if np.any(np.logical_not(keep)):
+            self.subset_elements(keep)
+        
+        if np.any(flipstrand_plus) or np.any(flipstrand_minus):
+            self.reduce_membership()
+        
     cpdef np.ndarray get_competitors(self, int index):
         """Given an element index, return a list of all elements that 
         (1) share at least one member and 
@@ -719,7 +733,6 @@ cdef class Locus:
             self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
         
         if reduce:
-            self.denoise()
             maxIC = self.membership.shape[1]
             self.resolve_containment()
             keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
@@ -740,148 +753,96 @@ cdef class Locus:
         self.number_of_elements = self.membership.shape[0]
         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
+    cpdef list get_subproblems(self):
+        """Split the Overlap Matrix into a list of connected components.
+        Each component can be assembled independently."""
+        cdef strandedComponents cc
+        cdef simplifyDFS dfs
+        cdef list subproblems
+        cdef np.ndarray component_bool indices
+        subproblems = []
+        self.adj = {i:[] for i in range(self.overlap.shape[0])}
+        edge_locations = np.where(self.overlap >= 1)
+        for a,b in zip(edge_locations[0],edge_locations[1]):
+            self.adj[a].append(b)
+        
+        self.exc = {i:set(np.where(self.overlap[i,:]==-1)[0]) for i in range(self.overlap.shape[0])}
+        cc = strandedComponents(self.adj, self.strand_array)
+        component_bool = np.zeros((self.membership.shape[0], cc.c), dtype=np.bool)
+        for c in cc.pc:
+            indices = cc.component_plus==c
+            prior_overlap = np.any(component_bool[indices,:c],axis=0)
+            if not self.ignore_ends:
+                if not np.all(np.sum(self.membership[indices,-4:-2]==1,axis=0)>0): # At least one start and end exists in the component
+                    continue
+            
+            component_bool[:,c] = indices
+            if np.any(prior_overlap):
+                prior_components = np.where(prior_overlap)[0]
+                component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
+                component_bool[:,prior_components] = False
+        
+        for c in cc.mc:
+            indices = cc.component_minus==c
+            prior_overlap = np.any(component_bool[indices,:c],axis=0)
+            if not self.ignore_ends:
+                if not np.all(np.sum(self.membership[indices,-2:]==1,axis=0)>0): # At least one start and end exists in the component
+                    continue
+            
+            component_bool[:,c] = indices
+            if np.any(prior_overlap):
+                prior_components = np.where(prior_overlap)[0]
+                component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
+                component_bool[:,prior_components] = False
+        
+        subproblems = []
+        for c in range(component_bool.shape[1]):
+            if np.any(component_bool[:,c]):
+                indices = np.where(component_bool[:,c])[0]
+                dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
+                
+                self.merge_reads(child_index, parent_index)
+
+                subproblems += [indices]
+        
+        
+        indices = simplified_indices
+            
+        return subproblems
+    
     cpdef void build_graph(self, reduce=True):
-        """Constructs one or more graphs from 
-        connection values (ones) in the overlap matrix.
-        Additionally, stores the set of excluded edges for each node as an 'antigraph'
+        """Constructs one or more graphs from connection values (ones) in the overlap matrix.
+        Each graph is an _element_graph.ElementGraph() object with a built-in assembly method.
         """
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive)
+        if reduce: # Split graph into connected components and solve each on its own
+            subproblem_indices = self.get_subproblems()
+        else:
+            subproblem_indices = (list(range(self.membership.shape[0])))
+
+        self.graphs = list()
+        for indices in subproblem_indices:
+            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive))
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
         cdef float total_coverage
-        self.graph.assemble(self.minimum_proportion)
-        if complete: # Discard all paths that aren't complete
-            paths_to_remove = [i for i in range(len(self.graph.paths)) if not self.graph.paths[i].complete]
-        else: # Still remove paths with internal gaps
-            paths_to_remove = [i for i in range(len(self.graph.paths)) if self.graph.paths[i].has_gaps]
-        
-        self.graph.remove_paths(sorted(set(paths_to_remove)))
-        self.graph.assign_weights()
-        paths_to_remove = self.filter_truncations()
-        if self.intron_filter > 0:
-            paths_to_remove += self.filter_retained_introns()
-        
-        assigned_bases = np.array([path.bases for path in self.graph.paths])
-        assigned_sum = np.sum(assigned_bases)
-        updated_bases = np.array([path.bases for path in self.graph.paths])
-        while np.sum(np.abs(updated_bases-assigned_bases)) < self.minimum_proportion * assigned_sum:
-            assigned_bases = updated_bases
-            self.graph.assign_weights()
-            updated_bases = np.array([path.bases for path in self.graph.paths])
-        
-        for i in range(len(self.graph.paths)):
-            path = self.graph.paths[i]
-            self.transcripts.append(self.convert_path(path, i+1))
-        
+        cdef int transcript_number
+        for graph in self.graphs:
+            graph.assemble(self.minimum_proportion)
+            if complete: # Discard all paths that aren't complete
+                paths_to_remove = [i for i in range(len(graph.paths)) if not graph.paths[i].complete]
+            else: # Still remove paths with internal gaps
+                paths_to_remove = [i for i in range(len(graph.paths)) if graph.paths[i].has_gaps]
+            
+            graph.remove_paths(sorted(set(paths_to_remove)))
+            graph.assign_weights()
+            paths_to_remove = self.filter_truncations()
+            for transcript_number in range(len(graph.paths)):
+                path = graph.paths[transcript_number]
+                self.transcripts.append(self.convert_path(path, transcript_number+1))
+            
         self.add_transcript_attributes()
     
-    cdef list filter_retained_introns(self):
-        """Removes paths from the list of assembled paths if they
-        contain at least one 'exonic' region that accumulates to
-        < intron_filter (float 0-1) of the spliced + unspliced coverage."""
-        cdef:
-            list paths_to_remove
-            char strand
-            dict junctions_as_frags, junctions
-            int i, number_of_paths, l, r, frag
-            (int, int) junction, frag_pair
-            str junction_hash, frag_hash
-            float junction_count, intronic_coverage, spliced_coverage
-            set members
-        
-        number_of_paths = len(self.graph.paths)
-        paths_to_remove = []
-        for strand in [-1, 1]:
-            junctions_as_frags = {}
-            junctions = self.J_plus if strand == 1 else self.J_minus
-            for junction_hash, junction_count in junctions.items():
-                # Convert all intron pair positions to frag indices
-                block = self.string_to_span(junction_hash)
-                l = block[0]
-                r = block[1]
-                frag_pair = (self.frag_by_pos[l], self.frag_by_pos[r-1])
-                junctions_as_frags[self.span_to_string(frag_pair)] = junction_count      
-            
-            for i in range(number_of_paths):
-                path = self.graph.paths[i]
-                members = path.members
-                if path.strand == strand:
-                    for frag_hash in junctions_as_frags.keys():
-                        # Check each like-stranded intron: is it fully intact?
-                        block = self.string_to_span(frag_hash)
-                        is_spliced_out = False
-                        for frag in range(block[0],block[1]+1):
-                            if frag not in members:
-                                is_spliced_out = True
-                        
-                        if not is_spliced_out: # Intron is retained, apply filter
-                            spliced_coverage = junctions_as_frags[frag_hash]
-                            if path.coverage < self.intron_filter * (path.coverage + spliced_coverage):
-                                paths_to_remove.append(i)
-                                break
-        
-        return paths_to_remove
-    
-    cpdef list filter_truncations(self):
-        """Removes paths from the list of assembled paths if they
-        are a truncated version of a longer path in the set and they
-        do not account for a majority of the reads of the set of transcripts
-        compatible in this way."""
-        cdef:
-            list paths_to_remove, number_of_members, end_indices
-            int index, n, f, i, j
-            set members, nonmembers
-            float container_reads
-            np.ndarray paths_in_member_order
-        
-        paths_to_remove = []
-        if len(self.graph.paths) <= 1:
-            return paths_to_remove
-        
-        end_indices = sorted(list(self.graph.paths[0].end_indices))
-        number_of_paths = len(self.graph.paths)
-        # Visit each path once by increasing number of members
-        number_of_members = [len(path.members) for path in self.graph.paths]
-        paths_in_member_order = np.argsort(number_of_members)
-        for i in range(number_of_paths-1):
-            # Remove the start incompatibilities and check if the path
-            # becomes contained in any other path.
-            index = paths_in_member_order[i]
-            path = self.graph.paths[index]
-            members = copy.copy(path.members)
-            nonmembers = copy.copy(path.nonmembers)
-            if path.strand == 1:
-                members.discard(end_indices[0]) # Remove S+
-                members.discard(end_indices[1]) # Remove E+
-            elif path.strand == -1:
-                members.discard(end_indices[2]) # Remove S-
-                members.discard(end_indices[3]) # Remove E-
-            
-            for f in range(path.LM): # Remove all incompatibilities upstream
-                nonmembers.discard(f)
-            
-            for f in range(path.RM, end_indices[0]): # Remove all incompatibilities upstream
-                nonmembers.discard(f)
-            
-            container_reads = 0
-            for j in range(i+1, number_of_paths):
-                other_index = paths_in_member_order[j]
-                other_path = self.graph.paths[other_index]
-                if other_path.strand == path.strand:
-                    if len(members.difference(other_path.members)) == 0:
-                        # All of path's members are in other_path
-                        if len(nonmembers.intersection(other_path.members)) == 0:
-                            if len(other_path.nonmembers.intersection(members)) == 0:
-                                # path is fully contained in other_path
-                                container_reads += np.sum(other_path.weights)
-            
-            # After all containers are found, compare path.reads to sum of all containers
-            if np.sum(path.weights) < container_reads:
-                paths_to_remove.append(index)
-
-        return paths_to_remove
-
     cpdef void resolve_containment(self):
         """Given a overlap matrix, 'bubble up' the weight of
         all reads that have one or more 'contained by' relationships
@@ -1001,29 +962,6 @@ cdef class Locus:
             
             T.attributes.update(S_info)
             T.attributes.update(E_info)
-    
-    # cpdef void collapse_linear_chains(self):
-    #     """Collapses chains of vertices connected with a single edge.
-    #     """
-    #     cdef int i, chain, parent
-    #     cdef list keep = []
-    #     cdef np.ndarray linear_chains, resolve_order
-    #     cdef dict chain_parent = {}
-    #     # resolve_order = np.lexsort((-self.information_content, -self.member_content))
-    #     linear_chains = find_linear_chains(self.overlap)
-    #     for i,chain in enumerate(linear_chains):
-    #         if chain == 0:
-    #             keep.append(i)
-    #         else:
-    #             if chain in chain_parent.keys(): # chain exists, merge i into the parent
-    #                 parent = chain_parent[chain]
-    #                 self.merge_reads(i, parent)
-    #             else: # chain doesn't yet exist, this is the parent
-    #                 chain_parent[chain] = i
-    #                 keep.append(i)
-    
-    #     if len(keep) < self.number_of_elements:
-    #         self.subset_elements(np.array(sorted(keep)))
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
@@ -1428,7 +1366,120 @@ cdef class AnnotationLocus(Locus):
     
 
 ##########################################
+cdef class strandedComponents():
+    cdef public int V, c
+    cdef public np.ndarray strands, visited_plus, visited_minus, component_plus, component_minus
+    cdef public list  pc, mc
+    cdef public dict adj
+    def __init__(self, adjacencies, strands):
+        """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
+        self.adj = copy.deepcopy(adjacencies)
+        for k,v in self.reverseGraph(adjacencies).items():
+            self.adj[k] += v
+        
+        self.strands = strands
+        self.V = len(self.adj.keys())
+        self.visited_plus = np.zeros(self.V, dtype=np.bool)
+        self.component_plus = np.full(self.V, -1, dtype=np.int32)
+        self.visited_minus = np.zeros(self.V, dtype=np.bool)
+        self.component_minus = np.full(self.V, -1, dtype=np.int32)
+        pluses = np.where(self.strands==1)[0]
+        minuses = np.where(self.strands==-1)[0]
+        self.pc = []
+        self.mc = []
+        self.c = 0
+        for v in pluses:
+            if not self.visited_plus[v]:
+                self.pc.append(self.c)
+                self.Explore(v, self.c, self.visited_plus, self.component_plus, 1)
+                self.c += 1
+        
+        self.c += 1
+        for v in minuses:
+            if not self.visited_minus[v]:
+                self.mc.append(self.c)
+                self.Explore(v, self.c, self.visited_minus, self.component_minus, -1)
+                self.c += 1
+    
+    def reverseGraph(self, edges):
+        cdef dict reverse_edges
+        reverse_edges = {v:[] for v in edges.keys()}
+        for v in edges.keys():
+            for w in edges[v]:
+                reverse_edges[w] += [v]
+        
+        return reverse_edges
+    
+    def Explore(self, v, c, visited, component, strand):
+        visited[v] = True
+        component[v] = c
+        for w in self.adj[v]:
+            if not visited[w] and self.strands[w] != -strand:
+                # print('{}-{}'.format(v,w))
+                self.Explore(w, c, visited, component, strand)
 
+cdef class simplifyDFS():
+    cdef public dict G, X
+    cdef public int vertices, c
+    cdef np.ndarray visited, component, pre, post
+    def __init__(self, overlap_matrix, search_order):
+        self.G = {i:[] for i in range(overlap_matrix.shape[0])}
+        edge_locations = np.where(overlap_matrix >= 1)
+        for a,b in zip(edge_locations[0],edge_locations[1]):
+            self.G[a].append(b)
+        
+        self.X = {i:set(np.where(overlap_matrix[i,:]==-1)[0]) for i in range(overlap_matrix.shape[0])}
+        self.vertices = len(self.G.keys())
+        self.visited = np.zeros(self.vertices, dtype=np.bool)
+        self.component = np.full(self.vertices, -1, dtype=np.int32)
+        self.pre = np.zeros(self.vertices, dtype=np.int32)
+        self.post = np.zeros(self.vertices, dtype=np.int32)
+        self.c = 0
+        clock = 0
+        for v in search_order:
+            if not self.visited[v]:
+                clock = self.Explore(v, clock)
+    
+    def Previsit(self, v, clock):
+        self.pre[v] = clock
+        return clock + 1
+    
+    def Postvisit(self, v, clock):
+        self.post[v] = clock
+        if len(self.G[v]) == 0: # If no outgroups, necessarily a new component
+            self.c += 1
+            self.component[v] = self.c
+        else: # Check if all outgroups are in the same component (that isn't -1)
+            outgroups = np.unique(self.component[self.G[v]])
+            if len(outgroups) > 1: # Incompatible groups downstream
+                self.c += 1
+                self.component[v] = self.c
+            else:
+                outgroup_exclusions = set()
+                for o in self.G[v]:
+                    outgroup_exclusions.update(self.X[o])
+                
+                if self.X[v].issubset(outgroup_exclusions):
+                    self.component[v] = outgroups[0]
+                else:
+                    self.c += 1
+                    self.component[v] = self.c
+        
+        return clock + 1
+    
+    def Explore(self, v, clock):
+        self.visited[v] = True
+        clock = self.Previsit(v, clock)
+        for w in self.G[v]:
+            # print('{}->{} ({})'.format('ABCDEFGHIJKLM'[v],'ABCDEFGHIJKLM'[w],self.visited[w]))
+            if not self.visited[w]:
+                # print("Visiting {}".format('ABCDEFGHIJKLM'[w]))
+                clock = self.Explore(w, clock)
+        
+        # print("Closing {}".format('ABCDEFGHIJKLM'[v]))
+        clock = self.Postvisit(v, clock)
+        # print(self.component)
+        return clock
 
 cpdef np.ndarray get_information_content(np.ndarray[char, ndim=2] membership_matrix):
     """Given a matrix of membership values,
@@ -1486,7 +1537,7 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
             
             info_buffer = (False, False, False, False)
             shared, a_to_b, b_to_a = 0,0,0
-            overlapping = False
+            overlapping, in_a, in_b = False, False, False
             for i in range(MEMBERSHIP.shape[1]):
                 ia = MEMBERSHIP[a,i]
                 ib = MEMBERSHIP[b,i]
@@ -1500,9 +1551,11 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                 shared += ia == ib and ia != 0 # Shared information (inclusion or exclusion)
                 overlapping = overlapping or ia + ib == 2 # At least one member is shared
                 info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
-                a_to_b += info_buffer == (False, True, True, True)
-                b_to_a += info_buffer == (True, True, False, True)
-
+                a_to_b += in_a and info_buffer == (False, True, True, True)
+                b_to_a += in_b and info_buffer == (True, True, False, True)
+                in_a = ia!=0 and (in_a or ia==1)
+                in_b = ib!=0 and (in_b or ib==1)
+            
             if shared <= 0:
                 continue
             
@@ -1564,88 +1617,6 @@ cpdef (int, int) first_and_last(np.ndarray[char, ndim=1] membership_row):
         return (indices[0],indices[-1])
     else:
         return (-1, -1)
-
-cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_ends=True):
-    """Identifies all points along the membership array where it could
-    be cleanly divided in two, with reads entirely on one side or the other."""
-    cdef np.ndarray boundaries, gaps, boolarray
-    cdef list breaks = []
-    if ignore_ends:
-        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix[:,:-4])
-        gaps = np.where(np.sum(membership_matrix[:,:-4]==1,0)==0)[0]
-    else:
-        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix)
-        gaps = np.where(np.sum(membership_matrix==1,0)==0)[0]
-    
-    for g in gaps:
-        boolarray = g > boundaries
-        if not np.any(np.sum(boolarray, 1)==1): # G isn't inside any membership ranges
-            if len(np.unique(boolarray)) == 2:
-                breaks.append(g)
-    
-    return breaks
-
-# cpdef np.ndarray find_linear_chains(np.ndarray[char, ndim=2] overlap_matrix, verbose=False):
-#     cdef:
-#         np.ndarray edges, in_chain, putative_chain_starts, incomp, visited
-#         int chain, v, i, o
-#         list next_v
-#         dict outs, ins, contained_by, contains
-#         tuple edge_locations
-    
-#     edges = overlap_matrix >= 1
-#     np.put(edges, range(0,edges.shape[0]**2,edges.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-#     outs = {i:[] for i in range(overlap_matrix.shape[0])}
-#     ins = {i:[] for i in range(overlap_matrix.shape[0])}
-#     contained_by = {i:[] for i in range(overlap_matrix.shape[0])}
-#     contains = {i:[] for i in range(overlap_matrix.shape[0])}
-#     # edges = np.logical_and(edges, overlap_matrix.transpose()!=2)
-#     edge_locations = np.where(edges)
-#     for a,b in zip(edge_locations[0],edge_locations[1]):
-#         if overlap_matrix[a,b]==2:
-#             contained_by[a].append(b)
-#             contains[b].append(a)
-#         else:
-#             outs[a].append(b)
-#             ins[b].append(a)
-    
-#     incomp = overlap_matrix==-1
-#     putative_chain_starts = np.where(np.logical_xor([len(outs[i])>0 for i in range(overlap_matrix.shape[0])], [len(ins[i])>0 for i in range(overlap_matrix.shape[0])]))[0]
-#     in_chain = np.zeros(overlap_matrix.shape[0], dtype=np.int32)
-#     visited = np.zeros(overlap_matrix.shape[0], dtype=np.bool)
-#     # visit_queue = deque(putative_chain_starts, maxlen=overlap_matrix.shape[0])
-#     visit_queue = deque(putative_chain_starts[np.lexsort((-locus.information_content[putative_chain_starts], -locus.member_content[putative_chain_starts]))], maxlen=overlap_matrix.shape[0])
-#     chain = 0
-#     while visit_queue:
-#         if verbose:print(visit_queue)
-#         v = visit_queue.popleft()
-#         # if v==9:break
-#         if not visited[v]:
-#             visited[v] = True
-#             if verbose:print("Visiting {}...".format(v))
-#             if in_chain[v] == 0: # Node hasn't been visited
-#                 chain += 1
-            
-#             if in_chain[v] in [chain, 0]: # Node continues the current chain
-#                 outgroup = [o for o in outs[v] if in_chain[o] in [chain,0] and not np.any(incomp[contained_by[o],v])]
-#                 ingroup = [i for i in ins[v] if in_chain[i] in [chain,0] and not np.any(incomp[contained_by[i],v])]
-#                 connections = sorted(list(set(ingroup + outgroup)))
-#                 next_v = []
-#                 if len(connections)>0:
-#                     if not np.any(incomp[connections+contained_by[v],:][:,connections+contained_by[v]]): # Chain can't continue
-#                         # Add connections that are compatible to the chain
-#                         next_v = connections
-                
-#                 next_v += [o for o in contains[v] if not np.any(incomp[contained_by[o],v])]
-#                 if verbose:print("Connections: {}".format(connections))
-#                 if len(next_v) > 0:
-#                     if verbose:print('Adding {} to chain {}'.format(next_v, chain))
-#                     in_chain[v] = chain
-#                     in_chain[next_v] = chain
-#                     visit_queue.extendleft([nv for nv in next_v if not visited[nv] and nv not in visit_queue])
-    
-#     return in_chain
-
 
 def sum_subset(mask, array_to_mask):
     """Given an array and a boolean mask, return
