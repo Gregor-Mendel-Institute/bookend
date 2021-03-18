@@ -799,10 +799,8 @@ cdef class Locus:
         for c in range(component_bool.shape[1]):
             if np.any(component_bool[:,c]):
                 indices = np.where(component_bool[:,c])[0]
-                dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
-                
-                self.merge_reads(child_index, parent_index)
-
+                # dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
+                # self.merge_reads(child_index, parent_index)
                 subproblems += [indices]
         
         
