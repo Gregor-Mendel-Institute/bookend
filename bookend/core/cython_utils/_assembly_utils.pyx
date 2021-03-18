@@ -801,10 +801,10 @@ cdef class Locus:
                 indices = np.where(component_bool[:,c])[0]
                 # dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
                 # self.merge_reads(child_index, parent_index)
+                # indices = simplified_indices
                 subproblems += [indices]
         
         
-        indices = simplified_indices
             
         return subproblems
     
@@ -1478,6 +1478,26 @@ cdef class simplifyDFS():
         clock = self.Postvisit(v, clock)
         # print(self.component)
         return clock
+
+cpdef list find_breaks(np.ndarray[char, ndim=2] membership_matrix, bint ignore_ends=True):
+    """Identifies all points along the membership array where it could
+    be cleanly divided in two, with reads entirely on one side or the other."""
+    cdef np.ndarray boundaries, gaps, boolarray
+    cdef list breaks = []
+    if ignore_ends:
+        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix[:,:-4])
+        gaps = np.where(np.sum(membership_matrix[:,:-4]==1,0)==0)[0]
+    else:
+        boundaries = np.apply_along_axis(first_and_last, 1, membership_matrix)
+        gaps = np.where(np.sum(membership_matrix==1,0)==0)[0]
+    
+    for g in gaps:
+        boolarray = g > boundaries
+        if not np.any(np.sum(boolarray, 1)==1): # G isn't inside any membership ranges
+            if len(np.unique(boolarray)) == 2:
+                breaks.append(g)
+    
+    return breaks
 
 cpdef np.ndarray get_information_content(np.ndarray[char, ndim=2] membership_matrix):
     """Given a matrix of membership values,
