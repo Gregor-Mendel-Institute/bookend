@@ -807,8 +807,7 @@ cdef class Locus:
                         chains[chain] = indices[i]
                 
                 indices = np.array(simplified_indices, dtype=np.int32)
-            
-            subproblems += [indices]
+                subproblems += [indices]
         
         return subproblems
     
