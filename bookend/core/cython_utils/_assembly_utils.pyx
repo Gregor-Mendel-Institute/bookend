@@ -756,7 +756,6 @@ cdef class Locus:
         cdef list subproblems, simplified_indices
         cdef dict chains
         cdef np.ndarray component_bool, indices
-        subproblems = []
         self.adj = {i:[] for i in range(self.overlap.shape[0])}
         edge_locations = np.where(self.overlap >= 1)
         for a,b in zip(edge_locations[0],edge_locations[1]):
@@ -807,7 +806,7 @@ cdef class Locus:
                         simplified_indices.append(indices[i])
                         chains[chain] = indices[i]
                 
-                indices = simplified_indices
+                indices = np.array(simplified_indices, dtype=np.int32)
             
             subproblems += [indices]
         
