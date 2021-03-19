@@ -727,9 +727,9 @@ cdef class Locus:
         if ignore_ends:
             endless_matrix = remove_ends(self.membership)
             endless_info = get_information_content(endless_matrix)
-            self.overlap = calculate_overlap(endless_matrix, endless_info, self.strand_array)
+            self.overlap = calculate_overlap_matrix(endless_matrix, endless_info, self.strand_array)
         else:
-            self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
+            self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
         
         if reduce:
             self.denoise()
@@ -968,7 +968,8 @@ cdef class Locus:
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
-        cdef char p, c, s
+        cdef char p_out, c_out, p_in, c_in, s
+        cdef (char, char) o
         cdef Py_ssize_t i
         cdef int combined_length
         # Parent gains all information of child
@@ -980,20 +981,33 @@ cdef class Locus:
             elif c != 0 and p != c: # Conflicting membership information
                 raise Exception('Incompatible read pair: {}, {}'.format(child_index, parent_index))
         
+        self.information_content[parent_index] = np.sum(np.abs(self.membership[parent_index,:]))
         for i in range(self.overlap.shape[0]): # Iterate over columns/rows of the overlap matrix
             # rows
-            p = self.overlap[parent_index, i]
-            c = self.overlap[child_index, i]
-            self.overlap[parent_index, i] = min(p,c)
-            
-            if p == 0 or c == -1:
-                self.overlap[parent_index, i] = c
+            p_out = self.overlap[parent_index, i]
+            c_out = self.overlap[child_index, i]
+            if p_out == 2:
+                self.overlap[parent_index, i] = 2 if c_out == 2 else 1
+            elif p_out == 1:
+                self.overlap[parent_index, i] = 1
+            elif p_out == 0:
+                self.overlap[parent_index, i] = c_out if c_out < 2 else 1
+            elif p_out == -1:
+                self.overlap[parent_index, i] = -1
             
             # columns
-            p = self.overlap[i, parent_index]
-            c = self.overlap[i, child_index]
-            if p == 0 or c == -1:
-                self.overlap[i, parent_index] = c
+            p_in = self.overlap[i, parent_index]
+            c_in = self.overlap[i, child_index]
+            elif p == -1 or c == -1:
+                self.overlap[i, parent_index] = -1
+            else:
+                self.overlap[i, parent_index] = max(p,c)
+            
+            # Special case, i bridges p and c; overlap needs to be recalculated
+            if (p_out==1 and c_in==1) or (c_out==1 and p_in==1):
+                o = get_overlap(self.membership[parent_index,:], self.membership[i,:], self.information_content[parent_index], self.information_content[i])
+                self.overlap[parent_index, i] = o[0]
+                self.overlap[i, parent_index] = o[1]
         
         # Exclude the child from the graph
         self.overlap[child_index,:] = -1
@@ -1522,7 +1536,45 @@ cpdef np.ndarray get_member_content(np.ndarray[char, ndim=2] membership_matrix):
     Maximum information is number_of_frags + 4"""
     return np.sum(membership_matrix==1, 1, dtype=np.int32)
 
-cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, np.ndarray information_content, np.ndarray strand_array):
+
+cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[char.ndim=1] members_b, int info_a, int info_b):
+    """Returns the a->b and b->a overlap relationship between two reads"""
+    cdef int ia, ib, shared, a_to_b, b_to_a
+    cdef (bint, bint, bint, bint) info_buffer
+    cdef bint overlapping
+    cdef char horiz, vert
+    info_buffer = (False, False, False, False)
+    shared, a_to_b, b_to_a = 0,0,0
+    overlapping, in_a, in_b = False, False, False
+    for i in range(len(members_a)):
+        ia = members_a[i]
+        ib = members_b[i]
+        if (ia == 1 and ib == -1) or (ia == -1 and ib == 1): # Incompatibility found
+            return (-1, -1)
+        
+        # If not incompatible, then they either share or do not share membership
+        shared += ia == ib and ia != 0 # Shared information (inclusion or exclusion)
+        overlapping = overlapping or ia + ib == 2 # At least one member is shared
+        info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
+        a_to_b += in_a and info_buffer == (False, True, True, True)
+        b_to_a += in_b and info_buffer == (True, True, False, True)
+        in_a = ia!=0 and (in_a or ia==1)
+        in_b = ib!=0 and (in_b or ib==1)
+    
+    if shared <= 0:
+        return (0, 0)
+    
+    if shared == info_a:
+        horiz = 2
+    elif shared == info_b:
+        vert = 2
+    else:
+        horiz = int(overlapping and a_to_b > 0)
+        vert = int(overlapping and b_to_a > 0)
+
+    return (horiz, vert) 
+
+cpdef np.ndarray calculate_overlap_matrix(np.ndarray[char, ndim=2] membership_matrix, np.ndarray information_content, np.ndarray strand_array):
     """Given a matrix of membership values (1, 0, or -1; see locus.build_membership_matrix),
     output a new read x read square matrix with a overlap code.
     For each (a,b) pair:
@@ -1535,11 +1587,8 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
     If an information_content vertex is not supplied, it will be calculated by the
     sum(abs(frag_membership)) of each row.
     """
-    cdef int ia, ib, shared, a_to_b, b_to_a
-    cdef (bint, bint, bint, bint) info_buffer
-    cdef char sa, sb, s
-    cdef bint overlapping
-    cdef Py_ssize_t a, b, i, maxlen, number_of_reads, number_of_frags
+    cdef char sa, sb, horiz, vert
+    cdef Py_ssize_t a, b, maxlen, number_of_reads, number_of_frags
     
     number_of_reads = membership_matrix.shape[0]
     number_of_frags = membership_matrix.shape[1]
@@ -1549,7 +1598,6 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
     cdef np.ndarray[char, ndim=2] overlap_matrix = np.zeros((number_of_reads, number_of_reads), dtype=np.int8) # Container for overlap information
     cdef char [:] STRAND_ARRAY = strand_array
     cdef int [:] INFO = information_content
-    cdef char [:, :] MEMBERSHIP = membership_matrix
     cdef char [:, :] COMPATIBILITY = overlap_matrix
     maxlen = COMPATIBILITY.shape[0]
     for a in range(maxlen):
@@ -1564,37 +1612,9 @@ cpdef np.ndarray calculate_overlap(np.ndarray[char, ndim=2] membership_matrix, n
                 COMPATIBILITY[b,a] = -1
                 continue
             
-            info_buffer = (False, False, False, False)
-            shared, a_to_b, b_to_a = 0,0,0
-            overlapping, in_a, in_b = False, False, False
-            for i in range(MEMBERSHIP.shape[1]):
-                ia = MEMBERSHIP[a,i]
-                ib = MEMBERSHIP[b,i]
-                if (ia == 1 and ib == -1) or (ia == -1 and ib == 1): # Incompatibility found
-                    COMPATIBILITY[a,b] = -1
-                    COMPATIBILITY[b,a] = -1
-                    shared = -1
-                    break # No need to evaluate the rest of the frags
-                
-                # If not incompatible, then they either share or do not share membership
-                shared += ia == ib and ia != 0 # Shared information (inclusion or exclusion)
-                overlapping = overlapping or ia + ib == 2 # At least one member is shared
-                info_buffer = (ia!=0, info_buffer[0], ib!=0, info_buffer[2])
-                a_to_b += in_a and info_buffer == (False, True, True, True)
-                b_to_a += in_b and info_buffer == (True, True, False, True)
-                in_a = ia!=0 and (in_a or ia==1)
-                in_b = ib!=0 and (in_b or ib==1)
-            
-            if shared <= 0:
-                continue
-            
-            if shared == INFO[a]:
-                COMPATIBILITY[a,b] = 2
-            elif shared == INFO[b]:
-                COMPATIBILITY[b,a] = 2
-            else:
-                COMPATIBILITY[a,b] = int(overlapping and a_to_b > 0)
-                COMPATIBILITY[b,a] = int(overlapping and b_to_a > 0)
+            horiz, vert = get_overlap(membership_matrix[a], membership_matrix[b], INFO[a], INFO[b])
+            COMPATIBILITY[a,b] = horiz
+            COMPATIBILITY[b,a] = vert
     
     return overlap_matrix
 
