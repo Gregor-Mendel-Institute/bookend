@@ -998,7 +998,7 @@ cdef class Locus:
             # columns
             p_in = self.overlap[i, parent_index]
             c_in = self.overlap[i, child_index]
-            elif p == -1 or c == -1:
+            if p == -1 or c == -1:
                 self.overlap[i, parent_index] = -1
             else:
                 self.overlap[i, parent_index] = max(p,c)
