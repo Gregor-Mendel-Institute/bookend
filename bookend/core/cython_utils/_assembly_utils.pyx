@@ -309,6 +309,8 @@ cdef class Locus:
             fragcov_minus = np.sum(self.cov_minus[span[0]:span[1]])
             if fragcov_plus + fragcov_minus > 0:
                 self.frag_strand_ratios[i] = fragcov_plus/(fragcov_plus+fragcov_minus)
+            else:
+                self.frag_strand_ratios[i] = .5 # Naive if no known stranded coverage
         
         # self.frag_len = np.array([b-a for a,b in self.frags]+[0,0,0,0], dtype=np.int32)
         self.frag_by_pos = np.full(shape=len(self), fill_value=-1, dtype=np.int32)
@@ -542,13 +544,18 @@ cdef class Locus:
                         competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
                         in_weight = np.sum(self.weight_array[compatible,:])
                         out_weight = np.sum(self.weight_array[competitors,:])
-                        proportion = in_weight / (in_weight+out_weight)
-                        if proportion < self.minimum_proportion:
+                        if in_weight == 0 and out_weight == 0:
                             keep[compatible] = False
-                        elif proportion > 1 - self.minimum_proportion:
                             keep[competitors] = False
+                        else:
+                            proportion = in_weight / (in_weight+out_weight)
+                            if proportion < self.minimum_proportion:
+                                keep[compatible] = False
+                            elif proportion > 1 - self.minimum_proportion:
+                                keep[competitors] = False
         
-        self.subset_elements(keep)
+        if np.any(np.logical_not(keep)):
+            self.subset_elements(np.where(keep)[0])
     
     cpdef void apply_intron_filter(self):
         """Removes reads if they are inferred to belong to an unprocessed transcript,
