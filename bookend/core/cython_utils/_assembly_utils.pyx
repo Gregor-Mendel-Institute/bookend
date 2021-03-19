@@ -521,35 +521,35 @@ cdef class Locus:
                     elif self.strand_array[i] == -1:
                         self.membership[i,:] = -1
     
-    # cpdef void denoise(self):
-    #     """Checks the competitors of each read. If the read (plus compatible reads)
-    #     accumulates to <minimum_proportion of sum(compatible + incompatible), 
-    #     remove the read."""
-    #     cdef np.ndarray keep, competitors, compatible, informative
-    #     cdef float in_weight, out_weight, proportion
-    #     cdef tuple compmembers
-    #     keep = np.ones(self.membership.shape[0], dtype=np.bool)
-    #     for index in range(self.membership.shape[0]):
-    #         if keep[index]:
-    #             competitors = self.get_competitors(index)
-    #             if len(competitors) > 0:
-    #                 compatible = self.get_compatible(index, competitors)
-    #                 informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
-    #                 if len(informative) > 0:
-    #                     # Subset for competitors that exclude the informative member(s) of the compatible set
-    #                     competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
-    #                     # Subset for competitors that span the informative member(s)
-    #                     compmembers = np.where(self.membership[competitors,:-4]==1)
-    #                     competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
-    #                     in_weight = np.sum(self.weight_array[compatible,:])
-    #                     out_weight = np.sum(self.weight_array[competitors,:])
-    #                     proportion = in_weight / (in_weight+out_weight)
-    #                     if proportion < self.minimum_proportion:
-    #                         keep[compatible] = False
-    #                     elif proportion > 1 - self.minimum_proportion:
-    #                         keep[competitors] = False
+    cpdef void denoise(self):
+        """Checks the competitors of each read. If the read (plus compatible reads)
+        accumulates to <minimum_proportion of sum(compatible + incompatible), 
+        remove the read."""
+        cdef np.ndarray keep, competitors, compatible, informative
+        cdef float in_weight, out_weight, proportion
+        cdef tuple compmembers
+        keep = np.ones(self.membership.shape[0], dtype=np.bool)
+        for index in range(self.membership.shape[0]):
+            if keep[index]:
+                competitors = self.get_competitors(index)
+                if len(competitors) > 0:
+                    compatible = self.get_compatible(index, competitors)
+                    informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
+                    if len(informative) > 0:
+                        # Subset for competitors that exclude the informative member(s) of the compatible set
+                        competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
+                        # Subset for competitors that span the informative member(s)
+                        compmembers = np.where(self.membership[competitors,:-4]==1)
+                        competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
+                        in_weight = np.sum(self.weight_array[compatible,:])
+                        out_weight = np.sum(self.weight_array[competitors,:])
+                        proportion = in_weight / (in_weight+out_weight)
+                        if proportion < self.minimum_proportion:
+                            keep[compatible] = False
+                        elif proportion > 1 - self.minimum_proportion:
+                            keep[competitors] = False
         
-    #     self.subset_elements(keep)
+        self.subset_elements(keep)
     
     cpdef void apply_intron_filter(self):
         """Removes reads if they are inferred to belong to an unprocessed transcript,
@@ -732,13 +732,8 @@ cdef class Locus:
         else:
             self.overlap = calculate_overlap(self.membership, self.information_content, self.strand_array)
         
-        # if reduce:
-        #     self.denoise()
-        #     maxIC = self.membership.shape[1]
-        #     # self.resolve_containment()
-        #     keep = np.where(np.sum(self.weight_array, axis=1) > 0)[0]
-        #     self.subset_elements(keep)
-        #     # self.collapse_linear_chains()
+        if reduce:
+            self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
         if not self.overlap is None: self.overlap = self.overlap[keep,:][:,keep]
