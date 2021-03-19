@@ -32,7 +32,7 @@ cdef class EndRange:
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
 cdef class Locus:
-    cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len
+    cdef public int chrom, leftmost, rightmost, extend, number_of_elements, min_overhang, chunk_number, oligo_len
     cdef public bint naive,  use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, end_extend=100, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -69,7 +69,6 @@ cdef class Locus:
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
             self.extend = extend
-            self.end_extend = end_extend
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             self.prune_junctions()
             self.generate_branchpoints()
@@ -224,7 +223,7 @@ cdef class Locus:
         current_range = (p, p+1)
         end_ranges = []
         for p,v in filtered_pos[1:]:
-            if p - self.end_extend <= current_range[1]:
+            if p - self.extend <= current_range[1]:
                 current_range = (current_range[0], p+1)
                 weight += v
                 if v > maxv or (v == maxv and endtype in [1,2]):
@@ -754,7 +753,8 @@ cdef class Locus:
         Each component can be assembled independently."""
         cdef strandedComponents cc
         cdef simplifyDFS dfs
-        cdef list subproblems
+        cdef list subproblems, simplified_indices
+        cdef dict chains
         cdef np.ndarray component_bool, indices
         subproblems = []
         self.adj = {i:[] for i in range(self.overlap.shape[0])}
@@ -795,13 +795,22 @@ cdef class Locus:
         for c in range(component_bool.shape[1]):
             if np.any(component_bool[:,c]):
                 indices = np.where(component_bool[:,c])[0]
-                # dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
-                # self.merge_reads(child_index, parent_index)
-                # indices = simplified_indices
-                subproblems += [indices]
-        
-        
+                dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
+                simplified_indices = []
+                chains = {}
+                for i in range(dfs.vertices):
+                    chain = dfs.component[i]
+                    if chain in chains.keys():
+                        parent = chains[chain]
+                        self.merge_reads(indices[i], parent)
+                    else:
+                        simplified_indices.append(indices[i])
+                        chains[chain] = indices[i]
+                
+                indices = simplified_indices
             
+            subproblems += [indices]
+        
         return subproblems
     
     cpdef void build_graph(self, reduce=True):
@@ -962,6 +971,7 @@ cdef class Locus:
         cdef char p, c, s
         cdef Py_ssize_t i
         cdef int combined_length
+        # Parent gains all information of child
         for i in range(self.membership.shape[1]): # Iterate over columns of the membership table
             p = self.membership[parent_index,i]
             c = self.membership[child_index,i]  
@@ -974,6 +984,8 @@ cdef class Locus:
             # rows
             p = self.overlap[parent_index, i]
             c = self.overlap[child_index, i]
+            self.overlap[parent_index, i] = min(p,c)
+            
             if p == 0 or c == -1:
                 self.overlap[parent_index, i] = c
             
@@ -983,6 +995,9 @@ cdef class Locus:
             if p == 0 or c == -1:
                 self.overlap[i, parent_index] = c
         
+        # Exclude the child from the graph
+        self.overlap[child_index,:] = -1
+        self.overlap[:,child_index] = -1
         s = self.strand_array[parent_index]
         if s == 0:
             self.strand_array[parent_index] = self.strand_array[child_index]
