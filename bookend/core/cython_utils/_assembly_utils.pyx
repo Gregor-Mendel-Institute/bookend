@@ -1537,7 +1537,7 @@ cpdef np.ndarray get_member_content(np.ndarray[char, ndim=2] membership_matrix):
     return np.sum(membership_matrix==1, 1, dtype=np.int32)
 
 
-cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[char.ndim=1] members_b, int info_a, int info_b):
+cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[char, ndim=1] members_b, int info_a, int info_b):
     """Returns the a->b and b->a overlap relationship between two reads"""
     cdef int ia, ib, shared, a_to_b, b_to_a
     cdef (bint, bint, bint, bint) info_buffer
