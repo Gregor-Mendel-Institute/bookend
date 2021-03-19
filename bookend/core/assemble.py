@@ -19,7 +19,6 @@ class Assembler:
         self.source = args['SOURCE']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
-        self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
         self.min_cov = args['MIN_COV']
         self.min_unstranded_cov = args['MIN_UNSTRANDED']
@@ -81,7 +80,8 @@ class Assembler:
             if self.verbose:
                 print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
             
-            locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.end_cluster, self.min_overhang, True, self.min_proportion, self.cap_bonus, self.complete, verbose=self.verbose, naive=self.naive, intron_filter=self.intron_filter, ignore_ends=self.ignore_labels)
+
+            locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.min_overhang, True, self.min_proportion, self.cap_bonus, self.complete, verbose=self.verbose, naive=self.naive, intron_filter=self.intron_filter, ignore_ends=self.ignore_labels)
             total_reads = locus.weight
             if locus.graph:
                 locus.assemble_transcripts(complete=self.complete)
@@ -111,7 +111,6 @@ class Assembler:
         options_string += "  Source name (--source):                           {}\n".format(self.source)
         options_string += "  *** Experiment parameters ***\n"
         options_string += "  Max allowed gap in coverage (--max_gap):          {}\n".format(self.max_gap)
-        options_string += "  Cluster distance for ends (--end_cluster):        {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
         options_string += "  Ignore read sources (--ignore_source):            {}\n".format(self.ignore_source)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
