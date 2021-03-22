@@ -292,6 +292,8 @@ cdef class Locus:
         cdef (int, int) block, span
         cdef str junction_hash
         self.member_weights = np.empty(0)
+        self.membership = np.empty(0)
+        self.overlap = np.empty(0)
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
