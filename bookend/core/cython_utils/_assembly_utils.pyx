@@ -529,7 +529,8 @@ cdef class Locus:
         cdef float in_weight, out_weight, proportion
         cdef tuple compmembers
         keep = np.ones(self.membership.shape[0], dtype=np.bool)
-        for index in range(self.membership.shape[0]):
+        IC_order = np.lexsort((-self.member_content, -self.information_content)) # Rank them by decreasing number of members
+        for index in IC_order:
             if keep[index]:
                 competitors = self.get_competitors(index)
                 if len(competitors) > 0:
@@ -795,8 +796,8 @@ cdef class Locus:
             self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
         
         if reduce:
-            self.denoise()
             self.resolve_containment()
+            self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
         if not self.membership is None: self.membership = self.membership[keep,:]
