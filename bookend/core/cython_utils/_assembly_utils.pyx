@@ -799,8 +799,8 @@ cdef class Locus:
             self.resolve_containment()
     
     cpdef void subset_elements(self, np.ndarray keep):
-        if not self.overlap is None: self.overlap = self.overlap[keep,:][:,keep]
         if not self.membership is None: self.membership = self.membership[keep,:]
+        if not self.overlap is None: self.overlap = self.overlap[keep,:][:,keep]
         if not self.weight_array is None: self.weight_array = self.weight_array[keep,:]
         if not self.member_weights is None: self.member_weights = self.member_weights[keep,:]
         if not self.rep_array is None: self.rep_array = self.rep_array[keep]
@@ -936,6 +936,7 @@ cdef class Locus:
             if len(incompatible) == 0: # Special case, all weight goes to containers
                 if len(containers) == 1:
                     new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
+                    self.member_weights[containers,:] += self.member_weights[i,:]
                 else: # Evaluate how much weight goes to each container
                     compatible = np.where(np.logical_and(
                         np.logical_or(
@@ -968,10 +969,17 @@ cdef class Locus:
                             weight_to_add[:,n] += weight * container_proportions * weight_transform
                     
                     new_weights[containers,:] += weight_to_add
+                    proportion = np.sum(weight_to_add,axis=1)/np.sum(weight_to_add)
+                    for c in range(len(containers)):
+                        self.member_weights[c,:] += self.member_weights[i,:]*proportion[c]
                 
                 new_weights[i,] = 0
                 containment[:,i] = False
                 containment[i,:] = False
+                self.member_weights[i,:] = 0
+        
+        self.weight_array = new_weights
+        self.subset_elements(np.where(np.sum(new_weights,axis=1)>0)[0])
     
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
