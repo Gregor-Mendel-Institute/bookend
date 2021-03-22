@@ -291,9 +291,6 @@ cdef class Locus:
         cdef set discard_frags
         cdef (int, int) block, span
         cdef str junction_hash
-        self.member_weights = np.empty(0)
-        self.membership = np.empty(0)
-        self.overlap = np.empty(0)
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -802,16 +799,16 @@ cdef class Locus:
     
     cpdef void subset_elements(self, np.ndarray keep):
         if not self.overlap is None: self.overlap = self.overlap[keep,:][:,keep]
-        self.membership = self.membership[keep,:]
-        self.weight_array = self.weight_array[keep,:]
-        self.member_weights = self.member_weights[keep,:]
-        self.rep_array = self.rep_array[keep]
-        self.strand_array = self.strand_array[keep]
+        if not self.membership is None: self.membership = self.membership[keep,:]
+        if not self.weight_array is None: self.weight_array = self.weight_array[keep,:]
+        if not self.member_weights is None: self.member_weights = self.member_weights[keep,:]
+        if not self.rep_array is None: self.rep_array = self.rep_array[keep]
+        if not self.strand_array is None: self.strand_array = self.strand_array[keep]
         if not self.information_content is None: self.information_content = self.information_content[keep]
         if not self.member_content is None: self.member_content = self.member_content[keep]
-        self.member_lengths = self.member_lengths[keep]
+        if not self.member_lengths is None: self.member_lengths = self.member_lengths[keep]
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
-        self.number_of_elements = self.membership.shape[0]
+        self.number_of_elements = len(keep)
         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef list get_subproblems(self):
