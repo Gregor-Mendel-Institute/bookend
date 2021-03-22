@@ -557,12 +557,16 @@ cdef class Locus:
         if np.any(np.logical_not(keep)):
             self.subset_elements(np.where(keep)[0])
     
-    cpdef void apply_intron_filter(self):
+    cpdef void apply_intron_filter(self, float threshold=1):
         """Removes reads if they are inferred to belong to an unprocessed transcript,
         i.e. a retained intron, run-on transcription downstream of a 3' end, or
         transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
         cdef EndRange endrange
-        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal
+        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, spans_intron, fills_intron, span_weight, fill_weight
+        cdef np.ndarray[char, ndim=2] junction_membership
+        cdef np.ndarray[char, ndim=1] splicepattern
+        cdef float fw, sw
+        cdef list stranded_branched
         cdef int strand, number_of_frags
         cdef str junction
         cdef (int, int) span
@@ -602,15 +606,68 @@ cdef class Locus:
                                 remove_plus[flowthrough] = True
                             else:
                                 remove_minus[flowthrough] = True
-
+        
         # Check same-stranded intron retention
         strand = 1
-        for junction in self.J_plus.keys():
-            span = self.string_to_span(junction)
+        stranded_branches = list()
+        for k in self.J_plus.keys():
+            l,r = string_to_span(k)
+            stranded_branches += [l,r]
         
+        for i in [0,1]:
+            for rng in self.end_ranges[i]:
+                stranded_branches.append(rng.terminal)
+        
+        sb = np.unique(sorted(stranded_branches))
+        for junction in self.J_plus.keys():
+            l,r = string_to_span(junction)
+            if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
+                lfrag = self.frag_by_pos[l]
+                rfrag = self.frag_by_pos[r]
+                junction_membership = self.membership[:,lfrag-1:rfrag+1]
+                splicepattern = np.array([1]+[-1]*(junction_membership.shape[1]-2)+[1], dtype=np.int8)
+                spans_intron = np.logical_and(np.all(junction_membership==splicepattern, axis=1), self.strand_array >= 0)
+                fills_intron = np.logical_and(np.logical_and(np.all(junction_membership[:,1:-1]>=0,axis=1),np.any(junction_membership[:,1:-1]==1,axis=1)), self.strand_array >= 0)
+                fill_weight = self.member_weights[fills_intron,lfrag:rfrag]
+                fill_weight[self.strand_array[fills_intron]==0,:] *= self.frag_strand_ratios[lfrag:rfrag]
+                span_weight = self.member_weights[spans_intron,lfrag:rfrag]
+                fw = np.sum(fill_weight)
+                sw = np.sum(span_weight)
+                if fw < threshold:
+                    remove_plus[fills_intron] = True
+                elif fw < self.intron_filter*(fw+sw): # Fill weight is <intron_filter% of total coverage
+                    remove_plus[fills_intron] = True
+        
+        # Repeat the procedure for the minus strand
         strand = -1
+        stranded_branches = list()
+        for k in self.J_minus.keys():
+            l,r = string_to_span(k)
+            stranded_branches += [l,r]
+        
+        for i in [2,3]:
+            for rng in self.end_ranges[i]:
+                stranded_branches.append(rng.terminal)
+        
+        sb = np.unique(sorted(stranded_branches))
         for junction in self.J_minus.keys():
-            span = self.string_to_span(junction)
+            l,r = string_to_span(junction)
+            if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
+                lfrag = self.frag_by_pos[l]
+                rfrag = self.frag_by_pos[r]
+                junction_membership = self.membership[:,lfrag-1:rfrag+1]
+                splicepattern = np.array([1]+[-1]*(junction_membership.shape[1]-2)+[1], dtype=np.int8)
+                spans_intron = np.logical_and(np.all(junction_membership==splicepattern, axis=1), self.strand_array <= 0)
+                fills_intron = np.logical_and(np.logical_and(np.all(junction_membership[:,1:-1]>=0,axis=1),np.any(junction_membership[:,1:-1]==1,axis=1)), self.strand_array <= 0)
+                fill_weight = self.member_weights[fills_intron,lfrag:rfrag]
+                fill_weight[self.strand_array[fills_intron]==0,:] *= 1-self.frag_strand_ratios[lfrag:rfrag]
+                span_weight = self.member_weights[spans_intron,lfrag:rfrag]
+                fw = np.sum(fill_weight)
+                sw = np.sum(span_weight)
+                if fw < threshold:
+                    remove_minus[fills_intron] = True
+                elif fw < self.intron_filter*(fw+sw):
+                    remove_minus[fills_intron] = True
         
         # Remove reads that were cut by at least one of the filters above.
         # A stranded read will be removed entirely
