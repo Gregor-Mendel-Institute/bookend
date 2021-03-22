@@ -869,10 +869,10 @@ cdef class Locus:
                         simplified_indices.append(indices[i])
                         chains[chain] = indices[i]
                 
-                self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
                 indices = np.array(simplified_indices, dtype=np.int32)
                 subproblems += [indices]
         
+        self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
         return subproblems
     
     cpdef void build_graph(self, reduce=True):
