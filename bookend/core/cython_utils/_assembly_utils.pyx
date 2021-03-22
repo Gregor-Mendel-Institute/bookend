@@ -869,6 +869,7 @@ cdef class Locus:
                         simplified_indices.append(indices[i])
                         chains[chain] = indices[i]
                 
+                self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
                 indices = np.array(simplified_indices, dtype=np.int32)
                 subproblems += [indices]
         
@@ -1043,36 +1044,36 @@ cdef class Locus:
                 raise Exception('Incompatible read pair: {}, {}'.format(child_index, parent_index))
         
         self.information_content[parent_index] = np.sum(np.abs(self.membership[parent_index,:]))
-        for i in range(self.overlap.shape[0]): # Iterate over columns/rows of the overlap matrix
-            # rows
-            p_out = self.overlap[parent_index, i]
-            c_out = self.overlap[child_index, i]
-            if p_out == 2:
-                self.overlap[parent_index, i] = 2 if c_out == 2 else 1
-            elif p_out == 1:
-                self.overlap[parent_index, i] = 1
-            elif p_out == 0:
-                self.overlap[parent_index, i] = c_out if c_out < 2 else 1
-            elif p_out == -1:
-                self.overlap[parent_index, i] = -1
+        # for i in range(self.overlap.shape[0]): # Iterate over columns/rows of the overlap matrix
+        #     # rows
+        #     p_out = self.overlap[parent_index, i]
+        #     c_out = self.overlap[child_index, i]
+        #     if p_out == 2:
+        #         self.overlap[parent_index, i] = 2 if c_out == 2 else 1
+        #     elif p_out == 1:
+        #         self.overlap[parent_index, i] = 1
+        #     elif p_out == 0:
+        #         self.overlap[parent_index, i] = c_out if c_out < 2 else 1
+        #     elif p_out == -1:
+        #         self.overlap[parent_index, i] = -1
             
-            # columns
-            p_in = self.overlap[i, parent_index]
-            c_in = self.overlap[i, child_index]
-            if p == -1 or c == -1:
-                self.overlap[i, parent_index] = -1
-            else:
-                self.overlap[i, parent_index] = max(p,c)
+        #     # columns
+        #     p_in = self.overlap[i, parent_index]
+        #     c_in = self.overlap[i, child_index]
+        #     if p == -1 or c == -1:
+        #         self.overlap[i, parent_index] = -1
+        #     else:
+        #         self.overlap[i, parent_index] = max(p,c)
             
-            # Special case, i bridges p and c; overlap needs to be recalculated
-            if (p_out==1 and c_in==1) or (c_out==1 and p_in==1):
-                o = get_overlap(self.membership[parent_index,:], self.membership[i,:], self.information_content[parent_index], self.information_content[i])
-                self.overlap[parent_index, i] = o[0]
-                self.overlap[i, parent_index] = o[1]
+        #     # Special case, i bridges p and c; overlap needs to be recalculated
+        #     if (p_out==1 and c_in==1) or (c_out==1 and p_in==1):
+        #         o = get_overlap(self.membership[parent_index,:], self.membership[i,:], self.information_content[parent_index], self.information_content[i])
+        #         self.overlap[parent_index, i] = o[0]
+        #         self.overlap[i, parent_index] = o[1]
         
-        # Exclude the child from the graph
-        self.overlap[child_index,:] = -1
-        self.overlap[:,child_index] = -1
+        # # Exclude the child from the graph
+        # self.overlap[child_index,:] = -1
+        # self.overlap[:,child_index] = -1
         s = self.strand_array[parent_index]
         if s == 0:
             self.strand_array[parent_index] = self.strand_array[child_index]
