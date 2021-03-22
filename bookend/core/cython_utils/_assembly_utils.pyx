@@ -679,10 +679,10 @@ cdef class Locus:
         # A nonstranded read will be assigned entirely to the other strand
         flipstrand_plus = np.logical_and(remove_plus, keep)
         self.strand_array[flipstrand_plus] = -1
-        self.membership[flipstrand_plus,-2:] = -1
+        self.membership[flipstrand_plus,-4:2] = -1
         flipstrand_minus = np.logical_and(remove_minus, keep)
         self.strand_array[flipstrand_minus] = 1
-        self.membership[flipstrand_minus,-4:-2] = -1
+        self.membership[flipstrand_minus,-2:] = -1
         if np.any(np.logical_not(keep)):
             self.subset_elements(np.where(keep)[0])
         
