@@ -611,7 +611,7 @@ cdef class Locus:
         strand = 1
         stranded_branches = list()
         for k in self.J_plus.keys():
-            l,r = string_to_span(k)
+            l,r = self.string_to_span(k)
             stranded_branches += [l,r]
         
         for i in [0,1]:
@@ -620,7 +620,7 @@ cdef class Locus:
         
         sb = np.unique(sorted(stranded_branches))
         for junction in self.J_plus.keys():
-            l,r = string_to_span(junction)
+            l,r = self.string_to_span(junction)
             if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
                 lfrag = self.frag_by_pos[l]
                 rfrag = self.frag_by_pos[r]
@@ -642,7 +642,7 @@ cdef class Locus:
         strand = -1
         stranded_branches = list()
         for k in self.J_minus.keys():
-            l,r = string_to_span(k)
+            l,r = self.string_to_span(k)
             stranded_branches += [l,r]
         
         for i in [2,3]:
@@ -651,7 +651,7 @@ cdef class Locus:
         
         sb = np.unique(sorted(stranded_branches))
         for junction in self.J_minus.keys():
-            l,r = string_to_span(junction)
+            l,r = self.string_to_span(junction)
             if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
                 lfrag = self.frag_by_pos[l]
                 rfrag = self.frag_by_pos[r]
