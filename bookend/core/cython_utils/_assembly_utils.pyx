@@ -1514,11 +1514,12 @@ cdef class strandedComponents():
                 self.Explore(w, c, visited, component, strand)
 
 cdef class simplifyDFS():
-    cdef public dict G, X
+    cdef public dict G, X, O
     cdef public int vertices, c
     cdef public np.ndarray visited, component, pre, post
     def __init__(self, overlap_matrix, search_order):
         self.G = {i:[] for i in range(overlap_matrix.shape[0])}
+        self.O = {}
         edge_locations = np.where(overlap_matrix >= 1)
         for a,b in zip(edge_locations[0],edge_locations[1]):
             self.G[a].append(b)
@@ -1544,21 +1545,33 @@ cdef class simplifyDFS():
         if len(self.G[v]) == 0: # If no outgroups, necessarily a new component
             self.c += 1
             self.component[v] = self.c
+            self.O[self.c] = set(self.G[v]+[v])
         else: # Check if all outgroups are in the same component (that isn't -1)
             outgroups = np.unique(self.component[self.G[v]])
-            if len(outgroups) > 1: # Incompatible groups downstream
+            outgroups = outgroups[outgroups!=-1]
+            outgroup_exclusions = set()
+            for o in self.G[v]:
+                outgroup_exclusions.update(self.X[o])
+            
+            if len(outgroups) == 0: # If no outgroups, necessarily a new component
                 self.c += 1
                 self.component[v] = self.c
-            else:
-                outgroup_exclusions = set()
-                for o in self.G[v]:
-                    outgroup_exclusions.update(self.X[o])
-                
+                self.O[self.c] = set(self.G[v]+[v])
+            elif len(outgroups) == 1:
                 if self.X[v].issubset(outgroup_exclusions):
                     self.component[v] = outgroups[0]
                 else:
                     self.c += 1
                     self.component[v] = self.c
+                    self.O[self.c] = set(self.G[v]+[v])
+            else: # Multiple groups downstream
+                if set(self.G[v]).issubset(self.O[self.c]) and self.X[v].issubset(outgroup_exclusions):
+                    self.component[v] = self.c
+                    self.O[self.c].add(v)
+                else: # Includes branches not seen by last component, make new component
+                    self.c += 1
+                    self.component[v] = self.c
+                    self.O[self.c] = set(self.G[v]+[v])
         
         return clock + 1
     
