@@ -254,9 +254,15 @@ cdef class Locus:
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
+        cdef int dist, bestdist
+        bestdist = -1
         for rng in end_ranges:
-            if pos >= rng.left and pos <= rng.right:
-                return rng
+            if pos >= max(0, rng.left-self.extend) and pos <= rng.right+self.extend:
+                if self.frag_by_pos[pos] == self.frag_by_pos[rng.peak]:
+                    dist = abs(pos-rng.peak)
+                    if bestdist == -1 or dist < bestdist:
+                        return rng
+                        bestdist = dist
         
         return self.nullRange
     
