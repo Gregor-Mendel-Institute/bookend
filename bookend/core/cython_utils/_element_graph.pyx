@@ -40,11 +40,11 @@ cdef class ElementGraph:
             i, source_weight_array[i,:], member_weight_array[i,:], strands[i],
             membership_matrix[i,:], self.overlap, lengths, self.maxIC
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
-        self.penalize_dead_ends()
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
         self.bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
+        self.penalize_dead_ends()
 
     cdef void penalize_dead_ends(self):
         """Perform a breadth-first search from all starts and all ends.

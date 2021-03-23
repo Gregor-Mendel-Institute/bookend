@@ -824,7 +824,8 @@ cdef class Locus:
         self.adj = {i:[] for i in range(self.overlap.shape[0])}
         edge_locations = np.where(self.overlap >= 1)
         for a,b in zip(edge_locations[0],edge_locations[1]):
-            self.adj[a].append(b)
+            if a != b:
+                self.adj[a].append(b)
         
         self.exc = {i:set(np.where(self.overlap[i,:]==-1)[0]) for i in range(self.overlap.shape[0])}
         cc = strandedComponents(self.adj, self.strand_array)
@@ -1522,7 +1523,8 @@ cdef class simplifyDFS():
         self.O = {}
         edge_locations = np.where(overlap_matrix >= 1)
         for a,b in zip(edge_locations[0],edge_locations[1]):
-            self.G[a].append(b)
+            if a != b:
+                self.G[a].append(b)
         
         self.X = {i:set(np.where(overlap_matrix[i,:]==-1)[0]) for i in range(overlap_matrix.shape[0])}
         self.vertices = len(self.G.keys())
@@ -1687,7 +1689,8 @@ cpdef np.ndarray calculate_overlap_matrix(np.ndarray[char, ndim=2] membership_ma
     maxlen = COMPATIBILITY.shape[0]
     for a in range(maxlen):
         for b in range(a,maxlen):
-            if b == a:
+            if b == a: # A read necessarily contains itself
+                COMPATIBILITY[a,b] = 2
                 continue
             
             sa = STRAND_ARRAY[a]
