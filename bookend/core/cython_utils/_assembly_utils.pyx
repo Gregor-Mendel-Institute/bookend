@@ -455,7 +455,7 @@ cdef class Locus:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
                 frag_depth = self.depth[l:r]
-                if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
+                if not au.passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
                     discard_frags.add(i)
         
         discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
@@ -568,7 +568,7 @@ cdef class Locus:
         i.e. a retained intron, run-on transcription downstream of a 3' end, or
         transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
         cdef EndRange endrange
-        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, spans_intron, fills_intron, span_weight, fill_weight
+        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, spans_intron, fills_intron, span_weight, fill_weight, cov
         cdef np.ndarray[char, ndim=2] junction_membership
         cdef np.ndarray[char, ndim=1] splicepattern
         cdef float fw, sw
@@ -582,6 +582,11 @@ cdef class Locus:
         remove_minus = np.zeros(self.membership.shape[0], dtype=np.bool)
         number_of_frags = self.membership.shape[1]
         for endtype in range(4):
+            if endtype < 2:
+                cov = self.cov_plus
+            else:
+                cov = self.cov_minus
+            
             for endrange in self.end_ranges[endtype]:
                 frag = self.frag_by_pos[endrange.terminal - (endtype in [1,2])]
                 if endtype == 0 and frag > 0: # S+, check plus-stranded left flowthrough
@@ -595,23 +600,14 @@ cdef class Locus:
                 else:
                     continue
                 
-                overlappers = np.where(np.logical_and(np.sum(self.membership[:,[frag,overrun_frag]]==1,axis=1)>0, np.abs(self.strand_array-strand)<2))[0]
-                runs_over = self.membership[overlappers,overrun_frag]==1
-                if np.any(runs_over):
-                    flowthrough = overlappers[runs_over]
-                    terminal = overlappers[np.logical_not(runs_over)]
-                    # if np.any(self.membership[terminal,endtype-4]==1) and not np.any(self.membership[flowthrough,endtype-4]==1): # At least one read actually stops here
-                    if np.any(self.membership[terminal,endtype-4]==1): # At least one read actually stops here
-                        terminal_weight = np.sum(self.weight_array[terminal,:],axis=1)
-                        terminal_weight[self.strand_array[terminal]==0] *= abs(-strand-self.frag_strand_ratios[frag])-(strand>0)
-                        flowthrough_weight = np.sum(self.weight_array[flowthrough,:],axis=1)
-                        flowthrough_weight[self.strand_array[flowthrough]==0] *= abs(-strand-self.frag_strand_ratios[overrun_frag])-(strand>0)
-                        if np.sum(flowthrough_weight) < self.intron_filter * np.sum(terminal_weight):
-                            # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
-                            if strand == 1:
-                                remove_plus[flowthrough] = True
-                            else:
-                                remove_minus[flowthrough] = True
+                terminal_weight = np.mean(cov[endrange.left:endrange.right])
+                flowthrough_weight = np.mean(cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]])
+                if flowthrough_weight < self.intron_filter * terminal_weight:
+                    # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
+                    if strand == 1:
+                        remove_plus[flowthrough] = True
+                    else:
+                        remove_minus[flowthrough] = True
         
         # Check same-stranded intron retention
         strand = 1
