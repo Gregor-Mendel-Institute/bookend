@@ -835,7 +835,7 @@ cdef class Element:
                 if n > lastn+1: # Only add one representative nonmember per intron
                     self.covered_indices.add(n)
         
-        self.bottleneck_weight = np.min(self.member_weights[self.covered_indices])
+        self.bottleneck_weight = np.min(self.member_weights[sorted(self.covered_indices)])
         self.bottleneck = set(np.where(self.member_weights == self.bottleneck_weight)[0])
     
     cpdef set uniqueMembers(self, Element other):
