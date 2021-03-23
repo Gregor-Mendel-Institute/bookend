@@ -796,7 +796,7 @@ cdef class Locus:
             self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
         
         if reduce:
-            # self.resolve_containment()
+            self.resolve_containment()
             self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
