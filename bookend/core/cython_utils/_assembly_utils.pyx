@@ -240,7 +240,7 @@ cdef class Locus:
         end_ranges.append(e)
         return end_ranges
     
-    cdef int end_of_cluster(self, int pos, list end_ranges):
+    cpdef int end_of_cluster(self, int pos, list end_ranges):
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
@@ -250,7 +250,7 @@ cdef class Locus:
         
         return -1
     
-    cdef EndRange get_end_cluster(self, int pos, list end_ranges):
+    cpdef EndRange get_end_cluster(self, int pos, list end_ranges):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
@@ -260,11 +260,11 @@ cdef class Locus:
         
         return self.nullRange
     
-    cdef str span_to_string(self, (int, int) span):
+    cpdef str span_to_string(self, (int, int) span):
         """Converts a tuple of two ints to a string connected by ':'"""
         return '{}:{}'.format(span[0], span[1])
     
-    cdef (int, int) string_to_span(self, str string):
+    cpdef (int, int) string_to_span(self, str string):
         """Converts a string from span_to_string() back into a span"""
         cdef list splitstring = string.split(':')
         return (int(splitstring[0]), int(splitstring[1]))
@@ -497,7 +497,7 @@ cdef class Locus:
         
         return junctions_in_range
     
-    cdef void filter_members_by_strand(self):
+    cpdef void filter_members_by_strand(self):
         """If a read is in a region with >1-minimum_proportion coverage
         of a specific strand, assign this strand to the read. If the read is
         the opposite strand, discard it."""
