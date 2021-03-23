@@ -245,7 +245,7 @@ cdef class ElementGraph:
             path = self.paths[i]
             assigned_weights += path.source_weights
             if len(element.members.intersection(path.bottleneck)) > 0: # Element is in path's bottleneck
-                return 0
+                return np.zeros(element.all.shape[0], dtype=np.float32)
         
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
