@@ -244,6 +244,8 @@ cdef class ElementGraph:
         for i in element.assigned_to:
             path = self.paths[i]
             assigned_weights += path.source_weights
+            if len(element.members.intersection(path.bottleneck)) > 0: # Element is in path's bottleneck
+                return 0
         
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
@@ -685,8 +687,8 @@ cdef class Element:
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
     cdef public list assigned_to
     cdef public char strand
-    cdef public float cov, bases
-    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices
+    cdef public float cov, bases, bottleneck_weight
+    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices, bottleneck
     cdef public np.ndarray frag_len, source_weights, member_weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray source_weights, np.ndarray member_weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
@@ -832,6 +834,9 @@ cdef class Element:
                 self.is_spliced = True
                 if n > lastn+1: # Only add one representative nonmember per intron
                     self.covered_indices.add(n)
+        
+        self.bottleneck_weight = np.min(self.member_weights[self.covered_indices])
+        self.bottleneck = set(np.where(self.member_weights == self.bottleneck_weight)[0])
     
     cpdef set uniqueMembers(self, Element other):
         """Given a second Element, return a set of frags that
