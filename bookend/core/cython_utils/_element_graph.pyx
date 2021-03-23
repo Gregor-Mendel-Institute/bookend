@@ -244,8 +244,8 @@ cdef class ElementGraph:
         for i in element.assigned_to:
             path = self.paths[i]
             assigned_weights += path.source_weights
-            if len(element.members.intersection(path.bottleneck)) > 0: # Element is in path's bottleneck
-                return np.zeros(element.all.shape[0], dtype=np.float32)
+            # if len(element.members.intersection(path.bottleneck)) > 0: # Element is in path's bottleneck
+            #     return np.zeros(element.all.shape[0], dtype=np.float32)
         
         proportion = np.ones(weights.shape[0], dtype=np.float32)
         for i in np.where(assigned_weights > weights)[0]:
@@ -835,8 +835,8 @@ cdef class Element:
                 if n > lastn+1: # Only add one representative nonmember per intron
                     self.covered_indices.add(n)
         
-        self.bottleneck_weight = np.min(self.member_weights[sorted(self.covered_indices)])
-        self.bottleneck = set(np.where(self.member_weights == self.bottleneck_weight)[0])
+        # self.bottleneck_weight = np.min(self.member_weights[sorted(self.covered_indices)])
+        # self.bottleneck = set(np.where(self.member_weights == self.bottleneck_weight)[0])
     
     cpdef set uniqueMembers(self, Element other):
         """Given a second Element, return a set of frags that
