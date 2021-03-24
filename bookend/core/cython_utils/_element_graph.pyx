@@ -190,7 +190,8 @@ cdef class ElementGraph:
         for i in np.where(sample_totals > 0)[0]:
             proportions[:,i] = priors[:,i]/sample_totals[i]
         
-        for i in np.where(self.assignments > 0)[0]: # Assign FULL weight of each assigned element
+        for i in np.argsort(self.assignments): # Assign FULL weight of each assigned element
+            if self.assignments[i] == 0: continue
             element = self.elements[i]
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
                 self.paths[element.assigned_to[0]].source_weights += element.source_weights * element.length
