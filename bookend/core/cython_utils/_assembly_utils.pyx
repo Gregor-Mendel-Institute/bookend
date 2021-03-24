@@ -253,18 +253,19 @@ cdef class Locus:
     cpdef EndRange get_end_cluster(self, int pos, list end_ranges):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
-        cdef EndRange rng
+        cdef EndRange rng, bestrng
         cdef int dist, bestdist
         bestdist = -1
+        bestrng = self.nullRange
         for rng in end_ranges:
             if pos >= max(0, rng.left-self.extend) and pos <= rng.right+self.extend:
                 if self.frag_by_pos[pos] == self.frag_by_pos[rng.peak]:
                     dist = abs(pos-rng.peak)
                     if bestdist == -1 or dist < bestdist:
-                        return rng
+                        bestrng = rng
                         bestdist = dist
         
-        return self.nullRange
+        return bestrng
     
     cpdef str span_to_string(self, (int, int) span):
         """Converts a tuple of two ints to a string connected by ':'"""
@@ -455,7 +456,7 @@ cdef class Locus:
             for i in range(len(self.frags)):
                 l,r = self.frags[i]
                 frag_depth = self.depth[l:r]
-                if not au.passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
+                if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
                     discard_frags.add(i)
         
         discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
@@ -603,6 +604,12 @@ cdef class Locus:
                 terminal_weight = np.mean(cov[endrange.left:endrange.right])
                 flowthrough_weight = np.mean(cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]])
                 if flowthrough_weight < self.intron_filter * terminal_weight:
+                    overlappers = np.where(np.logical_and(np.sum(self.membership[:,[frag,overrun_frag]]==1,axis=1)>0, np.abs(self.strand_array-strand)<2))[0]
+                    runs_over = self.membership[overlappers,overrun_frag]==1
+                    if np.any(runs_over):
+                        flowthrough = overlappers[runs_over]
+                        terminal = overlappers[np.logical_not(runs_over)]
+
                     # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
                     if strand == 1:
                         remove_plus[flowthrough] = True
