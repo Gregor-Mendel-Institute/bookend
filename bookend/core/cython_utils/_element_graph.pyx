@@ -100,7 +100,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_start_minus[v] = True
-            for w in self.elements[v].outgroup:
+            for w in self.elements[v].ingroup:
                 if not reached_from_start_minus[w]:
                     if self.elements[w].strand in strand:
                         reached_from_start_minus[w] = True
@@ -111,7 +111,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_end_minus[v] = True
-            for w in self.elements[v].ingroup:
+            for w in self.elements[v].outgroup:
                 if not reached_from_end_minus[w]:
                     if self.elements[w].strand in strand:
                         reached_from_end_minus[w] = True
