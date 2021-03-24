@@ -581,7 +581,7 @@ cdef class Locus:
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         remove_plus = np.zeros(self.membership.shape[0], dtype=np.bool)
         remove_minus = np.zeros(self.membership.shape[0], dtype=np.bool)
-        number_of_frags = self.membership.shape[1]
+        number_of_frags = self.membership.shape[1]-4
         for endtype in range(4):
             if endtype < 2:
                 cov = self.cov_plus
