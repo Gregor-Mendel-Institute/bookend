@@ -592,9 +592,9 @@ cdef class Locus:
                 frag = self.frag_by_pos[endrange.terminal - (endtype in [1,2])]
                 if endtype == 0 and frag > 0: # S+, check plus-stranded left flowthrough
                     strand, overrun_frag = 1, frag-1
-                elif endtype == 1 and frag < number_of_frags: # E+, check plus-stranded right flowthrough
+                elif endtype == 1 and frag < number_of_frags-1: # E+, check plus-stranded right flowthrough
                     strand, overrun_frag = 1, frag+1
-                elif endtype == 2 and frag < number_of_frags: # S-, check minus-stranded right flowthrough
+                elif endtype == 2 and frag < number_of_frags-1: # S-, check minus-stranded right flowthrough
                     strand, overrun_frag = -1, frag+1
                 elif endtype == 3 and frag > 0: # E-, check minus-stranded left flowthrough
                     strand, overrun_frag = -1, frag-1
