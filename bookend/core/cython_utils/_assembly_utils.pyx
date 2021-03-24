@@ -609,12 +609,11 @@ cdef class Locus:
                     if np.any(runs_over):
                         flowthrough = overlappers[runs_over]
                         terminal = overlappers[np.logical_not(runs_over)]
-
-                    # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
-                    if strand == 1:
-                        remove_plus[flowthrough] = True
-                    else:
-                        remove_minus[flowthrough] = True
+                        # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
+                        if strand == 1:
+                            remove_plus[flowthrough] = True
+                        else:
+                            remove_minus[flowthrough] = True
         
         # Check same-stranded intron retention
         strand = 1
