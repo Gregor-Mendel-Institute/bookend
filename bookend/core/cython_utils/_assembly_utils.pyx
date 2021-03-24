@@ -148,8 +148,9 @@ cdef class Locus:
             Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
             float threshold_depth, cumulative_depth, cutoff
             int l, r, p
+            (int, int) span
             EndRange rng
-            set prohibited_positions
+            set prohibited_plus, prohibited_minus, prohibited_positions
             list gaps
         
         Sp, Ep, Sm, Em, covp, covm, covn = range(7)
@@ -167,34 +168,36 @@ cdef class Locus:
         
         self.branchpoints = set()
         self.end_ranges = dict()
-        prohibited_positions = set()
+        prohibited_plus, prohibited_minus = set(), set()
         for j in self.J_plus.keys():
-            self.branchpoints.update(list(self.string_to_span(j)))
+            span = self.string_to_span(j)
+            self.branchpoints.update(list(span))
+            if self.min_overhang > 0:
+                prohibited_plus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
+                prohibited_plus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
         
         for j in self.J_minus.keys():
+            span = self.string_to_span(j)
             self.branchpoints.update(list(self.string_to_span(j)))
-        
-        if self.min_overhang > 0:
-            for p in self.branchpoints:
-                prohibited_positions.update(range(p-self.min_overhang, p+self.min_overhang+1))
+            if self.min_overhang > 0:
+                prohibited_minus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
+                prohibited_minus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
         
         for endtype in [Sp, Ep, Sm, Em]:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
+                prohibited_positions = prohibited_plus
             else:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
+                prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
             self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.peak not in prohibited_positions]
             self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
-        for endtype in [Sp, Ep, Sm, Em]:
-            for rng in self.end_ranges[endtype]:
-                prohibited_positions.update(range(rng.left, rng.right+1))
-        
-        if 0 not in prohibited_positions:self.branchpoints.add(0)
-        if len(self) not in prohibited_positions:self.branchpoints.add(len(self))
+        self.branchpoints.add(0)
+        self.branchpoints.add(len(self))
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
         """Returns a list of tuples that (1) filters low-signal positions
