@@ -258,7 +258,7 @@ cdef class Locus:
         bestdist = -1
         bestrng = self.nullRange
         for rng in end_ranges:
-            if pos >= max(0, rng.left-self.extend) and pos < min(locus.frag_by_pos.shape[0], rng.right+self.extend):
+            if pos >= max(0, rng.left-self.extend) and pos < min(self.frag_by_pos.shape[0], rng.right+self.extend):
                 if self.frag_by_pos[pos] == self.frag_by_pos[rng.peak]:
                     dist = abs(pos-rng.peak)
                     if bestdist == -1 or dist < bestdist:
