@@ -633,7 +633,7 @@ cdef class Locus:
                 rfrag = self.frag_by_pos[r]
                 cov_in_junction = cov[self.frags[lfrag][0]:self.frags[rfrag][0]]
                 spanning_cov = np.max(np.append(cov[self.frags[lfrag][0]], cov[self.frags[rfrag][0]]))
-                if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*intron_filter:
+                if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
                     junction_membership = self.membership[:,lfrag:rfrag]
                     fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array >= 0)
                     remove_plus[fills_intron] = True
@@ -658,7 +658,7 @@ cdef class Locus:
                 rfrag = self.frag_by_pos[r]
                 cov_in_junction = cov[self.frags[lfrag][0]:self.frags[rfrag][0]]
                 spanning_cov = np.max(np.append(cov[self.frags[lfrag][0]], cov[self.frags[rfrag][0]]))
-                if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*intron_filter:
+                if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
                     junction_membership = self.membership[:,lfrag:rfrag]
                     fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array <= 0)
                     remove_minus[fills_intron] = True
