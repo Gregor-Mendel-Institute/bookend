@@ -476,6 +476,7 @@ cdef class Locus:
         self.reduce_membership()
         self.filter_members_by_strand()
         self.apply_intron_filter()
+        self.reduce_membership()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
@@ -801,7 +802,8 @@ cdef class Locus:
             endless_info = get_information_content(endless_matrix)
             self.overlap = calculate_overlap_matrix(endless_matrix, endless_info, self.strand_array)
         else:
-            self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
+
+            self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
         
         if reduce:
             self.resolve_containment()
