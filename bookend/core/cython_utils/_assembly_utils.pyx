@@ -150,8 +150,8 @@ cdef class Locus:
             int l, r, p
             (int, int) span
             EndRange rng
-            set prohibited_plus, prohibited_minus
-            list gaps, prohibited_positions
+            set prohibited_plus, prohibited_minus, prohibited_positions
+            list gaps
         
         Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
@@ -187,10 +187,10 @@ cdef class Locus:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
-                prohibited_positions = sorted(prohibited_plus)
+                prohibited_positions = prohibited_plus
             else:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
-                prohibited_positions = sorted(prohibited_minus)
+                prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
             self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
@@ -198,7 +198,7 @@ cdef class Locus:
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
     
-    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype, list prohibited_positions):
+    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype, set prohibited_positions):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
@@ -225,7 +225,7 @@ cdef class Locus:
         weight = v
         current_range = (p, p+1)
         end_ranges = []
-        prohibited = iter(prohibited_positions)
+        prohibited = iter(sorted(prohibited_positions))
         passed_prohibit = False
         prohibit_pos = -1
         while prohibit_pos < p: # Initialize prohibit_pos as the first prohibited_position right of current_range 
@@ -813,7 +813,7 @@ cdef class Locus:
             self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
         
         if reduce:
-            # self.resolve_containment()
+            self.resolve_containment()
             self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
