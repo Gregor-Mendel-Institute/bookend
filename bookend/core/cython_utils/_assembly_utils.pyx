@@ -205,10 +205,11 @@ cdef class Locus:
         cdef:
             np.ndarray value_order
             EndRange e
-            int p, maxp, block_pos, block_index
+            int p, maxp, prohibit_pos
             float cumulative, threshold, v, maxv, weight
             list filtered_pos, end_ranges
             (int, int) current_range
+            bint passed_prohibit
         
         if len(pos) == 0:
             return []
@@ -224,24 +225,38 @@ cdef class Locus:
         weight = v
         current_range = (p, p+1)
         end_ranges = []
-        block_index, block_pos = -1, -1
-        if len(prohibited_positions) > 0:
-            block_index = 0
-            block_pos = prohibited_positions[block_index]
+        prohibited = iter(prohibited_positions)
+        passed_prohibit = False
+        prohibit_pos = -1
+        while prohibit_pos < p: # Initialize prohibit_pos as the first prohibited_position right of current_range 
+            try:
+                prohibit_pos = next(prohibited)
+            except StopIteration:
+                prohibit_pos = -1
+                break
         
         for p,v in filtered_pos[1:]: # Iterate over all positions that passed the threshold
-            if p - self.extend <= current_range[1]: # Can continue the last range
-                current_range = (current_range[0], p+1)
-                weight += v
-                if v > maxv or (v == maxv and endtype in [1,2]):
-                    maxv, maxp = v, p
-            else: # Must start a new range
+            passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
+            if passed_prohibit or p - self.extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
                 end_ranges.append(e)
                 current_range = (p, p+1)
                 maxp = p
                 maxv = v
                 weight = v
+                if passed_prohibit: # Push the prohibit_pos past current p
+                    passed_prohibit = False
+                    while prohibit_pos < p:
+                        try:
+                            prohibit_pos = next(prohibited)
+                        except StopIteration:
+                            prohibit_pos = -1
+                            break
+            else:# Can continue the last range
+                current_range = (current_range[0], p+1)
+                weight += v
+                if v > maxv or (v == maxv and endtype in [1,2]):
+                    maxv, maxp = v, p
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
         end_ranges.append(e)
