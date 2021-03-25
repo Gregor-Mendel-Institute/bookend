@@ -150,8 +150,8 @@ cdef class Locus:
             int l, r, p
             (int, int) span
             EndRange rng
-            set prohibited_plus, prohibited_minus, prohibited_positions
-            list gaps
+            set prohibited_plus, prohibited_minus
+            list gaps, prohibited_positions
         
         Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
@@ -187,26 +187,25 @@ cdef class Locus:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
-                prohibited_positions = prohibited_plus
+                prohibited_positions = sorted(prohibited_plus)
             else:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
-                prohibited_positions = prohibited_minus
+                prohibited_positions = sorted(prohibited_minus)
             
-            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype)
-            self.end_ranges[endtype] = [rng for rng in self.end_ranges[endtype] if rng.peak not in prohibited_positions]
+            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
             self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
     
-    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype):
+    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype, list prohibited_positions):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
         cdef:
             np.ndarray value_order
             EndRange e
-            int p, maxp
+            int p, maxp, block_pos, block_index
             float cumulative, threshold, v, maxv, weight
             list filtered_pos, end_ranges
             (int, int) current_range
@@ -225,13 +224,18 @@ cdef class Locus:
         weight = v
         current_range = (p, p+1)
         end_ranges = []
-        for p,v in filtered_pos[1:]:
-            if p - self.extend <= current_range[1]:
+        block_index, block_pos = -1, -1
+        if len(prohibited_positions) > 0:
+            block_index = 0
+            block_pos = prohibited_positions[block_index]
+        
+        for p,v in filtered_pos[1:]: # Iterate over all positions that passed the threshold
+            if p - self.extend <= current_range[1]: # Can continue the last range
                 current_range = (current_range[0], p+1)
                 weight += v
                 if v > maxv or (v == maxv and endtype in [1,2]):
                     maxv, maxp = v, p
-            else:
+            else: # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
                 end_ranges.append(e)
                 current_range = (p, p+1)
@@ -971,7 +975,7 @@ cdef class Locus:
                     new_weights[containers,:] += weight_to_add
                     proportion = np.sum(weight_to_add,axis=1)/np.sum(weight_to_add)
                     for c in range(len(containers)):
-                        self.member_weights[c,:] += self.member_weights[i,:]*proportion[c]
+                        self.member_weights[containers[c],:] += self.member_weights[i,:]*proportion[c]
                 
                 new_weights[i,] = 0
                 containment[:,i] = False
