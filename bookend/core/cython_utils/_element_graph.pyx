@@ -183,10 +183,10 @@ cdef class ElementGraph:
         cdef:
             np.ndarray default_proportions, proportions
             list contained, resolve_order, container_indices, maxmember
-            set containers, incompatible, compatible
-            float total_container_weight
+            set containers, incompatible
+            float total_container_weight, m
             Element element
-            Py_ssize_t resolve, i, c, m
+            Py_ssize_t resolve, i, c
             (int, int, int) sorttuple
         
         contained = [i for i in range(self.number_of_elements) if len(self.elements[i].contained)>0] # Identify reads that are contained
