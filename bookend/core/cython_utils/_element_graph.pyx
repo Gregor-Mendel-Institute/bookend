@@ -232,11 +232,11 @@ cdef class ElementGraph:
         element.cov = 0
         element.source_weights -= element.source_weights
         element.member_weights -= element.member_weights
-        for i in element.ingroup:self.elements[i].outgroup.difference_update(index)
-        for i in element.outgroup:self.elements[i].ingroup.difference_update(index)
-        for i in element.contains:self.elements[i].contained.difference_update(index)
-        for i in element.contained:self.elements[i].contains.difference_update(index)
-        for i in element.excludes:self.elements[i].excludes.difference_update(index)
+        for i in element.ingroup:self.elements[i].outgroup.difference_update([index])
+        for i in element.outgroup:self.elements[i].ingroup.difference_update([index])
+        for i in element.contains:self.elements[i].contained.difference_update([index])
+        for i in element.contained:self.elements[i].contains.difference_update([index])
+        for i in element.excludes:self.elements[i].excludes.difference_update([index])
     
     cpdef void assign_weights(self):
         """One round of Expectation Maximization: 
