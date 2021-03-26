@@ -907,9 +907,8 @@ cdef class Locus:
             self.subproblem_indices = [list(range(self.membership.shape[0]))]
 
         self.graphs = list()
-        dead_end_penalty = 0.1 if self.allow_incomplete else 0
         for indices in self.subproblem_indices:
-            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive, dead_end_penalty=dead_end_penalty))
+            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive))
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
