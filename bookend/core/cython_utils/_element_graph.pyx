@@ -184,13 +184,13 @@ cdef class ElementGraph:
             list contained, resolve_order, container_indices
             set containers, incompatible, compatible
             Element element
-            Py_ssize_t i, c, m
+            Py_ssize_t resolve, i, c, m
             (int, int, int) sorttuple
         
         contained = [i for i in range(self.number_of_elements) if len(self.elements[i].contained)>0] # Identify reads that are contained
         resolve_order = [sorttuple[2] for sorttuple in sorted([(-self.elements[c].IC, len(self.elements[c].contained), c) for c in contained])] # Rank them by decreasing number of members
-        for i in resolve_order:
-            element = self.elements[i]
+        for resolve in resolve_order:
+            element = self.elements[resolve]
             containers = element.contained
             # Get the set of reads incompatible with all containers but that do not exclude i
             incompatible =  set(range(self.number_of_elements))
@@ -220,7 +220,7 @@ cdef class ElementGraph:
                     for i in range(len(container_indices)):
                         self.elements[container_indices[i]].merge(element, proportions[i,:])
                 
-                self.zero_element(i)
+                self.zero_element(resolve)
     
     cpdef zero_element(self, int index):
         """Given an element's index, remove all references to it without
