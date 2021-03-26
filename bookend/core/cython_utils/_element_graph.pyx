@@ -45,9 +45,10 @@ cdef class ElementGraph:
         self.bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
         self.penalize_dead_ends()
-        self.resolve_containment()
         self.reachable_bases = sum([e.bases for e in self.elements])
-
+        if self.reachable_bases > 0:
+            self.resolve_containment()
+    
     cdef void penalize_dead_ends(self):
         """Perform a breadth-first search from all starts and all ends.
         The weight of all elements unreachable by each search is multiplied
