@@ -180,8 +180,8 @@ cdef class ElementGraph:
         weight proportional to the existing weight.
         The resulting matrix should contain only overlaps, exclusions, and unknowns."""
         cdef:
-            np.ndarray contained, default_proportions, proportions
-            list resolve_order, container_indices
+            np.ndarray default_proportions, proportions
+            list contained, resolve_order, container_indices
             set containers, incompatible, compatible
             Element element
             Py_ssize_t i, c, m
