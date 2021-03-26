@@ -1072,36 +1072,6 @@ cdef class Locus:
                 raise Exception('Incompatible read pair: {}, {}'.format(child_index, parent_index))
         
         self.information_content[parent_index] = np.sum(np.abs(self.membership[parent_index,:]))
-        # for i in range(self.overlap.shape[0]): # Iterate over columns/rows of the overlap matrix
-        #     # rows
-        #     p_out = self.overlap[parent_index, i]
-        #     c_out = self.overlap[child_index, i]
-        #     if p_out == 2:
-        #         self.overlap[parent_index, i] = 2 if c_out == 2 else 1
-        #     elif p_out == 1:
-        #         self.overlap[parent_index, i] = 1
-        #     elif p_out == 0:
-        #         self.overlap[parent_index, i] = c_out if c_out < 2 else 1
-        #     elif p_out == -1:
-        #         self.overlap[parent_index, i] = -1
-            
-        #     # columns
-        #     p_in = self.overlap[i, parent_index]
-        #     c_in = self.overlap[i, child_index]
-        #     if p == -1 or c == -1:
-        #         self.overlap[i, parent_index] = -1
-        #     else:
-        #         self.overlap[i, parent_index] = max(p,c)
-            
-        #     # Special case, i bridges p and c; overlap needs to be recalculated
-        #     if (p_out==1 and c_in==1) or (c_out==1 and p_in==1):
-        #         o = get_overlap(self.membership[parent_index,:], self.membership[i,:], self.information_content[parent_index], self.information_content[i])
-        #         self.overlap[parent_index, i] = o[0]
-        #         self.overlap[i, parent_index] = o[1]
-        
-        # # Exclude the child from the graph
-        # self.overlap[child_index,:] = -1
-        # self.overlap[:,child_index] = -1
         s = self.strand_array[parent_index]
         if s == 0:
             self.strand_array[parent_index] = self.strand_array[child_index]
@@ -1532,19 +1502,15 @@ cdef class strandedComponents():
                 self.Explore(w, c, visited, component, strand)
 
 cdef class simplifyDFS():
-    cdef public dict G, X, O
+    cdef public dict O, X, CO, CX
     cdef public int vertices, c
     cdef public np.ndarray visited, component, pre, post
     def __init__(self, overlap_matrix, search_order):
-        self.G = {i:[] for i in range(overlap_matrix.shape[0])}
-        self.O = {}
-        edge_locations = np.where(overlap_matrix >= 1)
-        for a,b in zip(edge_locations[0],edge_locations[1]):
-            if a != b:
-                self.G[a].append(b)
-        
+        self.O = self.getOutgroups(overlap_matrix)
         self.X = {i:set(np.where(overlap_matrix[i,:]==-1)[0]) for i in range(overlap_matrix.shape[0])}
-        self.vertices = len(self.G.keys())
+        self.CO = {} # Outgroups of each component
+        self.CX = {} # Exclusions of each component
+        self.vertices = len(self.O.keys())
         self.visited = np.zeros(self.vertices, dtype=np.bool)
         self.component = np.full(self.vertices, -1, dtype=np.int32)
         self.pre = np.zeros(self.vertices, dtype=np.int32)
@@ -1555,49 +1521,46 @@ cdef class simplifyDFS():
             if not self.visited[v]:
                 clock = self.Explore(v, clock)
     
-    def Previsit(self, v, clock):
+    cdef dict getOutgroups(self, np.ndarray overlap_matrix):
+        cdef tuple edge_locations
+        cdef dict O
+        O = {i:[] for i in range(overlap_matrix.shape[0])} # Outgroups of each element
+        edge_locations = np.where(overlap_matrix >= 1)
+        for a,b in zip(edge_locations[0],edge_locations[1]):
+            if a != b:
+                O[a].append(b)
+        
+        return O
+    
+    cdef int Previsit(self, int v, int clock):
         self.pre[v] = clock
         return clock + 1
     
-    def Postvisit(self, v, clock):
+    cdef void makeComponent(self, int v):
+        self.c += 1
+        self.component[v] = self.c
+        self.CO[self.c] = set(self.O[v]+[v])
+        self.CX[self.c] = self.X[v]
+    
+    cdef int Postvisit(self, int v, int clock):
         self.post[v] = clock
-        if len(self.G[v]) == 0: # If no outgroups, necessarily a new component
-            self.c += 1
-            self.component[v] = self.c
-            self.O[self.c] = set(self.G[v]+[v])
-        else: # Check if all outgroups are in the same component (that isn't -1)
-            outgroups = np.unique(self.component[self.G[v]])
-            outgroups = outgroups[outgroups!=-1]
-            outgroup_exclusions = set()
-            for o in self.G[v]:
-                outgroup_exclusions.update(self.X[o])
-            
-            if len(outgroups) == 0: # If no outgroups, necessarily a new component
-                self.c += 1
-                self.component[v] = self.c
-                self.O[self.c] = set(self.G[v]+[v])
-            elif len(outgroups) == 1:
-                if self.X[v].issubset(outgroup_exclusions):
-                    self.component[v] = outgroups[0]
-                else:
-                    self.c += 1
-                    self.component[v] = self.c
-                    self.O[self.c] = set(self.G[v]+[v])
-            else: # Multiple groups downstream
-                if set(self.G[v]).issubset(self.O[self.c]) and self.X[v].issubset(outgroup_exclusions):
-                    self.component[v] = self.c
-                    self.O[self.c].add(v)
-                else: # Includes branches not seen by last component, make new component
-                    self.c += 1
-                    self.component[v] = self.c
-                    self.O[self.c] = set(self.G[v]+[v])
+        outgroups = np.unique(self.component[self.O[v]])
+        outgroups = outgroups[outgroups!=-1]
+        for outgroup in outgroups: # Check if v can be added to the component of any of its outgroups
+            if set(self.O[v]).issubset(self.CO[outgroup]) and self.X[v].issubset(self.CX[outgroup]):
+                self.component[v] = outgroup
+                self.CO[outgroup].add(v)
+                return clock + 1
         
+        # If v is compatible with no outgroups, add a new component
+        self.makeComponent(v)
         return clock + 1
     
-    def Explore(self, v, clock):
+    cdef int Explore(self, int v, int clock):
+        cdef int w
         self.visited[v] = True
         clock = self.Previsit(v, clock)
-        for w in self.G[v]:
+        for w in self.O[v]:
             # print('{}->{} ({})'.format(v,w,self.visited[w]))
             if not self.visited[w]:
                 # print("Visiting {}".format(w))
