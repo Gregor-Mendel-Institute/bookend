@@ -77,7 +77,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_start_plus[v] = True
-            reached_from_start_plus[sorted(v.contains)] = True
+            reached_from_start_plus[sorted(self.elements[v].contains)] = True
             for w in self.elements[v].outgroup:
                 if not reached_from_start_plus[w]:
                     if self.elements[w].strand in strand:
@@ -89,7 +89,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_end_plus[v] = True
-            reached_from_end_plus[sorted(v.contains)] = True
+            reached_from_end_plus[sorted(self.elements[v].contains)] = True
             for w in self.elements[v].ingroup:
                 if not reached_from_end_plus[w]:
                     if self.elements[w].strand in strand:
@@ -102,7 +102,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_start_minus[v] = True
-            reached_from_start_minus[sorted(v.contains)] = True
+            reached_from_start_minus[sorted(self.elements[v].contains)] = True
             for w in self.elements[v].ingroup:
                 if not reached_from_start_minus[w]:
                     if self.elements[w].strand in strand:
@@ -114,7 +114,7 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             reached_from_end_minus[v] = True
-            reached_from_end_minus[sorted(v.contains)] = True
+            reached_from_end_minus[sorted(self.elements[v].contains)] = True
             for w in self.elements[v].outgroup:
                 if not reached_from_end_minus[w]:
                     if self.elements[w].strand in strand:
