@@ -181,8 +181,9 @@ cdef class ElementGraph:
         The resulting matrix should contain only overlaps, exclusions, and unknowns."""
         cdef:
             np.ndarray default_proportions, proportions
-            list contained, resolve_order, container_indices
+            list contained, resolve_order, container_indices, maxmember
             set containers, incompatible, compatible
+            float total_container_weight
             Element element
             Py_ssize_t resolve, i, c, m
             (int, int, int) sorttuple
@@ -209,7 +210,7 @@ cdef class ElementGraph:
                     proportions = np.zeros(shape=(len(containers), element.all.shape[0]), dtype=np.float32)
                     for i in range(len(container_indices)):
                         c = container_indices[i]
-                        proportions[i,:] = self.normalize(self.elements[c].source_weights)*maxmember[i]/total_container_weight
+                        proportions[i,:] = self.normalize(self.elements[c].source_weights)*default_proportions[i]
                     
                     for i in range(element.all.shape[0]):
                         if np.sum(proportions[:,i]) == 0:
@@ -229,11 +230,11 @@ cdef class ElementGraph:
         element.cov = 0
         element.source_weights -= element.source_weights
         element.member_weights -= element.member_weights
-        for i in element.ingroup:self.elements[i].outgroup.remove(index)
-        for i in element.outgroup:self.elements[i].ingroup.remove(index)
-        for i in element.contains:self.elements[i].contained.remove(index)
-        for i in element.contained:self.elements[i].contains.remove(index)
-        for i in element.excludes:self.elements[i].excludes.remove(index)
+        for i in element.ingroup:self.elements[i].outgroup.difference_update(index)
+        for i in element.outgroup:self.elements[i].ingroup.difference_update(index)
+        for i in element.contains:self.elements[i].contained.difference_update(index)
+        for i in element.contained:self.elements[i].contains.difference_update(index)
+        for i in element.excludes:self.elements[i].excludes.difference_update(index)
     
     cpdef void assign_weights(self):
         """One round of Expectation Maximization: 
