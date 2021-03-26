@@ -15,10 +15,10 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases, dead_end_penalty
+    cdef public float bases, reachable_bases, dead_end_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=.1, partial_coverage=True):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0, partial_coverage=True):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -45,6 +45,8 @@ cdef class ElementGraph:
         self.bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
         self.penalize_dead_ends()
+        self.resolve_containment()
+        self.reachable_bases = sum([e.bases for e in self.elements])
 
     cdef void penalize_dead_ends(self):
         """Perform a breadth-first search from all starts and all ends.
@@ -170,6 +172,67 @@ cdef class ElementGraph:
         
         if len(self.paths) > 0:
             self.assign_weights()
+    
+    cpdef void resolve_containment(self):
+        """Given a overlap matrix, 'bubble up' the weight of
+        all reads that have one or more 'contained by' relationships
+        to other reads. Pass from highest complexity reads down, assigning
+        weight proportional to the existing weight.
+        The resulting matrix should contain only overlaps, exclusions, and unknowns."""
+        cdef:
+            np.ndarray contained, containers, default_proportions, proportions
+            list resolve_order, container_indices
+            set containers, incompatible, compatible
+            Element element
+            Py_ssize_t i, c, m
+        
+        contained = [i for i in range(self.number_of_elements) if len(self.elements[i].contained)>0] # Identify reads that are contained
+        resolve_order = [i[2] for i in sorted([(-self.elements[c].IC, len(self.elements[c].contained), c) for c in contained])] # Rank them by decreasing number of members
+        for i in resolve_order:
+            element = self.elements[i]
+            containers = element.contained
+            # Get the set of reads incompatible with all containers but that do not exclude i
+            incompatible =  set(range(self.number_of_elements))
+            for c in containers:
+                incompatible.intersection_update(self.elements[c].excludes)
+            
+            incompatible.difference_update(element.excludes)
+            if len(incompatible) == 0: # Special case, all weight goes to containers
+                if len(containers) == 1:
+                    self.elements[containers.pop()].merge(element, element.all)
+                else: # Evaluate how much weight goes to each container
+                    container_indices = sorted(containers)
+                    maxmember = [max(self.elements[c].member_weights[sorted(self.elements[c].covered_indices)]) for c in container_indices]
+                    total_container_weight = sum(maxmember)
+                    default_proportions = np.array([m/total_container_weight for m in maxmember], dtype=np.float32)
+                    proportions = np.zeros(shape=(len(containers), element.all.shape[0]), dtype=np.float32)
+                    for i in range(len(container_indices)):
+                        c = container_indices[i]
+                        proportions[i,:] = self.normalize(self.elements[c].source_weights)*maxmember[i]/total_container_weight
+                    
+                    for i in range(element.all.shape[0]):
+                        if np.sum(proportions[:,i]) == 0:
+                            proportions[:,i] = default_proportions
+                        else:
+                            proportions[:,i] = self.normalize(proportions[:,i])
+                    
+                    for i in range(len(container_indices)):
+                        self.elements[container_indices[i]].merge(element, proportions[i,:])
+                
+                self.zero_element(i)
+    
+    cpdef zero_element(self, int index):
+        """Given an element's index, remove all references to it without
+        deleting it from the list of elements."""
+        element = self.elements[index]
+        element.cov = 0
+        element.source_weights -= element.source_weights
+        element.member_weights -= element.member_weights
+        for i in element.ingroup:self.elements[i].outgroup.remove(index)
+        for i in element.outgroup:self.elements[i].ingroup.remove(index)
+        for i in element.contains:self.elements[i].contained.remove(index)
+        for i in element.contained:self.elements[i].contains.remove(index)
+        for i in element.excludes:self.elements[i].excludes.remove(index)
     
     cpdef void assign_weights(self):
         """One round of Expectation Maximization: 

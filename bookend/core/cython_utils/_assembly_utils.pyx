@@ -33,7 +33,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, number_of_elements, min_overhang, chunk_number, oligo_len
-    cdef public bint naive,  use_attributes, ignore_ends
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -55,10 +55,12 @@ cdef class Locus:
         self.chrom = chrom
         self.cap_bonus = cap_bonus
         self.use_attributes = use_attributes
+        self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             if self.ignore_ends:
+                self.allow_incomplete = True
                 for read in list_of_reads:
                     read.s_tag, read.e_tag = False, False
                     if len(read.splice)==0:read.strand = 0
@@ -813,7 +815,7 @@ cdef class Locus:
             self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
         
         if reduce:
-            self.resolve_containment()
+            # self.resolve_containment()
             self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
@@ -905,8 +907,9 @@ cdef class Locus:
             self.subproblem_indices = [list(range(self.membership.shape[0]))]
 
         self.graphs = list()
+        dead_end_penalty = 0.1 if self.allow_incomplete else 0
         for indices in self.subproblem_indices:
-            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive))
+            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive, dead_end_penalty=dead_end_penalty))
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
@@ -927,78 +930,6 @@ cdef class Locus:
                 self.transcripts.append(self.convert_path(path, transcript_number+1))
             
         self.add_transcript_attributes()
-    
-    cpdef void resolve_containment(self):
-        """Given a overlap matrix, 'bubble up' the weight of
-        all reads that have one or more 'contained by' relationships
-        to other reads. Pass from highest complexity reads down, assigning
-        weight proportional to the existing weight.
-        The resulting matrix should contain only overlaps, exclusions, and unknowns."""
-        cdef:
-            np.ndarray containment, contained, IC_order, new_weights, containers, incompatible, weight_transform, compatibilities, informative, container_weights, container_proportions, total_container_weights, n_weights
-            Py_ssize_t i
-        
-        containment = self.overlap==2 # Make a boolean matrix of which reads are contained in other reads
-        np.put(containment, range(0,containment.shape[0]**2,containment.shape[0]+1), False, mode='wrap') # Blank out the diagonal (self-containments)
-        contained = np.where(np.sum(containment, axis=1) > 0)[0] # Identify reads that are contained
-        IC_order = contained[np.lexsort((-self.member_content[contained], -self.information_content[contained]))] # Rank them by decreasing number of members
-        new_weights = np.copy(self.weight_array)
-        for i in IC_order:
-            containers = np.where(containment[i,:])[0]
-            containers = containers[np.sum(new_weights[containers,:],axis=1)>0]
-            # Get the set of reads incompatible with all containers but that do not exclude i
-            incompatible =  np.where(np.logical_and(
-                np.all(self.overlap[:,containers]==-1, axis=1),
-                self.overlap[:,i] >=0
-            ))[0]
-            incompatible = incompatible[np.sum(new_weights[incompatible,:],axis=1)>0]
-            if len(incompatible) == 0: # Special case, all weight goes to containers
-                if len(containers) == 1:
-                    new_weights[containers,:] += new_weights[i,:] * self.member_lengths[i]/self.member_lengths[containers]
-                    self.member_weights[containers,:] += self.member_weights[i,:]
-                else: # Evaluate how much weight goes to each container
-                    compatible = np.where(np.logical_and(
-                        np.logical_or(
-                            np.any(self.overlap[:,containers] > 0, axis=1),
-                            np.any(self.overlap[containers,:] > 0, axis=0)
-                        ),
-                        np.all(self.overlap[:,incompatible]==-1, axis=1)
-                    ))[0]
-                    nonzero = np.where(new_weights[i,:] > 0)[0]
-                    weight_to_add = np.zeros(shape=(len(containers),new_weights.shape[1]), dtype=np.float32)
-                    weight_transform = self.member_lengths[i]/self.member_lengths[containers]
-                    
-                    compatibilities = self.overlap[:,containers][compatible,:] > -1
-                    informative = np.where(np.sum(compatibilities,axis=1) < len(containers))[0]
-                    container_weights = new_weights[containers,:]
-                    for f in informative:
-                        container_weights[compatibilities[f,:],:] += new_weights[compatible[f],:]
-                        if compatible[f] in containers:
-                            container_weights[containers==compatible[f],:] -= new_weights[containers[containers==compatible[f]],:]
-                    
-                    total_container_weights = np.sum(container_weights, axis=1)
-                    container_proportions = total_container_weights / np.sum(total_container_weights)
-                    for n in nonzero: # Each source that has reads of i is evaluated separately
-                        n_weights = container_weights[:,n]
-                        total = np.sum(n_weights)
-                        weight = new_weights[i,n]
-                        if total > 0:
-                            weight_to_add[:,n] += weight * n_weights / total * weight_transform
-                        else:
-                            weight_to_add[:,n] += weight * container_proportions * weight_transform
-                    
-                    new_weights[containers,:] += weight_to_add
-                    proportion = np.sum(weight_to_add,axis=1)/np.sum(weight_to_add)
-                    for c in range(len(containers)):
-                        self.member_weights[containers[c],:] += self.member_weights[i,:]*proportion[c]
-                
-                new_weights[i,] = 0
-                containment[:,i] = False
-                containment[i,:] = False
-                self.member_weights[i,:] = 0
-        
-        self.weight_array = new_weights
-        self.subset_elements(np.where(np.sum(new_weights,axis=1)>0)[0])
     
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
@@ -1081,6 +1012,7 @@ cdef class Locus:
         self.member_weights[parent_index,:] += self.member_weights[child_index,:]
         self.member_lengths[parent_index] = combined_length
         self.weight_array[child_index,:] = 0
+        self.member_weights[child_index,:] = 0
     
     cpdef convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
