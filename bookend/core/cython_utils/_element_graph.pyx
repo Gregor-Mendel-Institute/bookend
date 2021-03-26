@@ -180,14 +180,15 @@ cdef class ElementGraph:
         weight proportional to the existing weight.
         The resulting matrix should contain only overlaps, exclusions, and unknowns."""
         cdef:
-            np.ndarray contained, containers, default_proportions, proportions
+            np.ndarray contained, default_proportions, proportions
             list resolve_order, container_indices
             set containers, incompatible, compatible
             Element element
             Py_ssize_t i, c, m
+            (int, int, int) sorttuple
         
         contained = [i for i in range(self.number_of_elements) if len(self.elements[i].contained)>0] # Identify reads that are contained
-        resolve_order = [i[2] for i in sorted([(-self.elements[c].IC, len(self.elements[c].contained), c) for c in contained])] # Rank them by decreasing number of members
+        resolve_order = [sorttuple[2] for sorttuple in sorted([(-self.elements[c].IC, len(self.elements[c].contained), c) for c in contained])] # Rank them by decreasing number of members
         for i in resolve_order:
             element = self.elements[i]
             containers = element.contained
