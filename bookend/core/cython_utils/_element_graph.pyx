@@ -223,9 +223,10 @@ cdef class ElementGraph:
                 
                 self.zero_element(resolve)
     
-    cpdef zero_element(self, int index):
+    cpdef void zero_element(self, int index):
         """Given an element's index, remove all references to it without
         deleting it from the list of elements."""
+        cdef Element element
         element = self.elements[index]
         element.cov = 0
         element.source_weights -= element.source_weights
