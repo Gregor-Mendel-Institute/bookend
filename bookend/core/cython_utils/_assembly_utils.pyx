@@ -778,15 +778,17 @@ cdef class Locus:
             sorted_indices = [triple[2] for triple in sort_triples if number_of_members[triple[2]] > 0]
             self.membership = reduced_membership[sorted_indices,:]
             self.weight_array = new_weights[sorted_indices,:]
+            self.rep_array = new_reps[sorted_indices]
             if not member_weights_exists:
                 self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
                 self.member_weights[self.membership==0] = 0
+                for i in self.membership.shape[0]:
+                    self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
             else:
                 self.member_weights = new_member_weights[sorted_indices,:]
             
             self.member_lengths = new_lengths[sorted_indices]
             self.strand_array = new_strands[sorted_indices]
-            self.rep_array = new_reps[sorted_indices]
             if len(self.traceback) > 0:
                 self.traceback = [new_traceback[i] for i in sorted_indices]
         
