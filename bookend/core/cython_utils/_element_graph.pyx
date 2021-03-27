@@ -237,8 +237,10 @@ cdef class ElementGraph:
         """Given an element's index, remove all references to it without
         deleting it from the list of elements."""
         cdef Element element
+        self.assignments[index] = -1
         element = self.elements[index]
         element.cov = 0
+        element.bases = 0
         element.source_weights -= element.source_weights
         element.member_weights -= element.member_weights
         for e in self.elements:
@@ -365,16 +367,19 @@ cdef class ElementGraph:
         best_element = self.elements[available_elements[0]]
         most_cov = best_element.bases
         for c in best_element.contains:
-            most_cov += self.available_bases(best_element.source_weights, self.elements[c])
+            if c != best_element.index:
+                most_cov += self.available_bases(best_element.source_weights, self.elements[c])
         
         most_cov /= best_element.length
         for i in available_elements:
             new_element = self.elements[i]
             new_cov = new_element.bases
             for c in new_element.contains:
-                new_cov += self.available_bases(new_element.source_weights, self.elements[c])
+                if c != new_element.index:
+                    new_cov += self.available_bases(new_element.source_weights, self.elements[c])
             
             new_cov /= new_element.length
+            print(i, new_element, new_cov)
             if new_cov > most_cov:
                 best_element = new_element
                 most_cov = new_cov
