@@ -379,7 +379,7 @@ cdef class ElementGraph:
                     new_cov += self.available_bases(new_element.source_weights, self.elements[c])
             
             new_cov /= new_element.length
-            print(i, new_element, new_cov)
+            # print(i, new_element, new_cov)
             if new_cov > most_cov:
                 best_element = new_element
                 most_cov = new_cov
