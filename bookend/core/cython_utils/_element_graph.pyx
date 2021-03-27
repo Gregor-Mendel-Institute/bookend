@@ -18,7 +18,7 @@ cdef class ElementGraph:
     cdef public float bases, reachable_bases, dead_end_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0, partial_coverage=True):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -49,7 +49,7 @@ cdef class ElementGraph:
         if self.reachable_bases > 0:
             self.resolve_containment()
     
-    cdef void penalize_dead_ends(self):
+    cpdef void penalize_dead_ends(self):
         """Perform a breadth-first search from all starts and all ends.
         The weight of all elements unreachable by each search is multiplied
         by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
@@ -129,20 +129,26 @@ cdef class ElementGraph:
         for i in range(len(self.elements)):
             element = self.elements[i]
             if not reached_from_start[i]:
-                element.source_weights *= self.dead_end_penalty
-                element.member_weights *= self.dead_end_penalty
-                element.cov *= self.dead_end_penalty
-                original_bases = element.bases
-                element.bases *= self.dead_end_penalty
-                self.bases -= original_bases-element.bases
+                if self.dead_end_penalty == 0:
+                    self.zero_element(i)
+                else:
+                    element.source_weights *= self.dead_end_penalty
+                    element.member_weights *= self.dead_end_penalty
+                    element.cov *= self.dead_end_penalty
+                    original_bases = element.bases
+                    element.bases *= self.dead_end_penalty
+                    self.bases -= original_bases-element.bases
             
             if not reached_from_end[i]:
-                element.source_weights *= self.dead_end_penalty
-                element.member_weights *= self.dead_end_penalty
-                element.cov *= self.dead_end_penalty
-                original_bases = element.bases
-                element.bases *= self.dead_end_penalty
-                self.bases -= original_bases-element.bases
+                if self.dead_end_penalty == 0:
+                    self.zero_element(i)
+                else:
+                    element.source_weights *= self.dead_end_penalty
+                    element.member_weights *= self.dead_end_penalty
+                    element.cov *= self.dead_end_penalty
+                    original_bases = element.bases
+                    element.bases *= self.dead_end_penalty
+                    self.bases -= original_bases-element.bases
     
     cpdef void check_for_full_paths(self):
         """Assign all reads to any existing complete paths"""
@@ -183,23 +189,25 @@ cdef class ElementGraph:
         cdef:
             np.ndarray default_proportions, proportions
             list contained, resolve_order, container_indices, maxmember
-            set containers, incompatible
+            set zeros, containers, incompatible
             float total_container_weight, m
             Element element
             Py_ssize_t resolve, i, c
             (int, int, int) sorttuple
         
+        zeros = set([element.index for element in self.elements if element.cov == 0])
         contained = [i for i in range(self.number_of_elements) if len(self.elements[i].contained)>0] # Identify reads that are contained
         resolve_order = [sorttuple[2] for sorttuple in sorted([(-self.elements[c].IC, len(self.elements[c].contained), c) for c in contained])] # Rank them by decreasing number of members
         for resolve in resolve_order:
             element = self.elements[resolve]
-            containers = element.contained
+            if element.cov == 0:continue
+            containers = element.contained.difference(zeros)
             # Get the set of reads incompatible with all containers but that do not exclude i
             incompatible =  set(range(self.number_of_elements))
             for c in containers:
                 incompatible.intersection_update(self.elements[c].excludes)
             
-            incompatible.difference_update(element.excludes)
+            incompatible.difference_update(element.excludes|zeros)
             if len(incompatible) == 0: # Special case, all weight goes to containers
                 if len(containers) == 1:
                     self.elements[containers.pop()].merge(element, element.all)
@@ -223,6 +231,7 @@ cdef class ElementGraph:
                         self.elements[container_indices[i]].merge(element, proportions[i,:])
                 
                 self.zero_element(resolve)
+                zeros.add(resolve)
     
     cpdef void zero_element(self, int index):
         """Given an element's index, remove all references to it without
