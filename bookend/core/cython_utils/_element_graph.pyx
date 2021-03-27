@@ -15,7 +15,7 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases, reachable_bases, dead_end_penalty
+    cdef public float bases, input_bases, dead_end_penalty
     cdef public set SP, SM, EP, EM
     cdef public bint no_ends, naive, partial_coverage
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True):
@@ -23,10 +23,10 @@ cdef class ElementGraph:
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
         """
+        cdef int e_index, path_index, i
+        cdef Element e, path, part
         self.emptyPath = Element(-1, np.array([0]), np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
         self.dead_end_penalty = dead_end_penalty
-        cdef Element e, path, part
-        cdef int e_index, path_index, i
         self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
         self.overlap = overlap_matrix
         self.number_of_elements = self.overlap.shape[0]
@@ -34,7 +34,7 @@ cdef class ElementGraph:
         self.naive = naive
         self.partial_coverage = partial_coverage
         if self.naive:
-             source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
+                source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
         
         self.elements = [Element(
             i, source_weight_array[i,:], member_weight_array[i,:], strands[i],
@@ -42,11 +42,11 @@ cdef class ElementGraph:
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
-        self.bases = sum([e.bases for e in self.elements])
+        self.input_bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
         self.penalize_dead_ends()
-        self.reachable_bases = sum([e.bases for e in self.elements])
-        if self.reachable_bases > 0:
+        self.bases = sum([e.bases for e in self.elements])
+        if self.bases > 0:
             self.resolve_containment()
     
     cpdef void penalize_dead_ends(self):
