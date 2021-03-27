@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=True, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -363,13 +363,14 @@ cdef class Locus:
         strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
         weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
         self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
-        self.rep_array = np.ones(number_of_reads, dtype=np.int32)
+        self.rep_array = np.zeros(number_of_reads, dtype=np.float32)
         source_plus, sink_plus, source_minus, sink_minus = range(number_of_frags, number_of_frags+4)
         locus_length = len(self.frag_by_pos)
         cdef char [:, :] MEMBERSHIP = membership
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             last_rfrag = 0
             read = self.reads[i]
+            self.rep_array[i] = read.weight
             s = read.strand
             strand_array[i] = s
             if s == 1:
@@ -735,7 +736,7 @@ cdef class Locus:
         """Given a matrix of membership values, 
         returns a [reduced_membership_matrix, weights] array
         such that all rows are unique and in sort order."""
-        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool, new_lengths
+        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool, new_lengths, reps
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
         cdef Py_ssize_t i,v
@@ -791,9 +792,11 @@ cdef class Locus:
         
         if not np.any(self.member_weights): # member_weights still uninitialized
             self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
+            reps = np.full((self.membership.shape[0],self.membership.shape[1]), self.rep_array)
             self.member_weights[self.membership==0] = 0
+            self.member_weights[self.membership==-1] = reps[self.membership==-1]
     
-    cpdef void filter_by_reps(self, int minreps=1):
+    cpdef void filter_by_reps(self, float minreps=1):
         """Enforce that elements in the membership"""
         cdef np.ndarray keep
         if minreps > 1:
