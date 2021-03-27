@@ -736,7 +736,7 @@ cdef class Locus:
         """Given a matrix of membership values, 
         returns a [reduced_membership_matrix, weights] array
         such that all rows are unique and in sort order."""
-        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool, new_lengths, reps
+        cdef np.ndarray reduced_membership, reverse_lookup, new_weights, new_strands, members_bool, new_lengths
         cdef list left_member, right_member, index, sort_triples, sorted_indices
         cdef (int, int, int) triple
         cdef Py_ssize_t i,v
@@ -745,7 +745,7 @@ cdef class Locus:
             reduced_membership, reverse_lookup = np.unique(self.membership, axis=0, return_inverse=True)
             new_weights = np.zeros(shape=(reduced_membership.shape[0], self.weight_array.shape[1]), dtype=np.float32)
             new_strands = np.zeros(shape=reduced_membership.shape[0], dtype=np.int8)
-            new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
+            new_reps = np.zeros(shape=reduced_membership.shape[0], dtype=np.float32)
             new_lengths = np.zeros(shape=reduced_membership.shape[0], dtype=np.int32)
             if not np.any(self.member_weights):
                 member_weights_exists = False
@@ -792,9 +792,9 @@ cdef class Locus:
         
         if not np.any(self.member_weights): # member_weights still uninitialized
             self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
-            reps = np.full((self.membership.shape[0],self.membership.shape[1]), self.rep_array)
             self.member_weights[self.membership==0] = 0
-            self.member_weights[self.membership==-1] = reps[self.membership==-1]
+            for i in self.membership.shape[0]:
+                self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
     
     cpdef void filter_by_reps(self, float minreps=1):
         """Enforce that elements in the membership"""
