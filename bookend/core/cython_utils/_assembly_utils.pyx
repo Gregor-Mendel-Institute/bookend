@@ -782,7 +782,7 @@ cdef class Locus:
             if not member_weights_exists:
                 self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
                 self.member_weights[self.membership==0] = 0
-                for i in self.membership.shape[0]:
+                for i in range(self.membership.shape[0]):
                     self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
             else:
                 self.member_weights = new_member_weights[sorted_indices,:]
@@ -795,7 +795,7 @@ cdef class Locus:
         if not np.any(self.member_weights): # member_weights still uninitialized
             self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
             self.member_weights[self.membership==0] = 0
-            for i in self.membership.shape[0]:
+            for i in range(self.membership.shape[0]):
                 self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
     
     cpdef void filter_by_reps(self, float minreps=1):
