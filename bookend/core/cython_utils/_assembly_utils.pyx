@@ -640,7 +640,6 @@ cdef class Locus:
         
         # Check same-stranded intron retention
         strand = 1
-        cov = self.cov_plus
         stranded_branches = list()
         for k in self.J_plus.keys():
             l,r = self.string_to_span(k)
@@ -656,8 +655,8 @@ cdef class Locus:
             if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
                 lfrag = self.frag_by_pos[l]
                 rfrag = self.frag_by_pos[r]
-                cov_in_junction = cov[self.frags[lfrag][0]:self.frags[rfrag][0]]
-                spanning_cov = np.max(np.append(cov[self.frags[lfrag][0]], cov[self.frags[rfrag][0]]))
+                cov_in_junction = self.depth[self.frags[lfrag][0]:self.frags[rfrag][0]]
+                spanning_cov = np.max(np.append(self.depth[self.frags[lfrag][0]], self.depth[self.frags[rfrag][0]]))
                 if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
                     junction_membership = self.membership[:,lfrag:rfrag]
                     fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array >= 0)
@@ -665,7 +664,6 @@ cdef class Locus:
         
         # Repeat the procedure for the minus strand
         strand = -1
-        cov = self.cov_minus
         stranded_branches = list()
         for k in self.J_minus.keys():
             l,r = self.string_to_span(k)
@@ -681,8 +679,8 @@ cdef class Locus:
             if not np.any(np.logical_and(sb>l, sb<r)): # Intron has no intervening stranded branchpoints
                 lfrag = self.frag_by_pos[l]
                 rfrag = self.frag_by_pos[r]
-                cov_in_junction = cov[self.frags[lfrag][0]:self.frags[rfrag][0]]
-                spanning_cov = np.max(np.append(cov[self.frags[lfrag][0]], cov[self.frags[rfrag][0]]))
+                cov_in_junction = self.depth[self.frags[lfrag][0]:self.frags[rfrag][0]]
+                spanning_cov = np.max(np.append(self.depth[self.frags[lfrag][0]], self.depth[self.frags[rfrag][0]]))
                 if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
                     junction_membership = self.membership[:,lfrag:rfrag]
                     fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array <= 0)
@@ -795,7 +793,7 @@ cdef class Locus:
         if not np.any(self.member_weights): # member_weights still uninitialized
             self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
             self.member_weights[self.membership==0] = 0
-            for i in range(self.membership.shape[0]):
+            for i in range(self.membership.shape[0])    :
                 self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
     
     cpdef void filter_by_reps(self, float minreps=1):
