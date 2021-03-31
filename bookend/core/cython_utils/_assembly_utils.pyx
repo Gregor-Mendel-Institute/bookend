@@ -40,7 +40,7 @@ cdef class Locus:
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
+    cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
@@ -160,8 +160,11 @@ cdef class Locus:
         strandedpositions = np.where(covstranded > 0)[0]
         if strandedpositions.shape[0] > 0: # Some reads to inform the strand
             strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
-            self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*strandratio
-            self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-strandratio)
+            strandratio[strandratio < self.minimum_proportion] = 0
+            strandratio[strandratio > 1-self.minimum_proportion] = 1
+            self.strandratio = strandratio
+            self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*self.strandratio
+            self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-self.strandratio)
             self.depth = self.cov_plus + self.cov_minus
         else:
             self.cov_plus = self.depth_matrix[covn,:]*.5
@@ -188,10 +191,10 @@ cdef class Locus:
         for endtype in [Sp, Ep, Sm, Em]:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*self.strandratio[pos]
                 prohibited_positions = prohibited_plus
             else:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]*(1-self.strandratio[pos])
                 prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
