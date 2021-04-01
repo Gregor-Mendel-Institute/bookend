@@ -322,8 +322,7 @@ cdef class Locus:
         cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep, discard_frags
         cdef char s, jstrand
         cdef bint junctions_are_linear
-        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions
-        cdef set 
+        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
         cdef (int, int) block, span
         cdef str junction_hash
         bp_positions = sorted(list(self.branchpoints))
