@@ -72,6 +72,22 @@ cdef class Locus:
             self.source_lookup = ru.get_source_dict(self.sources)
             self.extend = extend
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
+            Sp, Ep, Sm, Em, covp, covm, covn = range(7)
+            covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
+            strandedpositions = np.where(covstranded > 0)[0]
+            if strandedpositions.shape[0] > 0: # Some reads to inform the strand
+                strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
+                strandratio[strandratio < self.minimum_proportion] = 0
+                strandratio[strandratio > 1-self.minimum_proportion] = 1
+                self.strandratio = strandratio
+                self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*self.strandratio
+                self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-self.strandratio)
+                self.depth = self.cov_plus + self.cov_minus
+            else:
+                self.cov_plus = self.depth_matrix[covn,:]*.5
+                self.cov_minus = self.depth_matrix[covn,:]*.5
+                self.depth = self.depth_matrix[covn,:]
+            
             self.prune_junctions()
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
@@ -110,11 +126,12 @@ cdef class Locus:
         cdef dict jdict, leftsides, rightsides
         cdef list keys, spans
         cdef str k
-        cdef int i,l,r
+        cdef int i,l,r, Sp, Ep, Sm, Em, covp, covm, covn
         cdef set prune
         cdef np.ndarray counts
-        cdef float total
+        cdef float total, jcov, spanning_cov
         cdef bint passes
+        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         for jdict in [self.J_plus, self.J_minus]:
             if jdict:
                 prune = set()
@@ -124,8 +141,13 @@ cdef class Locus:
                 rightsides = {}
                 for i in range(len(keys)):
                     l,r = spans[i]
-                    leftsides[l] = leftsides.get(l, [])+[keys[i]]
-                    rightsides[r] = rightsides.get(r, [])+[keys[i]]
+                    spanning_cov = max([self.depth[l], self.depth[r]])
+                    jcov = jdict[keys[i]]
+                    if jcov < spanning_cov * self.minimum_proportion:
+                        prune.add(keys[i])
+                    else:
+                        leftsides[l] = leftsides.get(l, [])+[keys[i]]
+                        rightsides[r] = rightsides.get(r, [])+[keys[i]]
                 
                 for l in leftsides.keys():
                     if len(leftsides[l]) > 1:
@@ -147,29 +169,12 @@ cdef class Locus:
         positions where branching could occur in the overlap graph."""
         cdef:
             np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
-            Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow, i
             float threshold_depth, cumulative_depth, cutoff
             int l, r, p
             (int, int) span
             EndRange rng
             set prohibited_plus, prohibited_minus, prohibited_positions
             list gaps
-        
-        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
-        covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
-        strandedpositions = np.where(covstranded > 0)[0]
-        if strandedpositions.shape[0] > 0: # Some reads to inform the strand
-            strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
-            strandratio[strandratio < self.minimum_proportion] = 0
-            strandratio[strandratio > 1-self.minimum_proportion] = 1
-            self.strandratio = strandratio
-            self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*self.strandratio
-            self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-self.strandratio)
-            self.depth = self.cov_plus + self.cov_minus
-        else:
-            self.cov_plus = self.depth_matrix[covn,:]*.5
-            self.cov_minus = self.depth_matrix[covn,:]*.5
-            self.depth = self.depth_matrix[covn,:]
         
         self.branchpoints = set()
         self.end_ranges = dict()
@@ -488,11 +493,10 @@ cdef class Locus:
                             sorted_splice_sites = sorted(set(splice_sites))
                             junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
                             if junctions_are_linear: # No overlapping splice junctions
-                                pass
                                 MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
                                 for span in spans:
                                     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
-                                    if not np.all(discard_frags[[s>=0, s<=0],skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
+                                    if not np.all(discard_frags[[s>=0, s<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
                                         membership[i, skipped_frags] = 0
                                     else: # Only the spliced path exists
                                         membership[i, skipped_frags] = -1
