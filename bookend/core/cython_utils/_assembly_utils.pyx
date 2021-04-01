@@ -378,6 +378,7 @@ cdef class Locus:
         locus_length = len(self.frag_by_pos)
         cdef char [:, :] MEMBERSHIP = membership
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
+            print(i)
             last_rfrag = 0
             read = self.reads[i]
             self.rep_array[i] = read.weight
@@ -535,6 +536,7 @@ cdef class Locus:
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
+        print('survived membership construction')
         if self.naive:
             weight_array = np.sum(weight_array,axis=1,keepdims=True)
         
