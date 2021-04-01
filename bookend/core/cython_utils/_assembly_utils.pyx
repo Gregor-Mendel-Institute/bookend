@@ -475,9 +475,11 @@ cdef class Locus:
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
                     else: # The gap is an unspecified gap
+                        print("resolving gap...")
                         intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], s)
                         if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
+                            print("\tNo junction.")
                         else: # Fill in as much information as possible based on filtered junctions and membership
                             spans = sorted([self.string_to_span(j) for j in intervening_junctions])
                             splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
@@ -495,14 +497,17 @@ cdef class Locus:
                             sorted_splice_sites = sorted(set(splice_sites))
                             junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
                             if junctions_are_linear: # No overlapping splice junctions
+                                print("\tLinear junctions...")
                                 MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
                                 for span in spans:
                                     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
                                     if not np.all(discard_frags[[s>=0, s<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
                                         for skipped in skipped_frags:
+                                            print("\t\tSkipping THAT one...")
                                             MEMBERSHIP[i, skipped] = 0
                                     else: # Only the spliced path exists
                                         for skipped in skipped_frags:
+                                            print("\t\tKeeping THIS one!")
                                             MEMBERSHIP[i, skipped] = -1
                                         
                                         if s == 0:
