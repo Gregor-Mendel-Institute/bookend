@@ -319,10 +319,11 @@ cdef class Locus:
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
         cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
-        cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep
-        cdef char s
-        cdef list temp_frags, bp_positions
-        cdef set discard_frags
+        cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep, discard_frags
+        cdef char s, jstrand
+        cdef bint junctions_are_linear
+        cdef list temp_frags, bp_positions, spans, splice_sites, intervening_junctions
+        cdef set 
         cdef (int, int) block, span
         cdef str junction_hash
         bp_positions = sorted(list(self.branchpoints))
@@ -362,6 +363,7 @@ cdef class Locus:
         
         number_of_reads = len(self.reads)
         number_of_frags = len(self.frags)
+        discard_frags = self.apply_intron_filter(threshold)
         membership = np.zeros((number_of_reads, number_of_frags+4), dtype=np.int8) # Container for membership of each vertex in each read (-1 False, 1 True, 0 Unmeasured)
         strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
         weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
@@ -469,41 +471,66 @@ cdef class Locus:
                     else: # The gap is an unspecified gap
                         intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], s)
                         if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
-                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1 
-                
+                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
+                        else: # Fill in as much information as possible based on filtered junctions and membership
+                            spans = sorted([self.string_to_span(j) for j in intervening_junctions])
+                            splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
+                            MEMBERSHIP[i, (last_rfrag+1):self.frag_by_pos[min(splice_sites)]] = 1 # Fill in up to the first junction boundary
+                            MEMBERSHIP[i, self.frag_by_pos[max(splice_sites)]:rfrag] = 1 # Fill in after the last junction boundary
+                            plus_junctions = any([j in self.J_plus.keys() for j in intervening_junctions])
+                            minus_junctions = any([j in self.J_minus.keys() for j in intervening_junctions])
+                            if plus_junctions and minus_junctions:
+                                break
+                            elif plus_junctions:
+                                jstrand = 1
+                            else:
+                                jstrand = -1
+                            
+                            junctions_are_linear = splice_sites == sorted(set(splice_sites)) # Any nesting will cause this evaluation to be false
+                            if junctions_are_linear: # No overlapping splice junctions
+                                MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
+                                for span in spans:
+                                    skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
+                                    if not np.all(discard_frags[[s>=0, s<=0],skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
+                                        MEMBERSHIP[i, skipped_frags] = 0
+                                    else: # Only the spliced path exists
+                                        MEMBERSHIP[i, skipped_frags] = -1
+                                        if s == 0:
+                                            s = jstrand
+                                            strand_array[i] = s
+                                            if s == 1:
+                                                MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
+                                                MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
+                                            elif s == -1:
+                                                MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
+                                                MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
                 
                 last_rfrag = rfrag
+            
+            # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
+            members = membership[i,:] == 1
+            if np.any(discard_frags[[s>=0, s<=0],members]):
+                if s != 0:
+                    MEMBERSHIP[i,:] = -1 # Read contains a discarded frag, remove
+                else: # The read may only be possible in one stranded orientation (or it may be impossible given discard_frags)
+                    if not np.any(discard_frags[0,members]): # Plus strand is still viable
+                        strand_array[i] = 1
+                        MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
+                        MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
+                    elif not np.any(discard_frags[1,members]): # Minus strand is still viable
+                        strand_array[i] = 1
+                        MEMBERSHIP[i, source_plus] = -1 # Read cannot have minus-stranded features
+                        MEMBERSHIP[i, sink_plus] = -1 # Read cannot have minus-stranded features
+                    else: # Neither strand is viable, remove
+                        MEMBERSHIP[i,:] = -1
             
             # Calculate the length (bases) of the element
             self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
-        discard_frags = set()
-        if threshold >= 0:
-            for i in range(len(self.frags)):
-                l,r = self.frags[i]
-                frag_depth = self.depth[l:r]
-                if not passes_threshold(frag_depth, self.extend, threshold): # This frag has too large of a gap
-                    discard_frags.add(i)
-        
-        discard = np.array(sorted(list(discard_frags)), dtype=np.int32)
-        membership[np.sum(membership[:,discard]==1,axis=1) > 0,:] = -1 # Discard all elements with a discarded frag as a member
-        if self.naive:
-            weight_array = np.sum(weight_array,axis=1,keepdims=True)
-        
-        keep = np.sum(membership[:,:-4]==1,axis=1)>0
-        self.membership = membership[keep,:]
-        self.weight_array = weight_array[keep,:]
-        self.strand_array = strand_array[keep]
-        self.rep_array = self.rep_array[keep]
-        self.member_lengths = self.member_lengths[keep]
-        if not np.any(keep):
-            return True
-        
         self.reduce_membership()
         self.filter_members_by_strand()
-        self.apply_intron_filter()
         self.reduce_membership()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
@@ -593,21 +620,22 @@ cdef class Locus:
         if np.any(np.logical_not(keep)):
             self.subset_elements(np.where(keep)[0])
     
-    cpdef void apply_intron_filter(self, float threshold=1):
-        """Removes reads if they are inferred to belong to an unprocessed transcript,
+    cpdef np.ndarray[bint, ndim=2] apply_intron_filter(self, float threshold=1):
+        """Returns a 2-row array of bools marking non-viable frags for plus and minus paths
+        if they are inferred to belong to an unprocessed transcript,
         i.e. a retained intron, run-on transcription downstream of a 3' end, or
         transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
         cdef EndRange endrange
         cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov
         cdef np.ndarray[char, ndim=2] junction_membership
+        cdef np.ndarray[bint, ndim=2] discard_frags
         cdef list stranded_branches
         cdef int strand, number_of_frags, l, r
         cdef str junction
         # Check flowthrough across all starts/ends
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
-        remove_plus = np.zeros(self.membership.shape[0], dtype=np.bool)
-        remove_minus = np.zeros(self.membership.shape[0], dtype=np.bool)
-        number_of_frags = self.membership.shape[1]-4
+        number_of_frags = len(self.frags)
+        discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
         for endtype in range(4):
             if endtype < 2:
                 cov = self.cov_plus
@@ -628,18 +656,13 @@ cdef class Locus:
                     continue
                 
                 terminal_weight = np.mean(cov[endrange.left:endrange.right])
-                flowthrough_weight = np.mean(cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]])
-                if flowthrough_weight < self.intron_filter * terminal_weight:
-                    overlappers = np.where(np.logical_and(np.sum(self.membership[:,[frag,overrun_frag]]==1,axis=1)>0, np.abs(self.strand_array-strand)<2))[0]
-                    runs_over = self.membership[overlappers,overrun_frag]==1
-                    if np.any(runs_over):
-                        flowthrough = overlappers[runs_over]
-                        terminal = overlappers[np.logical_not(runs_over)]
-                        # print("Filtering {} on strand {} for flowing past {}".format(flowthrough, strand, endrange))
-                        if strand == 1:
-                            remove_plus[flowthrough] = True
-                        else:
-                            remove_minus[flowthrough] = True
+                overrun_cov = cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]]
+                flowthrough_weight = np.mean(overrun_cov)
+                if np.any(overrun_cov < threshold) or  flowthrough_weight < self.intron_filter * terminal_weight:
+                    if strand == 1:
+                        discard_frags[0,overrun_frag] = True
+                    else:
+                        discard_frags[1,overrun_frag] = True
         
         # Check same-stranded intron retention
         strand = 1
@@ -661,9 +684,7 @@ cdef class Locus:
                 cov_in_junction = self.depth[self.frags[lfrag][0]:self.frags[rfrag][0]]
                 spanning_cov = np.max(np.append(self.depth[self.frags[lfrag][0]], self.depth[self.frags[rfrag][0]]))
                 if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
-                    junction_membership = self.membership[:,lfrag:rfrag]
-                    fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array >= 0)
-                    remove_plus[fills_intron] = True
+                    discard_frags[0, lfrag:rfrag] = True
         
         # Repeat the procedure for the minus strand
         strand = -1
@@ -685,29 +706,9 @@ cdef class Locus:
                 cov_in_junction = self.depth[self.frags[lfrag][0]:self.frags[rfrag][0]]
                 spanning_cov = np.max(np.append(self.depth[self.frags[lfrag][0]], self.depth[self.frags[rfrag][0]]))
                 if np.any(cov_in_junction < threshold) or np.mean(cov_in_junction) < spanning_cov*self.intron_filter:
-                    junction_membership = self.membership[:,lfrag:rfrag]
-                    fills_intron = np.logical_and(np.logical_and(np.all(junction_membership>=0,axis=1),np.any(junction_membership==1,axis=1)), self.strand_array <= 0)
-                    remove_minus[fills_intron] = True
+                    discard_frags[1, lfrag:rfrag] = True
         
-        # Remove reads that were cut by at least one of the filters above.
-        # A stranded read will be removed entirely
-        keep = np.ones(self.membership.shape[0], dtype=np.bool)
-        keep[np.logical_and(self.strand_array==1, remove_plus)] = False
-        keep[np.logical_and(self.strand_array==-1, remove_minus)] = False
-        # If a read is in both remove_plus and remove_minus, remove it entirely regardless of strand
-        keep[np.logical_and(remove_plus, remove_minus)] = False
-        # A nonstranded read will be assigned entirely to the other strand
-        flipstrand_plus = np.logical_and(remove_plus, keep)
-        self.strand_array[flipstrand_plus] = -1
-        self.membership[flipstrand_plus,-4:2] = -1
-        flipstrand_minus = np.logical_and(remove_minus, keep)
-        self.strand_array[flipstrand_minus] = 1
-        self.membership[flipstrand_minus,-2:] = -1
-        if np.any(np.logical_not(keep)):
-            self.subset_elements(np.where(keep)[0])
-        
-        if np.any(flipstrand_plus) or np.any(flipstrand_minus):
-            self.reduce_membership()
+        return discard_frags        
         
     cpdef np.ndarray get_competitors(self, int index):
         """Given an element index, return a list of all elements that 
