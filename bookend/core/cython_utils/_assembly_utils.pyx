@@ -510,7 +510,7 @@ cdef class Locus:
             
             # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
             members = membership[i,:-4] == 1
-            if np.any(discard_frags[[s>=0, s<=0],members]):
+            if np.any(discard_frags[[s>=0, s<=0],:][:,members]):
                 if s != 0:
                     MEMBERSHIP[i,:] = -1 # Read contains a discarded frag, remove
                 else: # The read may only be possible in one stranded orientation (or it may be impossible given discard_frags)
