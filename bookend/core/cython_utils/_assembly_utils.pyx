@@ -324,7 +324,7 @@ cdef class Locus:
             self.membership_weights - (1 per row of reduced_membership) number of reads
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
-        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length
+        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length, skipped
         cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep, discard_frags
         cdef char s, jstrand
         cdef bint junctions_are_linear
@@ -499,9 +499,12 @@ cdef class Locus:
                                 for span in spans:
                                     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
                                     if not np.all(discard_frags[[s>=0, s<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
-                                        membership[i, skipped_frags] = 0
+                                        for skipped in skipped_frags:
+                                            MEMBERSHIP[i, skipped] = 0
                                     else: # Only the spliced path exists
-                                        membership[i, skipped_frags] = -1
+                                        for skipped in skipped_frags:
+                                            MEMBERSHIP[i, skipped] = -1
+                                        
                                         if s == 0:
                                             s = jstrand
                                             strand_array[i] = s
