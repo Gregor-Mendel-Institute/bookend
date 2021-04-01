@@ -170,12 +170,13 @@ cdef class Locus:
         cdef:
             np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
             float threshold_depth, cumulative_depth, cutoff
-            int l, r, p
+            int l, r, p, Sp, Ep, Sm, Em, covp, covm, covn
             (int, int) span
             EndRange rng
             set prohibited_plus, prohibited_minus, prohibited_positions
             list gaps
         
+        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         self.branchpoints = set()
         self.end_ranges = dict()
         prohibited_plus, prohibited_minus = set(), set()
