@@ -488,22 +488,23 @@ cdef class Locus:
                             sorted_splice_sites = sorted(set(splice_sites))
                             junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
                             if junctions_are_linear: # No overlapping splice junctions
-                                MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
-                                for span in spans:
-                                    skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
-                                    if not np.all(discard_frags[[s>=0, s<=0],skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
-                                        membership[i, skipped_frags] = 0
-                                    else: # Only the spliced path exists
-                                        membership[i, skipped_frags] = -1
-                                        if s == 0:
-                                            s = jstrand
-                                            strand_array[i] = s
-                                            if s == 1:
-                                                MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
-                                                MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
-                                            elif s == -1:
-                                                MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
-                                                MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
+                                pass
+                                # MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
+                                # for span in spans:
+                                #     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
+                                #     if not np.all(discard_frags[[s>=0, s<=0],skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
+                                #         membership[i, skipped_frags] = 0
+                                #     else: # Only the spliced path exists
+                                #         membership[i, skipped_frags] = -1
+                                #         if s == 0:
+                                #             s = jstrand
+                                #             strand_array[i] = s
+                                #             if s == 1:
+                                #                 MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
+                                #                 MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
+                                #             elif s == -1:
+                                #                 MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
+                                #                 MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
                 
                 last_rfrag = rfrag
             
