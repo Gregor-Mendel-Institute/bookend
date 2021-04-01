@@ -322,7 +322,7 @@ cdef class Locus:
         cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep, discard_frags
         cdef char s, jstrand
         cdef bint junctions_are_linear
-        cdef list temp_frags, bp_positions, spans, splice_sites, intervening_junctions
+        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions
         cdef set 
         cdef (int, int) block, span
         cdef str junction_hash
@@ -486,7 +486,8 @@ cdef class Locus:
                             else:
                                 jstrand = -1
                             
-                            junctions_are_linear = splice_sites == sorted(set(splice_sites)) # Any nesting will cause this evaluation to be false
+                            sorted_splice_sites = sorted(set(splice_sites))
+                            junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
                             if junctions_are_linear: # No overlapping splice junctions
                                 MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
                                 for span in spans:
