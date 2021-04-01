@@ -1206,7 +1206,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
     
     Sp, Ep, Sm, Em, covp, covm, covn = range(7)
     array_length = rightmost - leftmost
-    depth_matrix = np.zeros(shape=(11, array_length), dtype=np.float32)
+    depth_matrix = np.zeros(shape=(7, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}
     for read in reads:
         if use_attributes: # Check a read's attributes for different values of each type
