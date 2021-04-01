@@ -620,7 +620,7 @@ cdef class Locus:
         if np.any(np.logical_not(keep)):
             self.subset_elements(np.where(keep)[0])
     
-    cpdef np.ndarray[bint, ndim=2] apply_intron_filter(self, float threshold=1):
+    cpdef np.ndarray apply_intron_filter(self, float threshold=1):
         """Returns a 2-row array of bools marking non-viable frags for plus and minus paths
         if they are inferred to belong to an unprocessed transcript,
         i.e. a retained intron, run-on transcription downstream of a 3' end, or
