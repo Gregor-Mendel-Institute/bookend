@@ -492,9 +492,9 @@ cdef class Locus:
                                 for span in spans:
                                     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
                                     if not np.all(discard_frags[[s>=0, s<=0],skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
-                                        MEMBERSHIP[i, skipped_frags] = 0
+                                        membership[i, skipped_frags] = 0
                                     else: # Only the spliced path exists
-                                        MEMBERSHIP[i, skipped_frags] = -1
+                                        membership[i, skipped_frags] = -1
                                         if s == 0:
                                             s = jstrand
                                             strand_array[i] = s
