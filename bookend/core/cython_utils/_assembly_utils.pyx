@@ -330,7 +330,7 @@ cdef class Locus:
         cdef bint junctions_are_linear
         cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
         cdef (int, int) block, span
-        cdef str junction_hash
+        cdef str junction_hash, junction
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -481,12 +481,12 @@ cdef class Locus:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
                             print("\tNo junction.")
                         else: # Fill in as much information as possible based on filtered junctions and membership
-                            spans = sorted([self.string_to_span(j) for j in intervening_junctions])
+                            spans = sorted([self.string_to_span(junction) for junction in intervening_junctions])
                             splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
                             MEMBERSHIP[i, (last_rfrag+1):self.frag_by_pos[min(splice_sites)]] = 1 # Fill in up to the first junction boundary
                             MEMBERSHIP[i, self.frag_by_pos[max(splice_sites)]:rfrag] = 1 # Fill in after the last junction boundary
-                            plus_junctions = any([j in self.J_plus.keys() for j in intervening_junctions])
-                            minus_junctions = any([j in self.J_minus.keys() for j in intervening_junctions])
+                            plus_junctions = any([junction in self.J_plus.keys() for junction in intervening_junctions])
+                            minus_junctions = any([junction in self.J_minus.keys() for junction in intervening_junctions])
                             if plus_junctions and minus_junctions:
                                 break
                             elif plus_junctions:
