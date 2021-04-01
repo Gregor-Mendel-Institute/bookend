@@ -83,9 +83,9 @@ cdef class Locus:
                         self.build_overlap_matrix(reduce=False, ignore_ends=True)
             else:
                 empty = self.build_membership_matrix()
-                if not empty:
-                    self.build_overlap_matrix(reduce)
-                    self.build_graph(reduce)
+                # if not empty:
+                #     self.build_overlap_matrix(reduce)
+                #     self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -531,8 +531,8 @@ cdef class Locus:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
         self.reduce_membership()
-        # self.filter_members_by_strand()
-        # self.reduce_membership()
+        self.filter_members_by_strand()
+        self.reduce_membership()
         self.weight = np.sum(self.weight_array)
         self.number_of_elements = self.membership.shape[0]
         self.information_content = get_information_content(self.membership)
