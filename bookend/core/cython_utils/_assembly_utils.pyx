@@ -626,9 +626,7 @@ cdef class Locus:
         i.e. a retained intron, run-on transcription downstream of a 3' end, or
         transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
         cdef EndRange endrange
-        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov
-        cdef np.ndarray[char, ndim=2] junction_membership
-        cdef np.ndarray[bint, ndim=2] discard_frags
+        cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov, junction_membership, discard_frags
         cdef list stranded_branches
         cdef int strand, number_of_frags, l, r
         cdef str junction
