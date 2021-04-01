@@ -517,6 +517,7 @@ cdef class Locus:
                 
                 last_rfrag = rfrag
             
+            print('Wrote members')
             # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
             members = membership[i,:-4] == 1
             if np.any(discard_frags[[s>=0, s<=0],:][:,members]):
@@ -535,6 +536,7 @@ cdef class Locus:
                         MEMBERSHIP[i,:] = -1
             
             # Calculate the length (bases) of the element
+            print('Reassessed strand.')
             self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
