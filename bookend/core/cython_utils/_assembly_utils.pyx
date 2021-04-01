@@ -535,6 +535,12 @@ cdef class Locus:
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
+        if self.naive:
+            weight_array = np.sum(weight_array,axis=1,keepdims=True)
+        
+        self.membership = membership
+        self.weight_array = weight_array
+        self.strand_array = strand_array
         self.reduce_membership()
         self.filter_members_by_strand()
         self.reduce_membership()
