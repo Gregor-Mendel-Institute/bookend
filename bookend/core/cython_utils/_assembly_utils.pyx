@@ -644,20 +644,21 @@ cdef class Locus:
         cdef EndRange endrange
         cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov, junction_membership, discard_frags
         cdef list stranded_branches
-        cdef int strand, number_of_frags, frag, l, r
+        cdef int strand, number_of_frags, frag, l, r, maxgap
         cdef str junction
         # Check flowthrough across all starts/ends
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
+        maxgap = 50
         for frag in range(number_of_frags):
-            if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], 0, threshold):
+            if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
                 discard_frags[:,frag] = True
             else:
-                if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
                     discard_frags[0,frag] = True
                 
-                if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
                     discard_frags[1,frag] = True
         
         for endtype in range(4):
