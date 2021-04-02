@@ -84,8 +84,9 @@ cdef class Locus:
                 self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-self.strandratio)
                 self.depth = self.cov_plus + self.cov_minus
             else:
-                self.cov_plus = self.depth_matrix[covn,:]*.5
-                self.cov_minus = self.depth_matrix[covn,:]*.5
+                self.strandratio = np.full(self.depth_matrix.shape[1], .5)
+                self.cov_plus = self.depth_matrix[covn,:]*self.strandratio
+                self.cov_minus = self.depth_matrix[covn,:]*self.strandratio
                 self.depth = self.depth_matrix[covn,:]
             
             self.prune_junctions()
