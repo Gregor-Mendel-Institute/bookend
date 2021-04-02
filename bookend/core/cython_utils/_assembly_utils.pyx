@@ -650,14 +650,14 @@ cdef class Locus:
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
         for frag in range(number_of_frags):
-            if not self.passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], 0, threshold):
+            if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], 0, threshold):
                 discard_frags[:,frag] = True
             else:
-                if not self.passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
                     discard_frags[0,frag] = True
                 
-                if not self.passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
-                    discard_frags[1,frag] = True
+                if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                    discard_frags[1,frag] = True]
         
         for endtype in range(4):
             if endtype < 2:
