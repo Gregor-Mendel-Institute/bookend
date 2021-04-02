@@ -99,9 +99,9 @@ cdef class Locus:
                         self.build_overlap_matrix(reduce=False, ignore_ends=True)
             else:
                 empty = self.build_membership_matrix()
-                # if not empty:
-                #     self.build_overlap_matrix(reduce)
-                #     self.build_graph(reduce)
+                if not empty:
+                    self.build_overlap_matrix(reduce)
+                    self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -378,7 +378,6 @@ cdef class Locus:
         locus_length = len(self.frag_by_pos)
         cdef char [:, :] MEMBERSHIP = membership
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
-            print(i)
             last_rfrag = 0
             read = self.reads[i]
             self.rep_array[i] = read.weight
@@ -475,11 +474,9 @@ cdef class Locus:
                         else:
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
                     else: # The gap is an unspecified gap
-                        print("resolving gap...")
                         intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], s)
                         if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
                             MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
-                            print("\tNo junction.")
                         else: # Fill in as much information as possible based on filtered junctions and membership
                             spans = sorted([self.string_to_span(junction) for junction in intervening_junctions])
                             splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
@@ -497,17 +494,14 @@ cdef class Locus:
                             sorted_splice_sites = sorted(set(splice_sites))
                             junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
                             if junctions_are_linear: # No overlapping splice junctions
-                                print("\tLinear junctions...")
                                 MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
                                 for span in spans:
                                     skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
                                     if not np.all(discard_frags[[s>=0, s<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
                                         for skipped in skipped_frags:
-                                            print("\t\tSkipping THAT one...")
                                             MEMBERSHIP[i, skipped] = 0
                                     else: # Only the spliced path exists
                                         for skipped in skipped_frags:
-                                            print("\t\tKeeping THIS one!")
                                             MEMBERSHIP[i, skipped] = -1
                                         
                                         if s == 0:
@@ -522,7 +516,6 @@ cdef class Locus:
                 
                 last_rfrag = rfrag
             
-            print('Wrote members')
             # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
             members = membership[i,:-4] == 1
             if np.any(discard_frags[[s>=0, s<=0],:][:,members]):
@@ -541,12 +534,10 @@ cdef class Locus:
                         MEMBERSHIP[i,:] = -1
             
             # Calculate the length (bases) of the element
-            print('Reassessed strand.')
             self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
             if self.member_lengths[i] > 0:
                 weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
         
-        print('survived membership construction')
         if self.naive:
             weight_array = np.sum(weight_array,axis=1,keepdims=True)
         
@@ -652,12 +643,22 @@ cdef class Locus:
         cdef EndRange endrange
         cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov, junction_membership, discard_frags
         cdef list stranded_branches
-        cdef int strand, number_of_frags, l, r
+        cdef int strand, number_of_frags, frag, l, r
         cdef str junction
         # Check flowthrough across all starts/ends
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
+        for frag in range(number_of_frags):
+            if not self.passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], 0, threshold):
+                discard_frags[:,frag] = True
+            else:
+                if not self.passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                    discard_frags[0,frag] = True
+                
+                if not self.passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], self.extend, threshold):
+                    discard_frags[1,frag = True]
+        
         for endtype in range(4):
             if endtype < 2:
                 cov = self.cov_plus
