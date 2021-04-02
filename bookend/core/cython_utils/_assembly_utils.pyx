@@ -528,7 +528,7 @@ cdef class Locus:
                         MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
                         MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
                     elif not np.any(discard_frags[1,members]): # Minus strand is still viable
-                        strand_array[i] = 1
+                        strand_array[i] = -1
                         MEMBERSHIP[i, source_plus] = -1 # Read cannot have minus-stranded features
                         MEMBERSHIP[i, sink_plus] = -1 # Read cannot have minus-stranded features
                     else: # Neither strand is viable, remove
