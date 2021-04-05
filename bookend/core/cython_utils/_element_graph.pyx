@@ -213,7 +213,7 @@ cdef class ElementGraph:
                     self.elements[containers.pop()].merge(element, element.all)
                 else: # Evaluate how much weight goes to each container
                     container_indices = sorted(containers)
-                    maxmember = [max(self.elements[c].member_weights[sorted(self.elements[c].covered_indices)]) for c in container_indices]
+                    maxmember = [self.elements[c].cov for c in container_indices]
                     total_container_weight = sum(maxmember)
                     default_proportions = np.array([m/total_container_weight for m in maxmember], dtype=np.float32)
                     proportions = np.zeros(shape=(len(containers), element.all.shape[0]), dtype=np.float32)
@@ -288,8 +288,7 @@ cdef class ElementGraph:
         
         for path in self.paths: # Update path source_weights
             path.source_weights /= path.length
-            path.cov = sum(path.source_weights)
-            path.bases = path.cov*path.length
+            path.bases = sum(path.source_weights)*path.length
     
     cpdef void assemble(self, float minimum_proportion):
         """Iteratively perform find_optimal_path() on the graph
@@ -492,23 +491,104 @@ cdef class ElementGraph:
                     extdict[exthash] = ext
         
         # Final check: If >0 extensions go both ways, remove the extensions that don't
-        
-        return sorted(list(extdict.values()))
+        extensions = sorted([(sum([self.elements[i].cov for i in ext]),ext) for ext in list(extdict.values())],reverse=True)
+        return extensions
     
     cpdef tuple best_extension(self, Element path, list extensions, float minimum_proportion):
         cdef tuple ext, best_ext
         cdef float score, best_score
         best_ext = ()
         best_score = 0
-        for ext in extensions:
-            score = self.calculate_extension_score(path, ext, minimum_proportion, best_score)
-            if score > best_score or (score == best_score and len(ext) > len(best_ext)):
-                best_ext = ext
-                best_score = score
-        
+        for cov,ext in extensions:
+            if cov >= best_score:
+                score = self.calculate_extension_score(path, ext, minimum_proportion)
+                if score > best_score or (score == best_score and len(ext) > len(best_ext)):
+                    best_ext = ext
+                    best_score = score
+            else:
+                break
+            
         return best_ext
     
-    cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion, float prune):
+    # cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion, float prune):
+    #     """Given a path and a set of Elements to extend from it, calculate the
+    #     new weights of the extended path and return a score 
+    #     """
+    #     cdef:
+    #         Element element
+    #         int i, outgroup_bases, excluded
+    #         set new_members, extension_outgroup, excluded_members, extension_excludes, new_covered_indices
+    #         float bases, new_bases, extension_bases, excluded_bases, score, source_similarity, e_cov, e_bases, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty, excluded_cov
+    #         np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
+    #         list shared_members
+    #     new_members = set()
+    #     bases = path.bases
+    #     path_proportions = path.source_weights/path.cov
+    #     proportions = path_proportions*path.bases
+    #     new_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
+    #     extension_bases = 0
+    #     extension_outgroup = set()
+    #     extension_excludes = set()
+    #     new_covered_indices = set()
+    #     for i in extension:
+    #         element = self.elements[i]
+    #         new_covered_indices.update(element.covered_indices)
+    #         extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
+    #         extension_excludes.update(element.excludes)
+    #         e_prop = self.available_proportion(path.source_weights, element)
+    #         e_weights = e_prop*element.source_weights
+    #         e_cov = np.sum(e_weights)
+    #         e_bases = e_cov*element.length
+    #         extension_bases += element.bases
+    #         bases += e_bases
+    #         new_member_weights += element.member_weights*e_cov/element.cov
+    #         proportions += e_weights*element.length
+    #         new_members.update(element.members.difference(path.members))
+        
+    #     proportions /= bases
+    #     new_length = sum([path.frag_len[i] for i in new_members])
+    #     # Calculate the new coverage (reads/base) of the extended path
+    #     new_bases = bases - path.bases
+    #     if self.partial_coverage: # Include overlapping weight of all members compatible with path + extension
+    #         extension_outgroup.difference_update(set(extension)|extension_excludes)
+    #         for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
+    #             element = self.elements[i]
+    #             e_prop = self.available_proportion(path.source_weights, element)
+    #             shared_members = sorted(element.members.intersection(new_members|path.members))
+    #             shared_length = np.sum(path.frag_len[shared_members])
+    #             outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
+    #             new_bases += outgroup_bases
+    #             extension_bases += np.sum(element.source_weights)*shared_length
+    #             new_member_weights[shared_members] += element.member_weights[shared_members]*np.sum(element.source_weights*e_prop)
+        
+    #     if new_bases < minimum_proportion * extension_bases:
+    #         return 0
+        
+    #     ext_cov = new_bases / new_length
+    #     extension_excludes.difference_update(path.excludes)
+    #     if len(extension_excludes) > 0:
+    #         excluded_bases = 0
+    #         excluded_members = set()
+    #         for excluded in extension_excludes:
+    #             element = self.elements[excluded]
+    #             excluded_bases += self.available_bases(path.source_weights, element)
+    #             excluded_members.update(element.members)
+        
+    #         excluded_length = np.sum(path.frag_len[sorted(excluded_members)])
+    #         excluded_cov = excluded_bases/excluded_length
+    #         exclusion_penalty = ext_cov/(ext_cov+excluded_cov)
+    #     else:
+    #         excluded_cov = 0
+    #         exclusion_penalty = 1
+        
+    #     combined_member_coverage = np.add(path.member_weights,new_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
+    #     weakest_link_penalty = np.min(combined_member_coverage)/np.mean(combined_member_coverage)
+    #     source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
+    #     dead_end_penalty = self.dead_end(path, extension)
+    #     score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * exclusion_penalty
+    #     return score
+    
+    cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion):
         """Given a path and a set of Elements to extend from it, calculate the
         new weights of the extended path and return a score 
         """
@@ -516,72 +596,35 @@ cdef class ElementGraph:
             Element element
             int i, outgroup_bases, excluded
             set new_members, extension_outgroup, excluded_members, extension_excludes, new_covered_indices
-            float bases, new_bases, extension_bases, excluded_bases, score, source_similarity, e_cov, e_bases, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty, excluded_cov
-            np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
+            float div, score, source_similarity, ext_cov, dead_end_penalty, excluded_cov
+            np.ndarray ext_proportions, e_prop, path_proportions, combined_member_coverage
             list shared_members
-        new_members = set()
-        bases = path.bases
-        path_proportions = path.source_weights/path.cov
-        proportions = path_proportions*path.bases
-        new_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
-        extension_bases = 0
-        extension_outgroup = set()
-        extension_excludes = set()
+        if len(extension)==0:return 0
+        ext_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
+        ext_proportions = np.zeros(path.source_weights.shape[0], dtype=np.float32)
         new_covered_indices = set()
+        extension_excludes = set()
+        div = 1/len(extension)
         for i in extension:
             element = self.elements[i]
             new_covered_indices.update(element.covered_indices)
-            extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
             extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
-            e_weights = e_prop*element.source_weights
-            e_cov = np.sum(e_weights)
-            e_bases = e_cov*element.length
-            extension_bases += element.bases
-            bases += e_bases
-            new_member_weights += element.member_weights*e_cov/element.cov
-            proportions += e_weights*element.length
-            new_members.update(element.members.difference(path.members))
+            ext_proportions += self.normalize(e_prop*element.source_weights)*div
+            ext_member_weights += element.member_weight_array*np.sum(e_prop)
         
-        proportions /= bases
-        new_length = sum([path.frag_len[i] for i in new_members])
-        # Calculate the new coverage (reads/base) of the extended path
-        new_bases = bases - path.bases
-        if self.partial_coverage: # Include overlapping weight of all members compatible with path + extension
-            extension_outgroup.difference_update(set(extension)|extension_excludes)
-            for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
-                element = self.elements[i]
-                e_prop = self.available_proportion(path.source_weights, element)
-                shared_members = sorted(element.members.intersection(new_members|path.members))
-                shared_length = np.sum(path.frag_len[shared_members])
-                outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
-                new_bases += outgroup_bases
-                extension_bases += np.sum(element.source_weights)*shared_length
-                new_member_weights[shared_members] += element.member_weights[shared_members]*np.sum(element.source_weights*e_prop)
-        
-        if new_bases < minimum_proportion * extension_bases:
-            return 0
-        
-        ext_cov = new_bases / new_length
+        ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
         extension_excludes.difference_update(path.excludes)
         if len(extension_excludes) > 0:
-            excluded_bases = 0
-            excluded_members = set()
-            for excluded in extension_excludes:
-                element = self.elements[excluded]
-                excluded_bases += self.available_bases(path.source_weights, element)
-                excluded_members.update(element.members)
-        
-            excluded_length = np.sum(path.frag_len[sorted(excluded_members)])
-            excluded_cov = excluded_bases/excluded_length
-            exclusion_penalty = ext_cov/(ext_cov+excluded_cov)
+            excluded_cov = [self.elements[i].cov for i in extension_excludes]
+            exclusion_penalty = ext_cov/(ext_cov+sum(excluded_cov))
         else:
-            excluded_cov = 0
             exclusion_penalty = 1
         
-        combined_member_coverage = np.add(path.member_weights,new_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
-        weakest_link_penalty = np.min(combined_member_coverage)/np.mean(combined_member_coverage)
-        source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
+        combined_member_coverage = np.add(path.member_weights,ext_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
+        weakest_link_penalty = np.min(combined_member_coverage)/np.max(combined_member_coverage)
+        path_proportions = self.normalize(path.source_weights)
+        source_similarity = .5*(2 - np.sum(np.abs(path_proportions - ext_proportions)))
         dead_end_penalty = self.dead_end(path, extension)
         score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * exclusion_penalty
         return score
@@ -907,8 +950,7 @@ cdef class Element:
             self.s_tag = self.maxIC - 2 in self.members # has + start
             self.e_tag = self.maxIC - 1 in self.members # has + end
         
-        self.cov = sum(self.source_weights)
-        self.bases = self.cov*self.length
+        self.bases = sum(self.source_weights)*self.length
         self.IC = len(self.members) + len(self.nonmembers)
         if self.IC == self.maxIC:
             self.complete = True
@@ -923,6 +965,7 @@ cdef class Element:
                 if n > lastn+1: # Only add one representative nonmember per intron
                     self.covered_indices.add(n)
         
+        self.cov = np.max(self.member_weights[sorted(self.covered_indices)])
         # self.bottleneck_weight = np.min(self.member_weights[sorted(self.covered_indices)])
         # self.bottleneck = set(np.where(self.member_weights == self.bottleneck_weight)[0])
     
