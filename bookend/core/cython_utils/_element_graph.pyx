@@ -644,7 +644,7 @@ cdef class ElementGraph:
         extensions = self.generate_extensions(currentPath)
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
-                if self.calculate_extension_score(currentPath, extensions[0], minimum_proportion, 0) == 0:break
+                if self.calculate_extension_score(currentPath, extensions[0], minimum_proportion) == 0:break
                 self.extend_path(currentPath, extensions[0])
             else:
                 ext = self.best_extension(currentPath, extensions, minimum_proportion)
