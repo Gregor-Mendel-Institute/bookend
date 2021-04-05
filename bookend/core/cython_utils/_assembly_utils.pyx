@@ -41,7 +41,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -50,6 +50,7 @@ cdef class Locus:
         self.chunk_number = chunk_number
         self.naive = naive
         self.minimum_proportion = minimum_proportion
+        self.min_intron_length = min_intron_length
         self.intron_filter = intron_filter
         self.antisense_filter = antisense_filter
         self.min_overhang = min_overhang
@@ -90,7 +91,7 @@ cdef class Locus:
                 self.cov_minus = self.depth_matrix[covn,:]*self.strandratio
                 self.depth = self.depth_matrix[covn,:]
             
-            self.prune_junctions()
+            self.prune_junctions(self.min_intron_length)
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
                 self.ignore_ends = True
@@ -123,7 +124,7 @@ cdef class Locus:
         
         return summary_string
     
-    cpdef void prune_junctions(self):
+    cpdef void prune_junctions(self, int min_intron_length=50):
         """If a splice junction represents < minimum_proportion of junction-spanning reads
         that either share its donor or its acceptor site, remove it."""
         cdef dict jdict, leftsides, rightsides
@@ -146,7 +147,7 @@ cdef class Locus:
                     l,r = spans[i]
                     spanning_cov = max([self.depth[l], self.depth[r]])
                     jcov = jdict[keys[i]]
-                    if jcov < spanning_cov * self.minimum_proportion:
+                    if jcov < spanning_cov * self.minimum_proportion or r-l < min_intron_length:
                         prune.add(keys[i])
                     else:
                         leftsides[l] = leftsides.get(l, [])+[keys[i]]
@@ -230,18 +231,10 @@ cdef class Locus:
         elif len(pos) == 1:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
-        # passes_threshold = vals > self.minimum_proportion*np.sum(vals)
-        # if np.sum(passes_threshold) == 0:
-        #     return []
-        passes_threshold = np.zeros(len(vals), dtype=np.bool)
-        threshold = np.sum(vals)*(1-self.minimum_proportion)
-        v = 0
-        for i in np.argsort(-vals):
-            v += vals[i]
-            passes_threshold[i] = True
-            if v >= threshold:break
+        passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        if np.sum(passes_threshold) == 0:
+            return []
         
-        # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
         filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
         p,v = filtered_pos[0]
         maxv = v
