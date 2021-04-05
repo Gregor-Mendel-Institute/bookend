@@ -57,7 +57,7 @@ cdef class ElementGraph:
         cdef float original_bases
         cdef int i, Sp, Ep, Sm, Em
         cdef set strand
-        self.end_reachability = np.zeros(shape=(4,len(self.elements), dtype=np.bool))
+        self.end_reachability = np.zeros(shape=(4,len(self.elements)), dtype=np.bool)
         Sp, Ep, Sm, Em = 0, 0, 0, 0
         queue = deque(maxlen=len(self.elements))
         strand = set([0,1])
