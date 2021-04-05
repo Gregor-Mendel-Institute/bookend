@@ -551,6 +551,7 @@ cdef class Locus:
         self.weight_array = weight_array
         self.strand_array = strand_array
         self.reduce_membership()
+        self.filter_by_reps(threshold)
         self.filter_members_by_strand()
         self.reduce_membership()
         self.weight = np.sum(self.weight_array)
@@ -831,11 +832,11 @@ cdef class Locus:
             for i in range(self.membership.shape[0])    :
                 self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
     
-    cpdef void filter_by_reps(self, float minreps=1):
+    cpdef void filter_by_reps(self, float threshold=1):
         """Enforce that elements in the membership"""
         cdef np.ndarray keep
-        if minreps > 1:
-            keep = np.where(self.rep_array >= minreps)[0]
+        if threshold > 1:
+            keep = np.where(self.rep_array > threshold)[0]
             self.subset_elements(keep)
     
     cpdef void build_overlap_matrix(self):
