@@ -613,7 +613,7 @@ cdef class ElementGraph:
         path_proportions = self.normalize(path.source_weights)
         source_similarity = .5*(2 - np.sum(np.abs(path_proportions - ext_proportions)))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * exclusion_penalty
+        score = ext_cov * source_similarity * variance_penalty * dead_end_penalty * exclusion_penalty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
