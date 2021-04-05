@@ -215,7 +215,7 @@ cdef class Locus:
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
         cdef:
-            np.ndarray value_order
+            np.ndarray value_order, passes_threshold
             EndRange e
             int p, maxp, prohibit_pos
             float cumulative, threshold, v, maxv, weight
@@ -229,7 +229,7 @@ cdef class Locus:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
-        if len(passes_threshold) == 0:
+        if np.sum(passes_threshold) == 0:
             return []
         
         # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
