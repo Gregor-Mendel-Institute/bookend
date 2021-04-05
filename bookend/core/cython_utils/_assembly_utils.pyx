@@ -35,7 +35,7 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, number_of_elements, min_overhang, chunk_number, oligo_len
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter, min_intron_length
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
