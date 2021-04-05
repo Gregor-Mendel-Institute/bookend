@@ -58,7 +58,7 @@ cdef class ElementGraph:
         cdef int i, Sp, Ep, Sm, Em
         cdef set strand
         self.end_reachability = np.zeros(shape=(4,len(self.elements)), dtype=np.bool)
-        Sp, Ep, Sm, Em = 0, 0, 0, 0
+        Sp, Ep, Sm, Em = range(4)
         queue = deque(maxlen=len(self.elements))
         strand = set([0,1])
         queue.extend(sorted(self.SP))
