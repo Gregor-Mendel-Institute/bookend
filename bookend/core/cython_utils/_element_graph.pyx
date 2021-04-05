@@ -73,7 +73,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(self.ends_plus)
+        queue.extend(sorted(self.EP))
         while queue:
             v = queue.popleft()
             self.end_reachability[Ep, v] = True
@@ -85,7 +85,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(self.starts_minus)
+        queue.extend(sorted(self.SM))
         strand = set([0,-1])
         while queue:
             v = queue.popleft()
@@ -98,7 +98,7 @@ cdef class ElementGraph:
                         queue.append(w)
         
         queue.clear()
-        queue.extend(self.ends_minus)
+        queue.extend(sorted(self.EM))
         while queue:
             v = queue.popleft()
             self.end_reachability[Em, v] = True
@@ -402,17 +402,17 @@ cdef class ElementGraph:
         
         if not s_tag: # Check that BFS from the + and/or - Start reached all extension indices
             if strand >= 0:
-                s_tag = np.logical_and(self.end_reachability[0,extension])
+                s_tag = np.all(self.end_reachability[0,extension])
             
             if strand <= 0 and not s_tag:
-                s_tag = np.logical_and(self.end_reachability[2,extension])
+                s_tag = np.all(self.end_reachability[2,extension])
         
         if not e_tag:
             if strand >= 0:
-                e_tag = np.logical_and(self.end_reachability[1,extension]) 
+                e_tag = np.all(self.end_reachability[1,extension]) 
             
             if strand <= 0 and not e_tag:
-                e_tag = np.logical_and(self.end_reachability[3,extension])
+                e_tag = np.all(self.end_reachability[3,extension])
         
         return [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
     
