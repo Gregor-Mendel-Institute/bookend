@@ -1109,11 +1109,11 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            S = self.get_end_cluster(r, self.end_ranges[2])
+            S = self.get_end_cluster(r-1, self.end_ranges[2])
             if S is not self.nullRange:
                 r = S.peak+1
         elif element.e_tag and element.strand == 1:
-            E = self.get_end_cluster(r, self.end_ranges[1])
+            E = self.get_end_cluster(r-1, self.end_ranges[1])
             if E is not self.nullRange:
                 r = E.peak+1
         
