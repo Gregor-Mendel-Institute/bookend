@@ -35,13 +35,13 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, number_of_elements, min_overhang, chunk_number, oligo_len
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints
     cdef public list transcripts, traceback, sources, graphs, subproblem_indices
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -51,6 +51,7 @@ cdef class Locus:
         self.naive = naive
         self.minimum_proportion = minimum_proportion
         self.intron_filter = intron_filter
+        self.antisense_filter = antisense_filter
         self.min_overhang = min_overhang
         self.chrom = chrom
         self.cap_bonus = cap_bonus
@@ -77,8 +78,8 @@ cdef class Locus:
             strandedpositions = np.where(covstranded > 0)[0]
             if strandedpositions.shape[0] > 0: # Some reads to inform the strand
                 strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, self.depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
-                strandratio[strandratio < self.minimum_proportion] = 0
-                strandratio[strandratio > 1-self.minimum_proportion] = 1
+                strandratio[strandratio < self.antisense_filter] = 0
+                strandratio[strandratio > 1-self.antisense_filter] = 1
                 self.strandratio = strandratio
                 self.cov_plus = self.depth_matrix[covp,:] + self.depth_matrix[covn,:]*self.strandratio
                 self.cov_minus = self.depth_matrix[covm,:] + self.depth_matrix[covn,:]*(1-self.strandratio)
@@ -101,7 +102,7 @@ cdef class Locus:
             else:
                 empty = self.build_membership_matrix()
                 if not empty:
-                    self.build_overlap_matrix(reduce)
+                    self.build_overlap_matrix()
                     self.build_graph(reduce)
     
     def __len__(self):
@@ -217,7 +218,7 @@ cdef class Locus:
         cdef:
             np.ndarray value_order, passes_threshold
             EndRange e
-            int p, maxp, prohibit_pos
+            int p, maxp, prohibit_pos, i
             float cumulative, threshold, v, maxv, weight
             list filtered_pos, end_ranges
             (int, int) current_range
@@ -228,9 +229,16 @@ cdef class Locus:
         elif len(pos) == 1:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
-        passes_threshold = vals > self.minimum_proportion*np.sum(vals)
-        if np.sum(passes_threshold) == 0:
-            return []
+        # passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        # if np.sum(passes_threshold) == 0:
+        #     return []
+        passes_threshold = np.zeros(len(vals), dtype=np.bool)
+        threshold = np.sum(vals)*(1-self.minimum_proportion)
+        v = 0
+        for i in np.argsort(-vals):
+            v += vals[i]
+            passes_threshold[i] = True
+            if v >= threshold:break
         
         # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
         filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
@@ -603,41 +611,42 @@ cdef class Locus:
                     elif self.strand_array[i] == -1:
                         self.membership[i,:] = -1
     
-    cpdef void denoise(self):
-        """Checks the competitors of each read. If the read (plus compatible reads)
-        accumulates to <minimum_proportion of sum(compatible + incompatible), 
-        remove the read."""
-        cdef np.ndarray keep, competitors, compatible, informative
-        cdef float in_weight, out_weight, proportion
-        cdef tuple compmembers
-        keep = np.ones(self.membership.shape[0], dtype=np.bool)
-        IC_order = np.lexsort((-self.member_content, -self.information_content)) # Rank them by decreasing number of members
-        for index in IC_order:
-            if keep[index]:
-                competitors = self.get_competitors(index)
-                if len(competitors) > 0:
-                    compatible = self.get_compatible(index, competitors)
-                    informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
-                    if len(informative) > 0:
-                        # Subset for competitors that exclude the informative member(s) of the compatible set
-                        competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
-                        # Subset for competitors that span the informative member(s)
-                        compmembers = np.where(self.membership[competitors,:-4]==1)
-                        competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
-                        in_weight = np.sum(self.weight_array[compatible,:])
-                        out_weight = np.sum(self.weight_array[competitors,:])
-                        if in_weight == 0 and out_weight == 0:
-                            keep[compatible] = False
-                            keep[competitors] = False
-                        else:
-                            proportion = in_weight / (in_weight+out_weight)
-                            if proportion < self.minimum_proportion:
-                                keep[compatible] = False
-                            elif proportion > 1 - self.minimum_proportion:
-                                keep[competitors] = False
+    # cpdef void denoise(self):
+    #     """Checks the competitors of each read. If the read (plus compatible reads)
+    #     accumulates to <minimum_proportion of sum(compatible + incompatible), 
+    #     remove the read."""
+    #     cdef np.ndarray keep, competitors, compatible, informative
+    #     cdef float in_weight, out_weight, proportion
+    #     cdef tuple compmembers
+    #     keep = np.ones(self.membership.shape[0], dtype=np.bool)
+    #     IC_order = np.lexsort((-self.member_content, -self.information_content)) # Rank them by decreasing number of members
+    #     for index in IC_order:
+    #         if keep[index]:
+    #             competitors = self.get_competitors(index)
+    #             if len(competitors) > 0:
+    #                 compatible = self.get_compatible(index, competitors)
+    #                 informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
+    #                 if len(informative) > 0:
+    #                     # Subset for competitors that exclude the informative member(s) of the compatible set
+    #                     competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
+    #                     # Subset for competitors that span the informative member(s)
+    #                     compmembers = np.where(self.membership[competitors,:-4]==1)
+    #                     competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
+    #                     if len(competitors) > 0:
+    #                         in_weight = np.sum(self.weight_array[compatible,:])
+    #                         out_weight = np.sum(self.weight_array[competitors,:])
+    #                         if in_weight == 0 and out_weight == 0:
+    #                             keep[compatible] = False
+    #                             keep[competitors] = False
+    #                         else:
+    #                             proportion = in_weight / (in_weight+out_weight)
+    #                             if proportion < self.minimum_proportion:
+    #                                 keep[compatible] = False
+    #                             elif proportion > 1 - self.minimum_proportion:
+    #                                 keep[competitors] = False
         
-        if np.any(np.logical_not(keep)):
-            self.subset_elements(np.where(keep)[0])
+    #     if np.any(np.logical_not(keep)):
+    #         self.subset_elements(np.where(keep)[0])
     
     cpdef np.ndarray apply_intron_filter(self, float threshold=1):
         """Returns a 2-row array of bools marking non-viable frags for plus and minus paths
@@ -835,23 +844,18 @@ cdef class Locus:
             keep = np.where(self.rep_array >= minreps)[0]
             self.subset_elements(keep)
     
-    cpdef void build_overlap_matrix(self, bint reduce=True, bint ignore_ends=False):
+    cpdef void build_overlap_matrix(self):
         """Builds reduced-representation matrix where every read is (-1) incompatible,
         (1) overlapping, or (0) non-overlapping with every other read. Any read completely
         contained in one or more reads with more information are removed, with their
         weight distributed proportionally to the containers.
         """
-        if ignore_ends:
+        if self.ignore_ends:
             endless_matrix = remove_ends(self.membership)
             endless_info = get_information_content(endless_matrix)
             self.overlap = calculate_overlap_matrix(endless_matrix, endless_info, self.strand_array)
         else:
-
             self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
-        
-        if reduce:
-            # self.resolve_containment()
-            self.denoise()
     
     cpdef void subset_elements(self, np.ndarray keep):
         if not self.membership is None: self.membership = self.membership[keep,:]
