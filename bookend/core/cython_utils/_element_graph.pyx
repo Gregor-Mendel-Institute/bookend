@@ -11,8 +11,7 @@ inf = float('Inf')
 
 cdef class ElementGraph:
     cdef public list elements, paths
-    cdef public list starts_plus, starts_minus, ends_plus, ends_minus
-    cdef public np.ndarray assignments, overlap
+    cdef public np.ndarray assignments, overlap, end_reachability
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
     cdef public float bases, input_bases, dead_end_penalty
@@ -54,49 +53,35 @@ cdef class ElementGraph:
         The weight of all elements unreachable by each search is multiplied
         by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
         cdef Element element
-        cdef np.ndarray reached_from_start, reached_from_start_plus, reached_from_start_minus, reached_from_end, reached_from_end_plus, reached_from_end_minus
+        cdef np.ndarray reached_from_start, reached_from_end
         cdef float original_bases
-        cdef int i
-        self.starts_plus, self.starts_minus, self.ends_plus, self.ends_minus = [], [], [], []
-        for element in self.elements:
-            if element.strand == 1:
-                if element.s_tag:
-                    self.starts_plus.append(element.index)
-                if element.e_tag:
-                    self.ends_plus.append(element.index)
-            elif element.strand == -1:
-                if element.s_tag:
-                    self.starts_minus.append(element.index)
-                if element.e_tag:
-                    self.ends_minus.append(element.index)
-        
-        reached_from_start_plus = np.zeros(len(self.elements), dtype=np.bool)
-        reached_from_start_minus = np.zeros(len(self.elements), dtype=np.bool)
-        reached_from_end_plus = np.zeros(len(self.elements), dtype=np.bool)
-        reached_from_end_minus = np.zeros(len(self.elements), dtype=np.bool)
+        cdef int i, Sp, Ep, Sm, Em
+        cdef set strand
+        self.end_reachability = np.zeros(shape=(4,len(self.elements), dtype=np.bool))
+        Sp, Ep, Sm, Em = 0, 0, 0, 0
         queue = deque(maxlen=len(self.elements))
         strand = set([0,1])
-        queue.extend(self.starts_plus)
+        queue.extend(sorted(self.SP))
         while queue:
             v = queue.popleft()
-            reached_from_start_plus[v] = True
-            reached_from_start_plus[sorted(self.elements[v].contains)] = True
+            self.end_reachability[Sp, v] = True
+            self.end_reachability[Sp, sorted(self.elements[v].contains)] = True
             for w in self.elements[v].outgroup:
-                if not reached_from_start_plus[w]:
+                if not self.end_reachability[Sp, w]:
                     if self.elements[w].strand in strand:
-                        reached_from_start_plus[w] = True
+                        self.end_reachability[Sp, w] = True
                         queue.append(w)
         
         queue.clear()
         queue.extend(self.ends_plus)
         while queue:
             v = queue.popleft()
-            reached_from_end_plus[v] = True
-            reached_from_end_plus[sorted(self.elements[v].contains)] = True
+            self.end_reachability[Ep, v] = True
+            self.end_reachability[Ep, sorted(self.elements[v].contains)] = True
             for w in self.elements[v].ingroup:
-                if not reached_from_end_plus[w]:
+                if not self.end_reachability[Ep, w]:
                     if self.elements[w].strand in strand:
-                        reached_from_end_plus[w] = True
+                        self.end_reachability[Ep, w] = True
                         queue.append(w)
         
         queue.clear()
@@ -104,28 +89,28 @@ cdef class ElementGraph:
         strand = set([0,-1])
         while queue:
             v = queue.popleft()
-            reached_from_start_minus[v] = True
-            reached_from_start_minus[sorted(self.elements[v].contains)] = True
+            self.end_reachability[Sm, v] = True
+            self.end_reachability[Sm, sorted(self.elements[v].contains)] = True
             for w in self.elements[v].ingroup:
-                if not reached_from_start_minus[w]:
+                if not self.end_reachability[Sm, w]:
                     if self.elements[w].strand in strand:
-                        reached_from_start_minus[w] = True
+                        self.end_reachability[Sm, w] = True
                         queue.append(w)
         
         queue.clear()
         queue.extend(self.ends_minus)
         while queue:
             v = queue.popleft()
-            reached_from_end_minus[v] = True
-            reached_from_end_minus[sorted(self.elements[v].contains)] = True
+            self.end_reachability[Em, v] = True
+            self.end_reachability[Em, sorted(self.elements[v].contains)] = True
             for w in self.elements[v].outgroup:
-                if not reached_from_end_minus[w]:
+                if not self.end_reachability[Em, w]:
                     if self.elements[w].strand in strand:
-                        reached_from_end_minus[w] = True
+                        self.end_reachability[Em, w] = True
                         queue.append(w)
         
-        reached_from_start = np.logical_or(reached_from_start_plus, reached_from_start_minus)
-        reached_from_end = np.logical_or(reached_from_end_plus, reached_from_end_minus)
+        reached_from_start = np.logical_or(self.end_reachability[Sp,:] , self.end_reachability[Sm,:])
+        reached_from_end = np.logical_or(self.end_reachability[Ep,:], self.end_reachability[Em,:])
         for i in range(len(self.elements)):
             element = self.elements[i]
             if not reached_from_start[i]:
@@ -405,10 +390,8 @@ cdef class ElementGraph:
         s_tag = path.s_tag
         e_tag = path.e_tag
         strand = path.strand
-        excludes = copy.copy(path.excludes)
         for i in extension:
             element = self.elements[i]
-            excludes.update(element.excludes)
             s_tag = s_tag or element.s_tag
             e_tag = e_tag or element.e_tag
             if strand == 0:
@@ -417,17 +400,21 @@ cdef class ElementGraph:
         if s_tag and e_tag: # Both ends are already found
             return 1
         
-        if not s_tag: # Try to extend from one of the known s_tag elements to path
-            starts = [self.SM, self.SM|self.SP, self.SP][strand].difference(excludes)
-            if len(starts) > 0: # At least one start is not excluded from the path
-                s_tag = True
+        if not s_tag: # Check that BFS from the + and/or - Start reached all extension indices
+            if strand >= 0:
+                s_tag = np.logical_and(self.end_reachability[0,extension])
+            
+            if strand <= 0 and not s_tag:
+                s_tag = np.logical_and(self.end_reachability[2,extension])
         
         if not e_tag:
-            ends = [self.EM, self.EM|self.EP, self.EP][strand].difference(excludes)
-            if len(ends) > 0: # At least one end is not excluded from the path
-                e_tag = True
+            if strand >= 0:
+                e_tag = np.logical_and(self.end_reachability[1,extension]) 
+            
+            if strand <= 0 and not e_tag:
+                e_tag = np.logical_and(self.end_reachability[3,extension])
         
-        return 1 * [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
+        return [self.dead_end_penalty,1.][s_tag] * [self.dead_end_penalty,1.][e_tag]
     
     cpdef list generate_extensions(self, Element path):
         """Defines all combinations of mutally compatible elements in
@@ -596,7 +583,7 @@ cdef class ElementGraph:
             Element element
             int i
             set extension_excludes, new_covered_indices
-            float div, score, source_similarity, ext_cov, dead_end_penalty
+            float div, score, source_similarity, ext_cov, dead_end_penalty, variance_penalty
             np.ndarray ext_proportions, e_prop, path_proportions, combined_member_coverage
             list shared_members, excluded_cov
         if len(extension)==0:return 0
@@ -611,7 +598,7 @@ cdef class ElementGraph:
             extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
             ext_proportions += self.normalize(e_prop*element.source_weights)*div
-            ext_member_weights += element.member_weights*np.sum(e_prop)
+            ext_member_weights += element.member_weights*np.sum(ext_proportions)
         
         ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
         extension_excludes.difference_update(path.excludes)
@@ -622,7 +609,7 @@ cdef class ElementGraph:
             exclusion_penalty = 1
         
         combined_member_coverage = np.add(path.member_weights,ext_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
-        weakest_link_penalty = np.min(combined_member_coverage)/np.max(combined_member_coverage)
+        variance_penalty = np.mean(combined_member_coverage)/np.max(combined_member_coverage)
         path_proportions = self.normalize(path.source_weights)
         source_similarity = .5*(2 - np.sum(np.abs(path_proportions - ext_proportions)))
         dead_end_penalty = self.dead_end(path, extension)
