@@ -594,11 +594,11 @@ cdef class ElementGraph:
         """
         cdef:
             Element element
-            int i, outgroup_bases, excluded
-            set new_members, extension_outgroup, excluded_members, extension_excludes, new_covered_indices
-            float div, score, source_similarity, ext_cov, dead_end_penalty, excluded_cov
+            int i
+            set extension_excludes, new_covered_indices
+            float div, score, source_similarity, ext_cov, dead_end_penalty
             np.ndarray ext_proportions, e_prop, path_proportions, combined_member_coverage
-            list shared_members
+            list shared_members, excluded_cov
         if len(extension)==0:return 0
         ext_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
         ext_proportions = np.zeros(path.source_weights.shape[0], dtype=np.float32)
