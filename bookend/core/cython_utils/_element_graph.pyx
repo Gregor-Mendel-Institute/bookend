@@ -497,84 +497,6 @@ cdef class ElementGraph:
             
         return best_ext
     
-    # cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion, float prune):
-    #     """Given a path and a set of Elements to extend from it, calculate the
-    #     new weights of the extended path and return a score 
-    #     """
-    #     cdef:
-    #         Element element
-    #         int i, outgroup_bases, excluded
-    #         set new_members, extension_outgroup, excluded_members, extension_excludes, new_covered_indices
-    #         float bases, new_bases, extension_bases, excluded_bases, score, source_similarity, e_cov, e_bases, ext_cov, ext_jcov, path_jcov, junction_delta, dead_end_penalty, excluded_cov
-    #         np.ndarray e_prop, e_weights, proportions, path_proportions, new_member_weights, combined_member_coverage
-    #         list shared_members
-    #     new_members = set()
-    #     bases = path.bases
-    #     path_proportions = path.source_weights/path.cov
-    #     proportions = path_proportions*path.bases
-    #     new_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
-    #     extension_bases = 0
-    #     extension_outgroup = set()
-    #     extension_excludes = set()
-    #     new_covered_indices = set()
-    #     for i in extension:
-    #         element = self.elements[i]
-    #         new_covered_indices.update(element.covered_indices)
-    #         extension_outgroup.update((element.outgroup|element.ingroup).difference(path.excludes|path.includes))
-    #         extension_excludes.update(element.excludes)
-    #         e_prop = self.available_proportion(path.source_weights, element)
-    #         e_weights = e_prop*element.source_weights
-    #         e_cov = np.sum(e_weights)
-    #         e_bases = e_cov*element.length
-    #         extension_bases += element.bases
-    #         bases += e_bases
-    #         new_member_weights += element.member_weights*e_cov/element.cov
-    #         proportions += e_weights*element.length
-    #         new_members.update(element.members.difference(path.members))
-        
-    #     proportions /= bases
-    #     new_length = sum([path.frag_len[i] for i in new_members])
-    #     # Calculate the new coverage (reads/base) of the extended path
-    #     new_bases = bases - path.bases
-    #     if self.partial_coverage: # Include overlapping weight of all members compatible with path + extension
-    #         extension_outgroup.difference_update(set(extension)|extension_excludes)
-    #         for i in extension_outgroup: # Add bases of the overlapping portions of all compatible outgroups
-    #             element = self.elements[i]
-    #             e_prop = self.available_proportion(path.source_weights, element)
-    #             shared_members = sorted(element.members.intersection(new_members|path.members))
-    #             shared_length = np.sum(path.frag_len[shared_members])
-    #             outgroup_bases = np.sum(element.source_weights*e_prop)*shared_length
-    #             new_bases += outgroup_bases
-    #             extension_bases += np.sum(element.source_weights)*shared_length
-    #             new_member_weights[shared_members] += element.member_weights[shared_members]*np.sum(element.source_weights*e_prop)
-        
-    #     if new_bases < minimum_proportion * extension_bases:
-    #         return 0
-        
-    #     ext_cov = new_bases / new_length
-    #     extension_excludes.difference_update(path.excludes)
-    #     if len(extension_excludes) > 0:
-    #         excluded_bases = 0
-    #         excluded_members = set()
-    #         for excluded in extension_excludes:
-    #             element = self.elements[excluded]
-    #             excluded_bases += self.available_bases(path.source_weights, element)
-    #             excluded_members.update(element.members)
-        
-    #         excluded_length = np.sum(path.frag_len[sorted(excluded_members)])
-    #         excluded_cov = excluded_bases/excluded_length
-    #         exclusion_penalty = ext_cov/(ext_cov+excluded_cov)
-    #     else:
-    #         excluded_cov = 0
-    #         exclusion_penalty = 1
-        
-    #     combined_member_coverage = np.add(path.member_weights,new_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
-    #     weakest_link_penalty = np.min(combined_member_coverage)/np.mean(combined_member_coverage)
-    #     source_similarity = 2 - np.sum(np.abs(path_proportions - proportions))
-    #     dead_end_penalty = self.dead_end(path, extension)
-    #     score = ext_cov * source_similarity * weakest_link_penalty * dead_end_penalty * exclusion_penalty
-    #     return score
-    
     cpdef float calculate_extension_score(self, Element path, tuple extension, float minimum_proportion):
         """Given a path and a set of Elements to extend from it, calculate the
         new weights of the extended path and return a score 
@@ -739,19 +661,21 @@ cdef class ElementGraph:
         """Evaluate what proportion of the compatible reads should be """
         cdef int i
         cdef float novel_bases = 0
-        cdef Element existing_path
+        cdef Element existing_path, element
         # Assign each included element to the path
         for existing_path in self.paths:
             if path.compatible(existing_path):
                 return 0
         
-        for i in path.includes:
-            if self.assignments[i] == 0:
-                novel_bases += self.elements[i].bases
-            
-            self.assignments[i] += 1
-            self.elements[i].assigned_to.append(len(self.paths))
-            self.elements[i].update()
+        for i in range(self.number_of_elements):
+            element = self.elements[i]
+            if element.compatible(path):
+                if self.assignments[i] == 0:
+                    novel_bases += self.elements[i].bases
+                
+                self.assignments[i] += 1
+                self.elements[i].assigned_to.append(len(self.paths))
+                self.elements[i].update()
         
         # Add the new path to the list of paths
         self.paths.append(path)
