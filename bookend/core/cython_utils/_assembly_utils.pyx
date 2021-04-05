@@ -229,6 +229,9 @@ cdef class Locus:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        if len(passes_threshold) == 0:
+            return []
+        
         # filtered_pos = sorted([(p,v) for p,v in zip(pos[value_order[:i]], vals[value_order[:i]])])
         filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
         p,v = filtered_pos[0]
