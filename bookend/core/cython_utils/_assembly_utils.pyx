@@ -93,12 +93,13 @@ cdef class Locus:
             self.prune_junctions()
             self.generate_branchpoints()
             if type(self) is AnnotationLocus:
+                self.ignore_ends = True
                 self.traceback = [set([i]) for i in range(len(self.reads))]
                 empty = self.build_membership_matrix(0)
                 if not empty:
                     self.filter_by_reps(self.minreps)
                     if self.membership.shape[0] > 0:
-                        self.build_overlap_matrix(reduce=False, ignore_ends=True)
+                        self.build_overlap_matrix()
             else:
                 empty = self.build_membership_matrix()
                 if not empty:
