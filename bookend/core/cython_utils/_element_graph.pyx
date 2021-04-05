@@ -52,7 +52,7 @@ cdef class ElementGraph:
         """Perform a breadth-first search from all starts and all ends.
         The weight of all elements unreachable by each search is multiplied
         by the dead_end_penalty, for a maximum penalty of dead_end_penalty^2"""
-        cdef Element element
+        cdef Element element, welement
         cdef np.ndarray reached_from_start, reached_from_end
         cdef float original_bases
         cdef int i, Sp, Ep, Sm, Em
@@ -65,10 +65,11 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             self.end_reachability[Sp, v] = True
-            self.end_reachability[Sp, sorted(self.elements[v].contains)] = True
-            for w in self.elements[v].outgroup:
+            element = self.elements[v]
+            for w in element.outgroup|element.contains:
                 if not self.end_reachability[Sp, w]:
-                    if self.elements[w].strand in strand:
+                    welement = self.elements[w]
+                    if welement.strand in strand and welement.LM >= element.LM:
                         self.end_reachability[Sp, w] = True
                         queue.append(w)
         
@@ -77,10 +78,11 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             self.end_reachability[Ep, v] = True
-            self.end_reachability[Ep, sorted(self.elements[v].contains)] = True
-            for w in self.elements[v].ingroup:
+            element = self.elements[v]
+            for w in element.ingroup|element.contains:
                 if not self.end_reachability[Ep, w]:
-                    if self.elements[w].strand in strand:
+                    welement = self.elements[w]
+                    if welement.strand in strand and welement.RM <= element.RM:
                         self.end_reachability[Ep, w] = True
                         queue.append(w)
         
@@ -90,10 +92,11 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             self.end_reachability[Sm, v] = True
-            self.end_reachability[Sm, sorted(self.elements[v].contains)] = True
-            for w in self.elements[v].ingroup:
+            element = self.elements[v]
+            for w in element.ingroup|element.contains:
                 if not self.end_reachability[Sm, w]:
-                    if self.elements[w].strand in strand:
+                    welement = self.elements[w]
+                    if welement.strand in strand and welement.RM <= element.RM:
                         self.end_reachability[Sm, w] = True
                         queue.append(w)
         
@@ -102,10 +105,11 @@ cdef class ElementGraph:
         while queue:
             v = queue.popleft()
             self.end_reachability[Em, v] = True
-            self.end_reachability[Em, sorted(self.elements[v].contains)] = True
-            for w in self.elements[v].outgroup:
+            element = self.elements[v]
+            for w in element.outgroup|element.contains:
                 if not self.end_reachability[Em, w]:
-                    if self.elements[w].strand in strand:
+                    welement = self.elements[w]
+                    if welement.strand in strand and welement.LM >= element.LM:
                         self.end_reachability[Em, w] = True
                         queue.append(w)
         
