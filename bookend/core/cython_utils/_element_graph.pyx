@@ -611,7 +611,7 @@ cdef class ElementGraph:
             extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
             ext_proportions += self.normalize(e_prop*element.source_weights)*div
-            ext_member_weights += element.member_weight_array*np.sum(e_prop)
+            ext_member_weights += element.member_weights*np.sum(e_prop)
         
         ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
         extension_excludes.difference_update(path.excludes)
