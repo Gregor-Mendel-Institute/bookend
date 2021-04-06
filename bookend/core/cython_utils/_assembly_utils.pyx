@@ -38,7 +38,8 @@ cdef class Locus:
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints
-    cdef public list transcripts, traceback, sources, graphs, subproblem_indices
+    cdef public list transcripts, traceback, sources, subproblem_indices
+    cdef public object graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
@@ -866,84 +867,96 @@ cdef class Locus:
         self.number_of_elements = len(keep)
         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
-    cpdef list get_subproblems(self):
+    cpdef void collapse_chains(self):
         """Split the Overlap Matrix into a list of connected components.
         Each component can be assembled independently."""
-        cdef strandedComponents cc
+        # cdef strandedComponents cc
         cdef simplifyDFS dfs
-        cdef list subproblems, simplified_indices
+        cdef list simplified_indices
         cdef dict chains
-        cdef np.ndarray component_bool, indices
-        self.adj = {i:[] for i in range(self.overlap.shape[0])}
-        edge_locations = np.where(self.overlap >= 1)
-        for a,b in zip(edge_locations[0],edge_locations[1]):
-            if a != b:
-                self.adj[a].append(b)
+        cdef np.ndarray indices
+        dfs = simplifyDFS(self.overlap, np.argsort(self.information_content))
+        simplified_indices = []
+        chains = {}
+        indices = np.array(range(self.overlap.shape[0])< dtype=np.int32)
+        for i in range(dfs.vertices):
+            chain = dfs.component[i]
+            if chain in chains.keys():
+                parent = chains[chain]
+                self.merge_reads(indices[i], parent)
+            else:
+                simplified_indices.append(indices[i])
+                chains[chain] = indices[i]
         
-        self.exc = {i:set(np.where(self.overlap[i,:]==-1)[0]) for i in range(self.overlap.shape[0])}
-        cc = strandedComponents(self.adj, self.strand_array)
-        component_bool = np.zeros((self.membership.shape[0], cc.c), dtype=np.bool)
-        for c in cc.pc:
-            indices = cc.component_plus==c
-            prior_overlap = np.any(component_bool[indices,:c],axis=0)
-            if not self.ignore_ends:
-                if not np.all(np.sum(self.membership[indices,-4:-2]==1,axis=0)>0): # At least one start and end exists in the component
-                    continue
-            
-            component_bool[:,c] = indices
-            if np.any(prior_overlap):
-                prior_components = np.where(prior_overlap)[0]
-                component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
-                component_bool[:,prior_components] = False
-        
-        for c in cc.mc:
-            indices = cc.component_minus==c
-            prior_overlap = np.any(component_bool[indices,:c],axis=0)
-            if not self.ignore_ends:
-                if not np.all(np.sum(self.membership[indices,-2:]==1,axis=0)>0): # At least one start and end exists in the component
-                    continue
-            
-            component_bool[:,c] = indices
-            if np.any(prior_overlap):
-                prior_components = np.where(prior_overlap)[0]
-                component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
-                component_bool[:,prior_components] = False
-        
-        subproblems = []
-        for c in range(component_bool.shape[1]):
-            if np.any(component_bool[:,c]):
-                indices = np.where(component_bool[:,c])[0]
-                dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
-                simplified_indices = []
-                chains = {}
-                for i in range(dfs.vertices):
-                    chain = dfs.component[i]
-                    if chain in chains.keys():
-                        parent = chains[chain]
-                        self.merge_reads(indices[i], parent)
-                    else:
-                        simplified_indices.append(indices[i])
-                        chains[chain] = indices[i]
-                
-                indices = np.array(simplified_indices, dtype=np.int32)
-                subproblems += [indices]
-        
+        indices = np.array(simplified_indices, dtype=np.int32)
+        self.subset_elements(indices)
         self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
-        return subproblems
+        # self.adj = {i:[] for i in range(self.overlap.shape[0])}
+        # edge_locations = np.where(self.overlap >= 1)
+        # for a,b in zip(edge_locations[0],edge_locations[1]):
+        #     if a != b:
+        #         self.adj[a].append(b)
+        
+        # self.exc = {i:set(np.where(self.overlap[i,:]==-1)[0]) for i in range(self.overlap.shape[0])}
+        # cc = strandedComponents(self.adj, self.strand_array)
+        # component_bool = np.zeros((self.membership.shape[0], cc.c), dtype=np.bool)
+        # for c in cc.pc:
+        #     indices = cc.component_plus==c
+        #     prior_overlap = np.any(component_bool[indices,:c],axis=0)
+        #     if not self.ignore_ends:
+        #         if not np.all(np.sum(self.membership[indices,-4:-2]==1,axis=0)>0): # At least one start and end exists in the component
+        #             continue
+            
+        #     component_bool[:,c] = indices
+        #     if np.any(prior_overlap):
+        #         prior_components = np.where(prior_overlap)[0]
+        #         component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
+        #         component_bool[:,prior_components] = False
+        
+        # for c in cc.mc:
+        #     indices = cc.component_minus==c
+        #     prior_overlap = np.any(component_bool[indices,:c],axis=0)
+        #     if not self.ignore_ends:
+        #         if not np.all(np.sum(self.membership[indices,-2:]==1,axis=0)>0): # At least one start and end exists in the component
+        #             continue
+            
+        #     component_bool[:,c] = indices
+        #     if np.any(prior_overlap):
+        #         prior_components = np.where(prior_overlap)[0]
+        #         component_bool[:,c] += np.sum(component_bool[:,prior_components],axis=1)>0
+        #         component_bool[:,prior_components] = False
+        
+        # subproblems = []
+        # for c in range(component_bool.shape[1]):
+        #     if np.any(component_bool[:,c]):
+        #         indices = np.where(component_bool[:,c])[0]
+        #         dfs = simplifyDFS(self.overlap[indices,:][:,indices], np.argsort(self.information_content[indices]))
+        #         simplified_indices = []
+        #         chains = {}
+        #         for i in range(dfs.vertices):
+        #             chain = dfs.component[i]
+        #             if chain in chains.keys():
+        #                 parent = chains[chain]
+        #                 self.merge_reads(indices[i], parent)
+        #             else:
+        #                 simplified_indices.append(indices[i])
+        #                 chains[chain] = indices[i]
+                
+        #         indices = np.array(simplified_indices, dtype=np.int32)
+        #         subproblems += [indices]
+        
+        # self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
+        # return subproblems
     
     cpdef void build_graph(self, reduce=True):
         """Constructs one or more graphs from connection values (ones) in the overlap matrix.
         Each graph is an _element_graph.ElementGraph() object with a built-in assembly method.
         """
         if reduce: # Split graph into connected components and solve each on its own
-            self.subproblem_indices = self.get_subproblems()
-        else:
-            self.subproblem_indices = [list(range(self.membership.shape[0]))]
-
-        self.graphs = list()
+            self.collapse_chains()
+        
         dead_end_penalty = 0.1 if self.allow_incomplete else 0
-        for indices in self.subproblem_indices:
-            self.graphs.append(ElementGraph(self.overlap[indices,:][:,indices], self.membership[indices,:], self.weight_array[indices,:], self.member_weights[indices,:], self.strand_array[indices], self.frag_len, self.naive, dead_end_penalty=dead_end_penalty))
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=dead_end_penalty)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage
@@ -1415,57 +1428,57 @@ cdef class AnnotationLocus(Locus):
     
 
 ##########################################
-cdef class strandedComponents():
-    cdef public int V, c
-    cdef public np.ndarray strands, visited_plus, visited_minus, component_plus, component_minus
-    cdef public list  pc, mc
-    cdef public dict adj
-    def __init__(self, adjacencies, strands):
-        """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
-        self.adj = copy.deepcopy(adjacencies)
-        for k,v in self.reverseGraph(adjacencies).items():
-            self.adj[k] += v
+# cdef class strandedComponents():
+#     cdef public int V, c
+#     cdef public np.ndarray strands, visited_plus, visited_minus, component_plus, component_minus
+#     cdef public list  pc, mc
+#     cdef public dict adj
+#     def __init__(self, adjacencies, strands):
+#         """Given an adjacency dict, perform Breadth-First Search and return a list of keys that were visited"""
+#         self.adj = copy.deepcopy(adjacencies)
+#         for k,v in self.reverseGraph(adjacencies).items():
+#             self.adj[k] += v
         
-        self.strands = strands
-        self.V = len(self.adj.keys())
-        self.visited_plus = np.zeros(self.V, dtype=np.bool)
-        self.component_plus = np.full(self.V, -1, dtype=np.int32)
-        self.visited_minus = np.zeros(self.V, dtype=np.bool)
-        self.component_minus = np.full(self.V, -1, dtype=np.int32)
-        pluses = np.where(self.strands==1)[0]
-        minuses = np.where(self.strands==-1)[0]
-        self.pc = []
-        self.mc = []
-        self.c = 0
-        for v in pluses:
-            if not self.visited_plus[v]:
-                self.pc.append(self.c)
-                self.Explore(v, self.c, self.visited_plus, self.component_plus, 1)
-                self.c += 1
+#         self.strands = strands
+#         self.V = len(self.adj.keys())
+#         self.visited_plus = np.zeros(self.V, dtype=np.bool)
+#         self.component_plus = np.full(self.V, -1, dtype=np.int32)
+#         self.visited_minus = np.zeros(self.V, dtype=np.bool)
+#         self.component_minus = np.full(self.V, -1, dtype=np.int32)
+#         pluses = np.where(self.strands==1)[0]
+#         minuses = np.where(self.strands==-1)[0]
+#         self.pc = []
+#         self.mc = []
+#         self.c = 0
+#         for v in pluses:
+#             if not self.visited_plus[v]:
+#                 self.pc.append(self.c)
+#                 self.Explore(v, self.c, self.visited_plus, self.component_plus, 1)
+#                 self.c += 1
         
-        self.c += 1
-        for v in minuses:
-            if not self.visited_minus[v]:
-                self.mc.append(self.c)
-                self.Explore(v, self.c, self.visited_minus, self.component_minus, -1)
-                self.c += 1
+#         self.c += 1
+#         for v in minuses:
+#             if not self.visited_minus[v]:
+#                 self.mc.append(self.c)
+#                 self.Explore(v, self.c, self.visited_minus, self.component_minus, -1)
+#                 self.c += 1
     
-    def reverseGraph(self, edges):
-        cdef dict reverse_edges
-        reverse_edges = {v:[] for v in edges.keys()}
-        for v in edges.keys():
-            for w in edges[v]:
-                reverse_edges[w] += [v]
+#     def reverseGraph(self, edges):
+#         cdef dict reverse_edges
+#         reverse_edges = {v:[] for v in edges.keys()}
+#         for v in edges.keys():
+#             for w in edges[v]:
+#                 reverse_edges[w] += [v]
         
-        return reverse_edges
+#         return reverse_edges
     
-    def Explore(self, v, c, visited, component, strand):
-        visited[v] = True
-        component[v] = c
-        for w in self.adj[v]:
-            if not visited[w] and self.strands[w] != -strand:
-                # print('{}-{}'.format(v,w))
-                self.Explore(w, c, visited, component, strand)
+#     def Explore(self, v, c, visited, component, strand):
+#         visited[v] = True
+#         component[v] = c
+#         for w in self.adj[v]:
+#             if not visited[w] and self.strands[w] != -strand:
+#                 # print('{}-{}'.format(v,w))
+#                 self.Explore(w, c, visited, component, strand)
 
 cdef class simplifyDFS():
     cdef public dict O, X, CO, CX
