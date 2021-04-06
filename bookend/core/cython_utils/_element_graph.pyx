@@ -853,7 +853,7 @@ cdef class Element:
     
     cpdef void update(self):
         cdef int n, lastn
-        if self.empty:
+        if self.empty or len(self.members) == 0:
             return
         
         self.LM = min(self.members.difference(self.end_indices))
