@@ -201,10 +201,10 @@ cdef class Locus:
         for endtype in [Sp, Ep, Sm, Em]:
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*self.strandratio[pos]!=0
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
             else:
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]*self.strandratio[pos]!=1
+                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
                 prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
