@@ -878,15 +878,14 @@ cdef class Locus:
         dfs = simplifyDFS(self.overlap, np.argsort(self.information_content))
         simplified_indices = []
         chains = {}
-        indices = np.array(range(self.overlap.shape[0])< dtype=np.int32)
         for i in range(dfs.vertices):
             chain = dfs.component[i]
             if chain in chains.keys():
                 parent = chains[chain]
-                self.merge_reads(indices[i], parent)
+                self.merge_reads(i, parent)
             else:
-                simplified_indices.append(indices[i])
-                chains[chain] = indices[i]
+                simplified_indices.append(i)
+                chains[chain] = i
         
         indices = np.array(simplified_indices, dtype=np.int32)
         self.subset_elements(indices)
