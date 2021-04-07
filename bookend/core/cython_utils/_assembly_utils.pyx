@@ -236,7 +236,7 @@ cdef class Locus:
         if np.sum(passes_threshold) == 0:
             return []
         
-        filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold])]
+        filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold]) if p not in prohibited_positions]
         p,v = filtered_pos[0]
         maxv = v
         maxp = p
