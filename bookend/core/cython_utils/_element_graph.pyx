@@ -897,7 +897,7 @@ cdef class Element:
             self.complete = True
         else:
             self.complete = False
-            self.has_gaps = not set(range(path.LM, path.RM)).issubset(path.members|path.nonmembers)
+            self.has_gaps = not set(range(self.LM, self.RM)).issubset(self.members|self.nonmembers)
         
         self.covered_indices = self.members.difference(self.end_indices) # Covered regions (excluding starts/ends)
         for n in sorted(self.nonmembers):
