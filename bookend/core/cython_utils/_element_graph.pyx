@@ -15,9 +15,9 @@ cdef class ElementGraph:
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
     cdef public float bases, input_bases, dead_end_penalty
-    cdef public set SP, SM, EP, EM
-    cdef public bint no_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True):
+    cdef public set SP, SM, EP, EM, end_elements
+    cdef public bint no_ends, ignore_ends, naive, partial_coverage
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -31,6 +31,7 @@ cdef class ElementGraph:
         self.number_of_elements = self.overlap.shape[0]
         self.maxIC = membership_matrix.shape[1]
         self.naive = naive
+        self.ignore_ends = ignore_ends
         self.partial_coverage = partial_coverage
         if self.naive:
                 source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
@@ -161,7 +162,8 @@ cdef class ElementGraph:
                     part.assigned_to.append(path_index)
                     self.assignments[i] += 1
         
-        if len(self.SP)+len(self.EP)+len(self.SM)+len(self.EM) == 0:
+        self.end_elements = self.SP|self.EP|self.SM|self.EM
+        if len(self.end_elements) == 0:
             self.no_ends = True
         else:
             self.no_ends = False
@@ -299,7 +301,24 @@ cdef class ElementGraph:
                     total_bases_assigned = threshold
                 else:
                     total_bases_assigned += novel_bases
+        
+        self.remove_bad_assemblies()
     
+    cpdef void remove_bad_assemblies(self):
+        cdef np.ndarray bad_paths
+        cdef int number_of_paths, i
+        number_of_paths = len(self.paths)
+        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        if self.ignore_ends: # Incomplete paths are those that have gaps
+            for i in range(number_of_paths):
+                bad_paths[i] = self.paths[i].has_gaps
+        else: # To be considered complete, path must have no gaps AND a start and end site
+            for i in range(number_of_paths):
+                bad_paths[i] = not self.paths[i].complete
+        
+
+
+
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
@@ -488,12 +507,15 @@ cdef class ElementGraph:
     cpdef tuple best_extension(self, Element path, list extensions, float minimum_proportion):
         cdef tuple ext, best_ext
         cdef float score, best_score
+        cdef bint has_an_end
+        cdef int i
         best_ext = ()
         best_score = 0
         for cov,ext in extensions:
-            if cov >= best_score:
+            has_an_end = any([i in self.end_elements for i in ext])
+            if cov >= best_score or has_an_end:
                 score = self.calculate_extension_score(path, ext, minimum_proportion)
-                if score > best_score or (score == best_score and len(ext) > len(best_ext)):
+                if score > best_score or (score == best_score and has_an_end or len(ext) > len(best_ext)):
                     best_ext = ext
                     best_score = score
             else:
@@ -557,7 +579,11 @@ cdef class ElementGraph:
         extensions = self.generate_extensions(currentPath)
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
-                if self.calculate_extension_score(currentPath, extensions[0][1], minimum_proportion) == 0:break
+                ext = extensions[0][1]
+                if ext not in self.end_elements:  # Allow extension to an end even if the score is 0
+                    if self.calculate_extension_score(currentPath, ext, minimum_proportion) == 0:
+                        break
+                
                 self.extend_path(currentPath, extensions[0][1])
             else:
                 ext = self.best_extension(currentPath, extensions, minimum_proportion)
@@ -871,6 +897,7 @@ cdef class Element:
             self.complete = True
         else:
             self.complete = False
+            self.has_gaps = not set(range(path.LM, path.RM)).issubset(path.members|path.nonmembers)
         
         self.covered_indices = self.members.difference(self.end_indices) # Covered regions (excluding starts/ends)
         for n in sorted(self.nonmembers):
