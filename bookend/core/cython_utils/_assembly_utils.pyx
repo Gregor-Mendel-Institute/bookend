@@ -1525,7 +1525,7 @@ cdef class simplifyDFS():
         outgroups = np.unique(self.component[self.O[v]])
         outgroups = outgroups[outgroups!=-1]
         for outgroup in outgroups: # Check if v can be added to the component of any of its outgroups
-            if set(self.O[v]).issubset(self.CO[outgroup]) and self.X[v].issubset(self.CX[outgroup]):
+            if set(self.O[v]).issubset(self.CO[outgroup]) and self.X[v] == self.CX[outgroup]:
                 self.component[v] = outgroup
                 self.CO[outgroup].add(v)
                 return clock + 1
