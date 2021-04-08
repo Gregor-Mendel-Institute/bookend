@@ -342,6 +342,7 @@ cdef class Locus:
         cdef str membership_hash, null_hash
         cdef dict reps, source_weights, member_weights, membership_lengths, unhash
         unhash = {'_':-1, ' ':0, '*':1}
+        reps, source_weights, member_weights, membership_lengths = {}, {}, {}, {}
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -495,14 +496,14 @@ cdef class Locus:
                         membership[sink_plus] = 1 # Add t+ to the membership table
                         r = tr
                         rfrag = self.frag_by_pos[r-1]
-                        membership[(rfrag+1):number_of_frags] = -1 # Read cannot extend beyond sink
+                        membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond sink
                 elif strand == -1 and s_tag: # Right position is a 5' end
                     tr = self.end_of_cluster(r, self.end_ranges[2])
                     if tr >= 0:
                         membership[source_minus] = 1 # Add s- to the membership table
                         r = tr
                         rfrag = self.frag_by_pos[r-1]
-                        membership[(rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
+                        membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond source
             
             if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
                 if len(ranges) > 1:
