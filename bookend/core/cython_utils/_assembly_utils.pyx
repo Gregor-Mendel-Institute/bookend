@@ -20,6 +20,7 @@ cdef class EndRange:
     def __init__(self, left, right, peak, weight, endtype):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
         self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
+        self.positions = set([left, right, peak])
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
@@ -436,7 +437,7 @@ cdef class Locus:
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         return False
     
-    cpdef str calculate_membership(self, int width, list ranges, list splice, char strand, bint s_tag, bint e_tag):
+    cpdef np.ndarray[char, ndim=1] calculate_membership(self, int width, list ranges, list splice, char strand, bint s_tag, bint e_tag):
         """Given an RNAseqMapping object, defines a membership string that describes
         which frags are included (*), excluded (_) or outside of ( ) the read."""
         cdef np.ndarray[char, ndim=1] membership
