@@ -655,7 +655,7 @@ cdef class Locus:
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
-        maxgap = 50
+        maxgap = self.extend
         for frag in range(number_of_frags):
             if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
                 discard_frags[:,frag] = True
