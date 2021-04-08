@@ -659,12 +659,12 @@ cdef class Locus:
         for frag in range(number_of_frags):
             if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
                 discard_frags[:,frag] = True
-            else:
-                if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
-                    discard_frags[0,frag] = True
+            # else:
+            #     if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
+            #         discard_frags[0,frag] = True
                 
-                if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
-                    discard_frags[1,frag] = True
+            #     if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
+            #         discard_frags[1,frag] = True
         
         for endtype in range(4):
             if endtype < 2:
