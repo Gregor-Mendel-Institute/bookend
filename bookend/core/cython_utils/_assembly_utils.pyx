@@ -15,6 +15,7 @@ cdef class EndRange:
     cdef public int left, right, peak, terminal, strand
     cdef public float weight
     cdef public str tag
+    cdef public set positions
     """Represents a reference point for a Start or End site."""
     def __init__(self, left, right, peak, weight, endtype):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
@@ -28,6 +29,12 @@ cdef class EndRange:
         strand = ['.','+','-'][self.strand]
         return '{}{}{} ({})'.format(self.tag, strand, self.peak, self.weight)
     
+    def add(self, int position):
+        self.positions.add(position)
+    
+    def span(self):
+        return (min(self.positions), max(self.positions)))
+
     def write_as_bed(self, chrom):
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
@@ -284,11 +291,8 @@ cdef class Locus:
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
-        for rng in end_ranges:
-            if pos >= rng.left and pos <= rng.right:
-                return rng.terminal
-        
-        return -1
+        rng = self.get_end_cluster(pos, end_ranges)
+        return rng.terminal
     
     cpdef EndRange get_end_cluster(self, int pos, list end_ranges):
         """Returns the most common position of the EndRange object that
@@ -298,13 +302,13 @@ cdef class Locus:
         bestdist = -1
         bestrng = self.nullRange
         for rng in end_ranges:
-            if pos >= max(0, rng.left-self.extend) and pos < min(self.frag_by_pos.shape[0], rng.right+self.extend):
-                if self.frag_by_pos[pos] == self.frag_by_pos[rng.peak]:
-                    dist = abs(pos-rng.peak)
-                    if bestdist == -1 or dist < bestdist:
-                        bestrng = rng
-                        bestdist = dist
+            if pos >= max(0, rng.left-self.extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+self.extend):
+                dist = abs(pos-rng.peak)
+                if bestdist == -1 or dist < bestdist:
+                    bestrng = rng
+                    bestdist = dist
         
+        bestrng.positions.add(pos)
         return bestrng
     
     cpdef str span_to_string(self, (int, int) span):
@@ -331,13 +335,14 @@ cdef class Locus:
             self.membership_weights - (1 per row of reduced_membership) number of reads
         """
         cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
-        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, locus_length, skipped
-        cdef np.ndarray membership, strand_array, weight_array, discard, lengths, keep, discard_frags
+        cdef int last_rfrag, membership_width, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, skipped
+        cdef np.ndarray strand_array, weight_array, discard, lengths, keep, discard_frags
         cdef char s, jstrand
         cdef bint junctions_are_linear
         cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
         cdef (int, int) block, span
-        cdef str junction_hash, junction
+        cdef str junction_hash, membership_hash, junction
+        cdef dict reps, source_weights, member_weights
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -375,171 +380,12 @@ cdef class Locus:
         
         number_of_reads = len(self.reads)
         number_of_frags = len(self.frags)
+        membership_width = number_of_frags+4
         discard_frags = self.apply_intron_filter(threshold)
-        membership = np.zeros((number_of_reads, number_of_frags+4), dtype=np.int8) # Container for membership of each vertex in each read (-1 False, 1 True, 0 Unmeasured)
-        strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
-        weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
-        self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
-        self.rep_array = np.zeros(number_of_reads, dtype=np.float32)
-        source_plus, sink_plus, source_minus, sink_minus = range(number_of_frags, number_of_frags+4)
-        locus_length = len(self.frag_by_pos)
-        cdef char [:, :] MEMBERSHIP = membership
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
-            last_rfrag = 0
             read = self.reads[i]
-            self.rep_array[i] = read.weight
-            s = read.strand
-            strand_array[i] = s
-            if s == 1:
-                MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
-                MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
-            elif s == -1:
-                MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
-                MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
-            
-            for j in range(len(read.ranges)): # Run through each block range of read
-                block = read.ranges[j]
-                l = block[0] - self.leftmost
-                r = block[1] - self.leftmost
-                # Get membership information about the block
-                lfrag = self.frag_by_pos[l]
-                rfrag = self.frag_by_pos[r-1]
-                if self.min_overhang > 0:
-                    if self.frag_len[lfrag] > self.min_overhang and l+self.min_overhang < locus_length:
-                        lfrag = self.frag_by_pos[l+self.min_overhang-1]
-                    
-                    if self.frag_len[rfrag] > self.min_overhang and r-self.min_overhang >= 0:
-                        rfrag = self.frag_by_pos[r-self.min_overhang]
-                
-                if j == 0: # Starting block
-                    if s == 1 and read.s_tag: # Left position is a 5' end
-                        # Sp, Ep, Sm, Em
-                        tl = self.end_of_cluster(l, self.end_ranges[0])
-                        if tl >= 0: # 5' end is in an EndRange
-                            MEMBERSHIP[i, source_plus] = 1 # Add s+ to the membership table
-                            l = tl
-                            lfrag = self.frag_by_pos[l]
-                            MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond source
-                        else:
-                            self.read_lengths[i] -= self.oligo_len
-                    elif s == -1 and read.e_tag: # Left position is a 3' end
-                        tl = self.end_of_cluster(l, self.end_ranges[3])
-                        if tl >= 0:
-                            MEMBERSHIP[i, sink_minus] = 1 # Add t- to the membership table
-                            l = tl
-                            lfrag = self.frag_by_pos[l]
-                            MEMBERSHIP[i, 0:lfrag] = -1 # Read cannot extend beyond sink
-                        else:
-                            self.read_lengths[i] -= self.oligo_len
-                
-                if j == len(read.ranges)-1: # Ending block
-                    if s == 1 and read.e_tag: # Right position is a 3' end
-                        tr = self.end_of_cluster(r, self.end_ranges[1])
-                        if tr >= 0:
-                            MEMBERSHIP[i, sink_plus] = 1 # Add t+ to the membership table
-                            r = tr
-                            rfrag = self.frag_by_pos[r-1]
-                            MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond sink
-                        else:
-                            self.read_lengths[i] -= self.oligo_len
-                    elif s == -1 and read.s_tag: # Right position is a 5' end
-                        tr = self.end_of_cluster(r, self.end_ranges[2])
-                        if tr >= 0:
-                            MEMBERSHIP[i, source_minus] = 1 # Add s- to the membership table
-                            r = tr
-                            rfrag = self.frag_by_pos[r-1]
-                            MEMBERSHIP[i, (rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
-                        else:
-                            self.read_lengths[i] -= self.oligo_len
-                if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
-                    if len(read.ranges) > 1:
-                        if j == 0 and read.splice[j]: # The right border is a splice junction, structural violation
-                            MEMBERSHIP[i,:] = -1 # Read is a violation, remove
-                            break
-                        elif j == len(read.ranges)-1 and read.splice[j-1]: # The left border is a splice junction, structural violation
-                            MEMBERSHIP[i,:] = -1 # Read is a violation, remove
-                            break
-                    
-                    if (read.s_tag and s == 1) or (read.e_tag and s == -1): # The left border was updated
-                        rfrag = lfrag
-                    else: # The right border was updated
-                        lfrag = rfrag
-                
-                MEMBERSHIP[i, lfrag:(rfrag+1)] = 1 # Add all covered frags to the membership table
-                if j > 0: # Processing a downstream block
-                    if read.splice[j-1]: # The gap between this block and the last was a splice junction
-                        # Check that this junction is in the list of splice junctions
-                        # If it was filtered out, this read is invalid and should be removed.
-                        span = (self.frags[last_rfrag][1], self.frags[lfrag][0])
-                        junction_hash = self.span_to_string(span)
-                        if s == 1 and junction_hash not in self.J_plus:
-                            MEMBERSHIP[i,:] = -1 # Read contains a filtered junction, remove
-                            break
-                        elif s == -1 and junction_hash not in self.J_minus:
-                            MEMBERSHIP[i,:] = -1 # Read contains a filtered junction, remove
-                            break
-                        else:
-                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
-                    else: # The gap is an unspecified gap
-                        intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], s)
-                        if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
-                            MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
-                        else: # Fill in as much information as possible based on filtered junctions and membership
-                            spans = sorted([self.string_to_span(junction) for junction in intervening_junctions])
-                            splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
-                            MEMBERSHIP[i, (last_rfrag+1):self.frag_by_pos[min(splice_sites)]] = 1 # Fill in up to the first junction boundary
-                            MEMBERSHIP[i, self.frag_by_pos[max(splice_sites)]:rfrag] = 1 # Fill in after the last junction boundary
-                            plus_junctions = any([junction in self.J_plus.keys() for junction in intervening_junctions])
-                            minus_junctions = any([junction in self.J_minus.keys() for junction in intervening_junctions])
-                            if plus_junctions and minus_junctions:
-                                break
-                            elif plus_junctions:
-                                jstrand = 1
-                            else:
-                                jstrand = -1
-                            
-                            sorted_splice_sites = sorted(set(splice_sites))
-                            junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
-                            if junctions_are_linear: # No overlapping splice junctions
-                                MEMBERSHIP[i, (last_rfrag+1):lfrag] = 1
-                                for span in spans:
-                                    skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
-                                    if not np.all(discard_frags[[s>=0, s<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
-                                        for skipped in skipped_frags:
-                                            MEMBERSHIP[i, skipped] = 0
-                                    else: # Only the spliced path exists
-                                        for skipped in skipped_frags:
-                                            MEMBERSHIP[i, skipped] = -1
-                                        
-                                        if s == 0:
-                                            s = jstrand
-                                            strand_array[i] = s
-                                            if s == 1:
-                                                MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
-                                                MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
-                                            elif s == -1:
-                                                MEMBERSHIP[i, source_plus] = -1 # Read cannot have plus-stranded features
-                                                MEMBERSHIP[i, sink_plus] = -1 # Read cannot have plus-stranded features
-                
-                last_rfrag = rfrag
-            
-            # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
-            members = membership[i,:-4] == 1
-            if np.any(discard_frags[[s>=0, s<=0],:][:,members]):
-                if s != 0:
-                    MEMBERSHIP[i,:] = -1 # Read contains a discarded frag, remove
-                else: # The read may only be possible in one stranded orientation (or it may be impossible given discard_frags)
-                    if not np.any(discard_frags[0,members]): # Plus strand is still viable
-                        strand_array[i] = 1
-                        MEMBERSHIP[i, source_minus] = -1 # Read cannot have minus-stranded features
-                        MEMBERSHIP[i, sink_minus] = -1 # Read cannot have minus-stranded features
-                    elif not np.any(discard_frags[1,members]): # Minus strand is still viable
-                        strand_array[i] = -1
-                        MEMBERSHIP[i, source_plus] = -1 # Read cannot have minus-stranded features
-                        MEMBERSHIP[i, sink_plus] = -1 # Read cannot have minus-stranded features
-                    else: # Neither strand is viable, remove
-                        MEMBERSHIP[i,:] = -1
-            
+            membership_hash = self.calculate_membership(membership_width, read.ranges, read.splice, read.strand, read.s_tag, read.e_tag)
+            reps[membership_hash] += read.weight
             # Calculate the length (bases) of the element
             self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
             if self.member_lengths[i] > 0:
@@ -548,6 +394,10 @@ cdef class Locus:
         if self.naive:
             weight_array = np.sum(weight_array,axis=1,keepdims=True)
         
+        strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
+        weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
+        self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
+        self.rep_array = np.zeros(number_of_reads, dtype=np.float32)
         self.membership = membership
         self.weight_array = weight_array
         self.strand_array = strand_array
@@ -561,6 +411,166 @@ cdef class Locus:
         self.member_content = get_member_content(self.membership)
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         return False
+    
+    cpdef str calculate_membership(self, int width, list ranges, list splice, char strand, bint s_tag, bint e_tag):
+        """Given an RNAseqMapping object, defines a membership string that describes
+        which frags are included (*), excluded (_) or outside of ( ) the read."""
+        cdef np.ndarray[char, ndim=1] membership
+        cdef Py_ssize_t j, source_plus, source_minus, sink_plus, sink_minus
+        cdef (int, int) block, span
+        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, skipped
+        cdef np.ndarray lengths, keep, discard_frags
+        cdef char s, jstrand
+        cdef bint junctions_are_linear
+        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
+        cdef str junction_hash, junction, membership_hash
+        membership = np.zeros(width, dtype=np.int8)
+        source_plus, sink_plus, source_minus, sink_minus = range(width-4, width)
+        last_rfrag = 0
+        if strand == 1:
+            membership[source_minus] = -1 # Read cannot have minus-stranded features
+            membership[sink_minus] = -1 # Read cannot have minus-stranded features
+        elif strand == -1:
+            membership[source_plus] = -1 # Read cannot have plus-stranded features
+            membership[sink_plus] = -1 # Read cannot have plus-stranded features
+        
+        for j in range(len(ranges)): # Run through each block range of read
+            block = ranges[j]
+            l = block[0] - self.leftmost
+            r = block[1] - self.leftmost
+            # Get membership information about the block
+            lfrag = self.frag_by_pos[l]
+            rfrag = self.frag_by_pos[r-1]
+            if self.min_overhang > 0:
+                if self.frag_len[lfrag] > self.min_overhang and l+self.min_overhang < len(self):
+                    lfrag = self.frag_by_pos[l+self.min_overhang-1]
+                
+                if self.frag_len[rfrag] > self.min_overhang and r-self.min_overhang >= 0:
+                    rfrag = self.frag_by_pos[r-self.min_overhang]
+            
+            if j == 0: # Starting block
+                if strand == 1 and s_tag: # Left position is a 5' end
+                    # Sp, Ep, Sm, Em
+                    tl = self.end_of_cluster(l, self.end_ranges[0])
+                    if tl >= 0: # 5' end is in an EndRange
+                        membership[source_plus] = 1 # Add s+ to the membership table
+                        l = tl
+                        lfrag = self.frag_by_pos[l]
+                        membership[0:lfrag] = -1 # Read cannot extend beyond source
+                elif strand == -1 and e_tag: # Left position is a 3' end
+                    tl = self.end_of_cluster(l, self.end_ranges[3])
+                    if tl >= 0:
+                        membership[sink_minus] = 1 # Add t- to the membership table
+                        l = tl
+                        lfrag = self.frag_by_pos[l]
+                        membership[0:lfrag] = -1 # Read cannot extend beyond sink
+            
+            if j == len(ranges)-1: # Ending block
+                if strand == 1 and e_tag: # Right position is a 3' end
+                    tr = self.end_of_cluster(r, self.end_ranges[1])
+                    if tr >= 0:
+                        membership[sink_plus] = 1 # Add t+ to the membership table
+                        r = tr
+                        rfrag = self.frag_by_pos[r-1]
+                        membership[(rfrag+1):number_of_frags] = -1 # Read cannot extend beyond sink
+                elif strand == -1 and s_tag: # Right position is a 5' end
+                    tr = self.end_of_cluster(r, self.end_ranges[2])
+                    if tr >= 0:
+                        membership[source_minus] = 1 # Add s- to the membership table
+                        r = tr
+                        rfrag = self.frag_by_pos[r-1]
+                        membership[(rfrag+1):number_of_frags] = -1 # Read cannot extend beyond source
+            
+            if lfrag > rfrag: # Reassignment of ends caused lfrag and rfrag to be out of order
+                if len(ranges) > 1:
+                    if j == 0 and splice[j]: # The right border is a splice junction, structural violation
+                        membership[:] = -1 # Read is a violation, remove
+                        break
+                    elif j == len(ranges)-1 and splice[j-1]: # The left border is a splice junction, structural violation
+                        membership[:] = -1 # Read is a violation, remove
+                        break
+                
+                if (s_tag and strand == 1) or (e_tag and strand == -1): # The left border was updated
+                    rfrag = lfrag
+                else: # The right border was updated
+                    lfrag = rfrag
+            
+            membership[lfrag:(rfrag+1)] = 1 # Add all covered frags to the membership table
+            if j > 0: # Processing a downstream block
+                if splice[j-1]: # The gap between this block and the last was a splice junction
+                    # Check that this junction is in the list of splice junctions
+                    # If it was filtered out, this read is invalid and should be removed.
+                    span = (self.frags[last_rfrag][1], self.frags[lfrag][0])
+                    junction_hash = self.span_to_string(span)
+                    if strand == 1 and junction_hash not in self.J_plus:
+                        membership[:] = -1 # Read contains a filtered junction, remove
+                        break
+                    elif strand == -1 and junction_hash not in self.J_minus:
+                        membership[:] = -1 # Read contains a filtered junction, remove
+                        break
+                    else:
+                        membership[(last_rfrag+1):lfrag] = -1 # All frags in the intron are incompatible
+                else: # The gap is an unspecified gap
+                    intervening_junctions = self.junctions_between(self.frags[last_rfrag][1], self.frags[lfrag][0], strand)
+                    if len(intervening_junctions) == 0: # Fill in the intervening gap if no junctions exist in the range
+                        membership[(last_rfrag+1):lfrag] = 1
+                    else: # Fill in as much information as possible based on filtered junctions and membership
+                        spans = sorted([self.string_to_span(junction) for junction in intervening_junctions])
+                        splice_sites = [site for span in spans for site in span] # 'unlist' the splice sites in the order they appear
+                        membership[(last_rfrag+1):self.frag_by_pos[min(splice_sites)]] = 1 # Fill in up to the first junction boundary
+                        membership[self.frag_by_pos[max(splice_sites)]:rfrag] = 1 # Fill in after the last junction boundary
+                        plus_junctions = any([junction in self.J_plus.keys() for junction in intervening_junctions])
+                        minus_junctions = any([junction in self.J_minus.keys() for junction in intervening_junctions])
+                        if plus_junctions and minus_junctions:
+                            break
+                        elif plus_junctions:
+                            jstrand = 1
+                        else:
+                            jstrand = -1
+                        
+                        sorted_splice_sites = sorted(set(splice_sites))
+                        junctions_are_linear = splice_sites == sorted_splice_sites # Any nesting will cause this evaluation to be false
+                        if junctions_are_linear: # No overlapping splice junctions
+                            membership[(last_rfrag+1):lfrag] = 1
+                            for span in spans:
+                                skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
+                                if not np.all(discard_frags[[strand>=0, strand<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
+                                    for skipped in skipped_frags:
+                                        membership[skipped] = 0
+                                else: # Only the spliced path exists
+                                    for skipped in skipped_frags:
+                                        membership[skipped] = -1
+                                    
+                                    if strand == 0:
+                                        strand = jstrand
+                                        strand_array[i] = strand
+                                        if strand == 1:
+                                            membership[source_minus] = -1 # Read cannot have minus-stranded features
+                                            membership[sink_minus] = -1 # Read cannot have minus-stranded features
+                                        elif strand == -1:
+                                            membership[source_plus] = -1 # Read cannot have plus-stranded features
+                                            membership[sink_plus] = -1 # Read cannot have plus-stranded features
+            
+            last_rfrag = rfrag
+        
+        # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
+        members = membership[:-4] == 1
+        if np.any(discard_frags[[strand>=0, strand<=0],:][:,members]):
+            if strand != 0:
+                membership[:] = -1 # Read contains a discarded frag, remove
+            else: # The read may only be possible in one stranded orientation (or it may be impossible given discard_frags)
+                if not np.any(discard_frags[0,members]): # Plus strand is still viable
+                    strand_array[i] = 1
+                    membership[source_minus] = -1 # Read cannot have minus-stranded features
+                    membership[sink_minus] = -1 # Read cannot have minus-stranded features
+                elif not np.any(discard_frags[1,members]): # Minus strand is still viable
+                    strand_array[i] = -1
+                    membership[source_plus] = -1 # Read cannot have minus-stranded features
+                    membership[sink_plus] = -1 # Read cannot have minus-stranded features
+                else: # Neither strand is viable, remove
+                    membership[:] = -1
+
+        return membership
     
     cpdef list junctions_between(self, int lpos, int rpos, char strand):
         """Returns a list of junction hashes that fall between the two specified positions
@@ -606,43 +616,6 @@ cdef class Locus:
                         self.membership[i, -2:] = -1 # Read cannot have minus-stranded features
                     elif self.strand_array[i] == -1:
                         self.membership[i,:] = -1
-    
-    # cpdef void denoise(self):
-    #     """Checks the competitors of each read. If the read (plus compatible reads)
-    #     accumulates to <minimum_proportion of sum(compatible + incompatible), 
-    #     remove the read."""
-    #     cdef np.ndarray keep, competitors, compatible, informative
-    #     cdef float in_weight, out_weight, proportion
-    #     cdef tuple compmembers
-    #     keep = np.ones(self.membership.shape[0], dtype=np.bool)
-    #     IC_order = np.lexsort((-self.member_content, -self.information_content)) # Rank them by decreasing number of members
-    #     for index in IC_order:
-    #         if keep[index]:
-    #             competitors = self.get_competitors(index)
-    #             if len(competitors) > 0:
-    #                 compatible = self.get_compatible(index, competitors)
-    #                 informative = np.where(np.apply_along_axis(np.all, 0, self.membership[compatible,:-4]==1))[0]
-    #                 if len(informative) > 0:
-    #                     # Subset for competitors that exclude the informative member(s) of the compatible set
-    #                     competitors = competitors[np.sum(self.membership[competitors,:][:,informative]==-1, axis=1)>0]
-    #                     # Subset for competitors that span the informative member(s)
-    #                     compmembers = np.where(self.membership[competitors,:-4]==1)
-    #                     competitors = competitors[sorted(set(compmembers[0][compmembers[1] < np.max(informative)]).intersection(set(compmembers[0][compmembers[1] > np.min(informative)])))]
-    #                     if len(competitors) > 0:
-    #                         in_weight = np.sum(self.weight_array[compatible,:])
-    #                         out_weight = np.sum(self.weight_array[competitors,:])
-    #                         if in_weight == 0 and out_weight == 0:
-    #                             keep[compatible] = False
-    #                             keep[competitors] = False
-    #                         else:
-    #                             proportion = in_weight / (in_weight+out_weight)
-    #                             if proportion < self.minimum_proportion:
-    #                                 keep[compatible] = False
-    #                             elif proportion > 1 - self.minimum_proportion:
-    #                                 keep[competitors] = False
-        
-    #     if np.any(np.logical_not(keep)):
-    #         self.subset_elements(np.where(keep)[0])
     
     cpdef np.ndarray apply_intron_filter(self, float threshold=1):
         """Returns a 2-row array of bools marking non-viable frags for plus and minus paths
