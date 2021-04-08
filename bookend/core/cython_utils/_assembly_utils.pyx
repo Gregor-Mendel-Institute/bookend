@@ -33,7 +33,7 @@ cdef class EndRange:
         self.positions.add(position)
     
     def span(self):
-        return (min(self.positions), max(self.positions)))
+        return (min(self.positions), max(self.positions))
 
     def write_as_bed(self, chrom):
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
@@ -48,7 +48,7 @@ cdef class Locus:
     cdef public list transcripts, traceback, sources, subproblem_indices
     cdef public object graph
     cdef EndRange nullRange
-    cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
+    cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
@@ -334,15 +334,14 @@ cdef class Locus:
             self.reduced_membership - a table of unique membership patterns
             self.membership_weights - (1 per row of reduced_membership) number of reads
         """
-        cdef Py_ssize_t a, b, i, j, number_of_reads, number_of_frags, source_plus, source_minus, sink_plus, sink_minus
-        cdef int last_rfrag, membership_width, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, skipped
-        cdef np.ndarray strand_array, weight_array, discard, lengths, keep, discard_frags
-        cdef char s, jstrand
-        cdef bint junctions_are_linear
-        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
+        cdef Py_ssize_t a, b, i, number_of_reads, number_of_frags
+        cdef int membership_width, read_length, lost_ends, number_of_members
+        cdef np.ndarray[char, ndim=1] membership
+        cdef list temp_frags, bp_positions, hashes
         cdef (int, int) block, span
-        cdef str junction_hash, membership_hash, junction
-        cdef dict reps, source_weights, member_weights
+        cdef str membership_hash, null_hash
+        cdef dict reps, source_weights, member_weights, membership_lengths, unhash
+        unhash = {'_':-1, ' ':0, '*':1}
         bp_positions = sorted(list(self.branchpoints))
         temp_frags = []
         for i in range(len(bp_positions)-1):
@@ -381,26 +380,50 @@ cdef class Locus:
         number_of_reads = len(self.reads)
         number_of_frags = len(self.frags)
         membership_width = number_of_frags+4
-        discard_frags = self.apply_intron_filter(threshold)
+        null_hash = '_'*membership_width
+        self.discard_frags = self.apply_intron_filter(threshold)
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             read = self.reads[i]
-            membership_hash = self.calculate_membership(membership_width, read.ranges, read.splice, read.strand, read.s_tag, read.e_tag)
-            reps[membership_hash] += read.weight
-            # Calculate the length (bases) of the element
-            self.member_lengths[i] = np.sum(self.frag_len[membership[i,:] == 1])
-            if self.member_lengths[i] > 0:
-                weight_array[i, self.source_lookup[read.source]] += read.weight * self.read_lengths[i] / self.member_lengths[i]
+            membership = self.calculate_membership(membership_width, read.ranges, read.splice, read.strand, read.s_tag, read.e_tag)
+            membership_hash = ''.join([[' ', '*', '_'][m] for m in membership])
+            if membership_hash != null_hash: # Read wasn't discarded
+                if read.strand == 1:
+                    lost_ends = sum([read.s_tag and membership[membership_width-4]!=1, read.e_tag and membership[membership_width-3]!=1])
+                elif read.strand == -1:
+                    lost_ends = sum([read.s_tag and membership[membership_width-2]!=1, read.e_tag and membership[membership_width-1]!=1])
+                else:
+                    lost_ends = 0
+                
+                read_length = self.read_lengths[i] - self.oligo_len*lost_ends
+                if membership_hash in reps.keys(): # This pattern has already been seen
+                    reps[membership_hash] += read.weight
+                    source_weights[membership_hash][self.source_lookup[read.source]] += read.weight * read_length / membership_lengths[membership_hash]
+                else: # This is the first time encountering this pattern
+                    reps[membership_hash] = read.weight
+                    membership_lengths[membership_hash] = np.sum(self.frag_len[membership == 1])
+                    source_weights[membership_hash] = np.zeros(len(self.source_lookup), dtype=np.float32)
+                    source_weights[membership_hash][self.source_lookup[read.source]] += read.weight * read_length / membership_lengths[membership_hash]
+        
+        hashes = sorted(reps.keys())
+        number_of_members = len(hashes)
+        self.member_lengths = np.zeros(number_of_members, dtype=np.int32)
+        self.rep_array = np.zeros(number_of_members, dtype=np.float32)
+        self.membership = np.zeros((number_of_members, membership_width), dtype=np.int8)
+        self.member_weights = np.zeros((number_of_members,membership_width), dtype=np.float32)
+        self.weight_array = np.zeros((number_of_members,len(self.source_lookup)), dtype=np.float32)
+        self.strand_array = np.zeros(number_of_members, dtype=np.int8)
+        for i in range(number_of_members):
+            membership_hash = hashes[i]
+            self.membership[i,:] = [unhash[h] for h in membership_hash]
+            self.weight_array[i,:] = source_weights[membership_hash]
+            self.rep_array[i] = reps[membership_hash]
+            self.member_weights[i,self.membership[i,:]==1] = np.sum(self.weight_array[i,:])
+            self.member_weights[i,self.membership[i,:]==-1] = self.rep_array[i]
+            self.strand_array[i] = 0 - int(membership_hash[-4:-2]=='__') + int(membership_hash[-2:]=='__')
         
         if self.naive:
-            weight_array = np.sum(weight_array,axis=1,keepdims=True)
+            self.weight_array = np.sum(self.weight_array,axis=1,keepdims=True)
         
-        strand_array = np.zeros(number_of_reads, dtype=np.int8) # Container for strandedness of each read (-1 minus, 1 plus, 0 nonstranded)
-        weight_array = np.zeros((number_of_reads,len(self.source_lookup)), dtype=np.float32)
-        self.member_lengths = np.zeros(number_of_reads, dtype=np.int32)
-        self.rep_array = np.zeros(number_of_reads, dtype=np.float32)
-        self.membership = membership
-        self.weight_array = weight_array
-        self.strand_array = strand_array
         self.reduce_membership()
         self.filter_by_reps(threshold)
         self.filter_members_by_strand()
@@ -416,13 +439,13 @@ cdef class Locus:
         """Given an RNAseqMapping object, defines a membership string that describes
         which frags are included (*), excluded (_) or outside of ( ) the read."""
         cdef np.ndarray[char, ndim=1] membership
+        cdef np.ndarray members
         cdef Py_ssize_t j, source_plus, source_minus, sink_plus, sink_minus
         cdef (int, int) block, span
-        cdef int last_rfrag, l, r, tl, tr, l_overhang, r_overhang, lfrag, rfrag, pos, skipped
-        cdef np.ndarray lengths, keep, discard_frags
+        cdef int last_rfrag, l, r, tl, tr, lfrag, rfrag
         cdef char s, jstrand
         cdef bint junctions_are_linear
-        cdef list temp_frags, bp_positions, spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
+        cdef list spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
         cdef str junction_hash, junction, membership_hash
         membership = np.zeros(width, dtype=np.int8)
         source_plus, sink_plus, source_minus, sink_minus = range(width-4, width)
@@ -534,7 +557,7 @@ cdef class Locus:
                             membership[(last_rfrag+1):lfrag] = 1
                             for span in spans:
                                 skipped_frags = list(range(self.frag_by_pos[span[0]], self.frag_by_pos[span[1]]))
-                                if not np.all(discard_frags[[strand>=0, strand<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
+                                if not np.all(self.discard_frags[[strand>=0, strand<=0],:][:,skipped_frags]): # Two alternative paths exist through this intron (spliced and unspliced)
                                     for skipped in skipped_frags:
                                         membership[skipped] = 0
                                 else: # Only the spliced path exists
@@ -543,7 +566,6 @@ cdef class Locus:
                                     
                                     if strand == 0:
                                         strand = jstrand
-                                        strand_array[i] = strand
                                         if strand == 1:
                                             membership[source_minus] = -1 # Read cannot have minus-stranded features
                                             membership[sink_minus] = -1 # Read cannot have minus-stranded features
@@ -555,16 +577,16 @@ cdef class Locus:
         
         # Apply intron filtering to (a) restrict the read to one strand or (b) remove it entirely
         members = membership[:-4] == 1
-        if np.any(discard_frags[[strand>=0, strand<=0],:][:,members]):
+        if not np.any(members):
+            membership[:] = -1
+        elif np.any(self.discard_frags[[strand>=0, strand<=0],:][:,members]):
             if strand != 0:
                 membership[:] = -1 # Read contains a discarded frag, remove
             else: # The read may only be possible in one stranded orientation (or it may be impossible given discard_frags)
-                if not np.any(discard_frags[0,members]): # Plus strand is still viable
-                    strand_array[i] = 1
+                if not np.any(self.discard_frags[0,members]): # Plus strand is still viable
                     membership[source_minus] = -1 # Read cannot have minus-stranded features
                     membership[sink_minus] = -1 # Read cannot have minus-stranded features
-                elif not np.any(discard_frags[1,members]): # Minus strand is still viable
-                    strand_array[i] = -1
+                elif not np.any(self.discard_frags[1,members]): # Minus strand is still viable
                     membership[source_plus] = -1 # Read cannot have minus-stranded features
                     membership[sink_plus] = -1 # Read cannot have minus-stranded features
                 else: # Neither strand is viable, remove
