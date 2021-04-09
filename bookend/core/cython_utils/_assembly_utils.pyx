@@ -889,7 +889,7 @@ cdef class Locus:
         
         indices = np.array(simplified_indices, dtype=np.int32)
         self.subset_elements(indices)
-        self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
+        self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
         # self.adj = {i:[] for i in range(self.overlap.shape[0])}
         # edge_locations = np.where(self.overlap >= 1)
         # for a,b in zip(edge_locations[0],edge_locations[1]):
