@@ -15,7 +15,7 @@ cdef class ElementGraph:
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
     cdef public float bases, input_bases, dead_end_penalty
-    cdef public set SP, SM, EP, EM, end_elements
+    cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
     cdef public bint no_ends, ignore_ends, naive, partial_coverage
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False):
         """Constructs a forward and reverse directed graph from the
@@ -27,6 +27,7 @@ cdef class ElementGraph:
         self.emptyPath = Element(-1, np.array([0]), np.array([0]), 0, np.array([0]), np.array([0]), np.array([0]), 0)
         self.dead_end_penalty = dead_end_penalty
         self.SP, self.SM, self.EP, self.EM = set(), set(), set(), set()
+        self.SPmembers, self.SMmembers, self.EPmembers, self.EMmembers = set(), set(), set(), set()
         self.overlap = overlap_matrix
         self.number_of_elements = self.overlap.shape[0]
         self.maxIC = membership_matrix.shape[1]
@@ -146,11 +147,19 @@ cdef class ElementGraph:
         cdef np.ndarray contained
         for e in self.elements:
             if e.strand == 1:
-                if e.s_tag: self.SP.add(e.index)
-                if e.e_tag: self.EP.add(e.index)
+                if e.s_tag:
+                    self.SP.add(e.index)
+                    self.SPmembers.add(e.LM)
+                if e.e_tag:
+                    self.EP.add(e.index)
+                    self.EPmembers.add(e.RM)
             elif e.strand == -1:
-                if e.s_tag: self.SM.add(e.index)
-                if e.e_tag: self.EM.add(e.index)
+                if e.s_tag:
+                    self.SM.add(e.index)
+                    self.SMmembers.add(e.RM)
+                if e.e_tag:
+                    self.EM.add(e.index)
+                    self.EMmembers.add(e.LM)
             if e.complete: # A full-length path exists in the input elements
                 path = copy.deepcopy(e)
                 path_index = len(self.paths)
@@ -316,9 +325,7 @@ cdef class ElementGraph:
             for i in range(number_of_paths):
                 bad_paths[i] = not self.paths[i].complete
         
-
-
-
+    
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
         calculate how much coverage is actually available to the path."""
@@ -594,98 +601,84 @@ cdef class ElementGraph:
             extensions = self.generate_extensions(currentPath)
         
         if verbose:print(currentPath)
-        # self.trim_ends(currentPath)
+        self.rescue_ends(currentPath)
         return currentPath
     
-    # cpdef void trim_ends(self, Element path):
-    #     """If a path has malformed ends, check if it is possible to back up to a
-    #     bypassed start/end site without crossing a splice junction."""
-    #     pass
-    #     cdef Element element, trim_element, start_element, end_element
-    #     cdef np.ndarray members
-    #     cdef int left_exon_border, right_exon_border, bypassed, m, lastm
-    #     cdef set elements_to_trim
-    #     cdef list candidates, repair_elements
-    #     if path.complete or path.strand==0:return
-    #     left_exon_border = -1
-    #     right_exon_border = -1
-    #     lastm = -1
-    #     members = np.array(sorted(path.members.difference(path.end_indices)), dtype=np.int32)
-    #     for m in members:
-    #         if lastm == -1:lastm = m
-    #         if m > lastm+1:
-    #             if left_exon_border==-1:left_exon_border = lastm
-    #             right_exon_border = m
+    cpdef void rescue_ends(self, Element path):
+        """If a path has malformed ends, check if it is possible to back up to a
+        bypassed start/end site without crossing a splice junction."""
+        cdef Element element
+        cdef np.ndarray members
+        cdef int left_exon_border, right_exon_border, bypassed, m, lastm, i
+        cdef set elements_to_trim, remove
+        cdef list candidates, repair_elements
+        if path.complete or path.strand==0:return
+        
+        left_exon_border = -1
+        right_exon_border = -1
+        lastm = -1
+        members = np.array(sorted(path.members.difference(path.end_indices)), dtype=np.int32)
+        for m in members:
+            if lastm == -1:lastm = m
+            if m > lastm+1:
+                if left_exon_border==-1:left_exon_border = lastm
+                right_exon_border = m
             
-    #         lastm = m
+            lastm = m
         
-    #     if left_exon_border == -1:left_exon_border=path.RM # single-exon path
-    #     if right_exon_border == -1:right_exon_border=path.LM # single-exon path
-    #     start_to_repair = self.emptyPath
-    #     if not path.s_tag: # Check if there is a bypassed start in the first exon
-    #         if path.strand == 1:
-    #             candidates = self.starts_plus
-    #             for bypassed in candidates:
-    #                 element = self.elements[bypassed]
-    #                 if element.LM > left_exon_border:continue
-    #                 if element.s_tag and element.LM > path.LM: # Start is in the bypassed range
-    #                     if start_to_repair is self.emptyPath:
-    #                         start_to_repair = element
-    #                     elif element.LM < start_to_repair.LM: # New start is upstream of the start already found
-    #                         start_to_repair = element
-    #         elif path.strand == -1:
-    #             candidates = self.starts_minus
-    #             for bypassed in candidates:
-    #                 element = self.elements[bypassed]
-    #                 if element.RM < right_exon_border:continue
-    #                 if element.s_tag and element.RM < path.RM:
-    #                     if start_to_repair is self.emptyPath:
-    #                         start_to_repair = element
-    #                     elif element.RM > start_to_repair.RM: # New start is upstream of the start already found
-    #                         start_to_repair = element
+        if left_exon_border == -1:left_exon_border=path.RM # single-exon path
+        if right_exon_border == -1:right_exon_border=path.LM # single-exon path
+        if path.strand == 1:
+            if not path.s_tag:
+                candidates = [m for m in range(path.LM, left_exon_border+1) if m in SPmembers]
+                if len(candidates) > 0: # A start exists, pick the most upstream
+                    m = min(candidates)
+                    path.s_tag = True
+                    path.members.add(path.number_of_members)
+                    path.members.difference_update(range(path.LM,m))
+                    path.covered_indices.difference_update(range(path.LM,m))
+                    path.nonmembers.update(range(m))
+            if not path.e_tag: # An end exists, pick the most downstream
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in EPmembers]
+                if len(candidates) > 0:
+                    m = max(candidates)
+                    path.e_tag = True
+                    path.members.add(path.number_of_members+1)
+                    path.members.difference_update(range(path.RM,m))
+                    path.covered_indices.difference_update(range(path.RM,m))
+                    path.nonmembers.update(range(m+1,path.number_of_members+1))
+        elif path.strand == -1:
+            if not path.s_tag: # A start exists, pick the most upstream
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in SMmembers]
+                if len(candidates) > 0:
+                    m = max(candidates)
+                    path.s_tag = True
+                    path.members.add(path.number_of_members+2)
+                    path.members.difference_update(range(path.RM,m))
+                    path.covered_indices.difference_update(range(path.RM,m))
+                    path.nonmembers.update(range(m+1,path.number_of_members+1))
+            if not path.e_tag: # An end exists, pick the most downstream
+                candidates = [m for m in range(path.LM, left_exon_border+1) if m in EMmembers]
+                if len(candidates) > 0:
+                    m = min(candidates)
+                    path.e_tag = True
+                    path.members.add(path.number_of_members+3)
+                    path.members.difference_update(range(path.LM,m))
+                    path.covered_indices.difference_update(range(path.LM,m))
+                    path.nonmembers.update(range(m))
         
-    #     end_to_repair = self.emptyPath
-    #     if not path.e_tag: # Check if there is a bypassed end in the first exon
-    #         if path.strand == -1:
-    #             candidates = self.ends_minus
-    #             for bypassed in candidates:
-    #                 element = self.elements[bypassed]
-    #                 if element.LM > left_exon_border:continue
-    #                 if element.e_tag and element.LM > path.LM:
-    #                     if end_to_repair is self.emptyPath:
-    #                         end_to_repair = element
-    #                     elif element.LM < end_to_repair.LM: # New end is downstream
-    #                         end_to_repair = element
-    #         elif path.strand == 1:
-    #             candidates = self.ends_plus
-    #             for bypassed in candidates:
-    #                 element = self.elements[bypassed]
-    #                 if element.RM < right_exon_border:continue
-    #                 if element.e_tag and element.RM < path.RM:
-    #                     if end_to_repair is self.emptyPath:
-    #                         end_to_repair = element
-    #                     elif element.RM > end_to_repair.RM: # New end is downstream
-    #                         end_to_repair = element
+        # Get rid of assigned elements that are no longer compatible after the change
+        remove = set()
+        for i in path.includes|path.contains:
+            element = self.elements[i]
+            if not element.compatible(path):
+                remove.add(i)
         
-    #     # Remove all included/excluded elements from path to make room for the repaired ends
-    #     repair_elements = [element for element in [start_to_repair, end_to_repair] if element is not self.emptyPath]
-    #     members_to_trim = set()
-    #     nonmembers_to_trim = set()
-    #     for element in repair_elements:
-    #         elements_to_trim = path.includes.intersection(element.excludes)
-    #         for e in elements_to_trim:
-    #             trim_element = self.elements[e]
-    #             members_to_trim.update(trim_element.members.intersection(element.nonmembers))
-    #             nonmembers_to_trim.update(trim_element.nonmembers.intersection(element.members))
-            
-    #         path.members.difference_update(members_to_trim)
-    #         path.nonmembers.difference_update(nonmembers_to_trim)
-    #         path.includes.difference_update(elements_to_trim)
-    #         path.contains.difference_update(elements_to_trim)
-    #         path.excludes.remove(element.index)
-    #         path.merge(element, self.available_proportion(path.source_weights, element))
-
-    #     path.update()
+        path.includes.difference_update(remove)
+        path.contains.difference_update(remove)
+        path.excludes.update(remove)
+        path.length = np.sum(path.frag_len[sorted(path.members)])
+        path.update()
     
     cpdef float add_path(self, Element path):
         """Evaluate what proportion of the compatible reads should be """
@@ -770,6 +763,7 @@ cdef class Element:
         self.index = self.left = self.right = index   # Initialize left, right, and index
         self.number_of_elements = overlap.shape[0]    # Total number of nodes in the graph
         self.frag_len = frag_len                      # Length of the fragment is provided
+        self.number_of_members = frag_len.shape[0]-4
         self.includes = set([self.index])             # Which Elements are part of this Element
         self.excludes = set()                         # Which Elements are incompatible with this Element
         self.source_weights = np.copy(source_weights) # Array of read coverage per Source
