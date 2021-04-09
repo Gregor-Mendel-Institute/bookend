@@ -291,14 +291,14 @@ cdef class Locus:
         end_ranges.append(e)
         return end_ranges
     
-    cpdef int end_of_cluster(self, int pos, list end_ranges, int extend=self.extend):
+    cpdef int end_of_cluster(self, int pos, list end_ranges, int extend):
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
         rng = self.get_end_cluster(pos, end_ranges, extend)
         return rng.terminal
     
-    cpdef EndRange get_end_cluster(self, int pos, list end_ranges, int extend=self.extend):
+    cpdef EndRange get_end_cluster(self, int pos, list end_ranges, int extend):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng, bestrng
@@ -486,7 +486,7 @@ cdef class Locus:
                         lfrag = self.frag_by_pos[l]
                         membership[0:lfrag] = -1 # Read cannot extend beyond source
                 elif strand == -1 and e_tag: # Left position is a 3' end
-                    tl = self.end_of_cluster(l, self.end_ranges[3])
+                    tl = self.end_of_cluster(l, self.end_ranges[3], self.extend)
                     if tl >= 0:
                         membership[sink_minus] = 1 # Add t- to the membership table
                         l = tl
@@ -495,7 +495,7 @@ cdef class Locus:
             
             if j == len(ranges)-1: # Ending block
                 if strand == 1 and e_tag: # Right position is a 3' end
-                    tr = self.end_of_cluster(r, self.end_ranges[1])
+                    tr = self.end_of_cluster(r, self.end_ranges[1], self.extend)
                     if tr >= 0:
                         membership[sink_plus] = 1 # Add t+ to the membership table
                         r = tr
@@ -1005,7 +1005,7 @@ cdef class Locus:
                     E_ranges = self.end_ranges[3]
                 
                 if T.s_tag:
-                    S = self.get_end_cluster(first, S_ranges)
+                    S = self.get_end_cluster(first, S_ranges, self.extend)
                     if S is not self.nullRange:
                         s_pos = S.peak
                         S_info['S.reads'] = round(S.weight, 2)
@@ -1018,7 +1018,7 @@ cdef class Locus:
                                 T.ranges[-1] = (T.ranges[-1][0], s_pos)
                 
                 if T.e_tag:
-                    E = self.get_end_cluster(last, E_ranges)
+                    E = self.get_end_cluster(last, E_ranges, self.extend)
                     if E is not self.nullRange:
                         e_pos = E.peak
                         E_info['E.reads'] = round(E.weight,2)
@@ -1095,11 +1095,11 @@ cdef class Locus:
                 l, r = frag
                 # Update leftmost position if it matches an S/E branchpoint
                 if element.s_tag and element.strand == 1:
-                    S = self.get_end_cluster(l, self.end_ranges[0])
+                    S = self.get_end_cluster(l, self.end_ranges[0], self.extend)
                     if S is not self.nullRange:
                         l = S.peak
                 elif element.e_tag and element.strand == -1:
-                    E = self.get_end_cluster(l, self.end_ranges[3])
+                    E = self.get_end_cluster(l, self.end_ranges[3], self.extend)
                     if E is not self.nullRange:
                         l = E.peak
             elif last_member == m-1:
@@ -1120,11 +1120,11 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            S = self.get_end_cluster(r-1, self.end_ranges[2])
+            S = self.get_end_cluster(r-1, self.end_ranges[2], self.extend)
             if S is not self.nullRange:
                 r = S.peak+1
         elif element.e_tag and element.strand == 1:
-            E = self.get_end_cluster(r-1, self.end_ranges[1])
+            E = self.get_end_cluster(r-1, self.end_ranges[1], self.extend)
             if E is not self.nullRange:
                 r = E.peak+1
         
