@@ -15,12 +15,12 @@ cdef class EndRange:
     cdef public int left, right, peak, terminal, strand
     cdef public float weight
     cdef public str tag
-    cdef public set positions
+    cdef public object positions
     """Represents a reference point for a Start or End site."""
     def __init__(self, left, right, peak, weight, endtype):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
         self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
-        self.positions = set([left, right, peak])
+        self.positions = Counter()
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
@@ -30,12 +30,15 @@ cdef class EndRange:
         strand = ['.','+','-'][self.strand]
         return '{}{}{} ({})'.format(self.tag, strand, self.peak, self.weight)
     
-    def add(self, int position):
-        self.positions.add(position)
+    def add(self, int position, float weight):
+        self.positions[position] += weight
     
     def span(self):
-        return (min(self.positions), max(self.positions))
-
+        return (min(self.positions.keys()), max(self.positions.keys()))
+    
+    def most_common(self):
+        return positions.most_common(1)[0][0]
+    
     def write_as_bed(self, chrom):
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
@@ -288,14 +291,14 @@ cdef class Locus:
         end_ranges.append(e)
         return end_ranges
     
-    cpdef int end_of_cluster(self, int pos, list end_ranges):
+    cpdef int end_of_cluster(self, int pos, list end_ranges, int extend=self.extend):
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
-        rng = self.get_end_cluster(pos, end_ranges)
+        rng = self.get_end_cluster(pos, end_ranges, extend)
         return rng.terminal
     
-    cpdef EndRange get_end_cluster(self, int pos, list end_ranges):
+    cpdef EndRange get_end_cluster(self, int pos, list end_ranges, int extend=self.extend):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng, bestrng
@@ -303,7 +306,7 @@ cdef class Locus:
         bestdist = -1
         bestrng = self.nullRange
         for rng in end_ranges:
-            if pos >= max(0, rng.left-self.extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+self.extend):
+            if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
                 dist = abs(pos-rng.peak)
                 if bestdist == -1 or dist < bestdist:
                     bestrng = rng
@@ -386,7 +389,7 @@ cdef class Locus:
         self.discard_frags = self.apply_intron_filter(threshold)
         for i in range(number_of_reads): # Read through the reads once, cataloging frags and branchpoints present/absent
             read = self.reads[i]
-            membership = self.calculate_membership(membership_width, read.ranges, read.splice, read.strand, read.s_tag, read.e_tag)
+            membership = self.calculate_membership(membership_width, read.ranges, read.splice, read.strand, read.s_tag, read.e_tag, read.capped)
             membership_hash = ''.join([[' ', '*', '_'][m] for m in membership])
             if membership_hash != null_hash: # Read wasn't discarded
                 if read.strand == 1:
@@ -437,7 +440,7 @@ cdef class Locus:
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         return False
     
-    cpdef np.ndarray[char, ndim=1] calculate_membership(self, int width, list ranges, list splice, char strand, bint s_tag, bint e_tag):
+    cpdef np.ndarray[char, ndim=1] calculate_membership(self, int width, list ranges, list splice, char strand, bint s_tag, bint e_tag, bint capped):
         """Given an RNAseqMapping object, defines a membership string that describes
         which frags are included (*), excluded (_) or outside of ( ) the read."""
         cdef np.ndarray[char, ndim=1] membership
@@ -476,7 +479,7 @@ cdef class Locus:
             if j == 0: # Starting block
                 if strand == 1 and s_tag: # Left position is a 5' end
                     # Sp, Ep, Sm, Em
-                    tl = self.end_of_cluster(l, self.end_ranges[0])
+                    tl = self.end_of_cluster(l, self.end_ranges[0], self.extend*capped)
                     if tl >= 0: # 5' end is in an EndRange
                         membership[source_plus] = 1 # Add s+ to the membership table
                         l = tl
@@ -499,7 +502,7 @@ cdef class Locus:
                         rfrag = self.frag_by_pos[r-1]
                         membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond sink
                 elif strand == -1 and s_tag: # Right position is a 5' end
-                    tr = self.end_of_cluster(r, self.end_ranges[2])
+                    tr = self.end_of_cluster(r, self.end_ranges[2], self.extend*capped)
                     if tr >= 0:
                         membership[source_minus] = 1 # Add s- to the membership table
                         r = tr
