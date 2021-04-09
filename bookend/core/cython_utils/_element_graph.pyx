@@ -749,7 +749,7 @@ cdef class ElementGraph:
 
 cdef class Element:
     """Represents a read or collection of reads in a Locus."""
-    cdef public int index, length, IC, maxIC, left, right, number_of_elements, LM, RM
+    cdef public int index, length, IC, maxIC, left, right, number_of_elements, number_of_members, LM, RM
     cdef public list assigned_to
     cdef public char strand
     cdef public float cov, bases, bottleneck_weight
