@@ -522,7 +522,7 @@ cdef class ElementGraph:
             has_an_end = any([i in self.end_elements for i in ext])
             if cov >= best_score or has_an_end:
                 score = self.calculate_extension_score(path, ext, minimum_proportion)
-                if score > best_score or (score == best_score and has_an_end or len(ext) > len(best_ext)):
+                if score > best_score or (score == best_score and (has_an_end or len(ext) > len(best_ext))):
                     best_ext = ext
                     best_score = score
             else:
