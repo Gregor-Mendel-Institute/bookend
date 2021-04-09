@@ -37,7 +37,7 @@ cdef class EndRange:
         return (min(self.positions.keys()), max(self.positions.keys()))
     
     def most_common(self):
-        return positions.most_common(1)[0][0]
+        return self.positions.most_common(1)[0][0]
     
     def write_as_bed(self, chrom):
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
