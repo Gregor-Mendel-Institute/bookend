@@ -381,16 +381,16 @@ cdef class ElementGraph:
         best_element = self.elements[available_elements[0]]
         most_cov = best_element.bases
         for c in best_element.contains:
-            if c != best_element.index:
-                most_cov += self.available_bases(best_element.source_weights, self.elements[c])
+            if c != best_element.index and self.assignments[c]==0:
+                most_cov += self.elements[c].bases
         
         most_cov /= best_element.length
         for i in available_elements:
             new_element = self.elements[i]
             new_cov = new_element.bases
             for c in new_element.contains:
-                if c != new_element.index:
-                    new_cov += self.available_bases(new_element.source_weights, self.elements[c])
+                if c != new_element.index and self.assignments[c]==0:
+                    new_cov += self.elements[c].bases
             
             new_cov /= new_element.length
             # print(i, new_element, new_cov)
