@@ -630,7 +630,7 @@ cdef class ElementGraph:
         if right_exon_border == -1:right_exon_border=path.LM # single-exon path
         if path.strand == 1:
             if not path.s_tag:
-                candidates = [m for m in range(path.LM, left_exon_border+1) if m in SPmembers]
+                candidates = [m for m in range(path.LM, left_exon_border+1) if m in self.SPmembers]
                 if len(candidates) > 0: # A start exists, pick the most upstream
                     m = min(candidates)
                     path.s_tag = True
@@ -639,7 +639,7 @@ cdef class ElementGraph:
                     path.covered_indices.difference_update(range(path.LM,m))
                     path.nonmembers.update(range(m))
             if not path.e_tag: # An end exists, pick the most downstream
-                candidates = [m for m in range(right_exon_border, path.RM+1) if m in EPmembers]
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.EPmembers]
                 if len(candidates) > 0:
                     m = max(candidates)
                     path.e_tag = True
@@ -649,7 +649,7 @@ cdef class ElementGraph:
                     path.nonmembers.update(range(m+1,path.number_of_members+1))
         elif path.strand == -1:
             if not path.s_tag: # A start exists, pick the most upstream
-                candidates = [m for m in range(right_exon_border, path.RM+1) if m in SMmembers]
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.SMmembers]
                 if len(candidates) > 0:
                     m = max(candidates)
                     path.s_tag = True
@@ -658,7 +658,7 @@ cdef class ElementGraph:
                     path.covered_indices.difference_update(range(path.RM,m))
                     path.nonmembers.update(range(m+1,path.number_of_members+1))
             if not path.e_tag: # An end exists, pick the most downstream
-                candidates = [m for m in range(path.LM, left_exon_border+1) if m in EMmembers]
+                candidates = [m for m in range(path.LM, left_exon_border+1) if m in self.EMmembers]
                 if len(candidates) > 0:
                     m = min(candidates)
                     path.e_tag = True
