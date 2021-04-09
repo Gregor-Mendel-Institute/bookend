@@ -646,7 +646,7 @@ cdef class ElementGraph:
                     path.members.add(path.number_of_members+1)
                     path.members.difference_update(range(path.RM,m))
                     path.covered_indices.difference_update(range(path.RM,m))
-                    path.nonmembers.update(range(m+1,path.number_of_members+1))
+                    path.nonmembers.update(range(m+1,path.number_of_members))
         elif path.strand == -1:
             if not path.s_tag: # A start exists, pick the most upstream
                 candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.SMmembers]
@@ -656,7 +656,7 @@ cdef class ElementGraph:
                     path.members.add(path.number_of_members+2)
                     path.members.difference_update(range(path.RM,m))
                     path.covered_indices.difference_update(range(path.RM,m))
-                    path.nonmembers.update(range(m+1,path.number_of_members+1))
+                    path.nonmembers.update(range(m+1,path.number_of_members))
             if not path.e_tag: # An end exists, pick the most downstream
                 candidates = [m for m in range(path.LM, left_exon_border+1) if m in self.EMmembers]
                 if len(candidates) > 0:
