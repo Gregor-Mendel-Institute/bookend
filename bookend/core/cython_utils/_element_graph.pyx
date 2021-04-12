@@ -487,16 +487,16 @@ cdef class ElementGraph:
         freebies = tuple(path.contains.difference(path.includes))
         if len(freebies) > 0:
             self.extend_path(path, freebies)
-            ingroup = np.array(sorted(path.ingroup))
-            outgroup = np.array(sorted(path.outgroup))
+            ingroup = path.ingroup
+            outgroup = path.outgroup
         
         if len(ingroup.difference(path.contained)) > 0:
             if len(outgroup.difference(path.contained)) > 0:
-                pairs = list(set([(i,o) for o in outgroup for i in ingroup if self.overlap[i,o] > -1]))
+                pairs = list(set([(i,o) for o in sorted(outgroup) for i in sorted(ingroup) if self.overlap[i,o] > -1]))
             else: # No outgroups, use path.index as other end of pair
-                pairs = [(i,path.index) for i in ingroup]
+                pairs = [(i,path.index) for i in sorted(ingroup)]
         else: # No ingroups, use path.index as other end of pair
-            pairs = [(path.index,o) for o in outgroup]
+            pairs = [(path.index,o) for o in sorted(outgroup)]
         
         # Make an extension set out of each pair by adding all elements contained by path+pair
         for pair in pairs:
