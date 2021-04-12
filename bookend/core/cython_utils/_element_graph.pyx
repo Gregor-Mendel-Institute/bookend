@@ -316,6 +316,9 @@ cdef class ElementGraph:
     cpdef void remove_bad_assemblies(self):
         cdef np.ndarray bad_paths
         cdef int number_of_paths, i
+        cdef set m
+        cdef Element path
+        # REMOVAL ROUND 1: INCOMPLETE ASSEMBLIES
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
         if self.ignore_ends: # Incomplete paths are those that have gaps
@@ -325,6 +328,24 @@ cdef class ElementGraph:
             for i in range(number_of_paths):
                 bad_paths[i] = not self.paths[i].complete
         
+        self.remove_paths(np.where(bad_paths)[0])
+        self.assign_weights()
+        # REMOVAL ROUND 2: TRUNCATIONS
+        number_of_paths = len(self.paths)
+        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        for i in range(number_of_paths):
+            path = self.paths[i]
+            m = path.members.difference(path.end_indices)
+            container_cov = 0
+            for j in range(number_of_paths):
+                if m.issubset(self.paths[j].members):
+                    container_cov += self.paths[j].bases / self.paths[j].length
+            
+            if container_cov > 0:
+                if path.bases/path.length < container_cov:
+                    bad_paths[i] = True
+        
+
     
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
@@ -366,9 +387,10 @@ cdef class ElementGraph:
         cdef np.ndarray prior_weights, proportion
         prior_weights = np.copy(path.source_weights)
         for i in range(len(extension)):
-            extpath = self.elements[extension[i]]
-            proportion = self.available_proportion(prior_weights, extpath)
-            path.merge(extpath, proportion)
+            if i not in path.includes:
+                extpath = self.elements[extension[i]]
+                proportion = self.available_proportion(prior_weights, extpath)
+                path.merge(extpath, proportion)
     
     cpdef Element get_heaviest_element(self):
         cdef Element best_element, new_element
@@ -451,9 +473,8 @@ cdef class ElementGraph:
         the path's ingroup/outgroup that should be evaluated. Requires
         at least one each from ingroup and outgroup if they are nonempty."""
         cdef:
-            np.ndarray ingroup, outgroup
             list pairs
-            set ext_accounts, ext_members, ext_nonmembers, exclude, contained
+            set ingroup, outgroup, ext_accounts, ext_members, ext_nonmembers, exclude, contained
             int i, o, c
             Element e, e_in, e_out, e_con
             (int, int) pair
@@ -461,16 +482,16 @@ cdef class ElementGraph:
             dict extdict
             str exthash
         extdict = {}
-        ingroup = np.array(sorted(path.ingroup))
-        outgroup = np.array(sorted(path.outgroup))
+        ingroup = path.ingroup|path.contained
+        outgroup = path.outgroup|path.contained
         freebies = tuple(path.contains.difference(path.includes))
         if len(freebies) > 0:
             self.extend_path(path, freebies)
             ingroup = np.array(sorted(path.ingroup))
             outgroup = np.array(sorted(path.outgroup))
         
-        if len(ingroup) > 0:
-            if len(outgroup) > 0:
+        if len(ingroup.difference(path.contained)) > 0:
+            if len(outgroup.difference(path.contained)) > 0:
                 pairs = list(set([(i,o) for o in outgroup for i in ingroup if self.overlap[i,o] > -1]))
             else: # No outgroups, use path.index as other end of pair
                 pairs = [(i,path.index) for i in ingroup]
@@ -506,7 +527,7 @@ cdef class ElementGraph:
                 exthash = '_'.join([','.join([str(i) for i in sorted(ext_members)]), ','.join([str(i) for i in sorted(ext_nonmembers)])])
                 if len(ext) > len(extdict.get(exthash, ())):
                     extdict[exthash] = ext
-        
+
         # Final check: If >0 extensions go both ways, remove the extensions that don't
         extensions = sorted([(sum([self.elements[i].cov for i in ext]),ext) for ext in list(extdict.values())],reverse=True)
         return extensions
