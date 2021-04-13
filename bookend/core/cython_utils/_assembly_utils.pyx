@@ -959,6 +959,9 @@ cdef class Locus:
     
     cpdef void assemble_transcripts(self):
         self.graph.assemble(self.minimum_proportion)
+        for path in self.graph.paths:
+            self.transcripts.append(self.convert_path(path, path.index))
+        
         self.add_transcript_attributes()
     
     cpdef void add_transcript_attributes(self):
@@ -1127,6 +1130,7 @@ cdef class Locus:
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
         readObject.attributes['cov'] = round(readObject.weight, 2)
+        readObject.attributes['bases'] = round(element.bases, 2)
         return readObject
 
 ##########################################

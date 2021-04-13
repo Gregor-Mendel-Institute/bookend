@@ -73,32 +73,31 @@ class Assembler:
 
     def process_entry(self, chunk):
         STOP_AT=float('inf')
-        # STOP_AT=3624
+        STOP_AT=1000000
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
             if self.verbose:
                 print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
             
-
             locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.min_overhang, True, self.min_proportion, self.cap_bonus, self.complete, verbose=self.verbose, naive=self.naive, intron_filter=self.intron_filter, ignore_ends=self.ignore_labels)
-            total_reads = locus.weight
+            total_bases = locus.bases
             if locus.graph:
-                locus.assemble_transcripts(complete=self.complete)
+                locus.assemble_transcripts()
                 if self.verbose:
-                    reads_used = 0
+                    bases_used = 0
                     transcripts_written = 0
                 
                 for transcript in locus.transcripts:
                     if self.passes_all_checks(transcript):
                         self.output_transcripts(transcript, self.output_type)
                         if self.verbose:
-                            reads_used += transcript.weight
+                            bases_used += transcript.attributes['bases']
                             transcripts_written += 1
                 
                 if self.verbose:
-                    print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
-                        transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
+                    print('\t{} transcripts assembled from {} of {} bases ({}%)'.format(
+                        transcripts_written, round(bases_used,1), round(total_bases,1), round(bases_used/total_bases*100,2)))
                 
                 if chunk[0].left() >= STOP_AT:
                     sys.exit()
