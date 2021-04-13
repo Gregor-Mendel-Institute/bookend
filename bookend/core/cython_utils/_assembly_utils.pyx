@@ -13,7 +13,7 @@ import time
 cdef class EndRange:
     cdef public int endtype
     cdef public int left, right, peak, terminal, strand
-    cdef public float weight
+    cdef public float weight, capped
     cdef public str tag
     cdef public object positions
     """Represents a reference point for a Start or End site."""
@@ -30,8 +30,9 @@ cdef class EndRange:
         strand = ['.','+','-'][self.strand]
         return '{}{}{} ({})'.format(self.tag, strand, self.peak, self.weight)
     
-    def add(self, int position, float weight):
+    def add(self, int position, float weight, bint capped=False):
         self.positions[position] += weight
+        self.capped += weight*capped
     
     def span(self):
         return (min(self.positions.keys()), max(self.positions.keys()))
@@ -291,14 +292,14 @@ cdef class Locus:
         end_ranges.append(e)
         return end_ranges
     
-    cpdef int end_of_cluster(self, int pos, float weight, list end_ranges, int extend):
+    cpdef int end_of_cluster(self, int pos, float weight, list end_ranges, int extend, bint capped):
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
-        rng = self.get_end_cluster(pos, weight, end_ranges, extend)
+        rng = self.get_end_cluster(pos, weight, end_ranges, extend, capped)
         return rng.terminal
     
-    cpdef EndRange get_end_cluster(self, int pos, float weight, list end_ranges, int extend):
+    cpdef EndRange get_end_cluster(self, int pos, float weight, list end_ranges, int extend, bint capped=False):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng, bestrng
@@ -312,7 +313,7 @@ cdef class Locus:
                     bestrng = rng
                     bestdist = dist
         
-        bestrng.add(pos, weight)
+        bestrng.add(pos, weight, capped)
         return bestrng
     
     cpdef str span_to_string(self, (int, int) span):
@@ -479,7 +480,7 @@ cdef class Locus:
             if j == 0: # Starting block
                 if strand == 1 and s_tag: # Left position is a 5' end
                     # Sp, Ep, Sm, Em
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[0], self.extend*capped)
+                    tl = self.end_of_cluster(l, weight, self.end_ranges[0], self.extend*capped, capped)
                     if tl >= 0: # 5' end is in an EndRange
                         membership[source_plus] = 1 # Add s+ to the membership table
                         l = tl
@@ -502,7 +503,7 @@ cdef class Locus:
                         rfrag = self.frag_by_pos[r-1]
                         membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond sink
                 elif strand == -1 and s_tag: # Right position is a 5' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[2], self.extend*capped)
+                    tr = self.end_of_cluster(r, weight, self.end_ranges[2], self.extend*capped, capped)
                     if tr >= 0:
                         membership[source_minus] = 1 # Add s- to the membership table
                         r = tr
@@ -981,13 +982,13 @@ cdef class Locus:
             
             if T.strand != 0:
                 if T.strand == 1:
-                    s_pos = first = T.span[0]
-                    e_pos = last = T.span[1]
+                    s_pos = first = T.span[0] - self.leftmost
+                    e_pos = last = T.span[1] - self.leftmost
                     S_ranges = self.end_ranges[0]
                     E_ranges = self.end_ranges[1]
                 else:
-                    s_pos = first = T.span[1]
-                    e_pos = last = T.span[0]
+                    s_pos = first = T.span[1] - self.leftmost
+                    e_pos = last = T.span[0] - self.leftmost
                     S_ranges = self.end_ranges[2]
                     E_ranges = self.end_ranges[3]
                 
@@ -997,6 +998,7 @@ cdef class Locus:
                         s_pos = S.peak
                         span = S.span()
                         S_info['S.reads'] = sum(S.positions.values())
+                        S_info['S.capped'] = S.capped
                         S_info['S.left'] = span[0]
                         S_info['S.right'] = span[1]
                         if s_pos != first: # S pos was replaced
@@ -1130,6 +1132,7 @@ cdef class Locus:
         readObject.attributes['transcript_id'] = transcript_id
         readObject.attributes['cov'] = round(element.bases/element.length, 2)
         readObject.attributes['bases'] = round(element.bases, 2)
+        readObject.coverage = readObject.attributes['cov']
         return readObject
 
 ##########################################
