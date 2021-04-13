@@ -754,7 +754,7 @@ cdef class ElementGraph:
         for i in range(self.number_of_elements):
             element = self.elements[i]
             if element.cov > 0:
-                if element.compatible(path):
+                if element.compatible(path) and element.LM >= path.LM and element.RM <= path.RM:
                     if self.assignments[i] == 0:
                         novel_bases += self.elements[i].bases
                     
@@ -779,6 +779,7 @@ cdef class ElementGraph:
         
         for index in indices:
             path = self.paths[index]
+            print(path.includes)
             for i in path.includes:
                 element = self.elements[i]
                 element.assigned_to.remove(index)
