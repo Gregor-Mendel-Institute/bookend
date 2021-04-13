@@ -779,7 +779,6 @@ cdef class ElementGraph:
         
         for index in indices:
             path = self.paths[index]
-            print(path.includes)
             for i in path.includes:
                 element = self.elements[i]
                 element.assigned_to.remove(index)
