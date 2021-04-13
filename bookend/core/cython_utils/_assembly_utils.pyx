@@ -487,7 +487,7 @@ cdef class Locus:
                         lfrag = self.frag_by_pos[l]
                         membership[0:lfrag] = -1 # Read cannot extend beyond source
                 elif strand == -1 and e_tag: # Left position is a 3' end
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[3], self.extend)
+                    tl = self.end_of_cluster(l, weight, self.end_ranges[3], self.extend, False)
                     if tl >= 0:
                         membership[sink_minus] = 1 # Add t- to the membership table
                         l = tl
@@ -496,7 +496,7 @@ cdef class Locus:
             
             if j == len(ranges)-1: # Ending block
                 if strand == 1 and e_tag: # Right position is a 3' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[1], self.extend)
+                    tr = self.end_of_cluster(r, weight, self.end_ranges[1], self.extend, False)
                     if tr >= 0:
                         membership[sink_plus] = 1 # Add t+ to the membership table
                         r = tr
