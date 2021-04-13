@@ -344,11 +344,12 @@ cdef class ElementGraph:
         # containment_order = [c for a,b,c in sorted([(-(p.RM-p.LM), len(p.members), i) for i,p in enumerate(self.paths)])]
         for i in range(number_of_paths):
             path = self.paths[i]
+            m = path.members.difference(path.end_indices)
             container_cov = 0
             for j in range(number_of_paths):
                 p = self.paths[j]
                 if path.RM < p.RM or path.LM > p.LM:
-                    if path.members.issubset(p.members):
+                    if m.issubset(p.members):
                         container_cov += p.bases / p.length
             
             if container_cov > 0:
