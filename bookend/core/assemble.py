@@ -82,7 +82,7 @@ class Assembler:
             
             locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.min_overhang, True, self.min_proportion, self.cap_bonus, self.complete, verbose=self.verbose, naive=self.naive, intron_filter=self.intron_filter, ignore_ends=self.ignore_labels)
             total_bases = locus.bases
-            if locus.graph:
+            if total_bases > 0:
                 locus.assemble_transcripts()
                 if self.verbose:
                     bases_used = 0
@@ -152,7 +152,7 @@ class Assembler:
         """
         if transcript.coverage < self.min_cov: return False
         if not self.incomplete and not transcript.complete: return False
-        if transcript.get_length() < self.minlen: return False
+        if transcript.attributes['length'] < self.minlen: return False
         if transcript.attributes['S.reads'] < self.min_start: return False
         if transcript.attributes['E.reads'] < self.min_end: return False
         # if not args.INCOMPLETE and True not in transcript.splice and transcript.attributes['S.capped']/transcript.attributes['S.reads'] < args.CAP_PERCENT: return False
