@@ -999,13 +999,13 @@ cdef class Locus:
                         span = S.span()
                         S_info['S.reads'] = sum(S.positions.values())
                         S_info['S.capped'] = S.capped
-                        S_info['S.left'] = span[0]
-                        S_info['S.right'] = span[1]
+                        S_info['S.left'] = span[0] + self.leftmost
+                        S_info['S.right'] = span[1] + self.leftmost
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
-                                T.ranges[0] = (s_pos, T.ranges[0][1])
+                                T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
                             else:
-                                T.ranges[-1] = (T.ranges[-1][0], s_pos)
+                                T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost)
                 
                 if T.e_tag:
                     E = self.get_end_cluster(last, 0, E_ranges, self.extend)
@@ -1013,16 +1013,18 @@ cdef class Locus:
                         e_pos = E.peak
                         span = E.span()
                         E_info['E.reads'] = sum(E.positions.values())
-                        E_info['E.left'] = span[0]
-                        E_info['E.right'] = span[1]
+                        E_info['E.left'] = span[0] + self.leftmost
+                        E_info['E.right'] = span[1] + self.leftmost
                         if e_pos != last: # S pos was replaced
                             if T.strand == 1:
-                                T.ranges[-1] = (T.ranges[-1][0], e_pos)
+                                T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost)
                             else:
-                                T.ranges[0] = (e_pos, T.ranges[0][1])
+                                T.ranges[0] = (e_pos + self.leftmost, T.ranges[0][1])
             
             T.attributes.update(S_info)
             T.attributes.update(E_info)
+            if T.attributes['S.capped'] > 0 and T.attributes['S.capped'] >= T.attributes['S.reads']*.1:
+                T.capped = True
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the locus."""
