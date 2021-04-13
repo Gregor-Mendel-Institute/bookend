@@ -386,6 +386,8 @@ cdef class ElementGraph:
             for i in np.where(bad_paths)[0]:
                 print('Removing {}, intron retention.'.format(self.paths[i]))
         
+        self.remove_paths(list(np.where(bad_paths)[0]))
+        self.assign_weights()
     
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
