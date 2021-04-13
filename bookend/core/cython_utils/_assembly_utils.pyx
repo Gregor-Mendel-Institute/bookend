@@ -955,7 +955,7 @@ cdef class Locus:
             self.collapse_chains()
         
         dead_end_penalty = 0.1 if self.allow_incomplete else 0
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=dead_end_penalty)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=dead_end_penalty, intron_filter=self.intron_filter)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
         cdef list reassigned_coverage

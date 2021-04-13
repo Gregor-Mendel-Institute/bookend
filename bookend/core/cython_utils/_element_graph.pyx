@@ -14,10 +14,10 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap, end_reachability
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases, input_bases, dead_end_penalty
+    cdef public float bases, input_bases, dead_end_penalty, intron_filter
     cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
     cdef public bint no_ends, ignore_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -33,6 +33,7 @@ cdef class ElementGraph:
         self.maxIC = membership_matrix.shape[1]
         self.naive = naive
         self.ignore_ends = ignore_ends
+        self.intron_filter = intron_filter
         self.partial_coverage = partial_coverage
         if self.naive:
                 source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
@@ -635,6 +636,7 @@ cdef class ElementGraph:
         """Traverses the path in a greedy fashion from the heaviest element."""
         cdef Element currentPath, e
         cdef tuple ext
+        cdef int i
         cdef list extensions
         # Get the current working path (heaviest unassigned Element)
         currentPath = self.get_heaviest_element()
@@ -647,7 +649,7 @@ cdef class ElementGraph:
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
                 ext = extensions[0][1]
-                if not any([e in self.end_elements for e in ext]):  # Allow extension to an end even if the score is 0
+                if not any([i in self.end_elements for i in ext]):  # Allow extension to an end even if the score is 0
                     if self.calculate_extension_score(currentPath, ext, minimum_proportion) == 0:
                         break
                 
