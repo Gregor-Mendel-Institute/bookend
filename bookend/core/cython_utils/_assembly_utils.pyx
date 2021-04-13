@@ -963,18 +963,7 @@ cdef class Locus:
         cdef int transcript_number
         for graph in self.graphs:
             graph.assemble(self.minimum_proportion)
-            if complete: # Discard all paths that aren't complete
-                paths_to_remove = [i for i in range(len(graph.paths)) if not graph.paths[i].complete]
-            else: # Still remove paths with internal gaps
-                paths_to_remove = [i for i in range(len(graph.paths)) if graph.paths[i].has_gaps]
-            
-            graph.remove_paths(sorted(set(paths_to_remove)))
-            graph.assign_weights()
-            paths_to_remove = self.filter_truncations()
-            for transcript_number in range(len(graph.paths)):
-                path = graph.paths[transcript_number]
-                self.transcripts.append(self.convert_path(path, transcript_number+1))
-            
+        
         self.add_transcript_attributes()
     
     cpdef void add_transcript_attributes(self):
@@ -985,10 +974,11 @@ cdef class Locus:
             dict S_info, E_info
             list S_ranges, E_ranges
             EndRange S, E
+            (int, int) span
         
         for T in self.transcripts:
             T.attributes['length'] = T.get_length()
-            T.attributes['reads'] = round(T.weight, 2)
+            T.attributes['cov'] = round(T.bases/T.length, 2)
             S_info = {'S.reads':0, 'S.capped':0, 'S.left':0, 'S.right':0}
             E_info = {'E.reads':0, 'E.left':0, 'E.right':0}
             
@@ -1008,9 +998,10 @@ cdef class Locus:
                     S = self.get_end_cluster(first, 0, S_ranges, self.extend)
                     if S is not self.nullRange:
                         s_pos = S.peak
-                        S_info['S.reads'] = round(S.weight, 2)
-                        S_info['S.left'] = S.left
-                        S_info['S.right'] = S.right
+                        span = S.span()
+                        S_info['S.reads'] = sum(S.positions.values())
+                        S_info['S.left'] = span[0]
+                        S_info['S.right'] = span[1]
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[0] = (s_pos, T.ranges[0][1])
@@ -1021,9 +1012,10 @@ cdef class Locus:
                     E = self.get_end_cluster(last, 0, E_ranges, self.extend)
                     if E is not self.nullRange:
                         e_pos = E.peak
-                        E_info['E.reads'] = round(E.weight,2)
-                        E_info['E.left'] = E.left
-                        E_info['E.right'] = E.right
+                        span = E.span()
+                        E_info['E.reads'] = sum(E.positions.values())
+                        E_info['E.left'] = span[0]
+                        E_info['E.right'] = span[1]
                         if e_pos != last: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[-1] = (T.ranges[-1][0], e_pos)
