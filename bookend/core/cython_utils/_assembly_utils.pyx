@@ -958,12 +958,7 @@ cdef class Locus:
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=dead_end_penalty, intron_filter=self.intron_filter)
     
     cpdef void assemble_transcripts(self, bint complete=False, bint collapse=True):
-        cdef list reassigned_coverage
-        cdef float total_coverage
-        cdef int transcript_number
-        for graph in self.graphs:
-            graph.assemble(self.minimum_proportion)
-        
+        self.graph.assemble(self.minimum_proportion)
         self.add_transcript_attributes()
     
     cpdef void add_transcript_attributes(self):
