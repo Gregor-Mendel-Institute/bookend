@@ -976,7 +976,6 @@ cdef class Locus:
         
         for T in self.transcripts:
             T.attributes['length'] = T.get_length()
-            T.attributes['cov'] = round(T.bases/T.length, 2)
             S_info = {'S.reads':0, 'S.capped':0, 'S.left':0, 'S.right':0}
             E_info = {'E.reads':0, 'E.left':0, 'E.right':0}
             
@@ -1129,7 +1128,7 @@ cdef class Locus:
         readObject = ru.RNAseqMapping(elementData, elementAttributes)
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
-        readObject.attributes['cov'] = round(readObject.weight, 2)
+        readObject.attributes['cov'] = round(element.bases/element.length, 2)
         readObject.attributes['bases'] = round(element.bases, 2)
         return readObject
 
