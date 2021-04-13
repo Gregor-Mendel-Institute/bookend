@@ -277,7 +277,7 @@ cdef class ElementGraph:
             proportions[:,i] = priors[:,i]/sample_totals[i]
         
         for i in np.argsort(self.assignments): # Assign FULL weight of each assigned element
-            if self.assignments[i] == 0: continue
+            if self.assignments[i] <= 0: continue
             element = self.elements[i]
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
                 self.paths[element.assigned_to[0]].source_weights += element.source_weights * element.length
@@ -338,7 +338,6 @@ cdef class ElementGraph:
                 print('Removing {}, incomplete.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
-        self.assign_weights()
         # REMOVAL ROUND 2: TRUNCATIONS
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
@@ -361,7 +360,6 @@ cdef class ElementGraph:
                 print('Removing {}, truncation.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
-        self.assign_weights()
         # REMOVAL ROUND 3: INTRON RETENTION
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
@@ -387,7 +385,6 @@ cdef class ElementGraph:
                 print('Removing {}, intron retention.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
-        self.assign_weights()
     
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
@@ -756,15 +753,17 @@ cdef class ElementGraph:
         
         for i in range(self.number_of_elements):
             element = self.elements[i]
-            if element.compatible(path):
-                if self.assignments[i] == 0:
-                    novel_bases += self.elements[i].bases
-                
-                self.assignments[i] += 1
-                self.elements[i].assigned_to.append(len(self.paths))
-                self.elements[i].update()
+            if element.cov > 0:
+                if element.compatible(path):
+                    if self.assignments[i] == 0:
+                        novel_bases += self.elements[i].bases
+                    
+                    self.assignments[i] += 1
+                    self.elements[i].assigned_to.append(len(self.paths))
+                    self.elements[i].update()
         
         # Add the new path to the list of paths
+        path.index = len(self.paths)
         self.paths.append(path)
         self.assign_weights()
         return novel_bases
