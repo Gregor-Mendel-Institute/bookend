@@ -691,7 +691,7 @@ cdef class Locus:
                 terminal_weight = np.mean(cov[endrange.left:endrange.right])
                 overrun_cov = cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]]
                 flowthrough_weight = np.mean(overrun_cov)
-                if np.any(overrun_cov < threshold) or  flowthrough_weight < self.intron_filter * terminal_weight:
+                if np.any(self.depth[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]] < threshold) or  flowthrough_weight < self.intron_filter * terminal_weight:
                     if strand == 1:
                         discard_frags[0,overrun_frag] = True
                     else:

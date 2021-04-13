@@ -261,6 +261,7 @@ cdef class ElementGraph:
         cdef Py_ssize_t i, p, j
         cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions, assignment_proportions
         cdef Element path, element
+        if len(self.paths) == 0:return
         number_of_sources = self.elements[0].source_weights.shape[0]
         priors = np.zeros(shape=(len(self.paths), number_of_sources))
         for i in range(len(self.paths)):
@@ -290,7 +291,7 @@ cdef class ElementGraph:
             path.source_weights /= path.length
             path.bases = sum(path.source_weights)*path.length
     
-    cpdef void assemble(self, float minimum_proportion):
+    cpdef void assemble(self, float minimum_proportion, simplify=True):
         """Iteratively perform find_optimal_path() on the graph
         until the number of novel reads fails to exceed minimum_proportion
         of the reads at the locus. If minimum_proportion == 0, assemble()
@@ -311,13 +312,16 @@ cdef class ElementGraph:
                 else:
                     total_bases_assigned += novel_bases
         
-        self.remove_bad_assemblies()
+        if simplify:
+            self.remove_bad_assemblies()
     
-    cpdef void remove_bad_assemblies(self):
+    cpdef void remove_bad_assemblies(self, verbose=False):
         cdef np.ndarray bad_paths
         cdef int number_of_paths, i
-        cdef set m
-        cdef Element path
+        cdef float container_cov, path_cov
+        cdef set m, path_introns, other_introns
+        cdef list containment_order
+        cdef Element path, p
         # REMOVAL ROUND 1: INCOMPLETE ASSEMBLIES
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
@@ -328,24 +332,59 @@ cdef class ElementGraph:
             for i in range(number_of_paths):
                 bad_paths[i] = not self.paths[i].complete
         
-        self.remove_paths(np.where(bad_paths)[0])
+        if verbose:
+            for i in np.where(bad_paths)[0]:
+                print('Removing {}, incomplete.'.format(self.paths[i]))
+        
+        self.remove_paths(list(np.where(bad_paths)[0]))
         self.assign_weights()
         # REMOVAL ROUND 2: TRUNCATIONS
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        # containment_order = [c for a,b,c in sorted([(-(p.RM-p.LM), len(p.members), i) for i,p in enumerate(self.paths)])]
         for i in range(number_of_paths):
             path = self.paths[i]
-            m = path.members.difference(path.end_indices)
             container_cov = 0
             for j in range(number_of_paths):
-                if m.issubset(self.paths[j].members):
-                    container_cov += self.paths[j].bases / self.paths[j].length
+                p = self.paths[j]
+                if path.RM < p.RM or path.LM > p.LM:
+                    if path.members.issubset(p.members):
+                        container_cov += p.bases / p.length
             
             if container_cov > 0:
                 if path.bases/path.length < container_cov:
                     bad_paths[i] = True
         
-
+        if verbose:
+            for i in np.where(bad_paths)[0]:
+                print('Removing {}, truncation.'.format(self.paths[i]))
+        
+        self.remove_paths(list(np.where(bad_paths)[0]))
+        self.assign_weights()
+        # REMOVAL ROUND 3: INTRON RETENTION
+        number_of_paths = len(self.paths)
+        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        for i in range(number_of_paths):
+            path = self.paths[i]
+            path_introns = set(path.get_introns())
+            container_cov = 0
+            for j in range(number_of_paths):
+                p = self.paths[j]
+                if path.RM == p.RM and path.LM == p.LM: # Same start and same end
+                    other_introns = set(p.get_introns())
+                    if path_introns.issubset(other_introns): 
+                        container_cov += p.bases / p.length
+            
+            if container_cov > 0:
+                path_cov = path.bases/path.length
+                container_cov += path_cov
+                if path_cov < container_cov * self.intron_filter:
+                    bad_paths[i] = True
+        
+        if verbose:
+            for i in np.where(bad_paths)[0]:
+                print('Removing {}, intron retention.'.format(self.paths[i]))
+        
     
     cpdef np.ndarray available_proportion(self, np.ndarray weights, Element element):
         """Given a path that wants to merge with the indexed element,
@@ -387,7 +426,7 @@ cdef class ElementGraph:
         cdef np.ndarray prior_weights, proportion
         prior_weights = np.copy(path.source_weights)
         for i in range(len(extension)):
-            if i not in path.includes:
+            if extension[i] not in path.includes:
                 extpath = self.elements[extension[i]]
                 proportion = self.available_proportion(prior_weights, extpath)
                 path.merge(extpath, proportion)
@@ -608,7 +647,7 @@ cdef class ElementGraph:
         while len(extensions) > 0: # Extend as long as possible
             if len(extensions) == 1: # Only one option, do not evaluate
                 ext = extensions[0][1]
-                if ext not in self.end_elements:  # Allow extension to an end even if the score is 0
+                if not any([e in self.end_elements for e in ext]):  # Allow extension to an end even if the score is 0
                     if self.calculate_extension_score(currentPath, ext, minimum_proportion) == 0:
                         break
                 
