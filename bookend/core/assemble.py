@@ -24,6 +24,7 @@ class Assembler:
         self.min_unstranded_cov = args['MIN_UNSTRANDED']
         self.min_start = args['MIN_S']
         self.min_end = args['MIN_E']
+        self.min_intron_length = args['MIN_INTRON_LEN']
         self.intron_filter = args['INTRON_FILTER']
         self.min_proportion = args['MIN_PROPORTION']
         self.cap_bonus = args['CAP_BONUS']
@@ -32,8 +33,11 @@ class Assembler:
         self.input = args['INPUT']
         self.ignore_labels = args['IGNORE_LABELS']
         self.ignore_source = args['IGNORE_SOURCE']
-        
+        self.antisense_filter = 0.001
         self.naive = not self.ignore_source
+        if self.ignore_labels:
+            self.incomplete = True
+        
         if self.incomplete: # Some settings are incompatible with writing incomplete transcripts.
             self.min_start = 0
             self.min_end = 0
@@ -80,7 +84,24 @@ class Assembler:
             if self.verbose:
                 print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
             
-            locus = au.Locus(chrom, self.chunk_counter, chunk, self.max_gap, self.min_overhang, True, self.min_proportion, self.cap_bonus, self.complete, verbose=self.verbose, naive=self.naive, intron_filter=self.intron_filter, ignore_ends=self.ignore_labels)
+            locus = au.Locus(
+                chrom=chrom, 
+                chunk_number=self.chunk_counter, 
+                list_of_reads=chunk, 
+                extend=self.max_gap, 
+                min_overhang=self.min_overhang, 
+                reduce=True, 
+                minimum_proportion=self.min_proportion, 
+                min_intron_length=self.min_intron_length, 
+                antisense_filter=self.antisense_filter, 
+                cap_bonus=self.cap_bonus, 
+                complete=False, 
+                verbose=self.verbose, 
+                naive=self.naive, 
+                intron_filter=self.intron_filter, 
+                ignore_ends=self.ignore_labels, 
+                allow_incomplete=self.incomplete
+            )
             total_bases = locus.bases
             if total_bases > 0:
                 locus.assemble_transcripts()
