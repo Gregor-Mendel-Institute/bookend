@@ -763,7 +763,7 @@ cdef class ElementGraph:
                     
                     path.includes.add(i)
                     self.assignments[i] += 1
-                    self.elements[i].assigned_to.append(len(self.paths))
+                    self.elements[i].assigned_to.add(len(self.paths))
                     self.elements[i].update()
         
         # Add the new path to the list of paths
@@ -785,7 +785,7 @@ cdef class ElementGraph:
             path = self.paths[index]
             for i in path.includes:
                 element = self.elements[i]
-                element.assigned_to.remove(index)
+                element.assigned_to.discard(index)
                 self.assignments[i]-=1
         
         keep = [index for index in range(len(self.paths)) if index not in indices]
@@ -795,7 +795,7 @@ cdef class ElementGraph:
         
         for i in range(len(self.elements)): # Update each assigned_to to keep elements connected to paths
             element = self.elements[i]
-            element.assigned_to = [old_indices[a].index for a in element.assigned_to]
+            element.assigned_to = set([old_indices[a].index for a in element.assigned_to])
         
         self.assign_weights()
     
