@@ -169,7 +169,7 @@ cdef class ElementGraph:
                 for i in contained:
                     path.includes.add(i)
                     part = self.elements[i]
-                    part.assigned_to.append(path_index)
+                    part.assigned_to.add(path_index)
                     self.assignments[i] += 1
         
         self.end_elements = self.SP|self.EP|self.SM|self.EM
@@ -259,6 +259,7 @@ cdef class ElementGraph:
         all weights of Paths that Element is assigned to.
         Runs once at initialization and once after each round of find_optimal_path()."""
         cdef int number_of_sources
+        cdef list assigned_to
         cdef Py_ssize_t i, p, j
         cdef np.ndarray priors, path_covs, sample_totals, proportions, cov_proportions, assignment_proportions
         cdef Element path, element
@@ -280,12 +281,13 @@ cdef class ElementGraph:
             if self.assignments[i] <= 0: continue
             element = self.elements[i]
             if self.assignments[i] == 1: # No proportions needed, assign all weight to 1 path
-                self.paths[element.assigned_to[0]].source_weights += element.source_weights * element.length
+                self.paths[list(element.assigned_to)[0]].source_weights += element.source_weights * element.length
             else: # Assigned paths must compete for element's source_weights
-                assignment_proportions = proportions[element.assigned_to,:]
+                assigned_to = sorted(element.assigned_to)
+                assignment_proportions = proportions[assigned_to,:]
                 assignment_proportions = np.apply_along_axis(self.normalize, 0, assignment_proportions)
-                for j in range(len(element.assigned_to)):
-                    path = self.paths[element.assigned_to[j]]
+                for j in range(len(assigned_to)):
+                    path = self.paths[assigned_to[j]]
                     path.source_weights += element.source_weights * element.length * assignment_proportions[j,:]
         
         for path in self.paths: # Update path source_weights
@@ -759,6 +761,7 @@ cdef class ElementGraph:
                     if self.assignments[i] == 0:
                         novel_bases += self.elements[i].bases
                     
+                    path.includes.add(i)
                     self.assignments[i] += 1
                     self.elements[i].assigned_to.append(len(self.paths))
                     self.elements[i].update()
@@ -814,10 +817,9 @@ cdef class ElementGraph:
 cdef class Element:
     """Represents a read or collection of reads in a Locus."""
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, number_of_members, LM, RM
-    cdef public list assigned_to
     cdef public char strand
     cdef public float cov, bases, bottleneck_weight
-    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices, bottleneck
+    cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices, bottleneck, assigned_to
     cdef public np.ndarray frag_len, source_weights, member_weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
     def __init__(self, int index, np.ndarray source_weights, np.ndarray member_weights, char strand, np.ndarray membership, np.ndarray overlap, np.ndarray frag_len, int maxIC):
@@ -834,9 +836,9 @@ cdef class Element:
         self.member_weights = np.copy(member_weights) # Array of read coverage of all members
         self.strand = strand                          # +1, -1, or 0 to indicate strand of path
         self.length = 0                               # Number of nucleotides in the path
-        self.assigned_to = []                         # List of Path indices this Element is a part of
         self.complete = False                         # Represents an entire end-to-end transcript
         self.has_gaps = False                         # Is missing information
+        self.assigned_to = set()                      # Set of Path indices this Element is a part of
         self.members = set()                          # Set of Member indices contained in this Element
         self.nonmembers = set()                       # Set of Members indices incompatible with this Element
         self.ingroup = set()                          # Set of compatible upstream Elements
