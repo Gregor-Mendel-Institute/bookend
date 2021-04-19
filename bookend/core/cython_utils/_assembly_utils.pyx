@@ -249,6 +249,9 @@ cdef class Locus:
             return []
         
         filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold]) if p not in prohibited_positions]
+        if len(filtered_pos) == 0:
+            return []
+        
         p,v = filtered_pos[0]
         maxv = v
         maxp = p
