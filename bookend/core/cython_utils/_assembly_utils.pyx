@@ -963,8 +963,10 @@ cdef class Locus:
     
     cpdef void assemble_transcripts(self):
         self.graph.assemble(self.minimum_proportion)
+        counter = 1
         for path in self.graph.paths:
-            self.transcripts.append(self.convert_path(path, path.index))
+            self.transcripts.append(self.convert_path(path, counter))
+            counter += 1
         
         self.add_transcript_attributes()
     
