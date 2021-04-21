@@ -41,6 +41,8 @@ class AnnotationMerger:
         self.gtf_child = self.args['GTF_CHILD']
         self.gff_parent = self.args['GFF_PARENT']
         self.gff_child = self.args['GFF_CHILD']
+        self.refid_parent = self.args['REF_ID_PARENT']
+        self.refid_child = self.args['REF_ID_CHILD']
 
         if self.input_is_valid(self.output): # Check for valid file extension on output name
             self.output_type = self.file_extension(self.output)
@@ -87,6 +89,14 @@ class AnnotationMerger:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
+        if self.refid_parent:
+            gff_defaults['parent_key_transcript'] = self.refid_parent
+            gtf_defaults['parent_key_transcript'] = self.refid_parent
+        
+        if self.refid_child:
+            gff_defaults['child_key_transcript'] = self.refid_child
+            gtf_defaults['child_key_transcript'] = self.refid_child
+        
         return config_defaults, gtf_defaults, gff_defaults
 
     def make_annotation_locus(self, chunk):
