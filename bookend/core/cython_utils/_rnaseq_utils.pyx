@@ -586,10 +586,10 @@ cdef class RNAseqDataset():
 ######################################
 gtf_defaults = {
     'parent_types':set(['transcript']),
-    'parent_key_transcript':'transcript_id',
+    'parent_key_transcript':['transcript_id'],
     'parent_key_gene':'gene_id',
     'child_types':set(['exon']),
-    'child_key_transcript':'transcript_id',
+    'child_key_transcript':['transcript_id'],
     'child_key_gene':'gene_id'
 }
 gff_defaults = {
@@ -597,10 +597,10 @@ gff_defaults = {
         'mRNA','transcript',
         'snoRNA','tRNA','snRNA','rRNA','miRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
         'antisense_lncRNA','antisense_RNA','lnc_RNA']),
-    'parent_key_transcript':'ID',
+    'parent_key_transcript':['ID'],
     'parent_key_gene':'Parent',
     'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':'Parent',
+    'child_key_transcript':['Parent'],
     'child_key_gene':'gene_id'
 }
 gtf_colorcode = {
@@ -679,7 +679,8 @@ cdef class AnnotationObject:
         This will not completely represent a transcript, only one exon."""
         cdef:
             set child_types, parent_types
-            str gene_id_key, transcript_id_key
+            str gene_id_key, t_id
+            list transcript_id_keys
         
         anno_string = anno_string.rstrip()
         self.format = format
@@ -708,14 +709,19 @@ cdef class AnnotationObject:
                     self.span = (int(self.fields[3])-1, int(self.fields[4]))
                     self.attributes = self.parse_attributes(self.fields[8], self.format)
                     if self.parent:
-                        gene_id_key=config_dict['parent_key_gene']
-                        transcript_id_key=config_dict['parent_key_transcript']
+                        gene_id_key = config_dict['parent_key_gene']
+                        transcript_id_keys = config_dict['parent_key_transcript']
                     else:
-                        gene_id_key=config_dict['child_key_gene']
-                        transcript_id_key=config_dict['child_key_transcript']
+                        gene_id_key = config_dict['child_key_gene']
+                        transcript_id_keys = config_dict['child_key_transcript']
                     
                     self.gene_id = self.attributes.get(gene_id_key,'')
-                    self.transcript_id = self.attributes.get(transcript_id_key,'')
+                    self.transcript_id = ''
+                    for t_id in transcript_id_keys:
+                        self.transcript_id = self.attributes.get(t_id,'')
+                        if self.transcript_id != '':
+                            break
+                    
                     self.attributes['gene_id'] = self.gene_id
                     self.attributes['transcript_id'] = self.transcript_id
                     if self.fields[6] == '+':
@@ -836,21 +842,23 @@ cdef class AnnotationDataset(RNAseqDataset):
                             chrom = self.chrom_array[item.chrom]
                             if chrom not in object_dict.keys(): object_dict[chrom] = []
                             object_dict[chrom].append(item)
+                            print(item.attributes['transcript_id'])
                         
                         current_parent = current_object
                         children = []
                     elif current_object.transcript_id == current_parent.transcript_id:
                         children.append(current_object)
             
-            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
-            item.attributes['source'] = name
-            total_coverage += item.weight
-            total_s += float(item.attributes.get('S.reads', 0))
-            total_s += float(item.attributes.get('S.capped', 0))
-            total_e += float(item.attributes.get('E.reads', 0))
-            chrom = self.chrom_array[item.chrom]
-            if chrom not in object_dict.keys(): object_dict[chrom] = []
-            object_dict[chrom].append(item)
+            if current_object.keep and current_object.transcript_id == current_parent.transcript_id and current_object.transcript_id != item.attributes['transcript_id']:
+                item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
+                item.attributes['source'] = name
+                total_coverage += item.weight
+                total_s += float(item.attributes.get('S.reads', 0))
+                total_s += float(item.attributes.get('S.capped', 0))
+                total_e += float(item.attributes.get('E.reads', 0))
+                chrom = self.chrom_array[item.chrom]
+                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                object_dict[chrom].append(item)
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
