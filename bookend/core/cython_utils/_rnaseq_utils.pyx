@@ -842,7 +842,6 @@ cdef class AnnotationDataset(RNAseqDataset):
                             chrom = self.chrom_array[item.chrom]
                             if chrom not in object_dict.keys(): object_dict[chrom] = []
                             object_dict[chrom].append(item)
-                            print(item.attributes['transcript_id'])
                         
                         current_parent = current_object
                         children = []
@@ -890,20 +889,11 @@ cdef class AnnotationDataset(RNAseqDataset):
         for chrom in object_dict.keys():
             object_dict[chrom].sort()
             for item in object_dict[chrom]:
-                item.attributes['TPM'] = item.weight/total_coverage*1000000
+                item.attributes['TPM'] = round(item.weight/total_coverage*1000000,2)
                 if format in ['ELR','BED']:
                     item.attributes['S.reads'] = item.attributes['TPM'] if item.s_tag else 0
                     item.attributes['S.capped'] = item.attributes['TPM'] if item.capped else 0
                     item.attributes['E.reads'] = item.attributes['TPM'] if item.e_tag else 0
-                
-                if 'S.reads' in item.attributes:
-                    item.attributes['S.ppm'] = float(item.attributes['S.reads'])/total_s*1000000
-                
-                if 'S.capped' in item.attributes:
-                    item.attributes['C.ppm'] = float(item.attributes['S.capped'])/total_s*1000000
-                
-                if 'E.reads' in item.attributes:
-                    item.attributes['E.ppm'] = float(item.attributes['E.reads'])/total_e*1000000
         
         return object_dict
     
@@ -1219,9 +1209,9 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
     for read in reads:
         if use_attributes: # Check a read's attributes for different values of each type
             weight = read.weight
-            s_weight = float(read.attributes.get('S.ppm', weight))
-            e_weight = float(read.attributes.get('E.ppm', weight))
-            c_weight = float(read.attributes.get('C.ppm', weight))
+            s_weight = float(read.attributes.get('S.reads', weight))
+            e_weight = float(read.attributes.get('E.reads', weight))
+            c_weight = float(read.attributes.get('C.reads', weight))
         else:
             weight = s_weight = e_weight = c_weight = read.weight
         
