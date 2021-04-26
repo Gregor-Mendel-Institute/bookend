@@ -1153,7 +1153,7 @@ cdef class AnnotationLocus(Locus):
     cdef public float total_s, total_e, cap_percent
     cdef public AnnotationLocus ref_locus
     def __init__(self, chrom, chunk_number, list_of_reads, end_extend, min_overhang=0, minimum_proportion=0, cap_percent=0.1, intron_filter=0, ignore_reference_ends=True, minreps=1, confidence=-1):
-        Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn = range(11)
+        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         self.minreps = minreps
         self.confidence = confidence
         self.ignore_reference_ends = ignore_reference_ends
@@ -1182,8 +1182,8 @@ cdef class AnnotationLocus(Locus):
                 allow_incomplete=True
             )
             self.cap_percent = cap_percent
-            self.total_s = sum([er.weight for er in [self.end_ranges[Sp]]+[self.end_ranges[Sm]]])
-            self.total_e = sum([er.weight for er in [self.end_ranges[Ep]]+[self.end_ranges[Em]]])
+            self.total_s = sum([er.weight for er in self.end_ranges[Sp]+self.end_ranges[Sm]])
+            self.total_e = sum([er.weight for er in self.end_ranges[Ep]+self.end_ranges[Em]])
             self.transcripts = [self.transcript_from_membership(i) for i in range(self.membership.shape[0])]
             if self.confidence == -1:
                 self.high_confidence_transcripts = []
