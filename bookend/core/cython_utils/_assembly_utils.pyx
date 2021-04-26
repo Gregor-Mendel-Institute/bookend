@@ -1002,8 +1002,8 @@ cdef class Locus:
                     if S is not self.nullRange:
                         s_pos = S.peak
                         span = S.span()
-                        S_info['S.reads'] = sum(S.positions.values())
-                        S_info['S.capped'] = S.capped
+                        S_info['S.reads'] = round(sum(S.positions.values()),1)
+                        S_info['S.capped'] = round(S.capped,1)
                         S_info['S.left'] = span[0] + self.leftmost
                         S_info['S.right'] = span[1] + self.leftmost
                         if s_pos != first: # S pos was replaced
@@ -1017,7 +1017,7 @@ cdef class Locus:
                     if E is not self.nullRange:
                         e_pos = E.peak
                         span = E.span()
-                        E_info['E.reads'] = sum(E.positions.values())
+                        E_info['E.reads'] = round(sum(E.positions.values()),1)
                         E_info['E.left'] = span[0] + self.leftmost
                         E_info['E.right'] = span[1] + self.leftmost
                         if e_pos != last: # S pos was replaced
@@ -1160,7 +1160,28 @@ cdef class AnnotationLocus(Locus):
         self.cap_percent = cap_percent
         self.ref_reads, nonref_reads = self.get_annotation_info(list_of_reads)
         if len(nonref_reads) > 0:
-            Locus.__init__(self, chrom, chunk_number, nonref_reads, 0, end_extend, min_overhang, True, minimum_proportion, 0, 1, False, False, True, intron_filter, False, False, True)
+            Locus.__init__(
+                self,
+                chrom=chrom, 
+                chunk_number=chunk_number, 
+                list_of_reads=nonref_reads, 
+                extend=0, 
+                end_extend, 
+                min_overhang=min_overhang, 
+                reduce=True, 
+                minimum_proportion=minimum_proportion, 
+                min_intron_length=0,
+                antisense_filter=0,
+                cap_bonus=1,
+                complete=False,
+                verbose=False,
+                naive=False,
+                intron_filter=intron_filter, 
+                use_attributes=False,
+                oligo_len=0,
+                ignore_ends=False, 
+                allow_incomplete=True
+            )
             self.cap_percent = cap_percent
             self.total_s = sum([er.weight for er in [self.end_ranges[Sp]]+[self.end_ranges[Sm]]])
             self.total_e = sum([er.weight for er in [self.end_ranges[Ep]]+[self.end_ranges[Em]]])
@@ -1296,22 +1317,6 @@ cdef class AnnotationLocus(Locus):
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
         if self.confidence >= 0: self.high_confidence_transcripts = list(np.where(self.rep_array >= self.confidence)[0])
-
-    cpdef end_ratio(self, int index):
-        """Calculates the average deviation from an equal ratio
-        of Start and End read proportions across all reads of the meta-assembly."""
-        traceback = self.traceback[index]
-        average_ratio = 0
-        for i in traceback:
-            read = self.reads[i]
-            part_s = float(read.attributes.get('S.ppm',0))/self.total_s
-            part_e = float(read.attributes.get('E.ppm',0))/self.total_e
-            ordered_ends = sorted([part_s, part_e])
-            ratio = (ordered_ends[1]+0.01) / (ordered_ends[0]+0.01)
-            average_ratio += ratio
-
-        average_ratio = average_ratio / len(traceback)
-        return average_ratio
     
     cpdef tuple get_name_for(self, index):
         """Given its relationship to the annotation set,
