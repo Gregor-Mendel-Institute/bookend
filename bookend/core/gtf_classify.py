@@ -28,10 +28,10 @@ class AssemblyClassifier:
             sys.exit(0)
         
         self.gene_attr = self.args['GENE_ATTR']
-        self.gtf_parent = self.args['GTF_PARENT']
-        self.gtf_child = self.args['GTF_CHILD']
-        self.gff_parent = self.args['GTF_PARENT']
-        self.gff_child = self.args['GTF_CHILD']
+        self.gtf_parent = self.args['GFF_PARENT']
+        self.gtf_child = self.args['GFF_CHILD']
+        self.gff_parent = self.args['GFF_PARENT']
+        self.gff_child = self.args['GFF_CHILD']
         self.refid_parent = self.args['REF_ID_PARENT']
         self.refid_child = self.args['REF_ID_CHILD']
         if self.input_is_valid(self.output): # Check for valid file extension on output name
