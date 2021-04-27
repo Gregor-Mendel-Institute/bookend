@@ -210,7 +210,7 @@ class AssemblyClassifier:
     
     def display_options(self):
         """Returns a string describing all input args"""
-        options_string = "\n/| bookend merge |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string = "\n/| bookend classify |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input files:\n\t{}\n".format('\n\t'.join(self.input))
         options_string += "  Reference file (-r):\n\t{}\n".format(self.reference)
         options_string += "  Output file (-o):\n\t{}\n".format(self.output)
@@ -256,7 +256,7 @@ class AssemblyClassifier:
 
 
 if __name__ == '__main__':
-    from argument_parsers import merge_parser as parser
+    from argument_parsers import classify_parser as parser
     args = vars(parser.parse_args())
     obj = AssemblyClassifier(args)
     sys.exit(obj.run())
