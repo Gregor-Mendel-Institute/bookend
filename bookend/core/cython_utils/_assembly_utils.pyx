@@ -811,8 +811,6 @@ cdef class Locus:
             
             self.member_lengths = new_lengths[sorted_indices]
             self.strand_array = new_strands[sorted_indices]
-            if len(self.traceback) > 0:
-                self.traceback = [new_traceback[i] for i in sorted_indices]
         
         if not np.any(self.member_weights): # member_weights still uninitialized
             self.member_weights = np.full((self.membership.shape[0],self.membership.shape[1]), np.sum(self.weight_array,axis=1,keepdims=True))
@@ -852,7 +850,6 @@ cdef class Locus:
         if not self.member_lengths is None: self.member_lengths = self.member_lengths[keep]
         self.bases = np.sum(np.sum(self.weight_array, axis=1)*self.member_lengths)
         self.number_of_elements = len(keep)
-        if len(self.traceback) > 0: self.traceback = [self.traceback[k] for k in keep]
     
     cpdef void collapse_chains(self):
         """Split the Overlap Matrix into a list of connected components.
