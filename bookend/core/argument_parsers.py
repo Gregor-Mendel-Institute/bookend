@@ -199,6 +199,7 @@ merge_parser.set_defaults(object='AnnotationMerger')
 
 ### gtf_classify.py ###
 classify_parser = subparsers.add_parser('classify',help="Classifies each transcript in an assembly against those in a reference annotation.")
+sj_merge_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
 classify_parser.add_argument("-o", "--output", dest='OUT', type=str, default='classify.tsv', help="Filepath to write output class file (default: classify.tsv)")
 classify_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
 classify_parser.add_argument('--gene_attr', dest='GENE_ATTR', type=str, default='gene_id', help="Attribute that stores the gene name in ref transcripts (default: gene_id)")
@@ -208,7 +209,6 @@ classify_parser.add_argument('--ref_id_parent', dest='REF_ID_PARENT', type=str, 
 classify_parser.add_argument('--ref_id_child', dest='REF_ID_CHILD', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
 classify_parser.add_argument('--end_buffer', dest='END_BUFFER', type=int, default=100, help="Largest distance between ends to be considered the same (nucleotides).")
 classify_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
-classify_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
 classify_parser.set_defaults(object='AssemblyClassifier')
 
 
@@ -222,12 +222,12 @@ sam_sj_parser.set_defaults(object='SAMtoSJconverter')
 
 ### sj_merge.py ###
 sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.")
-sj_merge_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
 sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj_merge.out.tab', help="Filepath to write merged file.")
 sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
 sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
 sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
+sj_merge_parser.add_argument("INPUT", nargs='+', default=[])
 sj_merge_parser.set_defaults(object='SJmerger')
 
 ### sj_to_bed.py ###
