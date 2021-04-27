@@ -179,7 +179,7 @@ class AssemblyClassifier:
             if transcript.splice_match(ref, ignore_ends=True):
                 left_diff = abs(transcript.ranges[0][0]-ref.ranges[0][0])
                 right_diff = abs(transcript.ranges[-1][1]-ref.ranges[-1][1])
-                if left_diff and right_diff < self.end_buffer:
+                if left_diff <= self.end_buffer and right_diff <= self.end_buffer:
                     match_type = 8 # full_match
                 else:
                     match_type = 7 # exon_match
