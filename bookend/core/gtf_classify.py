@@ -52,6 +52,7 @@ class AssemblyClassifier:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
+        self.output_file.write('assembly_id\tclassification\tref_match\tref_gene\tassembly_len\tref_len\toverlap_len\n')
         self.dataset.source_array = ['reference', 'assembly']
         self.generator = self.dataset.generator
         self.locus_counter = 0
@@ -111,6 +112,8 @@ class AssemblyClassifier:
                 match_data.exonoverlap
             )
             self.output_file.write(classification)
+            if self.verbose:
+                print(classification.rstrip())
         
         return
     
@@ -127,13 +130,13 @@ class AssemblyClassifier:
                 return old_match
         elif new_match.matchtype == 8:
             return new_match
-        elif new_match.gene != old_match.gene: # Evaluate if a fusion
+        elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
             if new_match.reflen == new_match.exonoverlap or new_match.matchtype == 4:
                 if old_match.reflen == old_match.exonoverlap or old_match.matchtype == 4:
                     fused_match = self.match_data(
                         6, 
-                        '{},{}'.join(old_match.transcript, new_match.transcript), 
-                        '{},{}'.join(old_match.gene, new_match.gene),
+                        '{},{}'.format(old_match.transcript, new_match.transcript), 
+                        '{},{}'.format(old_match.gene, new_match.gene),
                         max(old_match.exonoverlap, new_match.exonoverlap),
                         max(old_match.reflen, new_match.reflen),
                         old_match.tlen
@@ -160,14 +163,14 @@ class AssemblyClassifier:
             'exon_match', # 7 shares entire exon chain, but not ends
             'full_match'  # 8 shares entire exon chan and ends
         """
-        best_match = self.match_data(0, 'NA', 'NA', 0)
+        tlen = transcript.get_length()
+        best_match = self.match_data(0, 'NA', 'NA', 0, 0, tlen)
         for ref in reference_transcripts:
             match_type = 0
             if not transcript.overlaps(ref):
                 continue
             
             reflen = ref.get_length()
-            tlen = transcript.get_length()
             shared_bases = transcript.shared_bases(ref)
             if transcript.splice_match(ref, ignore_ends=True):
                 left_diff = abs(transcript.ranges[0][0]-ref.ranges[0][0])
@@ -194,7 +197,7 @@ class AssemblyClassifier:
                 else: # At least some shared, sense, exonic sequence
                     match_type = 4 # isoform
                 
-            new_match = self.match_data(match_type, ref.attributes['transcript_id'], transcript.attributes[self.gene_attr], shared_bases, reflen, tlen)
+            new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen)
             best_match = self.update_match(best_match, new_match)
         
         return best_match
