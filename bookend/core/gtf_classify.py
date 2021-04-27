@@ -110,10 +110,10 @@ class AssemblyClassifier:
                 match_data.tlen,
                 match_data.reflen,
                 match_data.exonoverlap,
-                round(transcript.attributes.get('cov', 0),1),
-                round(transcript.attributes.get('S.reads', 0),1),
-                round(transcript.attributes.get('S.capped', 0),1),
-                round(transcript.attributes.get('E.reads', 0),1)
+                round(float(transcript.attributes.get('cov', 0)),1),
+                round(float(transcript.attributes.get('S.reads', 0)),1),
+                round(float(transcript.attributes.get('S.capped', 0)),1),
+                round(float(transcript.attributes.get('E.reads', 0)),1)
             )
             self.output_file.write(classification)
             if self.verbose:
