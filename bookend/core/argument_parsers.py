@@ -199,7 +199,7 @@ merge_parser.set_defaults(object='AnnotationMerger')
 
 ### gtf_classify.py ###
 classify_parser = subparsers.add_parser('classify',help="Classifies each transcript in an assembly against those in a reference annotation.")
-sj_merge_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
+classify_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
 classify_parser.add_argument("-o", "--output", dest='OUT', type=str, default='classify.tsv', help="Filepath to write output class file (default: classify.tsv)")
 classify_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
 classify_parser.add_argument('--gene_attr', dest='GENE_ATTR', type=str, default='gene_id', help="Attribute that stores the gene name in ref transcripts (default: gene_id)")
