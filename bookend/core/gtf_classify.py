@@ -102,7 +102,7 @@ class AssemblyClassifier:
         """
         for transcript in input_transcripts:
             match_data = self.calculate_match_type(transcript, reference_transcripts)
-            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
                 transcript.attributes['transcript_id'],
                 self.match_types[match_data.matchtype],
                 match_data.transcript,
