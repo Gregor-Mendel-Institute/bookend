@@ -52,7 +52,7 @@ class AssemblyClassifier:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
-        self.output_file.write('assembly_id\tclassification\tref_match\tref_gene\tassembly_len\tref_len\toverlap_len\n')
+        self.output_file.write('assembly_id\tclassification\tref_match\tref_gene\tassembly_len\tref_len\toverlap_len\tcov\tS.reads\tS.capped\tE.reads\n')
         self.dataset.source_array = ['reference', 'assembly']
         self.generator = self.dataset.generator
         self.locus_counter = 0
@@ -102,14 +102,18 @@ class AssemblyClassifier:
         """
         for transcript in input_transcripts:
             match_data = self.calculate_match_type(transcript, reference_transcripts)
-            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
                 transcript.attributes['transcript_id'],
                 self.match_types[match_data.matchtype],
                 match_data.transcript,
                 match_data.gene,
                 match_data.tlen,
                 match_data.reflen,
-                match_data.exonoverlap
+                match_data.exonoverlap,
+                round(transcript.attributes.get('cov', 0),1)
+                round(transcript.attributes.get('S.reads', 0),1)
+                round(transcript.attributes.get('S.capped', 0),1)
+                round(transcript.attributes.get('E.reads', 0),1)
             )
             self.output_file.write(classification)
             if self.verbose:
@@ -190,10 +194,7 @@ class AssemblyClassifier:
                 elif transcript.strand != ref.strand:
                     match_type = 2 # antisense
                 elif shared_bases == 0:
-                    if ref.span[0] < transcript.span[0] and ref.span[1] > transcript.span[1]:
-                        match_type = 3 # intronic
-                    else:
-                        match_type = 1
+                    match_type = 3
                 else: # At least some shared, sense, exonic sequence
                     match_type = 4 # isoform
                 
