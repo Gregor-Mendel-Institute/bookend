@@ -106,19 +106,10 @@ cdef class Locus:
             
             self.prune_junctions(self.min_intron_length)
             self.generate_branchpoints()
-            if type(self) is AnnotationLocus:
-                self.ignore_ends = True
-                self.traceback = [set([i]) for i in range(len(self.reads))]
-                empty = self.build_membership_matrix(0)
-                if not empty:
-                    self.filter_by_reps(self.minreps)
-                    if self.membership.shape[0] > 0:
-                        self.build_overlap_matrix()
-            else:
-                empty = self.build_membership_matrix()
-                if not empty:
-                    self.build_overlap_matrix()
-                    self.build_graph(reduce)
+            empty = self.build_membership_matrix()
+            if not empty:
+                self.build_overlap_matrix()
+                self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -792,14 +783,6 @@ cdef class Locus:
                 member_weights_exists = True
                 new_member_weights = np.zeros(shape=(reduced_membership.shape[0],reduced_membership.shape[1]), dtype=np.float32)
             
-            if type(self) is AnnotationLocus:
-                new_traceback = []
-                for i in range(reduced_membership.shape[0]):
-                    new_traceback += [set()]
-                
-                for i,v in enumerate(reverse_lookup):
-                    new_traceback[v].add(i)
-
             for i,v in enumerate(reverse_lookup):
                 new_weights[v] += self.weight_array[i]
                 new_strands[v] = self.strand_array[i]
