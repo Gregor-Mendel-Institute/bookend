@@ -222,7 +222,7 @@ sam_sj_parser.set_defaults(object='SAMtoSJconverter')
 
 ### sj_merge.py ###
 sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.")
-sj_merge_parser.add_argument("-i", "--input", "INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
+sj_merge_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
 sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj_merge.out.tab', help="Filepath to write merged file.")
 sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
