@@ -258,6 +258,6 @@ class AssemblyClassifier:
 if __name__ == '__main__':
     from argument_parsers import merge_parser as parser
     args = vars(parser.parse_args())
-    obj = AnnotationMerger(args)
+    obj = AssemblyClassifier(args)
     sys.exit(obj.run())
 
