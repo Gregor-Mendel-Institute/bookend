@@ -45,6 +45,9 @@ def import_object(object_name):
     elif object_name == 'AnnotationMerger':
         from .core.gtf_merge import AnnotationMerger
         objectClass = AnnotationMerger
+    elif object_name == 'AssemblyClassifier':
+        from .core.gtf_classify import AssemblyClassifier
+        objectClass = AssemblyClassifier
     elif object_name == 'ELRcombiner':
         from .core.elr_combine import ELRcombiner
         objectClass = ELRcombiner

@@ -123,6 +123,39 @@ cdef class RNAseqMapping():
         edges = sorted([self.span, other.span])
         return (edges[1][0], edges[0][1])
     
+    cpdef int shared_bases(self, RNAseqMapping other):
+        """Returns the number of exonic nucleotides that overlap between
+        self and other."""
+        cdef int index_self, index_other, exlen_self, exlen_other, l1, r1, l2, r2, shared
+        if not self.overlaps(other):
+            return 0
+        
+        shared = 0
+        exlen_self = len(self.ranges)
+        exlen_other = len(other.ranges)
+        index_self, index_other = 0, 0
+        while index_self < exlen_self and index_other < exlen_other:
+            l1, r1 = self.ranges[index_self]
+            l2, r2 = other.ranges[index_other]
+            if l2 > r1: # other is fully right of self
+                index_self += 1
+                continue
+            
+            if l1 > r2: # self is fully right of other
+                index_other += 1
+                continue
+            
+            shared += max(0, min(r1,r2)-max(l1,l2))
+            if r1 > r2: # self is right of other, advance other
+                index_other += 1
+            elif r2 > r1: # other is right of self, advance self
+                index_self += 1
+            else: # right edges are the same, advance both
+                index_other += 1
+                index_self += 1
+        
+        return shared
+    
     cpdef bint ends_clash(self, RNAseqMapping other):
         """Returns a boolean of whether the combination of end tags between
         self and other can be substrings of the same object."""
@@ -835,6 +868,7 @@ cdef class AnnotationDataset(RNAseqDataset):
                         if current_parent.parent: # Ignore the first empty annotation object
                             item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
                             item.attributes['source'] = name
+                            item.attributes['transcript_id'] = current_parent.transcript_id
                             total_coverage += item.weight
                             total_s += float(item.attributes.get('S.reads', 0))
                             total_s += float(item.attributes.get('S.capped', 0))
@@ -851,6 +885,7 @@ cdef class AnnotationDataset(RNAseqDataset):
             if current_object.keep and current_object.transcript_id == current_parent.transcript_id and current_object.transcript_id != item.attributes['transcript_id']:
                 item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
                 item.attributes['source'] = name
+                item.attributes['transcript_id'] = current_parent.transcript_id
                 total_coverage += item.weight
                 total_s += float(item.attributes.get('S.reads', 0))
                 total_s += float(item.attributes.get('S.capped', 0))

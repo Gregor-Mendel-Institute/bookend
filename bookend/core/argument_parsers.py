@@ -17,13 +17,14 @@ Subcommands (use -h/--help for more info):
     label    (Label 5' and 3' ends in a FASTQ file)
     elr      (Convert a BAM/SAM file to the end-labeled read format)
     assemble (Assemble transcripts from aligned end-labeled reads)
-    merge    (Merge assembled GTFs with a reference annotation)
-
+    classify (Compare an assembly to the transcripts of a reference annotation)
+    merge    (Merge assembled transcripts with a reference GTF/GFF3)
+    
     --end-labeled read (ELR) operations--
     elr-sort
     elr-subset
     elr-combine
-
+    
     --file conversion--
     gtf-to-bed
     bed-to-elr
@@ -171,7 +172,7 @@ end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FAS
 end_label_parser.set_defaults(object='EndLabeler')
 
 ### gtf_merge.py ###
-merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
+merge_parser = subparsers.add_parser('integrate',help="Merges multiple assembly/annotation files into one consensus annotation")
 merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
 merge_parser.add_argument("--fasta_out", dest='FASTA_OUT', help="Output FASTA file of spliced transcript sequences.", default=None, type=str)
 merge_parser.add_argument("--orf_out", dest='ORF_OUT', help="Output FASTA file of amino acid sequence for the longest ORF.", default=None, type=str)
@@ -194,6 +195,22 @@ merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, 
 merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
 merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
 merge_parser.set_defaults(object='AnnotationMerger')
+
+
+### gtf_classify.py ###
+classify_parser = subparsers.add_parser('classify',help="")
+classify_parser.add_argument("-o", "--output", dest='OUT', type=str, default='classify.tsv', help="Filepath to write output class file.")
+classify_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
+classify_parser.add_argument('--gene_attr', dest='GENE_ATTR', type=str, nargs='+', default=None, help="Attribute that stores the gene name in ref transcripts (default: gene_id)")
+classify_parser.add_argument('--ref_transcript', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in reference that define the transcript (default: mRNA, transcript)")
+classify_parser.add_argument('--ref_exon', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in reference that define the exon (default: exon)")
+classify_parser.add_argument('--ref_id_parent', dest='REF_ID_PARENT', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
+classify_parser.add_argument('--ref_id_child', dest='REF_ID_CHILD', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
+classify_parser.add_argument('--end_buffer', dest='END_BUFFER', type=int, default=100, help="Largest distance between ends to be considered the same (nucleotides).")
+classify_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
+classify_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
+classify_parser.set_defaults(object='AssemblyClassifier')
+
 
 ### sam_sj_out.py ###
 sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.")
