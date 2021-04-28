@@ -198,7 +198,7 @@ class AssemblyClassifier:
                 else: # At least some shared, sense, exonic sequence
                     match_type = 4 # isoform
             
-            if transcript.strand == 0:
+            if transcript.strand == 0 and match_type in [8, 7, 4]:
                 match_type = 1
             
             new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen)
