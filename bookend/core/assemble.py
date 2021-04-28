@@ -132,8 +132,9 @@ class Assembler:
         options_string += "  Source name (--source):                           {}\n".format(self.source)
         options_string += "  *** Experiment parameters ***\n"
         options_string += "  Max allowed gap in coverage (--max_gap):          {}\n".format(self.max_gap)
+        options_string += "  Max end cluster distance (--end_cluster):         {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
-        options_string += "  Ignore read sources (--ignore_source):            {}\n".format(self.ignore_source)
+        options_string += "  Split read sources (--split_sources):             {}\n".format(not self.naive)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
         options_string += "  Min bp transcript length (--minlen):              {}\n".format(self.minlen)
@@ -142,7 +143,7 @@ class Assembler:
         options_string += "  Min retained intron proportion (--intron_filter): {}\n".format(self.intron_filter)
         options_string += "  Min number of 5' reads (--min_start):             {}\n".format(self.min_start)
         options_string += "  Min number of 3' reads (--min_end):               {}\n".format(self.min_end)
-        options_string += "  Min percent 5' end reads w/ uuG (--cap_bonus):  {}\n".format(self.cap_bonus)
+        options_string += "  Min percent 5' end reads w/ uuG (--cap_bonus):    {}\n".format(self.cap_bonus)
         options_string += "  Keep fragmented assemblies (--allow_incomplete):  {}\n".format(self.incomplete)
         return options_string
     
