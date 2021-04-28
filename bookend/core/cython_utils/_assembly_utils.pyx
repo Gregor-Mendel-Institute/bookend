@@ -352,7 +352,7 @@ cdef class Locus:
                     maxv, maxp = v, p
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
-        if self.passes_cap_filter(rng):
+        if self.passes_cap_filter(e):
             end_ranges.append(e)
         
         return end_ranges
