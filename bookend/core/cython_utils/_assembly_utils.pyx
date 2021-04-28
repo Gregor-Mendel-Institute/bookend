@@ -236,6 +236,11 @@ cdef class Locus:
             return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
         
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        if endtype in [0, 3]:
+            passes_threshold[0] = True
+        elif endtype in [1, 2]:
+            passes_threshold[-1] = True
+        
         if np.sum(passes_threshold) == 0:
             return []
         
