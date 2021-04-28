@@ -976,6 +976,43 @@ cdef class Locus:
         
         self.add_transcript_attributes()
     
+    cpdef void trim_transcript_ends(self, transcript):
+        """(for endless transcripts only) Cuts 5' and 3' down
+        to the position with the largest relative delta."""
+        cdef np.ndarray d, dd, posdelta, negdelta
+        cdef bint update_left, update_right
+        cdef int l, r, maxdelta
+        update_left, update_right = False, False
+        if transcript.strand == 0:
+            update_left = True
+            update_right = True
+        
+        if (transcript.strand == 1 and not transcript.s_tag) or (transcript.strand == -1 and not transcript.e_tag):
+            update_left = True
+        
+        if (transcript.strand == 1 and not transcript.e_tag) or (transcript.strand == -1 and not transcript.s_tag):
+            update_right = True
+        
+        if update_left:
+            l = transcript.ranges[0][0] - self.leftmost
+            r = transcript.ranges[0][1] - self.leftmost
+            d = self.depth[l:r]
+            dd = np.diff(d)
+            posdeltas = np.where(dd > 0)[0]
+            maxdelta = posdeltas[np.argsort(-np.power(dd[posdeltas],2)/d[posdeltas])[0]]
+            transcript.ranges[0] = (transcript.ranges[0][0]+maxdelta, transcript.ranges[0][1])
+        
+        if update_right:
+            l = transcript.ranges[-1][0] - self.leftmost
+            r = transcript.ranges[-1][1] - self.leftmost
+            d = self.depth[l:r]
+            dd = np.diff(d)
+            negdeltas = np.where(dd < 0)[0]
+            maxdelta = negdeltas[np.argsort(-np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
+            transcript.ranges[-1] = (transcript.ranges[-1][0], transcript.ranges[-1][0]+maxdelta)
+        
+        return
+
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
         to store in the GTF attributes column."""
@@ -1146,6 +1183,9 @@ cdef class Locus:
         readObject.attributes['cov'] = round(element.bases/element.length, 2)
         readObject.attributes['bases'] = round(element.bases, 2)
         readObject.coverage = readObject.attributes['cov']
+        if self.allow_incomplete and not readObject.complete:
+            self.trim_transcript_ends(readObject)
+        
         return readObject
 
 

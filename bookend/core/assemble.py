@@ -179,7 +179,7 @@ class Assembler:
         if transcript.attributes['S.reads'] < self.min_start: return False
         if transcript.attributes['E.reads'] < self.min_end: return False
         # if not args.INCOMPLETE and True not in transcript.splice and transcript.attributes['S.capped']/transcript.attributes['S.reads'] < args.CAP_PERCENT: return False
-        if transcript.strand == '.' and transcript.coverage < self.min_unstranded: return False
+        if transcript.strand == 0 and transcript.coverage < self.min_unstranded: return False
         return True
     
     def run(self):
