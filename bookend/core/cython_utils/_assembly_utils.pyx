@@ -95,7 +95,7 @@ cdef class Locus:
             self.source_lookup = ru.get_source_dict(self.sources)
             self.extend = max_gap
             self.end_extend = end_cluster
-            self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
+            self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.use_attributes)
             Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
             covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
             strandedpositions = np.where(covstranded > 0)[0]
