@@ -236,9 +236,8 @@ cdef class Locus:
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
             for rng in self.end_ranges[endtype]:
-                if self.passes_cap_filter(rng):
-                    self.branchpoints.add(rng.terminal)
-                    bpset.add(rng.terminal)
+                self.branchpoints.add(rng.terminal)
+                bpset.add(rng.terminal)
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
@@ -331,7 +330,9 @@ cdef class Locus:
             passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
             if passed_prohibit or p - self.end_extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
-                end_ranges.append(e)
+                if self.passes_cap_filter(e):
+                    end_ranges.append(e)
+                
                 current_range = (p, p+1)
                 maxp = p
                 maxv = v
@@ -351,7 +352,9 @@ cdef class Locus:
                     maxv, maxp = v, p
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
-        end_ranges.append(e)
+        if self.passes_cap_filter(rng):
+            end_ranges.append(e)
+        
         return end_ranges
     
     cpdef int end_of_cluster(self, int pos, float weight, list end_ranges, int extend, bint capped):
