@@ -601,7 +601,7 @@ cdef class ElementGraph:
             Element element
             int i
             set extension_excludes, new_covered_indices
-            float div, score, source_similarity, ext_cov, dead_end_penalty, variance_penalty
+            float div, available, score, source_similarity, ext_cov, dead_end_penalty, variance_penalty
             np.ndarray ext_proportions, e_prop, path_proportions, combined_member_coverage
             list shared_members, excluded_cov
         if len(extension)==0:return 0
@@ -616,7 +616,8 @@ cdef class ElementGraph:
             # extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
             ext_proportions += self.normalize(e_prop*element.source_weights)*div
-            ext_member_weights += element.member_weights*np.sum(ext_proportions)
+            available = np.sum(e_prop*element.source_weights)/np.sum(element.source_weights)
+            ext_member_weights += element.member_weights*available
         
         ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
         # extension_excludes.difference_update(path.excludes)
