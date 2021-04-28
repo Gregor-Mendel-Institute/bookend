@@ -33,7 +33,7 @@ class Assembler:
         self.verbose = args['VERBOSE']
         self.input = args['INPUT']
         self.ignore_labels = args['IGNORE_LABELS']
-        self.naive = not args['SPLIT_SOURCES']
+        self.ignore_sources = args['IGNORE_SOURCES']
         self.antisense_filter = 0.001
         if self.ignore_labels:
             self.incomplete = True
@@ -98,7 +98,7 @@ class Assembler:
                 cap_bonus=self.cap_bonus, 
                 complete=False, 
                 verbose=self.verbose, 
-                naive=self.naive, 
+                naive=self.ignore_sources, 
                 intron_filter=self.intron_filter, 
                 ignore_ends=self.ignore_labels, 
                 allow_incomplete=self.incomplete
@@ -134,7 +134,7 @@ class Assembler:
         options_string += "  Max allowed gap in coverage (--max_gap):          {}\n".format(self.max_gap)
         options_string += "  Max end cluster distance (--end_cluster):         {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
-        options_string += "  Split read sources (--split_sources):             {}\n".format(not self.naive)
+        options_string += "  Split read sources (--ignore_sources):            {}\n".format(self.ignore_sources)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
         options_string += "  Min bp transcript length (--minlen):              {}\n".format(self.minlen)

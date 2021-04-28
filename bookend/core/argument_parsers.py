@@ -97,7 +97,7 @@ assemble_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=flo
 assemble_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
 assemble_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
 assemble_parser.add_argument("--ignore_labels", dest='IGNORE_LABELS', default=False, action='store_true', help="(overrides other options) Ignore all 5' and 3' end labels.")
-assemble_parser.add_argument("--split_sources", dest='SPLIT_SOURCES', default=False, action='store_true', help="Separate read weights by source.")
+assemble_parser.add_argument("--ignore_sources", dest='IGNORE_SOURCES', default=False, action='store_true', help="Do not utilize read source information.")
 assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")
 assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepath. MUST be a single coordinate-sorted file.")
 assemble_parser.set_defaults(object='Assembler')
