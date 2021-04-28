@@ -608,30 +608,30 @@ cdef class ElementGraph:
         ext_member_weights = np.zeros(path.member_weights.shape[0], dtype=np.float32)
         ext_proportions = np.zeros(path.source_weights.shape[0], dtype=np.float32)
         new_covered_indices = set()
-        extension_excludes = set()
+        # extension_excludes = set()
         div = 1/len(extension)
         for i in extension:
             element = self.elements[i]
             new_covered_indices.update(element.covered_indices)
-            extension_excludes.update(element.excludes)
+            # extension_excludes.update(element.excludes)
             e_prop = self.available_proportion(path.source_weights, element)
             ext_proportions += self.normalize(e_prop*element.source_weights)*div
             ext_member_weights += element.member_weights*np.sum(ext_proportions)
         
         ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
-        extension_excludes.difference_update(path.excludes)
-        if len(extension_excludes) > 0 and not any([e in self.end_elements for e in extension]):
-            excluded_cov = [self.elements[i].cov for i in extension_excludes]
-            exclusion_penalty = ext_cov/(ext_cov+sum(excluded_cov))
-        else:
-            exclusion_penalty = 1
+        # extension_excludes.difference_update(path.excludes)
+        # if len(extension_excludes) > 0 and not any([e in self.end_elements for e in extension]):
+        #     excluded_cov = [self.elements[i].cov for i in extension_excludes]
+        #     exclusion_penalty = ext_cov/(ext_cov+sum(excluded_cov))
+        # else:
+        #     exclusion_penalty = 1
         
         combined_member_coverage = np.add(path.member_weights,ext_member_weights)[sorted(path.covered_indices.union(new_covered_indices))]
         variance_penalty = np.mean(combined_member_coverage)/np.max(combined_member_coverage)
         path_proportions = self.normalize(path.source_weights)
         source_similarity = .5*(2 - np.sum(np.abs(path_proportions - ext_proportions)))
         dead_end_penalty = self.dead_end(path, extension)
-        score = ext_cov * source_similarity * variance_penalty * dead_end_penalty * exclusion_penalty
+        score = ext_cov * source_similarity * variance_penalty * dead_end_penalty # * exclusion_penalty
         return score
     
     cpdef Element find_optimal_path(self, float minimum_proportion, bint verbose=False):
