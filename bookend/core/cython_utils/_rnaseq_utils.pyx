@@ -1221,7 +1221,7 @@ cpdef dict get_source_dict(list list_of_sources):
     source_lookup = dict(zip(sources, range(len(sources))))
     return source_lookup
 
-cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bonus=1, bint use_attributes=False):
+cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=False):
     """Stores a numpy array of feature-specific coverage depth for the read list.
     Populates an 11-row matrix:
     S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
@@ -1236,9 +1236,9 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
         RNAseqMapping read
         np.ndarray depth_matrix
     
-    Sp, Ep, Sm, Em, covp, covm, covn = range(7)
+    Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
     array_length = rightmost - leftmost
-    depth_matrix = np.zeros(shape=(7, array_length), dtype=np.float32)
+    depth_matrix = np.zeros(shape=(9, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}
     for read in reads:
         if use_attributes: # Check a read's attributes for different values of each type
@@ -1261,7 +1261,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
             if read.s_tag:
                 pos = read.span[0] - leftmost
                 if read.capped:
-                    depth_matrix[Sp, pos] += c_weight * cap_bonus
+                    depth_matrix[Cp, pos] += c_weight
                 else:
                     depth_matrix[Sp, pos] += s_weight
             
@@ -1284,7 +1284,7 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, float cap_bon
             if read.s_tag:
                 pos = read.span[1] - leftmost - 1
                 if read.capped:
-                    depth_matrix[Sm, pos] += c_weight * cap_bonus
+                    depth_matrix[Cm, pos] += c_weight
                 else:
                     depth_matrix[Sm, pos] += s_weight
         else: # The read has no features other than non-stranded coverage
