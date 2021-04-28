@@ -115,9 +115,9 @@ cdef class Locus:
             self.prune_junctions(self.min_intron_length)
             self.generate_branchpoints()
             self.build_membership_matrix()
-            # if self.membership.shape[0] > 0:
-            #     self.build_overlap_matrix()
-            #     self.build_graph(reduce)
+            if self.membership.shape[0] > 0:
+                self.build_overlap_matrix()
+                self.build_graph(reduce)
     
     def __len__(self):
         return self.rightmost - self.leftmost
