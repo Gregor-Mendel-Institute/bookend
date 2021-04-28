@@ -77,7 +77,7 @@ class Assembler:
 
     def process_entry(self, chunk):
         STOP_AT=float('inf')
-        STOP_AT=1000000
+        # STOP_AT=1000000
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
