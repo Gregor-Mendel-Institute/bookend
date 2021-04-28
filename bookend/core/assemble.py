@@ -82,7 +82,7 @@ class Assembler:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
             if self.verbose:
-                print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()))
+                print('[{}:{}-{}] '.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()), end =" ")
             
             locus = au.Locus(
                 chrom=chrom, 
@@ -118,7 +118,7 @@ class Assembler:
                             transcripts_written += 1
                 
                 if self.verbose:
-                    print('\t{} transcripts assembled from {} of {} bases ({}%)'.format(
+                    print('\t{} transcripts from {} / {} bases ({}%)'.format(
                         transcripts_written, round(bases_used,1), round(total_bases,1), round(bases_used/total_bases*100,2)))
                 
                 if chunk[0].left() >= STOP_AT:
