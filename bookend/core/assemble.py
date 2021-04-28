@@ -139,6 +139,7 @@ class Assembler:
         options_string += "  *** Filters ***\n"
         options_string += "  Min bp transcript length (--minlen):              {}\n".format(self.minlen)
         options_string += "  Min isoform coverage (--min_cov):                 {}\n".format(self.min_cov)
+        options_string += "  Min unstranded coverage (--min_unstranded_cov):   {}\n".format(self.min_unstranded_cov)
         options_string += "  Min isoform contribution (--min_proportion):      {}\n".format(self.min_proportion)
         options_string += "  Min retained intron proportion (--intron_filter): {}\n".format(self.intron_filter)
         options_string += "  Min number of 5' reads (--min_start):             {}\n".format(self.min_start)
@@ -179,7 +180,7 @@ class Assembler:
         if transcript.attributes['S.reads'] < self.min_start: return False
         if transcript.attributes['E.reads'] < self.min_end: return False
         # if not args.INCOMPLETE and True not in transcript.splice and transcript.attributes['S.capped']/transcript.attributes['S.reads'] < args.CAP_PERCENT: return False
-        if transcript.strand == 0 and transcript.coverage < self.min_unstranded: return False
+        if transcript.strand == 0 and transcript.coverage < self.min_unstranded_cov: return False
         return True
     
     def run(self):
