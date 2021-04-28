@@ -620,7 +620,7 @@ cdef class ElementGraph:
         
         ext_cov = np.max(ext_member_weights[sorted(new_covered_indices)])
         extension_excludes.difference_update(path.excludes)
-        if len(extension_excludes) > 0:
+        if len(extension_excludes) > 0 and not any([e in self.end_elements for e in extension]):
             excluded_cov = [self.elements[i].cov for i in extension_excludes]
             exclusion_penalty = ext_cov/(ext_cov+sum(excluded_cov))
         else:
