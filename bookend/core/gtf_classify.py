@@ -197,7 +197,10 @@ class AssemblyClassifier:
                     match_type = 3
                 else: # At least some shared, sense, exonic sequence
                     match_type = 4 # isoform
-                
+            
+            if transcript.strand == 0:
+                match_type = 1
+            
             new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen)
             best_match = self.update_match(best_match, new_match)
         
@@ -247,7 +250,7 @@ class AssemblyClassifier:
     def navigate_to(self, gene_id):
         generator = self.dataset.generate_loci()
         for chunk in generator:
-            if gene_id in [r.attributes['gene_id'] for r in chunk]:
+            if gene_id in [r.attributes[self.gene_attr] for r in chunk]:
                 return copy.deepcopy(chunk)
 
     def run(self):

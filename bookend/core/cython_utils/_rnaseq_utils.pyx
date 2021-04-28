@@ -120,8 +120,7 @@ cdef class RNAseqMapping():
     
     cpdef (int, int) overlap_range(self, RNAseqMapping other):
         """Returns 0-indexed open range of overlap between self and other"""
-        edges = sorted([self.span, other.span])
-        return (edges[1][0], edges[0][1])
+        return (max([self.span[0],other.span[0]]), min([self.span[1],other.span[1]]))
     
     cpdef int shared_bases(self, RNAseqMapping other):
         """Returns the number of exonic nucleotides that overlap between
