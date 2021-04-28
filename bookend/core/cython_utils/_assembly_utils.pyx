@@ -73,11 +73,11 @@ cdef class Locus:
         self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
         if self.ignore_ends:
-            dead_end_penalty = 1
+            self.dead_end_penalty = 1
         elif self.allow_incomplete:
-            dead_end_penalty = 0.1
+            self.dead_end_penalty = 0.1
         else:
-            dead_end_penalty = 0
+            self.dead_end_penalty = 0
         
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
