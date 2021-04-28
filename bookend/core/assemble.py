@@ -33,9 +33,8 @@ class Assembler:
         self.verbose = args['VERBOSE']
         self.input = args['INPUT']
         self.ignore_labels = args['IGNORE_LABELS']
-        self.ignore_source = args['IGNORE_SOURCE']
+        self.naive = not args['SPLIT_SOURCES']
         self.antisense_filter = 0.001
-        self.naive = not self.ignore_source
         if self.ignore_labels:
             self.incomplete = True
         
