@@ -255,6 +255,9 @@ cdef class Locus:
                 return True
             
             closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.right])
+            if closest_bp == 0:
+                return True
+            
             cov_through = np.mean(self.cov_plus[closest_bp:rng.right])
             cov_in = self.cov_plus[rng.right]
             if cov_through*2. < cov_in:
@@ -271,6 +274,9 @@ cdef class Locus:
                 return True
             
             closest_bp = min([self.cov_minus.shape[0]]+[bp for bp in self.branchpoints if bp > rng.left+1])
+            if closest_bp == self.cov_minus.shape[0]:
+                return True
+            
             cov_through = np.mean(self.cov_minus[rng.left+1:closest_bp])
             cov_in = self.cov_minus[rng.left]
             if cov_through*2. < cov_in:
