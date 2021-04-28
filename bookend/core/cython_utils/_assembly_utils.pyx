@@ -212,7 +212,7 @@ cdef class Locus:
                 prohibited_minus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
                 prohibited_minus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
         
-        for endtype in [Sp, Ep, Sm, Em]:
+        for endtype in [Ep, Em, Sp, Sm]:
             if endtype == Sp:
                 bpset = self.SPbp
                 pos = np.where(np.sum(self.depth_matrix[[Sp,Cp],],axis=0)>0)[0]
@@ -254,9 +254,9 @@ cdef class Locus:
             if rng.left == 0:
                 return True
             
-            closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.left])
-            cov_through = np.mean(self.cov_plus[closest_bp:rng.left])
-            cov_in = np.mean(self.cov_plus[rng.left:rng.right])
+            closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.right])
+            cov_through = np.mean(self.cov_plus[closest_bp:rng.right])
+            cov_in = self.cov_plus[rng.right]
             if cov_through*2. < cov_in:
                 return True
             
@@ -270,9 +270,9 @@ cdef class Locus:
             if rng.right >= self.cov_minus.shape[0]:
                 return True
             
-            closest_bp = min([self.cov_minus.shape[0]]+[bp for bp in self.branchpoints if bp > rng.right])
-            cov_through = np.mean(self.cov_minus[rng.right:closest_bp])
-            cov_in = np.mean(self.cov_minus[rng.left:rng.right])
+            closest_bp = min([self.cov_minus.shape[0]]+[bp for bp in self.branchpoints if bp > rng.left+1])
+            cov_through = np.mean(self.cov_minus[rng.left+1:closest_bp])
+            cov_in = self.cov_minus[rng.left]
             if cov_through*2. < cov_in:
                 return True
             
@@ -753,19 +753,22 @@ cdef class Locus:
                 frag = self.frag_by_pos[endrange.terminal - (endtype in [1,2])]
                 if endtype == 0 and frag > 0: # S+, check plus-stranded left flowthrough
                     strand, overrun_frag = 1, frag-1
+                    terminal_weight = cov[endrange.right-1]
                 elif endtype == 1 and frag < number_of_frags-1: # E+, check plus-stranded right flowthrough
                     strand, overrun_frag = 1, frag+1
+                    terminal_weight = cov[endrange.left]
                 elif endtype == 2 and frag < number_of_frags-1: # S-, check minus-stranded right flowthrough
                     strand, overrun_frag = -1, frag+1
+                    terminal_weight = cov[endrange.left]
                 elif endtype == 3 and frag > 0: # E-, check minus-stranded left flowthrough
                     strand, overrun_frag = -1, frag-1
+                    terminal_weight = cov[endrange.right-1]
                 else:
                     continue
                 
-                terminal_weight = np.mean(cov[endrange.left:endrange.right])
                 overrun_cov = cov[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]]
                 flowthrough_weight = np.mean(overrun_cov)
-                if np.any(self.depth[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]] < threshold) or  flowthrough_weight < self.intron_filter * terminal_weight:
+                if np.any(self.depth[self.frags[overrun_frag][0]:self.frags[overrun_frag][1]] < threshold) or flowthrough_weight < self.intron_filter * terminal_weight:
                     if strand == 1:
                         discard_frags[0,overrun_frag] = True
                     else:
