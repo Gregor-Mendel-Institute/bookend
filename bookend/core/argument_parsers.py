@@ -96,6 +96,7 @@ assemble_parser.add_argument('--min_len', dest='MINLEN', type=int, default=50, h
 assemble_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude ends, juctions, or transcripts that contribute < this proportion. (Used as a signal threshold)")
 assemble_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
 assemble_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
+assemble_parser.add_argument('--cap_filter', dest='CAP_FILTER', type=float, default=.1, help="[float] Require putative truncations to have >= this percent 'capped' reads (uuG).")
 assemble_parser.add_argument("--ignore_labels", dest='IGNORE_LABELS', default=False, action='store_true', help="(overrides other options) Ignore all 5' and 3' end labels.")
 assemble_parser.add_argument("--ignore_sources", dest='IGNORE_SOURCES', default=False, action='store_true', help="Do not utilize read source information.")
 assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")

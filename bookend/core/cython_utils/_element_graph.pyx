@@ -10,11 +10,11 @@ from collections import deque
 inf = float('Inf')
 
 cdef class ElementGraph:
-    cdef public list elements, paths, initial_bases
+    cdef public list elements, paths
     cdef public np.ndarray assignments, overlap, end_reachability
     cdef readonly int number_of_elements, maxIC
     cdef Element emptyPath
-    cdef public float bases, raw_bases, dead_end_penalty, intron_filter
+    cdef public float bases, input_bases, dead_end_penalty, intron_filter
     cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
     cdef public bint no_ends, ignore_ends, naive, partial_coverage
     def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1):
@@ -44,18 +44,12 @@ cdef class ElementGraph:
         ) for i in range(self.number_of_elements)] # Generate an array of Element objects
         self.assignments = np.zeros(shape=self.number_of_elements, dtype=np.int32)
         self.paths = []
-        self.initial_bases = [e.bases for e in self.elements]
-        self.raw_bases = sum(self.initial_bases)
+        self.input_bases = sum([e.bases for e in self.elements])
         self.check_for_full_paths()
         self.penalize_dead_ends()
         self.bases = sum([e.bases for e in self.elements])
         if self.bases > 0:
             self.resolve_containment()
-    
-    cpdef float upstream_discarded_bases(self, path):
-        """Returns the number of bases that were reachable upstream
-        but got discarded from penalize_dead_ends()"""
-        pass
     
     cpdef void penalize_dead_ends(self):
         """Perform a breadth-first search from all starts and all ends.

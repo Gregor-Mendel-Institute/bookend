@@ -47,14 +47,14 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter, dead_end_penalty
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
     cdef public list transcripts, traceback, sources, subproblem_indices
     cdef public object graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -69,6 +69,7 @@ cdef class Locus:
         self.min_overhang = min_overhang
         self.chrom = chrom
         self.cap_bonus = cap_bonus
+        self.cap_filter = cap_filter
         self.use_attributes = use_attributes
         self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
@@ -95,7 +96,7 @@ cdef class Locus:
             self.extend = max_gap
             self.end_extend = end_cluster
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
-            Sp, Ep, Sm, Em, covp, covm, covn = range(7)
+            Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
             covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
             strandedpositions = np.where(covstranded > 0)[0]
             if strandedpositions.shape[0] > 0: # Some reads to inform the strand
@@ -147,7 +148,7 @@ cdef class Locus:
         cdef np.ndarray counts
         cdef float total, jcov, spanning_cov
         cdef bint passes
-        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
+        Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         for jdict in [self.J_plus, self.J_minus]:
             if jdict:
                 prune = set()
@@ -192,7 +193,7 @@ cdef class Locus:
             set prohibited_plus, prohibited_minus, prohibited_positions, bpset
             list gaps
         
-        Sp, Ep, Sm, Em, covp, covm, covn = range(7)
+        Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         self.branchpoints = set()
         self.SPbp, self.EPbp, self.SMbp, self.EMbp = set(), set(), set(), set()
         self.end_ranges = dict()
@@ -214,28 +215,69 @@ cdef class Locus:
         for endtype in [Sp, Ep, Sm, Em]:
             if endtype == Sp:
                 bpset = self.SPbp
-            elif endtype == Ep:
-                bpset = self.EPbp
+                pos = np.where(np.sum(self.depth_matrix[[Sp,Cp],],axis=0)>0)[0]
+                vals = np.power(self.depth_matrix[Sp, pos] + self.cap_bonus*self.depth_matrix[Cp, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
+                prohibited_positions = prohibited_plus
             elif endtype == Sm:
                 bpset = self.SMbp
-            elif endtype == Em:
-                bpset = self.EMbp
-            
-            pos = np.where(self.depth_matrix[endtype,]>0)[0]
-            if endtype in [Sp, Ep]:
+                pos = np.where(np.sum(self.depth_matrix[[Sm,Cm],],axis=0)>0)[0]
+                vals = np.power(self.depth_matrix[Sm, pos] + self.cap_bonus*self.depth_matrix[Cm, pos],2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
+                prohibited_positions = prohibited_minus
+            elif endtype == Ep:
+                bpset = self.EPbp
+                pos = np.where(self.depth_matrix[endtype,]>0)[0]
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
-            else:
+            elif endtype == Em:
+                bpset = self.EMbp
+                pos = np.where(self.depth_matrix[endtype,]>0)[0]
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
                 prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
             for rng in self.end_ranges[endtype]:
-                self.branchpoints.add(rng.terminal)
-                bpset.add(rng.terminal)
+                if self.passes_cap_filter(rng):
+                    self.branchpoints.add(rng.terminal)
+                    bpset.add(rng.terminal)
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
+    
+    cpdef bint passes_cap_filter(self, EndRange rng):
+        """"Checks if an EndRange should be kept. Sp/Sm EndRanges with >50% flowthrough
+        must be >self.cap_filter uuG to be retained
+        """
+        cdef float cov_in, cov_through, caps, noncaps
+        cdef int Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+        cdef int bp, closest_bp
+        if rng.endtype == Sp:
+            closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.left])
+            cov_through = np.mean(self.cov_plus[closest_bp:rng.left])
+            cov_in = np.mean(self.cov_plus[rng.left:rng.right])
+            if cov_through*2. < cov_in:
+                return True
+            
+            noncaps = np.sum(self.depth_matrix[Sp, rng.left:rng.right])
+            caps = np.sum(self.depth_matrix[Cp, rng.left:rng.right])
+            if caps >= self.cap_filter * (caps + noncaps):
+                return True
+            
+            return False
+        elif rng.endtype == Sm:
+            closest_bp = min([self.cov_minus.shape[0]]+[bp for bp in self.branchpoints if bp > rng.right])
+            cov_through = np.mean(self.cov_minus[rng.right:closest_bp])
+            cov_in = np.mean(self.cov_minus[rng.left:rng.right])
+            if cov_through*2. < cov_in:
+                return True
+            
+            noncaps = np.sum(self.depth_matrix[Sm, rng.left:rng.right])
+            caps = np.sum(self.depth_matrix[Cm, rng.left:rng.right])
+            if caps >= self.cap_filter * (caps + noncaps):
+                return True
+            
+            return False
+        else:
+            return True
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype, set prohibited_positions):
         """Returns a list of tuples that (1) filters low-signal positions

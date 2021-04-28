@@ -29,6 +29,7 @@ class Assembler:
         self.intron_filter = args['INTRON_FILTER']
         self.min_proportion = args['MIN_PROPORTION']
         self.cap_bonus = args['CAP_BONUS']
+        self.cap_filter = args['CAP_FILTER']
         self.minlen = args['MINLEN']
         self.verbose = args['VERBOSE']
         self.input = args['INPUT']
@@ -95,7 +96,8 @@ class Assembler:
                 minimum_proportion=self.min_proportion, 
                 min_intron_length=self.min_intron_length, 
                 antisense_filter=self.antisense_filter, 
-                cap_bonus=self.cap_bonus, 
+                cap_bonus=self.cap_bonus,
+                cap_filter=self.cap_filter, 
                 complete=False, 
                 verbose=self.verbose, 
                 naive=self.ignore_sources, 
