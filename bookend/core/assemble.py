@@ -19,6 +19,7 @@ class Assembler:
         self.source = args['SOURCE']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
+        self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
         self.min_cov = args['MIN_COV']
         self.min_unstranded_cov = args['MIN_UNSTRANDED']
@@ -88,7 +89,8 @@ class Assembler:
                 chrom=chrom, 
                 chunk_number=self.chunk_counter, 
                 list_of_reads=chunk, 
-                extend=self.max_gap, 
+                max_gap=self.max_gap,
+                end_cluster=self.end_cluster,
                 min_overhang=self.min_overhang, 
                 reduce=True, 
                 minimum_proportion=self.min_proportion, 

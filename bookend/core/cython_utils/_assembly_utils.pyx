@@ -44,17 +44,17 @@ cdef class EndRange:
         print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.tag, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
 
 cdef class Locus:
-    cdef public int chrom, leftmost, rightmost, extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
+    cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
-    cdef public set branchpoints
+    cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
     cdef public list transcripts, traceback, sources, subproblem_indices
     cdef public object graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, extend=50, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -85,7 +85,8 @@ cdef class Locus:
             self.raw_bases = np.sum(self.read_lengths * np.array([read.weight for read in self.reads]))
             self.sources = ru.get_sources(list_of_reads)
             self.source_lookup = ru.get_source_dict(self.sources)
-            self.extend = extend
+            self.extend = max_gap
+            self.end_extend = end_cluster
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.cap_bonus, self.use_attributes)
             Sp, Ep, Sm, Em, covp, covm, covn = range(7)
             covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
@@ -181,11 +182,12 @@ cdef class Locus:
             int l, r, p, Sp, Ep, Sm, Em, covp, covm, covn
             (int, int) span
             EndRange rng
-            set prohibited_plus, prohibited_minus, prohibited_positions
+            set prohibited_plus, prohibited_minus, prohibited_positions, bpset
             list gaps
         
         Sp, Ep, Sm, Em, covp, covm, covn = range(7)
         self.branchpoints = set()
+        self.SPbp, self.EPbp, self.SMbp, self.EMbp = set(), set(), set(), set()
         self.end_ranges = dict()
         prohibited_plus, prohibited_minus = set(), set()
         for j in self.J_plus.keys():
@@ -203,6 +205,15 @@ cdef class Locus:
                 prohibited_minus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
         
         for endtype in [Sp, Ep, Sm, Em]:
+            if endtype == Sp:
+                bpset = self.SPbp
+            elif endtype == Ep:
+                bpset = self.EPbp
+            elif endtype == Sm:
+                bpset = self.SMbp
+            elif endtype == Em:
+                bpset = self.EMbp
+            
             pos = np.where(self.depth_matrix[endtype,]>0)[0]
             if endtype in [Sp, Ep]:
                 vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
@@ -212,7 +223,9 @@ cdef class Locus:
                 prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
-            self.branchpoints.update([rng.terminal for rng in self.end_ranges[endtype]])
+            for rng in self.end_ranges[endtype]:
+                self.branchpoints.add(rng.terminal)
+                bpset.add(rng.terminal)
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
@@ -266,7 +279,7 @@ cdef class Locus:
         
         for p,v in filtered_pos[1:]: # Iterate over all positions that passed the threshold
             passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
-            if passed_prohibit or p - self.extend > current_range[1]:  # Must start a new range
+            if passed_prohibit or p - self.end_extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
                 end_ranges.append(e)
                 current_range = (p, p+1)
@@ -479,14 +492,14 @@ cdef class Locus:
             if j == 0: # Starting block
                 if strand == 1 and s_tag: # Left position is a 5' end
                     # Sp, Ep, Sm, Em
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[0], self.extend*capped, capped)
+                    tl = self.end_of_cluster(l, weight, self.end_ranges[0], self.end_extend*capped, capped)
                     if tl >= 0: # 5' end is in an EndRange
                         membership[source_plus] = 1 # Add s+ to the membership table
                         l = tl
                         lfrag = self.frag_by_pos[l]
                         membership[0:lfrag] = -1 # Read cannot extend beyond source
                 elif strand == -1 and e_tag: # Left position is a 3' end
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[3], self.extend, False)
+                    tl = self.end_of_cluster(l, weight, self.end_ranges[3], self.end_extend, False)
                     if tl >= 0:
                         membership[sink_minus] = 1 # Add t- to the membership table
                         l = tl
@@ -495,14 +508,14 @@ cdef class Locus:
             
             if j == len(ranges)-1: # Ending block
                 if strand == 1 and e_tag: # Right position is a 3' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[1], self.extend, False)
+                    tr = self.end_of_cluster(r, weight, self.end_ranges[1], self.end_extend, False)
                     if tr >= 0:
                         membership[sink_plus] = 1 # Add t+ to the membership table
                         r = tr
                         rfrag = self.frag_by_pos[r-1]
                         membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond sink
                 elif strand == -1 and s_tag: # Right position is a 5' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[2], self.extend*capped, capped)
+                    tr = self.end_of_cluster(r, weight, self.end_ranges[2], self.end_extend*capped, capped)
                     if tr >= 0:
                         membership[source_minus] = 1 # Add s- to the membership table
                         r = tr
@@ -651,16 +664,18 @@ cdef class Locus:
         transcriptional noise upstream of a 5' end. The argument 'intron_filter' is used here."""
         cdef EndRange endrange
         cdef np.ndarray remove_plus, remove_minus, overlappers, flowthrough, terminal, sb, fills_intron, cov, junction_membership, discard_frags
-        cdef list stranded_branches
+        cdef list stranded_branches, nonterminal_frags
         cdef int strand, number_of_frags, frag, l, r, maxgap
         cdef str junction
+        cdef (int, int) span
         # Check flowthrough across all starts/ends
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
         maxgap = self.extend
-        for frag in range(number_of_frags):
-            if not passes_threshold(self.depth[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
+        nonterminal_frags = [(frag,span) for frag,span in enumerate(self.frags) if span[0] not in self.SPbp|self.EMbp and span[1] not in self.SMbp|self.EPbp]
+        for frag,span in nonterminal_frags:
+            if not passes_threshold(self.depth[span[0]:span[1]], maxgap, threshold):
                 discard_frags[:,frag] = True
             # else:
             #     if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
@@ -983,7 +998,7 @@ cdef class Locus:
                     E_ranges = self.end_ranges[3]
                 
                 if T.s_tag:
-                    S = self.get_end_cluster(first, 0, S_ranges, self.extend)
+                    S = self.get_end_cluster(first, 0, S_ranges, self.end_extend)
                     if S is not self.nullRange:
                         s_pos = S.peak
                         span = S.span()
@@ -998,7 +1013,7 @@ cdef class Locus:
                                 T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost)
                 
                 if T.e_tag:
-                    E = self.get_end_cluster(last, 0, E_ranges, self.extend)
+                    E = self.get_end_cluster(last, 0, E_ranges, self.end_extend)
                     if E is not self.nullRange:
                         e_pos = E.peak
                         span = E.span()
@@ -1078,11 +1093,11 @@ cdef class Locus:
                 l, r = frag
                 # Update leftmost position if it matches an S/E branchpoint
                 if element.s_tag and element.strand == 1:
-                    S = self.get_end_cluster(l, 0, self.end_ranges[0], self.extend)
+                    S = self.get_end_cluster(l, 0, self.end_ranges[0], self.end_extend)
                     if S is not self.nullRange:
                         l = S.peak
                 elif element.e_tag and element.strand == -1:
-                    E = self.get_end_cluster(l, 0, self.end_ranges[3], self.extend)
+                    E = self.get_end_cluster(l, 0, self.end_ranges[3], self.end_extend)
                     if E is not self.nullRange:
                         l = E.peak
             elif last_member == m-1:
@@ -1103,11 +1118,11 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            S = self.get_end_cluster(r-1, 0, self.end_ranges[2], self.extend)
+            S = self.get_end_cluster(r-1, 0, self.end_ranges[2], self.end_extend)
             if S is not self.nullRange:
                 r = S.peak+1
         elif element.e_tag and element.strand == 1:
-            E = self.get_end_cluster(r-1, 0, self.end_ranges[1], self.extend)
+            E = self.get_end_cluster(r-1, 0, self.end_ranges[1], self.end_extend)
             if E is not self.nullRange:
                 r = E.peak+1
         
