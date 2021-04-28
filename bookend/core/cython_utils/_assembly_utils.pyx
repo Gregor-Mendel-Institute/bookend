@@ -251,6 +251,9 @@ cdef class Locus:
         cdef int bp, closest_bp
         Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         if rng.endtype == Sp:
+            if rng.left == 0:
+                return True
+            
             closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.left])
             cov_through = np.mean(self.cov_plus[closest_bp:rng.left])
             cov_in = np.mean(self.cov_plus[rng.left:rng.right])
@@ -264,6 +267,9 @@ cdef class Locus:
             
             return False
         elif rng.endtype == Sm:
+            if rng.right >= self.cov_minus.shape[0]:
+                return True
+            
             closest_bp = min([self.cov_minus.shape[0]]+[bp for bp in self.branchpoints if bp > rng.right])
             cov_through = np.mean(self.cov_minus[rng.right:closest_bp])
             cov_in = np.mean(self.cov_minus[rng.left:rng.right])
