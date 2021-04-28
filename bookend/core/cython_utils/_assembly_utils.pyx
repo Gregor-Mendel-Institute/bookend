@@ -47,7 +47,7 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
     cdef public list transcripts, traceback, sources, subproblem_indices
@@ -72,6 +72,13 @@ cdef class Locus:
         self.use_attributes = use_attributes
         self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
+        if self.ignore_ends:
+            dead_end_penalty = 1
+        elif self.allow_incomplete:
+            dead_end_penalty = 0.1
+        else:
+            dead_end_penalty = 0
+        
         if len(list_of_reads) > 0:
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             if self.ignore_ends:
@@ -958,8 +965,7 @@ cdef class Locus:
         if reduce: # Split graph into connected components and solve each on its own
             self.collapse_chains()
         
-        dead_end_penalty = 0.1 if self.allow_incomplete else 0
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter)
     
     cpdef void assemble_transcripts(self):
         self.graph.assemble(self.minimum_proportion)
