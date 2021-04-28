@@ -248,8 +248,9 @@ cdef class Locus:
         must be >self.cap_filter uuG to be retained
         """
         cdef float cov_in, cov_through, caps, noncaps
-        cdef int Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+        cdef int Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn
         cdef int bp, closest_bp
+        Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         if rng.endtype == Sp:
             closest_bp = max([0]+[bp for bp in self.branchpoints if bp < rng.left])
             cov_through = np.mean(self.cov_plus[closest_bp:rng.left])
