@@ -35,7 +35,7 @@ cdef class ElementGraph:
         self.ignore_ends = ignore_ends
         self.intron_filter = intron_filter
         self.partial_coverage = partial_coverage
-
+        self.max_isos = max_isos
         if self.naive:
                 source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
         
