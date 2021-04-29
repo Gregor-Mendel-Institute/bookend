@@ -12,12 +12,12 @@ inf = float('Inf')
 cdef class ElementGraph:
     cdef public list elements, paths
     cdef public np.ndarray assignments, overlap, end_reachability
-    cdef readonly int number_of_elements, maxIC
+    cdef readonly int number_of_elements, maxIC, max_isos
     cdef Element emptyPath
     cdef public float bases, input_bases, dead_end_penalty, intron_filter
     cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
     cdef public bint no_ends, ignore_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1, max_isos=10):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -35,6 +35,7 @@ cdef class ElementGraph:
         self.ignore_ends = ignore_ends
         self.intron_filter = intron_filter
         self.partial_coverage = partial_coverage
+
         if self.naive:
                 source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
         
@@ -310,7 +311,7 @@ cdef class ElementGraph:
                 total_bases_assigned = threshold
             else:
                 novel_bases = self.add_path(path)
-                if novel_bases == 0:
+                if novel_bases == 0 or np.max(self.assignments) >= self.max_isos:
                     total_bases_assigned = threshold
                 else:
                     total_bases_assigned += novel_bases
