@@ -85,11 +85,11 @@ class AssemblyClassifier:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
-        if len(self.refid_parent)>0:
+        if self.refid_parent is not None:
             gff_defaults['parent_key_transcript'] += self.refid_parent
             gtf_defaults['parent_key_transcript'] += self.refid_parent
         
-        if len(self.refid_child)>0:
+        if self.refid_child is not None:
             gff_defaults['child_key_transcript'] += self.refid_child
             gtf_defaults['child_key_transcript'] += self.refid_child
         
