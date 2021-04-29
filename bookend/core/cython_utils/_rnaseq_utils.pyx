@@ -922,7 +922,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
-                item = self.parse_bed_line(line)
+                item = self.parse_bed_line(line, name)
                 item.attributes['source'] = name
                 total_coverage += item.weight
                 chrom = self.chrom_array[item.chrom]
@@ -970,10 +970,10 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         return fasta
 
-    cdef RNAseqMapping parse_bed_line(self, str line):
+    cdef RNAseqMapping parse_bed_line(self, str line, str source_string):
         cdef RNAseqMapping new_read
         cdef list bed_elements
-        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict, gaps_are_junctions=True)
+        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict, source_string, s_tag=True, e_tag=True, gaps_are_junctions=True, keep_readname=True)
         if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
             chrom_string = input_data.chrom
             input_data = input_data._replace(chrom=self.chrom_index)
