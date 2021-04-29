@@ -254,9 +254,9 @@ cdef class Locus:
         self.branchpoints.add(len(self))
     
     cpdef void resolve_overlapping_ends(self, int endtype):
-        """"If same-stranded start and end clusters overlap, split
+        """If same-stranded start and end clusters overlap, split
         to avoid malformed entries where start is downstream of end.
-        """"
+        """
         cdef EndRange LR, RR
         cdef int ltype, rtype
         cdef list newlefts, newrights
