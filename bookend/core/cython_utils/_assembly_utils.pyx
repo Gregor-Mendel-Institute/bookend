@@ -260,7 +260,7 @@ cdef class Locus:
             
             cov_through = np.mean(self.cov_plus[closest_bp:rng.right])
             cov_in = self.cov_plus[rng.right]
-            if cov_through*2. < cov_in:
+            if cov_through < cov_in*self.intron_filter:
                 return True
             
             noncaps = np.sum(self.depth_matrix[Sp, rng.left:rng.right])
@@ -279,7 +279,7 @@ cdef class Locus:
             
             cov_through = np.mean(self.cov_minus[rng.left+1:closest_bp])
             cov_in = self.cov_minus[rng.left]
-            if cov_through*2. < cov_in:
+            if cov_through < cov_in*self.intron_filter:
                 return True
             
             noncaps = np.sum(self.depth_matrix[Sm, rng.left:rng.right])
@@ -1037,44 +1037,44 @@ cdef class Locus:
         
         self.add_transcript_attributes()
     
-    # cpdef void trim_transcript_ends(self, transcript):
-    #     """(for endless transcripts only) Cuts 5' and 3' down
-    #     to the position with the largest relative delta."""
-    #     cdef np.ndarray d, dd, posdelta, negdelta
-    #     cdef bint update_left, update_right
-    #     cdef int l, r, maxdelta
-    #     update_left, update_right = False, False
-    #     if transcript.strand == 0:
-    #         update_left = True
-    #         update_right = True
+    cpdef void trim_transcript_ends(self, transcript):
+        """(for endless transcripts only) Cuts 5' and 3' down
+        to the position with the largest relative delta."""
+        cdef np.ndarray d, dd, posdelta, negdelta
+        cdef bint update_left, update_right
+        cdef int l, r, maxdelta
+        update_left, update_right = False, False
+        if transcript.strand == 0:
+            update_left = True
+            update_right = True
         
-    #     if (transcript.strand == 1 and not transcript.s_tag) or (transcript.strand == -1 and not transcript.e_tag):
-    #         update_left = True
+        if (transcript.strand == 1 and not transcript.s_tag) or (transcript.strand == -1 and not transcript.e_tag):
+            update_left = True
         
-    #     if (transcript.strand == 1 and not transcript.e_tag) or (transcript.strand == -1 and not transcript.s_tag):
-    #         update_right = True
+        if (transcript.strand == 1 and not transcript.e_tag) or (transcript.strand == -1 and not transcript.s_tag):
+            update_right = True
         
-    #     if update_left:
-    #         l = transcript.ranges[0][0] - self.leftmost
-    #         r = transcript.ranges[0][1] - self.leftmost
-    #         d = self.depth[l:r]
-    #         dd = np.diff(d)
-    #         posdeltas = np.where(dd > 0)[0]
-    #         if len(posdeltas) > 0:
-    #             maxdelta = posdeltas[np.argsort(-np.power(dd[posdeltas],2)/d[posdeltas])[0]]
-    #             transcript.ranges[0] = (transcript.ranges[0][0]+maxdelta, transcript.ranges[0][1])
+        if update_left:
+            l = transcript.ranges[0][0] - self.leftmost
+            r = transcript.ranges[0][1] - self.leftmost
+            d = self.depth[l:r]
+            dd = np.diff(d)
+            posdeltas = np.where(dd > 0)[0]
+            if len(posdeltas) > 0:
+                maxdelta = posdeltas[np.argsort(-np.power(dd[posdeltas],2)/d[posdeltas])[0]]
+                transcript.ranges[0] = (transcript.ranges[0][0]+maxdelta, transcript.ranges[0][1])
         
-    #     if update_right:
-    #         l = transcript.ranges[-1][0] - self.leftmost
-    #         r = transcript.ranges[-1][1] - self.leftmost
-    #         d = self.depth[l:r]
-    #         dd = np.diff(d)
-    #         negdeltas = np.where(dd < 0)[0]
-    #         if len(negdeltas) > 0:
-    #             maxdelta = negdeltas[np.argsort(-np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
-    #             transcript.ranges[-1] = (transcript.ranges[-1][0], transcript.ranges[-1][0]+maxdelta)
+        if update_right:
+            l = transcript.ranges[-1][0] - self.leftmost
+            r = transcript.ranges[-1][1] - self.leftmost
+            d = self.depth[l:r]
+            dd = np.diff(d)
+            negdeltas = np.where(dd < 0)[0]
+            if len(negdeltas) > 0:
+                maxdelta = negdeltas[np.argsort(-np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
+                transcript.ranges[-1] = (transcript.ranges[-1][0], transcript.ranges[-1][0]+maxdelta)
         
-    #     return
+        return
 
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
@@ -1246,8 +1246,8 @@ cdef class Locus:
         readObject.attributes['cov'] = round(element.bases/element.length, 2)
         readObject.attributes['bases'] = round(element.bases, 2)
         readObject.coverage = readObject.attributes['cov']
-        # if self.allow_incomplete and not readObject.complete:
-        #     self.trim_transcript_ends(readObject)
+        if self.allow_incomplete and not readObject.complete:
+            self.trim_transcript_ends(readObject)
         
         return readObject
 
