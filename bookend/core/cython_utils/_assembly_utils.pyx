@@ -289,28 +289,38 @@ cdef class Locus:
                     if LR.right > RR.left and LR.left < RR.right: # overlapping
                         if LR.peak > RR.peak: # out-of-order peaks
                             left_positions = Counter({k:v for k,v in LR.positions.items() if k < RR.peak})
-                            splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), ltype)
-                            splitRangeLeft.positions = left_positions
-                            right_positions = Counter({k:v for k,v in LR.positions.items() if k > RR.peak})
-                            splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), ltype)
-                            splitRangeRight.positions = right_positions
-                            newlefts += [splitRangeLeft, splitRangeRight]
-                            if RR.right > splitRangeRight.peak: # Also split RR
-                                left_positions = Counter({k:v for k,v in RR.positions.items() if k < splitRangeRight.peak})
-                                right_positions = Counter({k:v for k,v in RR.positions.items() if k > splitRangeRight.peak})
-                                splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), rtype)
+                            if len(left_positions) > 0:
+                                splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), ltype)
                                 splitRangeLeft.positions = left_positions
-                                splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), rtype)
+                                newlefts += [splitRangeLeft]
+                            
+                            right_positions = Counter({k:v for k,v in LR.positions.items() if k > RR.peak})
+                            if len(right_positions) > 0:
+                                splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), ltype)
                                 splitRangeRight.positions = right_positions
-                                newrights += [splitRangeLeft, splitRangeRight]
-                            else:
-                                newrights += [RR]
+                                newlefts += [splitRangeRight]
+                                if RR.right > splitRangeRight.peak: # Also split RR
+                                    left_positions = Counter({k:v for k,v in RR.positions.items() if k < splitRangeRight.peak})
+                                    right_positions = Counter({k:v for k,v in RR.positions.items() if k > splitRangeRight.peak})
+                                    if len(left_positions) > 0:
+                                        splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), rtype)
+                                        splitRangeLeft.positions = left_positions
+                                        newrights += [splitRangeLeft]
+                                    
+                                    if len(right_positions) > 0:
+                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), rtype)
+                                        splitRangeRight.positions = right_positions
+                                        newrights += [splitRangeRight]
+                                    
+                                else:
+                                    newrights += [RR]
+                                    added_rights.add(RR.peak)
                             
                             added_lefts.add(LR.peak)
                             added_rights.add(RR.peak)
                         else: # Peaks are in the correct order, do nothing
                             newlefts += [LR]
-                            added_lefts.add(LR)
+                            added_lefts.add(LR.peak)
             
             if LR.peak not in added_lefts:
                 newlefts += [LR]
