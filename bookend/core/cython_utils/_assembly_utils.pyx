@@ -282,6 +282,8 @@ cdef class Locus:
                         added_rights.add(RR.peak)
                         continue
                     elif RR.left > LR.right:
+                        newlefts += [LR]
+                        added_lefts.add(LR.peak)
                         continue
                     
                     if LR.right > RR.left and LR.left < RR.right: # overlapping
