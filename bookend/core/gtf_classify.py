@@ -135,8 +135,8 @@ class AssemblyClassifier:
         elif new_match.matchtype == 8:
             return new_match
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
-            if new_match.reflen >= .9*new_match.exonoverlap or new_match.matchtype == 4:
-                if old_match.reflen >= .9*old_match.exonoverlap or old_match.matchtype == 4:
+            if new_match.exonoverlap >= .9*new_match.reflen or new_match.matchtype == 4:
+                if old_match.exonoverlap >= .9*old_match.reflen or old_match.matchtype == 4:
                     fused_match = self.match_data(
                         6, 
                         '{},{}'.format(old_match.transcript, new_match.transcript), 
