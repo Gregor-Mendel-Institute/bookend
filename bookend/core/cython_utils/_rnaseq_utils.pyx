@@ -788,7 +788,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     """Child of an RNAseqDataset. Parses a set of input annotations (GFF3/GTF/BED12/ELR).
     Has methods that allow these annotations to be merged together to
     form a single consensus or to be merged directly into a 'reference' annotation."""
-    cdef public dict annotations, gtf_config, gff_config
+    cdef public dict annotations, gtf_config, gff_config, chrom_dict, source_dict
     cdef public object generator
     cdef public int number_of_assemblies, counter, min_reps, confidence
     cdef public float cap_bonus
@@ -804,6 +804,31 @@ cdef class AnnotationDataset(RNAseqDataset):
         self.gff_config = gff_config
         cdef str f, name, k
         cdef RNAseqMapping v
+        self.chrom_dict = {}
+        self.source_dict = {}
+        # self.chrom_index = 0
+        # self.chrom_array = []
+        # if chrom_array is not None:
+        #     for c in chrom_array:
+        #         self.add_chrom(c)
+        
+        # if genome_fasta is not None:
+        #     self.genome, index = fu.import_genome(genome_fasta)
+        #     if chrom_array is None:
+        #         index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
+        #         self.chrom_array = [l[0] for l in index_lines]
+        #         self.chrom_lengths = [int(l[1]) for l in index_lines]
+        #         self.chrom_index = len(self.chrom_array)
+        #         self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
+        # else:
+        #     self.genome = {}
+        
+        # self.source_dict = {}
+        # self.source_index = 0
+        # self.source_array = []
+        # if source_array is not None:
+        #     for s in source_array:
+        #         self.add_source(s)
         self.annotations = {}
         for f in annotation_files:
             name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
@@ -857,6 +882,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         file = open(filename,'r')
         current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
+        current_object = AnnotationObject('', format, config_dict) # An empty annotation object
         children = []
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
             for line in file:
@@ -946,7 +972,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     cdef RNAseqMapping parse_bed_line(self, str line):
         cdef RNAseqMapping new_read
         cdef list bed_elements
-        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict)
+        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict, gaps_are_junctions=True)
         if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
             chrom_string = input_data.chrom
             input_data = input_data._replace(chrom=self.chrom_index)
@@ -1308,7 +1334,7 @@ cdef (int, int) string_to_span(str string):
     return (int(splitstring[0]), int(splitstring[1]))
 
 
-cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
+cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False, keep_readname=False):
     """Parses one line of a 12- or 15-column BED file into an ELdata namedtuple.
     Examples:
       Ath_chr1 6787 8737 AT1G01020.6 . - 6787 8737 0,0,0 6 282,294,86,90,48,144 0,369,776,1448,1629,1806
