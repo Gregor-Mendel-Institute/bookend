@@ -311,6 +311,10 @@ cdef class Locus:
                         else: # Peaks are in the correct order, do nothing
                             newlefts += [LR]
                             added_lefts.add(LR)
+            
+            if LR.peak not in added_lefts:
+                newlefts += [LR]
+                added_lefts.add(LR.peak)
         
         for RR in rights:
             if RR.peak not in added_rights:
