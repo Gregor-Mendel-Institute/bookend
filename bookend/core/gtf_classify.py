@@ -135,8 +135,8 @@ class AssemblyClassifier:
         elif new_match.matchtype == 8:
             return new_match
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
-            if new_match.reflen == new_match.exonoverlap or new_match.matchtype == 4:
-                if old_match.reflen == old_match.exonoverlap or old_match.matchtype == 4:
+            if new_match.reflen >= .9*new_match.exonoverlap or new_match.matchtype == 4:
+                if old_match.reflen >= .9*old_match.exonoverlap or old_match.matchtype == 4:
                     fused_match = self.match_data(
                         6, 
                         '{},{}'.format(old_match.transcript, new_match.transcript), 
@@ -256,7 +256,8 @@ class AssemblyClassifier:
     def run(self):
         """Executes end labeling on all reads."""
         for chunk in self.generator:
-            self.process_entry(chunk)
+            if len(chunk)>0:
+                self.process_entry(chunk)
         
         self.output_file.close()
         print(self.display_summary())
