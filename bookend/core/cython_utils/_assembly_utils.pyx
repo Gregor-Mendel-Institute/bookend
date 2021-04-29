@@ -1059,7 +1059,7 @@ cdef class Locus:
             r = transcript.ranges[0][1] - self.leftmost
             d = self.depth[l:r]
             dd = np.diff(d)
-            posdeltas = np.where(dd > 0)[0]
+            posdeltas = np.where(np.logical_and(dd > 0,d[1:]<np.mean(d)))[0]
             if len(posdeltas) > 0:
                 maxdelta = posdeltas[np.argsort(-np.power(dd[posdeltas],2)/d[posdeltas])[0]]
                 transcript.ranges[0] = (transcript.ranges[0][0]+maxdelta, transcript.ranges[0][1])
@@ -1069,7 +1069,7 @@ cdef class Locus:
             r = transcript.ranges[-1][1] - self.leftmost
             d = self.depth[l:r]
             dd = np.diff(d)
-            negdeltas = np.where(dd < 0)[0]
+            negdeltas = np.where(np.logical_and(dd < 0, d[:-1] < np.mean(d)))[0]
             if len(negdeltas) > 0:
                 maxdelta = negdeltas[np.argsort(-np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
                 transcript.ranges[-1] = (transcript.ranges[-1][0], transcript.ranges[-1][0]+maxdelta)
