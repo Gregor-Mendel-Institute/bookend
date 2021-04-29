@@ -788,7 +788,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     """Child of an RNAseqDataset. Parses a set of input annotations (GFF3/GTF/BED12/ELR).
     Has methods that allow these annotations to be merged together to
     form a single consensus or to be merged directly into a 'reference' annotation."""
-    cdef public dict annotations, gtf_config, gff_config, chrom_dict, source_dict
+    cdef public dict annotations, gtf_config, gff_config
     cdef public object generator
     cdef public int number_of_assemblies, counter, min_reps, confidence
     cdef public float cap_bonus
@@ -829,6 +829,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         # if source_array is not None:
         #     for s in source_array:
         #         self.add_source(s)
+        
         self.annotations = {}
         for f in annotation_files:
             name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
