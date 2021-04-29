@@ -322,9 +322,10 @@ cdef class ElementGraph:
     cpdef void remove_bad_assemblies(self, verbose=False):
         cdef np.ndarray bad_paths
         cdef int number_of_paths, i
-        cdef float container_cov, path_cov
+        cdef float container_cov, path_cov, p_cov
         cdef set m, path_introns, other_introns
-        cdef list containment_order
+        cdef list containment_order, contained_ranges
+        cdef (int, int) c1, c2
         cdef Element path, p
         # REMOVAL ROUND 1: INCOMPLETE ASSEMBLIES
         number_of_paths = len(self.paths)
@@ -341,7 +342,38 @@ cdef class ElementGraph:
                 print('Removing {}, incomplete.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
-        # REMOVAL ROUND 2: TRUNCATIONS
+        # REMOVAL ROUND 2: FUSIONS
+        # >=2 contained nonoverlapping paths with higher coverage
+        number_of_paths = len(self.paths)
+        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        for i in range(number_of_paths):
+            contained_ranges = []
+            path = self.paths[i]
+            path_cov = path.bases / path.length
+            m = path.members
+            container_cov = 0
+            for j in range(number_of_paths):
+                if j != i:
+                    p = self.paths[j]
+                    pm = p.members.difference(p.end_indices)
+                    if p.RM < path.RM or p.LM > path.LM and p.strand == path.strand:
+                        if pm.issubset(path.members):
+                            p_cov = p.bases / p.length
+                            if p_cov >= path_cov:
+                                contained_ranges.append((p.LM, p.RM))
+            
+            if len(contained_ranges) > 1:
+                for c1 in contained_ranges:
+                    for c2 in contained_ranges:
+                        if c1[0] > c2[1] or c2[0] > c1[1]:
+                            bad_paths[i] = True
+        
+        if verbose:
+            for i in np.where(bad_paths)[0]:
+                print('Removing {}, truncation.'.format(self.paths[i]))
+        
+        self.remove_paths(list(np.where(bad_paths)[0]))
+        # REMOVAL ROUND 3: TRUNCATIONS
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
         # containment_order = [c for a,b,c in sorted([(-(p.RM-p.LM), len(p.members), i) for i,p in enumerate(self.paths)])]
@@ -364,7 +396,7 @@ cdef class ElementGraph:
                 print('Removing {}, truncation.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
-        # REMOVAL ROUND 3: INTRON RETENTION
+        # REMOVAL ROUND 4: INTRON RETENTION
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
         for i in range(number_of_paths):
