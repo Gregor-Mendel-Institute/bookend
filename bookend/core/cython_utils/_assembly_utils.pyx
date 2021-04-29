@@ -1040,7 +1040,7 @@ cdef class Locus:
     cpdef void trim_transcript_ends(self, transcript):
         """(for endless transcripts only) Cuts 5' and 3' down
         to the position with the largest relative delta."""
-        cdef np.ndarray d, dd, posdelta, negdelta
+        cdef np.ndarray d, dd, posdelta, negdelta, dist_from_end
         cdef bint update_left, update_right
         cdef int l, r, maxdelta
         update_left, update_right = False, False
@@ -1061,7 +1061,8 @@ cdef class Locus:
             dd = np.diff(d)
             posdeltas = np.where(np.logical_and(dd > 0,d[1:]<np.mean(d)))[0]
             if len(posdeltas) > 0:
-                maxdelta = posdeltas[np.argsort(-np.power(dd[posdeltas],2)/d[posdeltas])[0]]
+                dist_from_end = 1 - posdeltas / (r-l)
+                maxdelta = posdeltas[np.argsort(dist_from_end * -np.power(dd[posdeltas],2)/d[posdeltas])[0]]
                 transcript.ranges[0] = (transcript.ranges[0][0]+maxdelta, transcript.ranges[0][1])
         
         if update_right:
@@ -1071,7 +1072,8 @@ cdef class Locus:
             dd = np.diff(d)
             negdeltas = np.where(np.logical_and(dd < 0, d[:-1] < np.mean(d)))[0]
             if len(negdeltas) > 0:
-                maxdelta = negdeltas[np.argsort(-np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
+                dist_from_end = negdeltas / (r-l)
+                maxdelta = negdeltas[np.argsort(dist_from_end * -np.power(dd[negdeltas],2)/d[negdeltas-1])[0]]
                 transcript.ranges[-1] = (transcript.ranges[-1][0], transcript.ranges[-1][0]+maxdelta)
         
         return
