@@ -30,11 +30,18 @@ cdef class EndRange:
         strand = ['.','+','-'][self.strand]
         return '{}{}{} ({})'.format(self.tag, strand, self.peak, self.weight)
     
+    def __eq__(self, other): return self.span() == other.span()
+    def __ne__(self, other): return self.span() != other.span()
+    def __gt__(self, other): return self.span() >  other.span()
+    def __ge__(self, other): return self.span() >= other.span()
+    def __lt__(self, other): return self.span() <  other.span()
+    def __le__(self, other): return self.span() <= other.span()
+    
     def add(self, int position, float weight, bint capped=False):
         self.positions[position] += weight
         self.capped += weight*capped
     
-    def span(self):
+    cpdef (int, int) span(self):
         return (min(self.positions.keys()), max(self.positions.keys()))
     
     def most_common(self):
@@ -235,12 +242,81 @@ cdef class Locus:
                 prohibited_positions = prohibited_minus
             
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
+            if endtype in [Sp, Sm]:
+                self.resolve_overlapping_ends(endtype)
+        
+        for endtype in [Ep, Em, Sp, Sm]:
             for rng in self.end_ranges[endtype]:
                 self.branchpoints.add(rng.terminal)
                 bpset.add(rng.terminal)
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
+    
+    cpdef void resolve_overlapping_ends(self, int endtype):
+        """"If same-stranded start and end clusters overlap, split
+        to avoid malformed entries where start is downstream of end.
+        """"
+        cdef EndRange LR, RR
+        cdef int ltype, rtype
+        cdef list newlefts, newrights
+        cdef set added_lefts, added_rights
+        newlefts, newrights = [], []
+        added_lefts, added_rights = set(), set()
+        if endtype == 0:
+            ltype = 0
+            rtype = 1
+            lefts = self.end_ranges[ltype]
+            rights = self.end_ranges[rtype]
+        elif endtype == 2:
+            ltype = 3
+            rtype = 2
+            lefts = self.end_ranges[ltype]
+            rights = self.end_ranges[rtype]
+        
+        for LR in lefts:
+            for RR in rights:
+                if RR.peak not in added_rights: # 
+                    if RR.right < LR.left:
+                        newrights += [RR]
+                        added_rights.add(RR.peak)
+                        continue
+                    elif RR.left > LR.right:
+                        continue
+                    
+                    if LR.right > RR.left and LR.left < RR.right: # overlapping
+                        if LR.peak > RR.peak: # out-of-order peaks
+                            left_positions = Counter({k:v for k,v in LR.positions.items() if k < RR.peak})
+                            splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), ltype)
+                            splitRangeLeft.positions = left_positions
+                            right_positions = Counter({k:v for k,v in LR.positions.items() if k > RR.peak})
+                            splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), ltype)
+                            splitRangeRight.positions = right_positions
+                            newlefts += [splitRangeLeft, splitRangeRight]
+                            if RR.right > splitRangeRight.peak: # Also split RR
+                                left_positions = Counter({k:v for k,v in RR.positions.items() if k < splitRangeRight.peak})
+                                right_positions = Counter({k:v for k,v in RR.positions.items() if k > splitRangeRight.peak})
+                                splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), rtype)
+                                splitRangeLeft.positions = left_positions
+                                splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), rtype)
+                                splitRangeRight.positions = right_positions
+                                newrights += [splitRangeLeft, splitRangeRight]
+                            else:
+                                newrights += [RR]
+                            
+                            added_lefts.add(LR.peak)
+                            added_rights.add(RR.peak)
+                        else: # Peaks are in the correct order, do nothing
+                            newlefts += [LR]
+                            added_lefts.add(LR)
+        
+        for RR in rights:
+            if RR.peak not in added_rights:
+                newrights += [RR]
+                added_rights.add(RR.peak)
+        
+        self.end_ranges[ltype] = newlefts
+        self.end_ranges[rtype] = newrights
     
     cpdef bint passes_cap_filter(self, EndRange rng):
         """"Checks if an EndRange should be kept. Sp/Sm EndRanges with >50% flowthrough
@@ -303,6 +379,7 @@ cdef class Locus:
             list filtered_pos, end_ranges
             (int, int) current_range
             bint passed_prohibit
+            dict positions
         
         if len(pos) == 0:
             return []
@@ -326,6 +403,7 @@ cdef class Locus:
         maxv = v
         maxp = p
         weight = v
+        positions = {p:v}
         current_range = (p, p+1)
         end_ranges = []
         prohibited = iter(sorted(prohibited_positions))
@@ -342,10 +420,12 @@ cdef class Locus:
             passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
             if passed_prohibit or p - self.end_extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
+                e.positions = Counter(positions)
                 if self.passes_cap_filter(e):
                     end_ranges.append(e)
                 
                 current_range = (p, p+1)
+                positions = {p:v}
                 maxp = p
                 maxv = v
                 weight = v
@@ -359,11 +439,13 @@ cdef class Locus:
                             break
             else:# Can continue the last range
                 current_range = (current_range[0], p+1)
+                positions[p] = v
                 weight += v
                 if v > maxv or (v == maxv and endtype in [1,2]):
                     maxv, maxp = v, p
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
+        e.positions = Counter(positions)
         if self.passes_cap_filter(e):
             end_ranges.append(e)
         
@@ -410,7 +492,7 @@ cdef class Locus:
             (0) frag membership not determined
         
         The full table is produced by one pass through the reads. During this pass
-        values are produced for each nucleotide of the locus object as:
+        values are produced for each nucleotide of the object as:
             self.frag_by_pos - the unique fragment that each nucleotide belongs to
         After this, the table is compressed to produce:
             self.reduced_membership - a table of unique membership patterns
@@ -1032,7 +1114,7 @@ cdef class Locus:
         self.graph.assemble(self.minimum_proportion)
         counter = 1
         for path in self.graph.paths:
-            self.transcripts.append(self.convert_path(path, counter))
+            self.transcripts += self.convert_path(path, counter)
             counter += 1
         
         self.add_transcript_attributes()
@@ -1140,7 +1222,7 @@ cdef class Locus:
                 T.capped = True
     
     cpdef void merge_reads(self, int child_index, int parent_index):
-        """Combines the information of two read elements in the locus."""
+        """Combines the information of two read elements in the object."""
         cdef char p_out, c_out, p_in, c_in, s
         cdef (char, char) o
         cdef Py_ssize_t i
@@ -1166,18 +1248,19 @@ cdef class Locus:
         self.weight_array[child_index,:] = 0
         self.member_weights[child_index,:] = 0
     
-    cpdef convert_path(self, element, transcript_number):
+    cpdef list convert_path(self, element, transcript_number):
         """Prints a representation of an ElementGraph Element object
         by converting it first to an RNAseqMapping object."""
         cdef int chrom, source, N, m, n, l, r, last_member
         cdef char strand
         cdef bint s_tag, e_tag, capped, gap_is_splice
-        cdef list ranges, splice, members
+        cdef list ranges, splice, members, output
         cdef (int, int) frag, exon
         cdef set nonmembers
         cdef str gene_id, transcript_id, junction_hash
         cdef dict junctions
         cdef EndRange S, E
+        output = []
         gene_id = 'bookend.{}'.format(self.chunk_number)
         transcript_id = 'bookend.{}.{}'.format(self.chunk_number, transcript_number)
         members = sorted(element.members)
@@ -1251,7 +1334,7 @@ cdef class Locus:
         if self.allow_incomplete and not readObject.complete:
             self.trim_transcript_ends(readObject)
         
-        return readObject
+        return [readObject]
 
 
 cdef class simplifyDFS():
@@ -1395,7 +1478,7 @@ cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[cha
     return (horiz, vert) 
 
 cpdef np.ndarray calculate_overlap_matrix(np.ndarray[char, ndim=2] membership_matrix, np.ndarray information_content, np.ndarray strand_array):
-    """Given a matrix of membership values (1, 0, or -1; see locus.build_membership_matrix),
+    """Given a matrix of membership values (1, 0, or -1; see self.build_membership_matrix),
     output a new read x read square matrix with a overlap code.
     For each (a,b) pair:
         -1 - a is incompatible with b (at least one (-1,1) pair)
