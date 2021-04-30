@@ -16,7 +16,7 @@ if __name__ == '__main__':
 class AssemblyClassifier:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen')
+        self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref')
         self.args = args
         self.output = self.args['OUT']
         self.end_buffer = self.args['END_BUFFER']
@@ -137,15 +137,17 @@ class AssemblyClassifier:
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
             if new_match.exonoverlap >= .9*new_match.reflen or new_match.matchtype == 4:
                 if old_match.exonoverlap >= .9*old_match.reflen or old_match.matchtype == 4:
-                    fused_match = self.match_data(
-                        6, 
-                        '{},{}'.format(old_match.transcript, new_match.transcript), 
-                        '{},{}'.format(old_match.gene, new_match.gene),
-                        max(old_match.exonoverlap, new_match.exonoverlap),
-                        max(old_match.reflen, new_match.reflen),
-                        old_match.tlen
-                    )
-                    return fused_match
+                    if old_match.ref.shared_bases(new_match.ref) < .9*min([old_match.reflen, new_match.reflen]):
+                        fused_match = self.match_data(
+                            6, 
+                            '{},{}'.format(old_match.transcript, new_match.transcript), 
+                            '{},{}'.format(old_match.gene, new_match.gene),
+                            max(old_match.exonoverlap, new_match.exonoverlap),
+                            max(old_match.reflen, new_match.reflen),
+                            old_match.tlen,
+                            old_match.ref if old_match.exonoverlap > new_match.exonoverlap else new_match.ref
+                        )
+                        return fused_match
         
         if new_match.matchtype > old_match.matchtype:
             return new_match
@@ -168,7 +170,7 @@ class AssemblyClassifier:
             'full_match'  # 8 shares entire exon chan and ends
         """
         tlen = transcript.get_length()
-        best_match = self.match_data(0, 'NA', 'NA', 0, 0, tlen)
+        best_match = self.match_data(0, 'NA', 'NA', 0, 0, tlen, None)
         for ref in reference_transcripts:
             match_type = 0
             if not transcript.overlaps(ref):
@@ -201,7 +203,7 @@ class AssemblyClassifier:
             if transcript.strand == 0 and match_type in [8, 7, 4]:
                 match_type = 1
             
-            new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen)
+            new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen, ref)
             best_match = self.update_match(best_match, new_match)
         
         return best_match
