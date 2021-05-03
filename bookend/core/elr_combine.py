@@ -154,11 +154,11 @@ class ELRcombiner:
                 finished_files += 1
         
         for h in self.dataset.dump_header():
-            self.output_line(h)
+            self.output_line(h, output)
         
         while finished_files < file_number: # Keep going until every line of every file is processed
             index, item = self.PQ.pop(True)
-            self.output_line(self.sortable_tuple_to_read(item))
+            self.output_line(self.sortable_tuple_to_read(item), output)
             next_line = files[index].readline().rstrip()
             if next_line:
                 next_item = self.read_to_sortable_tuple(next_line, index)
