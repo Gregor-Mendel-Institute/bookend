@@ -469,7 +469,7 @@ cdef class RNAseqDataset():
     cdef public dict chrom_dict, source_dict
     cdef readonly dict config, genome, label_tally
     cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
-    cdef readonly str start_seq, end_seq, gene_delim
+    cdef readonly str start_seq, end_seq
     cdef readonly int minlen, minlen_strict, minlen_loose
     cdef readonly float mismatch_rate
     cdef readonly array.array start_array, end_array
