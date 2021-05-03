@@ -459,7 +459,8 @@ config_defaults = {
     'mismatch_rate':0.2,
     'min_reps':2,
     'cap_bonus':5,
-    'confidence_threshold':0.5
+    'confidence_threshold':0.5,
+    'gene_delim':'.'
 }
 
 cdef class RNAseqDataset():
@@ -468,7 +469,7 @@ cdef class RNAseqDataset():
     cdef public dict chrom_dict, source_dict
     cdef readonly dict config, genome, label_tally
     cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
-    cdef readonly str start_seq, end_seq
+    cdef readonly str start_seq, end_seq, gene_delim
     cdef readonly int minlen, minlen_strict, minlen_loose
     cdef readonly float mismatch_rate
     cdef readonly array.array start_array, end_array
@@ -793,11 +794,13 @@ cdef class AnnotationDataset(RNAseqDataset):
     cdef public int number_of_assemblies, counter, min_reps, confidence
     cdef public float cap_bonus
     cdef public bint verbose
+    cdef public str gene_delim
     def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults, confidence=1):
         RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
         self.min_reps = config['min_reps']
         self.cap_bonus = config['cap_bonus']
         self.verbose = config.get('verbose',False)
+        self.gene_delim = self.config['gene_delim']
         self.number_of_assemblies = len(annotation_files)
         self.confidence = confidence
         self.gtf_config = gtf_config
@@ -986,7 +989,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         new_read = RNAseqMapping(input_data)
         bed_elements = line.rstrip().split('\t')
-        new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split('.')[:-1])
+        new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split(self.gene_delim)[:-1])
         new_read.attributes['transcript_id'] = bed_elements[3]
         new_read.attributes['S.reads'] = new_read.weight if new_read.s_tag else 0
         new_read.attributes['S.capped'] = new_read.weight if new_read.capped else 0

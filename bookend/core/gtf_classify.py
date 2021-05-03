@@ -34,6 +34,7 @@ class AssemblyClassifier:
         self.gff_child = self.args['GFF_CHILD']
         self.refid_parent = self.args['REF_ID_PARENT']
         self.refid_child = self.args['REF_ID_CHILD']
+        self.gene_delim = self.args['GENE_DELIM']
         if self.input_is_valid(self.output): # Check for valid file extension on output name
             self.output_type = self.file_extension(self.output)
             self.output_file = open(self.output,'w')
@@ -81,6 +82,7 @@ class AssemblyClassifier:
         config_defaults['min_reps'] = 0
         config_defaults['cap_percent'] = 0
         config_defaults['verbose'] = self.verbose
+        config_defaults['gene_delim'] = self.gene_delim
         if self.gtf_parent: gtf_defaults['parent_types'] = set(self.gtf_parent)
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
