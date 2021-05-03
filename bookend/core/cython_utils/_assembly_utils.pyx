@@ -1127,13 +1127,14 @@ cdef class Locus:
         self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter)
     
     cpdef void assemble_transcripts(self):
-        self.graph.assemble(self.minimum_proportion)
-        counter = 1
-        for path in self.graph.paths:
-            self.transcripts += self.convert_path(path, counter)
-            counter += 1
-        
-        self.add_transcript_attributes()
+        if self.graph is not None:
+            self.graph.assemble(self.minimum_proportion)
+            counter = 1
+            for path in self.graph.paths:
+                self.transcripts += self.convert_path(path, counter)
+                counter += 1
+            
+            self.add_transcript_attributes()
     
     cpdef void trim_transcript_ends(self, transcript):
         """(for endless transcripts only) Cuts 5' and 3' down

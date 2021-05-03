@@ -117,7 +117,7 @@ class ELRcombiner:
                 
                 files = [open(f) for f in temp_list]
             else:
-                files = [open(f) for f in filenames]
+                files = [open(f) for f in file_list]
         elif file_list is None:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
@@ -169,7 +169,7 @@ class ELRcombiner:
     
     def display_options(self):
         """Returns a string describing all input args"""
-        options_string = "\n/| bookend bed-to-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string = "\n/| bookend elr-combine |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input files:     {}\n".format(self.input)
         options_string += "  Output file:    {}\n".format(self.output)
         options_string += "  Temp directory: {}\n".format(self.temp)

@@ -98,15 +98,6 @@ class AnnotationMerger:
             gtf_defaults['child_key_transcript'] += self.refid_child
         
         return config_defaults, gtf_defaults, gff_defaults
-
-    def make_annotation_locus(self, chunk):
-        """Converts a chunk yielded by generate_loci() to an _assembly_utils.AnnotationLocus"""
-        if len(chunk) == 0:
-            return
-        
-        self.locus_counter += 1
-        locus = au.AnnotationLocus(chunk[0].chrom, self.locus_counter, chunk, self.end_cluster, 0, 0, self.cap_percent, 0, True, self.min_reps, self.confidence)
-        return locus
     
     def integrate_assemblies_with_reference(self, locus):
         """Iterate over the set of filtered transcripts (highest TPM first)
@@ -199,6 +190,7 @@ class AnnotationMerger:
         self.output_file.write(output_line+'\n')
 
     def process_entry(self, chunk):
+        self.locus_counter += 1
         locus = self.make_annotation_locus(chunk)
         if locus: # Work needs to be done on non-reference transcripts
             locus.filter_fused_and_truncated_annotations()

@@ -19,7 +19,7 @@ class ELRsorter:
             if self.force or not os.path.exists(self.output):
                 self.output_file = open(self.output,'w')
             else:
-                print("ERROR: output file already exists")
+                print("ERROR: output file already exists. Use -f/--force to overwrite.")
                 sys.exit(1)
 
     def run(self):
