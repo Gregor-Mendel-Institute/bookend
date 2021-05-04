@@ -1334,7 +1334,7 @@ cdef class Locus:
             if E is not self.nullRange:
                 r = E.peak+1
         
-        exon = (l+self.leftmost, r+self.leftmost+1)
+        exon = (l+self.leftmost, r+self.leftmost+100)
         ranges.append(exon)
         s_tag = element.s_tag
         e_tag = element.e_tag
