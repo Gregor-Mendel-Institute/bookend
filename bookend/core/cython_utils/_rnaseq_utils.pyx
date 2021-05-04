@@ -1690,7 +1690,7 @@ cdef class BAMobject:
             str ID, chrom, js, seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
-            list splice, gaps, ranges, introns
+            list splice, gaps, ranges, introns, mapping_list
             bint stranded, stranded_method, fiveprime, threeprime, junction_exists
             (int, int) g
             array.array flankmatch
@@ -1759,9 +1759,12 @@ cdef class BAMobject:
             
             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
             try:
-                errors = line.get_tag('NM')
+                errors = line.get_tag('nM')
             except KeyError:
-                errors = 0
+                try:
+                    errors = line.get_tag('NM')
+                except KeyError:
+                    errors = 0
             
             try:
                 mdstring = line.get_tag('MD')
@@ -1834,7 +1837,7 @@ cdef class BAMobject:
             
             # Generate a ReadObject with the parsed attributes above
             read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
-            current_mapping = RNAseqMapping(read_data)
+            current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
             current_mapping.e_len = e_tag_len
             current_mapping.s_len = s_tag_len
             if map_number not in mappings:
@@ -1843,8 +1846,28 @@ cdef class BAMobject:
                 mate_read = mappings[map_number]
                 mate_read.merge(current_mapping)
         
-        return list(mappings.values())
-
+        mapping_list = self.resolve_overlapping_mappings(mappings)
+        return mapping_list
+    
+    cdef list resolve_overlapping_mappings(self, dict mappings):
+        """Decision tree for simplifying multimappers """
+        cdef RNAseqMapping mapping, v, previous_mapping
+        cdef list output_mappings, ordered_mappings
+        cdef int length
+        if len(mappings.values()) <= 1:
+            output_mappings = list(mappings.values())
+        else:
+            output_mappings = []
+            ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
+            for mapping in ordered_mappings:
+                for previous_mapping in output_mappings:
+                    if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get(['errors'],0) <= mapping.attributes.get(['errors'], 0):
+                        continue
+                    
+                    output_mappings.append(mapping)
+        
+        return output_mappings
+    
     cdef int get_mapping_number(self):  
         """Given a list of pysam objects, determine
         how many locations in the genome the read (pair) mapped."""
