@@ -387,7 +387,7 @@ cpdef (int, int) best_sliding_fit(
     min_oligomer = 3
     i = minmatch
     while i <= q_len:
-        max_mismatch = int(mm_rate*i)
+        max_mismatch = int(mm_rate*min(i,t_len))
         spacer = i-t_len # Calculate whether the trim array is shorter than i
         if spacer > 0:
             a = Q[spacer:i] # Slice the query up to position i
