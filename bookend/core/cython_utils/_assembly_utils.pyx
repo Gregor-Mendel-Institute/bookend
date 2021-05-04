@@ -1212,12 +1212,12 @@ cdef class Locus:
                         S_info['S.reads'] = round(sum(S.positions.values()),1)
                         S_info['S.capped'] = round(S.capped,1)
                         S_info['S.left'] = span[0] + self.leftmost
-                        S_info['S.right'] = span[1] + self.leftmost
+                        S_info['S.right'] = span[1] + self.leftmost + 1
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
                             else:
-                                T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost)
+                                T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost + 1)
                 
                 if T.e_tag:
                     E = self.get_end_cluster(last, 0, E_ranges, self.end_extend)
@@ -1226,10 +1226,10 @@ cdef class Locus:
                         span = E.span()
                         E_info['E.reads'] = round(sum(E.positions.values()),1)
                         E_info['E.left'] = span[0] + self.leftmost
-                        E_info['E.right'] = span[1] + self.leftmost
+                        E_info['E.right'] = span[1] + self.leftmost + 1
                         if e_pos != last: # S pos was replaced
                             if T.strand == 1:
-                                T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost)
+                                T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost + 1)
                             else:
                                 T.ranges[0] = (e_pos + self.leftmost, T.ranges[0][1])
             
