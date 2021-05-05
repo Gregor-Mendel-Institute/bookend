@@ -162,18 +162,24 @@ class EndLabeler:
             summary_string += "Removed (qual):  {} ({}%)\n".format(xq_tag, int(xq_tag/total*1000)/10)
             summary_string += "Total output:    {} ({}%)\n".format(kept, int(kept/total*1000)/10)
 
-            multilabel = sorted([k for k in self.labeldict.keys() if 'S' in k and 'E' in k])
+            multilabel = set([k for k in self.labeldict.keys() if 'S' in k and 'E' in k])
+            for m in multilabel:
+                s, e = m.lstrip('S').split('E')
+                self.labeldict['S{}'.format(s)] += self.labeldict[m]
+                self.labeldict['E{}'.format(e)] += self.labeldict[m]
+            
             label_lengths = [int(i.strip('SE')) for i in self.labeldict.keys() if i != '' and i not in multilabel and 'X' not in i]
             if len(label_lengths) > 0:
                 summary_string += "\nlen\tS_tag\tE_tag\n"
                 max_len = max(label_lengths)
                 for i in range(1, max_len+1):
-                    summary_string += '{}\t{}\t{}\n'.format(i, self.labeldict['S{}'.format(i)], self.labeldict['E{}'.format(i)])
+                    s_count = self.labeldict['S{}'.format(i)]
+                    e_count = self.labeldict['E{}'.format(i)]
+                    if s_count > 0 or e_count > 0:
+                        summary_string += '{}\t{}\t{}\n'.format(i, s_count, e_count)
                 
                 if len(multilabel) > 0:
-                    summary_string += "Multi-label reads:\n"
-                    for m in multilabel:
-                        summary_string += '{}:{}\t'.format(m, self.labeldict[m])
+                    summary_string += "Multi-label reads: {}".format(sum([self.labeldict[m] for m in multilabel]))
         
         return summary_string
     
