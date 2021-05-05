@@ -1779,7 +1779,7 @@ cdef class BAMobject:
                 alignment_strand = 0
                 splice = []
             else:
-                alignment_strand = self.get_alignment_strand(line)
+                alignment_strand = self.get_alignment_strand(line, strand)
                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand) # Check which gaps between exon blocks are present in intron blocks
             
             if tail == 0:
@@ -1925,23 +1925,24 @@ cdef class BAMobject:
         
         return False
 
-    cdef int get_alignment_strand(self, line):
+    cdef int get_alignment_strand(self, line, int strand):
         """Returns 1(+), -1(-), or 0(.) if one of the BAM
         splice tags (XS, ts) contains strand information."""
         cdef str js
-        cdef alignment_strand = 0
+        cdef int alignment_strand
+        alignment_strand = 0
         try:
             js = line.get_tag('XS')
+            if js == '+':
+                alignment_strand = 1
+            elif js == '-':
+                alignment_strand = -1
         except KeyError:
             try:
                 js = line.get_tag('ts')
+                alignment_strand = {'+':strand, '-':-strand}[js]
             except KeyError:
-                js = '.'
-        
-        if js == '+':
-            alignment_strand = 1
-        elif js == '-':
-            alignment_strand = -1
+                alignment_strand = 0
         
         return alignment_strand
 
