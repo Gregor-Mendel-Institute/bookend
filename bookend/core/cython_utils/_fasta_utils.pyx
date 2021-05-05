@@ -716,7 +716,7 @@ def terminal_trim(
                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
                     if trimtype1 == 1: # Can be shared with first trim
                         pos2 = S3pos1
-                        ham2 = S3pos2
+                        ham2 = S3ham1
                         trimtype2 = 2
                     else: # Replaces first trim
                         pos1 = S3pos1
