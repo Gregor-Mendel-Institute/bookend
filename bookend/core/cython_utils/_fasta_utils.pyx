@@ -746,11 +746,13 @@ def terminal_trim(
         label1 = get_label(mate1, pos1, trimtype1)
         flipped1 = is_flipped(trimtype1)
         if trimtype2 != -1: # A matching trim was found
-            trim1 = trim1[:-pos2]
-            qtrm1 = qtrm1[:-pos2]
-            if 'S' in label1:
+            if trimtype1 == 0: # S5 + E3 trim
+                trim1 = trim1[:-pos2]
+                qtrm1 = qtrm1[:-pos2]
                 label1 = label1+'E'+str(pos2)
-            else:
+            elif trimtype1 == 1: # E5 + S3 trim
+                trim1 = trim1[pos2:]
+                qtrm1 = qtrm1[pos2:]
                 label1 = 'S'+str(pos2)+label1
         
         if len(trim1) < minlen: # trim1 length fail
