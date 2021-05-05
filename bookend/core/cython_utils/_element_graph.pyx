@@ -370,7 +370,7 @@ cdef class ElementGraph:
         
         if verbose:
             for i in np.where(bad_paths)[0]:
-                print('Removing {}, truncation.'.format(self.paths[i]))
+                print('Removing {}, fusion.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
         # REMOVAL ROUND 3: TRUNCATIONS
@@ -419,6 +419,29 @@ cdef class ElementGraph:
         if verbose:
             for i in np.where(bad_paths)[0]:
                 print('Removing {}, intron retention.'.format(self.paths[i]))
+        
+        self.remove_paths(list(np.where(bad_paths)[0]))
+        # REMOVAL ROUND 5: LOW ABUNDANCE
+        number_of_paths = len(self.paths)
+        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        for i in range(number_of_paths):
+            path = self.paths[i]
+            path_introns = set(path.get_introns())
+            overlapping_cov = 0
+            for j in range(number_of_paths):
+                p = self.paths[j]
+                if len(path.members.intersection(p.members)) >= .5*min([len(path.members),len(p.members)]): # Same start and same end
+                    overlapping_cov += p.bases / p.length
+            
+            if overlapping_cov > 0:
+                path_cov = path.bases/path.length
+                overlapping_cov += path_cov
+                if path_cov < overlapping_cov * self.minimum_proportion:
+                    bad_paths[i] = True
+        
+        if verbose:
+            for i in np.where(bad_paths)[0]:
+                print('Removing {}, low abundance.'.format(self.paths[i]))
         
         self.remove_paths(list(np.where(bad_paths)[0]))
     
