@@ -317,9 +317,9 @@ cdef class ElementGraph:
                     total_bases_assigned += novel_bases
         
         if simplify:
-            self.remove_bad_assemblies()
+            self.remove_bad_assemblies(minimum_proportion)
     
-    cpdef void remove_bad_assemblies(self, verbose=False):
+    cpdef void remove_bad_assemblies(self, minimum_proportion, verbose=False):
         cdef np.ndarray bad_paths
         cdef int number_of_paths, i
         cdef float container_cov, path_cov, p_cov
@@ -436,7 +436,7 @@ cdef class ElementGraph:
             if overlapping_cov > 0:
                 path_cov = path.bases/path.length
                 overlapping_cov += path_cov
-                if path_cov < overlapping_cov * self.minimum_proportion:
+                if path_cov < overlapping_cov * minimum_proportion:
                     bad_paths[i] = True
         
         if verbose:
