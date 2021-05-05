@@ -728,8 +728,8 @@ def terminal_trim(
         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
             if E3ham1 != -1:
-                if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype == 0: # Improved match
-                    if trimtype == 0: # Can be shared with first trim
+                if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+                    if trimtype1 == 0: # Can be shared with first trim
                         pos2 = E3pos1
                         ham2 = E3ham1
                         trimtype2 = 3
