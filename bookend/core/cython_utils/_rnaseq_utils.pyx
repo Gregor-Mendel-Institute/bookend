@@ -628,8 +628,8 @@ gtf_defaults = {
 gff_defaults = {
     'parent_types':set([
         'mRNA','transcript',
-        'snoRNA','tRNA','snRNA','rRNA','miRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
-        'antisense_lncRNA','antisense_RNA','lnc_RNA']),
+        'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
+        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript']),
     'parent_key_transcript':['ID'],
     'parent_key_gene':'Parent',
     'child_types':set(['exon','pseudogenic_exon']),
@@ -668,7 +668,10 @@ gtf_colorcode = {
     'pre_miRNA': '198,95,84', 
     'processed_pseudogene': '80,80,80', 
     'processed_transcript': '180,155,100', 
+    'primary_transcript': '198,95,84',
     'protein_coding': '49,132,44', 
+    'mRNA': '49,132,44', 
+    'transcript': '249,185,54', 
     'pseudogene': '80,80,80', 
     'retained_intron': '180,155,100', 
     'ribozyme': '249,185,54', 
@@ -854,10 +857,9 @@ cdef class AnnotationDataset(RNAseqDataset):
         Each key:value pair is a chromosome:position-sorted list of objects."""
         cdef:
             RNAseqMapping item
-            AnnotationObject line_object
+            AnnotationObject current_object, current_parent, last_object
             str file_extension, format, chrom
             dict object_dict, config_dict
-            AnnotationObject current_object, current_parent
             list children
             int counter
             float total_coverage, total_s, total_e
@@ -885,43 +887,30 @@ cdef class AnnotationDataset(RNAseqDataset):
             format = 'ELR'
         
         file = open(filename,'r')
-        current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
-        current_object = AnnotationObject('', format, config_dict) # An empty annotation object
-        children = []
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
+            current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
+            current_object = AnnotationObject('', format, config_dict) # An empty annotation object
+            last_object = current_object
+            children = []
             for line in file:
                 if line[0] == '#':continue
                 current_object = AnnotationObject(line, format, config_dict)
                 if current_object.keep:
                     if current_object.parent: # Add the old object to object_dict and start a new one
                         if current_parent.parent: # Ignore the first empty annotation object
-                            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
-                            item.attributes['source'] = name
-                            item.attributes['transcript_id'] = current_parent.transcript_id
-                            total_coverage += item.weight
-                            total_s += float(item.attributes.get('S.reads', 0))
-                            total_s += float(item.attributes.get('S.capped', 0))
-                            total_e += float(item.attributes.get('E.reads', 0))
-                            chrom = self.chrom_array[item.chrom]
-                            if chrom not in object_dict.keys(): object_dict[chrom] = []
-                            object_dict[chrom].append(item)
+                            self.add_mapping_object(current_parent, children, name, int(name=='reference'))
                         
                         current_parent = current_object
                         children = []
-                    elif current_object.transcript_id == current_parent.transcript_id:
+                    elif current_object.transcript_id == last_object.transcript_id and len(children)>0:
                         children.append(current_object)
+                    else: # New transcript from same parent
+                        self.add_mapping_object(current_parent, children, name, int(name=='reference'))
+                        children = [current_object]
+                
+                last_object = current_object
             
-            if current_object.keep and current_object.transcript_id == current_parent.transcript_id and current_object.transcript_id != item.attributes['transcript_id']:
-                item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
-                item.attributes['source'] = name
-                item.attributes['transcript_id'] = current_parent.transcript_id
-                total_coverage += item.weight
-                total_s += float(item.attributes.get('S.reads', 0))
-                total_s += float(item.attributes.get('S.capped', 0))
-                total_e += float(item.attributes.get('E.reads', 0))
-                chrom = self.chrom_array[item.chrom]
-                if chrom not in object_dict.keys(): object_dict[chrom] = []
-                object_dict[chrom].append(item)
+            self.add_mapping_object(current_parent, children, name, int(name=='reference'))
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
@@ -972,6 +961,27 @@ cdef class AnnotationDataset(RNAseqDataset):
             fasta = fu.rc(fasta)
         
         return fasta
+    
+    cpdef void add_mapping_object(self, AnnotationObject parent, list children, str name, int source):
+        """Converts a GTF/GFF collection of AnnotationObjects to a single RNAseqMapping object"""
+        cdef RNAseqMapping item
+        cdef AnnotationObject child
+        cdef str transcript_id
+        transcript_id = children[0].transcript_id
+        for child in children:
+            if child.gene_id != parent.gene_id:return
+            if child.transcript_id != transcript_id:return
+        
+        item = self.anno_to_mapping_object(parent, children, source)
+        item.attributes['source'] = name
+        item.attributes['transcript_id'] = parent.transcript_id
+        total_coverage += item.weight
+        total_s += float(item.attributes.get('S.reads', 0))
+        total_s += float(item.attributes.get('S.capped', 0))
+        total_e += float(item.attributes.get('E.reads', 0))
+        chrom = self.chrom_array[item.chrom]
+        if chrom not in object_dict.keys(): object_dict[chrom] = []
+        object_dict[chrom].append(item)
 
     cdef RNAseqMapping parse_bed_line(self, str line, str source_string):
         cdef RNAseqMapping new_read
