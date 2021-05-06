@@ -629,7 +629,8 @@ gff_defaults = {
     'parent_types':set([
         'mRNA','transcript',
         'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
-        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript']),
+        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
+        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
     'parent_key_transcript':set(['transcript_id']),
     'parent_key_gene':'gene',
     'child_types':set(['exon','pseudogenic_exon']),
