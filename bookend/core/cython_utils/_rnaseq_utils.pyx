@@ -857,7 +857,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         Each key:value pair is a chromosome:position-sorted list of objects."""
         cdef:
             RNAseqMapping item
-            AnnotationObject current_object, current_parent, last_object
+            AnnotationObject current_object, current_parent, last_child
             str file_extension, format, chrom
             dict object_dict, config_dict
             list children
@@ -890,7 +890,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
             current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
             current_object = AnnotationObject('', format, config_dict) # An empty annotation object
-            last_object = current_object
+            last_child = current_object
             children = []
             for line in file:
                 if line[0] == '#':continue
@@ -905,16 +905,17 @@ cdef class AnnotationDataset(RNAseqDataset):
                         
                         current_parent = current_object
                         children = []
-                    elif current_object.transcript_id == last_object.transcript_id and len(children)>0:
-                        children.append(current_object)
-                    else: # New transcript from same parent
-                        coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
-                        total_coverage += coverage
-                        total_s += s
-                        total_e += e
-                        children = [current_object]
-                
-                last_object = current_object
+                    else:
+                        if current_object.transcript_id == last_child.transcript_id and len(children)>0:
+                            children.append(current_object)
+                        else: # New transcript from same parent
+                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+                            total_coverage += coverage
+                            total_s += s
+                            total_e += e
+                            children = [current_object]
+                        
+                        last_child = current_object
             
             coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
             total_coverage += coverage
