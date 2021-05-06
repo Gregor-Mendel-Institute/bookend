@@ -978,8 +978,8 @@ cdef class AnnotationDataset(RNAseqDataset):
         cdef str transcript_id, chrom
         transcript_id = children[0].transcript_id
         for child in children:
-            if child.gene_id != parent.gene_id:return
-            if child.transcript_id != transcript_id:return
+            if child.gene_id != parent.gene_id:return (0., 0., 0.)
+            if child.transcript_id != transcript_id:return (0., 0., 0.)
         
         item = self.anno_to_mapping_object(parent, children, source)
         item.attributes['source'] = name
