@@ -862,7 +862,7 @@ cdef class AnnotationDataset(RNAseqDataset):
             dict object_dict, config_dict
             list children
             int counter
-            float total_coverage, total_s, total_e
+            float total_coverage, total_s, total_e, coverage, s, e
         
         if self.verbose:
             print('Importing {}...'.format(filename))
@@ -898,19 +898,28 @@ cdef class AnnotationDataset(RNAseqDataset):
                 if current_object.keep:
                     if current_object.parent: # Add the old object to object_dict and start a new one
                         if current_parent.parent: # Ignore the first empty annotation object
-                            self.add_mapping_object(current_parent, children, name, int(name=='reference'))
+                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+                            total_coverage += coverage
+                            total_s += s
+                            total_e += e
                         
                         current_parent = current_object
                         children = []
                     elif current_object.transcript_id == last_object.transcript_id and len(children)>0:
                         children.append(current_object)
                     else: # New transcript from same parent
-                        self.add_mapping_object(current_parent, children, name, int(name=='reference'))
+                        coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+                        total_coverage += coverage
+                        total_s += s
+                        total_e += e
                         children = [current_object]
                 
                 last_object = current_object
             
-            self.add_mapping_object(current_parent, children, name, int(name=='reference'))
+            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+            total_coverage += coverage
+            total_s += s
+            total_e += e
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
@@ -962,11 +971,11 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         return fasta
     
-    cpdef void add_mapping_object(self, AnnotationObject parent, list children, str name, int source):
+    cpdef (float, float, float) add_mapping_object(self, AnnotationObject parent, list children, str name, int source, dict object_dict):
         """Converts a GTF/GFF collection of AnnotationObjects to a single RNAseqMapping object"""
         cdef RNAseqMapping item
         cdef AnnotationObject child
-        cdef str transcript_id
+        cdef str transcript_id, chrom
         transcript_id = children[0].transcript_id
         for child in children:
             if child.gene_id != parent.gene_id:return
@@ -975,14 +984,11 @@ cdef class AnnotationDataset(RNAseqDataset):
         item = self.anno_to_mapping_object(parent, children, source)
         item.attributes['source'] = name
         item.attributes['transcript_id'] = parent.transcript_id
-        total_coverage += item.weight
-        total_s += float(item.attributes.get('S.reads', 0))
-        total_s += float(item.attributes.get('S.capped', 0))
-        total_e += float(item.attributes.get('E.reads', 0))
         chrom = self.chrom_array[item.chrom]
         if chrom not in object_dict.keys(): object_dict[chrom] = []
         object_dict[chrom].append(item)
-
+        return (item.weight, float(item.attributes.get('S.reads', 0))+float(item.attributes.get('S.capped', 0)), float(item.attributes.get('E.reads', 0)))
+    
     cdef RNAseqMapping parse_bed_line(self, str line, str source_string):
         cdef RNAseqMapping new_read
         cdef list bed_elements
