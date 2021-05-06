@@ -17,6 +17,10 @@ class GTFconverter:
         self.gtf_child = args['GTF_CHILD']
         self.gff_parent = args['GFF_PARENT']
         self.gff_child = args['GFF_CHILD']
+        self.parent_key_gene = args['PARENT_KEY_GENE']
+        self.child_key_gene = args['CHILD_KEY_GENE']
+        self.parent_key_transcript = args['PARENT_KEY_TRANSCRIPT']
+        self.child_key_transcript = args['CHILD_KEY_TRANSCRIPT']
         self.color_key = args['COLOR_KEY']
         self.name_attr = args['NAME_ATTR']
         if self.color_key is None:
@@ -102,6 +106,14 @@ class GTFconverter:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
+        gtf_defaults['parent_key_transcript'].update(self.parent_key_transcript)
+        gtf_defaults['child_key_transcript'].update(self.child_key_transcript)
+        gff_defaults['parent_key_transcript'].update(self.parent_key_transcript)
+        gff_defaults['child_key_transcript'].update(self.child_key_transcript)
+        gtf_defaults['parent_key_gene'] = self.parent_key_gene
+        gtf_defaults['child_key_gene'] = self.child_key_gene
+        gff_defaults['parent_key_gene'] = self.parent_key_gene
+        gff_defaults['child_key_gene'] = self.child_key_gene    
         return config_defaults, gtf_defaults, gff_defaults
     
     def process_locus(self, locus):

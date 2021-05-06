@@ -619,10 +619,10 @@ cdef class RNAseqDataset():
 ######################################
 gtf_defaults = {
     'parent_types':set(['transcript']),
-    'parent_key_transcript':['transcript_id'],
+    'parent_key_transcript':set(['transcript_id']),
     'parent_key_gene':'gene_id',
     'child_types':set(['exon']),
-    'child_key_transcript':['transcript_id'],
+    'child_key_transcript':set(['transcript_id']),
     'child_key_gene':'gene_id'
 }
 gff_defaults = {
@@ -630,11 +630,11 @@ gff_defaults = {
         'mRNA','transcript',
         'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
         'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript']),
-    'parent_key_transcript':['ID'],
-    'parent_key_gene':'Parent',
+    'parent_key_transcript':set(['transcript_id']),
+    'parent_key_gene':'gene',
     'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':['Parent'],
-    'child_key_gene':'gene_id'
+    'child_key_transcript':set(['transcript_id']),
+    'child_key_gene':'gene'
 }
 gtf_colorcode = {
     '3prime_overlapping_ncRNA': '203,98,130',
@@ -716,7 +716,7 @@ cdef class AnnotationObject:
         cdef:
             set child_types, parent_types
             str gene_id_key, t_id
-            list transcript_id_keys
+            set transcript_id_keys
         
         anno_string = anno_string.rstrip()
         self.format = format
