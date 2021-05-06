@@ -1042,8 +1042,8 @@ cdef class AnnotationDataset(RNAseqDataset):
             ranges += [child.span]
 
         input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1)
-        parent.attributes['transcript_id'] = child.attributes.get('transcript_id', parent.attributes['transcript_id'])
         mapping_object = RNAseqMapping(input_data, parent.attributes)
+        mapping_object.attributes['transcript_id'] = child.transcript_id
         if 'cov' in mapping_object.attributes.keys():
             mapping_object.weight = float(mapping_object.attributes['cov'])
         
