@@ -88,12 +88,12 @@ class AssemblyClassifier:
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
         if self.refid_parent is not None:
-            gff_defaults['parent_key_transcript'] += self.refid_parent
-            gtf_defaults['parent_key_transcript'] += self.refid_parent
+            gff_defaults['parent_key_transcript'].update(self.refid_parent)
+            gtf_defaults['parent_key_transcript'].update(self.refid_parent)
         
         if self.refid_child is not None:
-            gff_defaults['child_key_transcript'] += self.refid_child
-            gtf_defaults['child_key_transcript'] += self.refid_child
+            gff_defaults['child_key_transcript'].update(self.refid_child)
+            gtf_defaults['child_key_transcript'].update(self.refid_child)
         
         return config_defaults, gtf_defaults, gff_defaults
     
