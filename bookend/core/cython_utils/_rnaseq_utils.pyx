@@ -976,18 +976,19 @@ cdef class AnnotationDataset(RNAseqDataset):
         cdef RNAseqMapping item
         cdef AnnotationObject child
         cdef str transcript_id, chrom
-        transcript_id = children[0].transcript_id
-        for child in children:
-            if child.gene_id != parent.gene_id:return (0., 0., 0.)
-            if child.transcript_id != transcript_id:return (0., 0., 0.)
-        
-        item = self.anno_to_mapping_object(parent, children, source)
-        item.attributes['source'] = name
-        item.attributes['transcript_id'] = parent.transcript_id
-        chrom = self.chrom_array[item.chrom]
-        if chrom not in object_dict.keys(): object_dict[chrom] = []
-        object_dict[chrom].append(item)
-        return (item.weight, float(item.attributes.get('S.reads', 0))+float(item.attributes.get('S.capped', 0)), float(item.attributes.get('E.reads', 0)))
+        if len(children) > 0:
+            transcript_id = children[0].transcript_id
+            for child in children:
+                if child.gene_id != parent.gene_id:return (0., 0., 0.)
+                if child.transcript_id != transcript_id:return (0., 0., 0.)
+            
+            item = self.anno_to_mapping_object(parent, children, source)
+            item.attributes['source'] = name
+            item.attributes['transcript_id'] = parent.transcript_id
+            chrom = self.chrom_array[item.chrom]
+            if chrom not in object_dict.keys(): object_dict[chrom] = []
+            object_dict[chrom].append(item)
+            return (item.weight, float(item.attributes.get('S.reads', 0))+float(item.attributes.get('S.capped', 0)), float(item.attributes.get('E.reads', 0)))
     
     cdef RNAseqMapping parse_bed_line(self, str line, str source_string):
         cdef RNAseqMapping new_read
