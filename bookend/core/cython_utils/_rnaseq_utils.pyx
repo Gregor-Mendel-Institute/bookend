@@ -986,6 +986,7 @@ cdef class AnnotationDataset(RNAseqDataset):
             item = self.anno_to_mapping_object(parent, children, source)
             item.attributes['source'] = name
             item.attributes['transcript_id'] = transcript_id
+            item.transcript_id = transcript_id
             chrom = self.chrom_array[item.chrom]
             if chrom not in object_dict.keys(): object_dict[chrom] = []
             object_dict[chrom].append(item)
