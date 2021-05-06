@@ -106,14 +106,22 @@ class GTFconverter:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
-        gtf_defaults['parent_key_transcript'].update(self.parent_key_transcript)
-        gtf_defaults['child_key_transcript'].update(self.child_key_transcript)
-        gff_defaults['parent_key_transcript'].update(self.parent_key_transcript)
-        gff_defaults['child_key_transcript'].update(self.child_key_transcript)
-        gtf_defaults['parent_key_gene'] = self.parent_key_gene
-        gtf_defaults['child_key_gene'] = self.child_key_gene
-        gff_defaults['parent_key_gene'] = self.parent_key_gene
-        gff_defaults['child_key_gene'] = self.child_key_gene    
+        if self.parent_key_transcript is not None:
+            gtf_defaults['parent_key_transcript'].update(self.parent_key_transcript)
+            gff_defaults['parent_key_transcript'].update(self.parent_key_transcript)
+        
+        if self.child_key_transcript is not None:
+            gtf_defaults['child_key_transcript'].update(self.child_key_transcript)
+            gff_defaults['child_key_transcript'].update(self.child_key_transcript)
+        
+        if self.parent_key_gene is not None:
+            gtf_defaults['parent_key_gene'] = self.parent_key_gene
+            gff_defaults['parent_key_gene'] = self.parent_key_gene
+        
+        if self.child_key_gene is not None:
+            gtf_defaults['child_key_gene'] = self.child_key_gene
+            gff_defaults['child_key_gene'] = self.child_key_gene    
+        
         return config_defaults, gtf_defaults, gff_defaults
     
     def process_locus(self, locus):
