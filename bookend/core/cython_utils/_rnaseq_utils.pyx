@@ -906,7 +906,7 @@ cdef class AnnotationDataset(RNAseqDataset):
                         current_parent = current_object
                         children = []
                     else:
-                        if current_object.transcript_id == last_child.transcript_id or len(children) == 0:
+                        if current_object.transcript_id and current_object.transcript_id == last_child.transcript_id or len(children) == 0:
                             children.append(current_object)
                         else: # New transcript from same parent
                             coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
