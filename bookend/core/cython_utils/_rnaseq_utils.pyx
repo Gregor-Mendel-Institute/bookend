@@ -626,7 +626,7 @@ gtf_defaults = {
     'child_key_gene':'gene_id'
 }
 gff_defaults = {
-    'parent_types':set([
+    'parent_types':set([    
         'mRNA','transcript',
         'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
         'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
@@ -871,7 +871,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         total_coverage = 0
         total_s = 0
         total_e = 0
-        object_dict = {k:[] for k in self.chrom_array}
+            
         config_dict = {}
         file_extension = filename.split('.')[-1].upper()
         if file_extension not in ['GTF','GFF3','GFF','BED','ELR']:
@@ -981,7 +981,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         if len(children) > 0:
             transcript_id = children[0].transcript_id
             for child in children:
-                if child.gene_id != parent.gene_id:return (0., 0., 0.)
+                # if child.gene_id != parent.gene_id:return (0., 0., 0.)
                 if child.transcript_id != transcript_id:return (0., 0., 0.)
             
             item = self.anno_to_mapping_object(parent, children, source)
