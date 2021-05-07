@@ -988,7 +988,7 @@ cdef class AnnotationDataset(RNAseqDataset):
                 return (0., 0., 0.)
             
             for child in children:
-                if len(child.gene_id)>0 and child.gene_id != parent.gene_id:return (0., 0., 0.)
+                # if len(child.gene_id)>0 and child.gene_id != parent.gene_id:return (0., 0., 0.)
                 if child.transcript_id == transcript_id:return (0., 0., 0.)
             
             item = self.anno_to_mapping_object(parent, children, source)
