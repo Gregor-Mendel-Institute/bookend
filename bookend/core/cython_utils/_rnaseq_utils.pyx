@@ -655,6 +655,7 @@ gtf_colorcode = {
     'IG_V_pseudogene': '80,80,80', 
     'lincRNA': '56,114,168', 
     'lncRNA': '56,114,168', 
+    'lnc_RNA': '56,114,168', 
     'macro_lncRNA': '6,74,140', 
     'miRNA': '198,95,84', 
     'misc_RNA': '249,185,54', 
