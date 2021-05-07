@@ -27,13 +27,14 @@ class AssemblyClassifier:
             parser.print_help()
             sys.exit(0)
         
-        self.gene_attr = self.args['GENE_ATTR']
+        self.gene_attr = self.args['PARENT_ATTR_GENE']
+        self.gene_attr_child = self.args['CHILD_ATTR_GENE']
         self.gtf_parent = self.args['GFF_PARENT']
         self.gtf_child = self.args['GFF_CHILD']
         self.gff_parent = self.args['GFF_PARENT']
         self.gff_child = self.args['GFF_CHILD']
-        self.refid_parent = self.args['REF_ID_PARENT']
-        self.refid_child = self.args['REF_ID_CHILD']
+        self.refid_parent = self.args['PARENT_ATTR_TRANSCRIPT']
+        self.refid_child = self.args['CHILD_ATTR_TRANSCRIPT']
         self.gene_delim = self.args['GENE_DELIM']
         if self.input_is_valid(self.output): # Check for valid file extension on output name
             self.output_type = self.file_extension(self.output)
@@ -87,6 +88,11 @@ class AssemblyClassifier:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
+        if self.gene_attr is not None:
+            gff_defaults['parent_key_gene'] = self.gene_attr
+        if self.gene_attr_child is not None:
+            gff_defaults['child_key_gene'] = self.gene_attr_child
+        
         if self.refid_parent is not None:
             gff_defaults['parent_key_transcript'].update(self.refid_parent)
             gtf_defaults['parent_key_transcript'].update(self.refid_parent)
