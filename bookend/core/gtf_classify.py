@@ -88,8 +88,11 @@ class AssemblyClassifier:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
-        if self.gene_attr is not None:
+        if self.gene_attr is None:
+            self.gene_attr = gff_defaults['parent_key_gene']
+        else:
             gff_defaults['parent_key_gene'] = self.gene_attr
+        
         if self.gene_attr_child is not None:
             gff_defaults['child_key_gene'] = self.gene_attr_child
         
