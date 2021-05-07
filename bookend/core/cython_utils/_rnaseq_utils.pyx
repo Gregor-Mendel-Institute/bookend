@@ -628,7 +628,7 @@ gtf_defaults = {
 gff_defaults = {
     'parent_types':set([    
         'mRNA','transcript',
-        'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
+        'snoRNA','tRNA','snRNA', 'miRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
         'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
         'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
     'parent_key_transcript':['transcript_id'],
@@ -988,8 +988,8 @@ cdef class AnnotationDataset(RNAseqDataset):
                 return (0., 0., 0.)
             
             for child in children:
-                # if child.gene_id != parent.gene_id:return (0., 0., 0.)
-                if child.transcript_id != transcript_id:return (0., 0., 0.)
+                if child.gene_id != parent.gene_id and child.transcript_id != gene.transcript_id:return (0., 0., 0.)
+                if child.transcript_id == transcript_id:return (0., 0., 0.)
             
             item = self.anno_to_mapping_object(parent, children, source)
             item.attributes['source'] = name
