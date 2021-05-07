@@ -619,10 +619,10 @@ cdef class RNAseqDataset():
 ######################################
 gtf_defaults = {
     'parent_types':set(['transcript']),
-    'parent_key_transcript':set(['transcript_id']),
+    'parent_key_transcript':['transcript_id', 'Name'],
     'parent_key_gene':'gene_id',
     'child_types':set(['exon']),
-    'child_key_transcript':set(['transcript_id']),
+    'child_key_transcript':['transcript_id', 'Parent'],
     'child_key_gene':'gene_id'
 }
 gff_defaults = {
@@ -631,10 +631,10 @@ gff_defaults = {
         'snoRNA','tRNA','snRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
         'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
         'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
-    'parent_key_transcript':set(['transcript_id']),
+    'parent_key_transcript':['transcript_id'],
     'parent_key_gene':'gene',
     'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':set(['transcript_id']),
+    'child_key_transcript':['transcript_id', 'Parent'],
     'child_key_gene':'gene'
 }
 gtf_colorcode = {
@@ -661,19 +661,21 @@ gtf_colorcode = {
     'misc_RNA': '249,185,54', 
     'Mt_rRNA': '0,0,0', 
     'Mt_tRNA': '0,0,0', 
-    'ncRNA': '249,185,54',
+    'mRNA_TE_gene': '120,120,120',
+    'ncRNA': '56,114,168',
     'nonsense_mediated_decay': '180,155,100', 
     'non_stop_decay': '180,155,100', 
     'nontranslating_CDS': '180,155,100',
     'otherRNA': '56,114,168',
     'polymorphic_pseudogene': '80,80,80', 
+    'pseudogenic_transcript': '80,80,80', 
     'pre_miRNA': '198,95,84', 
     'processed_pseudogene': '80,80,80', 
     'processed_transcript': '180,155,100', 
     'primary_transcript': '198,95,84',
     'protein_coding': '49,132,44', 
     'mRNA': '49,132,44', 
-    'transcript': '249,185,54', 
+    'transcript': '0,0,0', 
     'pseudogene': '80,80,80', 
     'retained_intron': '180,155,100', 
     'ribozyme': '249,185,54', 
@@ -718,7 +720,7 @@ cdef class AnnotationObject:
         cdef:
             set child_types, parent_types
             str gene_id_key, t_id
-            set transcript_id_keys
+            list transcript_id_keys
         
         anno_string = anno_string.rstrip()
         self.format = format
@@ -982,6 +984,9 @@ cdef class AnnotationDataset(RNAseqDataset):
         cdef str transcript_id, chrom
         if len(children) > 0:
             transcript_id = children[0].transcript_id
+            if not transcript_id:
+                return (0., 0., 0.)
+            
             for child in children:
                 # if child.gene_id != parent.gene_id:return (0., 0., 0.)
                 if child.transcript_id != transcript_id:return (0., 0., 0.)

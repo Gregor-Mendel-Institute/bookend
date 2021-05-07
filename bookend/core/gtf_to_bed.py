@@ -108,12 +108,12 @@ class GTFconverter:
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
         if self.parent_key_transcript is not None:
-            gtf_defaults['parent_key_transcript'].update(self.parent_key_transcript)
-            gff_defaults['parent_key_transcript'].update(self.parent_key_transcript)
+            gtf_defaults['parent_key_transcript'] += self.parent_key_transcript
+            gff_defaults['parent_key_transcript'] += self.parent_key_transcript
         
         if self.child_key_transcript is not None:
-            gtf_defaults['child_key_transcript'].update(self.child_key_transcript)
-            gff_defaults['child_key_transcript'].update(self.child_key_transcript)
+            gtf_defaults['child_key_transcript'] += self.child_key_transcript
+            gff_defaults['child_key_transcript'] += self.child_key_transcript
         
         if self.parent_key_gene is not None:
             gtf_defaults['parent_key_gene'] = self.parent_key_gene
@@ -133,7 +133,7 @@ class GTFconverter:
                 out_string = mapping_object.write_as_elr()
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
-                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '0,0,0')
+                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80')
                 out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color)
                 out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
