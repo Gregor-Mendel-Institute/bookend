@@ -761,6 +761,7 @@ cdef class AnnotationObject:
                     
                     self.attributes['gene_id'] = self.gene_id
                     self.attributes['transcript_id'] = self.transcript_id
+                    self.attributes['anno_type'] = self.anno_type
                     if self.fields[6] == '+':
                         self.strand = 1
                     elif self.fields[6] == '-':

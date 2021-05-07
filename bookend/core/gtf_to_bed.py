@@ -24,7 +24,8 @@ class GTFconverter:
         self.color_key = args['COLOR_KEY']
         self.name_attr = args['NAME_ATTR']
         if self.color_key is None:
-            self.color_code = {'.':'0,0,0'}
+            self.color_code = ru.gtf_colorcode
+            self.color_key = 'anno_type'
         elif args['COLOR_CODE'] is not None:
             self.color_code = self.parse_color_code(args['COLOR_CODE'])
         else:
