@@ -871,7 +871,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         total_coverage = 0
         total_s = 0
         total_e = 0
-            
+        object_dict = {k:[] for k in self.chrom_array}
         config_dict = {}
         file_extension = filename.split('.')[-1].upper()
         if file_extension not in ['GTF','GFF3','GFF','BED','ELR']:
