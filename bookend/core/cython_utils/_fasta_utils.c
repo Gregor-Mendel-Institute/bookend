@@ -1050,7 +1050,7 @@ struct __pyx_opt_args_12_fasta_utils_collapse_reads {
   int qualmask;
 };
 
-/* "_fasta_utils.pyx":874
+/* "_fasta_utils.pyx":900
  * 
  * # Importing a FASTA file as a genome object
  * cpdef import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True, bint indexed=False):             # <<<<<<<<<<<<<<
@@ -1064,7 +1064,7 @@ struct __pyx_opt_args_12_fasta_utils_import_genome {
   int indexed;
 };
 
-/* "_fasta_utils.pyx":943
+/* "_fasta_utils.pyx":969
  * 
  * 
  * def generate_softbridges(dict genome_dict, int minlen, int maxlen):             # <<<<<<<<<<<<<<
@@ -6249,9 +6249,9 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
   __pyx_ctuple_int__and_int __pyx_t_3;
   __Pyx_memviewslice __pyx_t_4 = { 0, 0, { 0 }, { 0 }, { 0 } };
   int __pyx_t_5;
-  size_t __pyx_t_6;
+  int __pyx_t_6;
   int __pyx_t_7;
-  int __pyx_t_8;
+  size_t __pyx_t_8;
   Py_ssize_t __pyx_t_9;
   int __pyx_t_10;
   Py_ssize_t __pyx_t_11;
@@ -6397,7 +6397,7 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
  *     min_oligomer = 3
  *     i = minmatch             # <<<<<<<<<<<<<<
  *     while i <= q_len:
- *         max_mismatch = int(mm_rate*i)
+ *         max_mismatch = int(mm_rate*min(i,t_len))
  */
   __pyx_v_i = __pyx_v_minmatch;
 
@@ -6405,7 +6405,7 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
  *     min_oligomer = 3
  *     i = minmatch
  *     while i <= q_len:             # <<<<<<<<<<<<<<
- *         max_mismatch = int(mm_rate*i)
+ *         max_mismatch = int(mm_rate*min(i,t_len))
  *         spacer = i-t_len # Calculate whether the trim array is shorter than i
  */
   while (1) {
@@ -6415,15 +6415,22 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
     /* "_fasta_utils.pyx":390
  *     i = minmatch
  *     while i <= q_len:
- *         max_mismatch = int(mm_rate*i)             # <<<<<<<<<<<<<<
+ *         max_mismatch = int(mm_rate*min(i,t_len))             # <<<<<<<<<<<<<<
  *         spacer = i-t_len # Calculate whether the trim array is shorter than i
  *         if spacer > 0:
  */
-    __pyx_v_max_mismatch = ((int)(__pyx_v_mm_rate * __pyx_v_i));
+    __pyx_t_5 = __pyx_v_t_len;
+    __pyx_t_6 = __pyx_v_i;
+    if (((__pyx_t_5 < __pyx_t_6) != 0)) {
+      __pyx_t_7 = __pyx_t_5;
+    } else {
+      __pyx_t_7 = __pyx_t_6;
+    }
+    __pyx_v_max_mismatch = ((int)(__pyx_v_mm_rate * __pyx_t_7));
 
     /* "_fasta_utils.pyx":391
  *     while i <= q_len:
- *         max_mismatch = int(mm_rate*i)
+ *         max_mismatch = int(mm_rate*min(i,t_len))
  *         spacer = i-t_len # Calculate whether the trim array is shorter than i             # <<<<<<<<<<<<<<
  *         if spacer > 0:
  *             a = Q[spacer:i] # Slice the query up to position i
@@ -6431,7 +6438,7 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
     __pyx_v_spacer = (__pyx_v_i - __pyx_v_t_len);
 
     /* "_fasta_utils.pyx":392
- *         max_mismatch = int(mm_rate*i)
+ *         max_mismatch = int(mm_rate*min(i,t_len))
  *         spacer = i-t_len # Calculate whether the trim array is shorter than i
  *         if spacer > 0:             # <<<<<<<<<<<<<<
  *             a = Q[spacer:i] # Slice the query up to position i
@@ -6450,13 +6457,13 @@ static __pyx_ctuple_int__and_int __pyx_f_12_fasta_utils_best_sliding_fit(arrayob
       __pyx_t_4.data = __pyx_v_Q.data;
       __pyx_t_4.memview = __pyx_v_Q.memview;
       __PYX_INC_MEMVIEW(&__pyx_t_4, 0);
-      __pyx_t_5 = -1;
+      __pyx_t_7 = -1;
       if (unlikely(__pyx_memoryview_slice_memviewslice(
     &__pyx_t_4,
     __pyx_v_Q.shape[0], __pyx_v_Q.strides[0], __pyx_v_Q.suboffsets[0],
     0,
     0,
-    &__pyx_t_5,
+    &__pyx_t_7,
     __pyx_v_spacer,
     __pyx_v_i,
     0,
@@ -6474,7 +6481,7 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_a, 1);
       __pyx_t_4.data = NULL;
 
       /* "_fasta_utils.pyx":392
- *         max_mismatch = int(mm_rate*i)
+ *         max_mismatch = int(mm_rate*min(i,t_len))
  *         spacer = i-t_len # Calculate whether the trim array is shorter than i
  *         if spacer > 0:             # <<<<<<<<<<<<<<
  *             a = Q[spacer:i] # Slice the query up to position i
@@ -6494,13 +6501,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_a, 1);
       __pyx_t_4.data = __pyx_v_Q.data;
       __pyx_t_4.memview = __pyx_v_Q.memview;
       __PYX_INC_MEMVIEW(&__pyx_t_4, 0);
-      __pyx_t_5 = -1;
+      __pyx_t_7 = -1;
       if (unlikely(__pyx_memoryview_slice_memviewslice(
     &__pyx_t_4,
     __pyx_v_Q.shape[0], __pyx_v_Q.strides[0], __pyx_v_Q.suboffsets[0],
     0,
     0,
-    &__pyx_t_5,
+    &__pyx_t_7,
     0,
     __pyx_v_i,
     0,
@@ -6529,13 +6536,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_a, 1);
     __pyx_t_4.data = __pyx_v_T.data;
     __pyx_t_4.memview = __pyx_v_T.memview;
     __PYX_INC_MEMVIEW(&__pyx_t_4, 0);
-    __pyx_t_5 = -1;
+    __pyx_t_7 = -1;
     if (unlikely(__pyx_memoryview_slice_memviewslice(
     &__pyx_t_4,
     __pyx_v_T.shape[0], __pyx_v_T.strides[0], __pyx_v_T.suboffsets[0],
     0,
     0,
-    &__pyx_t_5,
+    &__pyx_t_7,
     (-__pyx_v_i),
     0,
     0,
@@ -6568,8 +6575,8 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *         l_b = len(b)
  *         if l_a == l_b:
  */
-    __pyx_t_6 = __Pyx_MemoryView_Len(__pyx_v_a); 
-    __pyx_v_l_a = __pyx_t_6;
+    __pyx_t_8 = __Pyx_MemoryView_Len(__pyx_v_a); 
+    __pyx_v_l_a = __pyx_t_8;
 
     /* "_fasta_utils.pyx":400
  *         ham = -1
@@ -6578,8 +6585,8 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *         if l_a == l_b:
  *             ham = 0
  */
-    __pyx_t_6 = __Pyx_MemoryView_Len(__pyx_v_b); 
-    __pyx_v_l_b = __pyx_t_6;
+    __pyx_t_8 = __Pyx_MemoryView_Len(__pyx_v_b); 
+    __pyx_v_l_b = __pyx_t_8;
 
     /* "_fasta_utils.pyx":401
  *         l_a = len(a)
@@ -6607,10 +6614,10 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                 x = a[j]
  *                 y = b[j]
  */
-      __pyx_t_5 = __pyx_v_l_a;
-      __pyx_t_7 = __pyx_t_5;
-      for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
-        __pyx_v_j = __pyx_t_8;
+      __pyx_t_7 = __pyx_v_l_a;
+      __pyx_t_5 = __pyx_t_7;
+      for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
+        __pyx_v_j = __pyx_t_6;
 
         /* "_fasta_utils.pyx":404
  *             ham = 0
@@ -6738,14 +6745,14 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
       __Pyx_GOTREF(__pyx_t_13);
       __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 412, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_14);
-      __pyx_t_6 = __Pyx_MemoryView_Len(__pyx_v_a); 
-      __pyx_t_15 = __Pyx_PyInt_FromSize_t(__pyx_t_6); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 412, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_MemoryView_Len(__pyx_v_a); 
+      __pyx_t_15 = __Pyx_PyInt_FromSize_t(__pyx_t_8); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 412, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_15);
-      __pyx_t_6 = __Pyx_MemoryView_Len(__pyx_v_b); 
-      __pyx_t_16 = __Pyx_PyInt_FromSize_t(__pyx_t_6); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 412, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_MemoryView_Len(__pyx_v_b); 
+      __pyx_t_16 = __Pyx_PyInt_FromSize_t(__pyx_t_8); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 412, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_16);
       __pyx_t_17 = NULL;
-      __pyx_t_5 = 0;
+      __pyx_t_7 = 0;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_13))) {
         __pyx_t_17 = PyMethod_GET_SELF(__pyx_t_13);
         if (likely(__pyx_t_17)) {
@@ -6753,13 +6760,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
           __Pyx_INCREF(__pyx_t_17);
           __Pyx_INCREF(function);
           __Pyx_DECREF_SET(__pyx_t_13, function);
-          __pyx_t_5 = 1;
+          __pyx_t_7 = 1;
         }
       }
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_13)) {
         PyObject *__pyx_temp[4] = {__pyx_t_17, __pyx_t_14, __pyx_t_15, __pyx_t_16};
-        __pyx_t_12 = __Pyx_PyFunction_FastCall(__pyx_t_13, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 412, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_PyFunction_FastCall(__pyx_t_13, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 412, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -6770,7 +6777,7 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_13)) {
         PyObject *__pyx_temp[4] = {__pyx_t_17, __pyx_t_14, __pyx_t_15, __pyx_t_16};
-        __pyx_t_12 = __Pyx_PyCFunction_FastCall(__pyx_t_13, __pyx_temp+1-__pyx_t_5, 3+__pyx_t_5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 412, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_PyCFunction_FastCall(__pyx_t_13, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 412, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -6779,17 +6786,17 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
       } else
       #endif
       {
-        __pyx_t_18 = PyTuple_New(3+__pyx_t_5); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 412, __pyx_L1_error)
+        __pyx_t_18 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 412, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_18);
         if (__pyx_t_17) {
           __Pyx_GIVEREF(__pyx_t_17); PyTuple_SET_ITEM(__pyx_t_18, 0, __pyx_t_17); __pyx_t_17 = NULL;
         }
         __Pyx_GIVEREF(__pyx_t_14);
-        PyTuple_SET_ITEM(__pyx_t_18, 0+__pyx_t_5, __pyx_t_14);
+        PyTuple_SET_ITEM(__pyx_t_18, 0+__pyx_t_7, __pyx_t_14);
         __Pyx_GIVEREF(__pyx_t_15);
-        PyTuple_SET_ITEM(__pyx_t_18, 1+__pyx_t_5, __pyx_t_15);
+        PyTuple_SET_ITEM(__pyx_t_18, 1+__pyx_t_7, __pyx_t_15);
         __Pyx_GIVEREF(__pyx_t_16);
-        PyTuple_SET_ITEM(__pyx_t_18, 2+__pyx_t_5, __pyx_t_16);
+        PyTuple_SET_ITEM(__pyx_t_18, 2+__pyx_t_7, __pyx_t_16);
         __pyx_t_14 = 0;
         __pyx_t_15 = 0;
         __pyx_t_16 = 0;
@@ -6842,23 +6849,23 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                     return i, ham
  */
       __pyx_t_19 = -1L;
-      __pyx_t_5 = -1;
+      __pyx_t_7 = -1;
       if (__pyx_t_19 < 0) {
         __pyx_t_19 += __pyx_v_a.shape[0];
-        if (unlikely(__pyx_t_19 < 0)) __pyx_t_5 = 0;
-      } else if (unlikely(__pyx_t_19 >= __pyx_v_a.shape[0])) __pyx_t_5 = 0;
-      if (unlikely(__pyx_t_5 != -1)) {
-        __Pyx_RaiseBufferIndexError(__pyx_t_5);
+        if (unlikely(__pyx_t_19 < 0)) __pyx_t_7 = 0;
+      } else if (unlikely(__pyx_t_19 >= __pyx_v_a.shape[0])) __pyx_t_7 = 0;
+      if (unlikely(__pyx_t_7 != -1)) {
+        __Pyx_RaiseBufferIndexError(__pyx_t_7);
         __PYX_ERR(0, 416, __pyx_L1_error)
       }
       __pyx_t_20 = -1L;
-      __pyx_t_5 = -1;
+      __pyx_t_7 = -1;
       if (__pyx_t_20 < 0) {
         __pyx_t_20 += __pyx_v_b.shape[0];
-        if (unlikely(__pyx_t_20 < 0)) __pyx_t_5 = 0;
-      } else if (unlikely(__pyx_t_20 >= __pyx_v_b.shape[0])) __pyx_t_5 = 0;
-      if (unlikely(__pyx_t_5 != -1)) {
-        __Pyx_RaiseBufferIndexError(__pyx_t_5);
+        if (unlikely(__pyx_t_20 < 0)) __pyx_t_7 = 0;
+      } else if (unlikely(__pyx_t_20 >= __pyx_v_b.shape[0])) __pyx_t_7 = 0;
+      if (unlikely(__pyx_t_7 != -1)) {
+        __Pyx_RaiseBufferIndexError(__pyx_t_7);
         __PYX_ERR(0, 416, __pyx_L1_error)
       }
       __pyx_t_2 = ((((*((int *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_19 * __pyx_v_a.strides[0]) ))) & (*((int *) ( /* dim=0 */ (__pyx_v_b.data + __pyx_t_20 * __pyx_v_b.strides[0]) )))) > 0) != 0);
@@ -6922,13 +6929,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                         oligo_counter += 1
  */
           __pyx_t_21 = (-__pyx_v_oligo_counter);
-          __pyx_t_5 = -1;
+          __pyx_t_7 = -1;
           if (__pyx_t_21 < 0) {
             __pyx_t_21 += __pyx_v_a.shape[0];
-            if (unlikely(__pyx_t_21 < 0)) __pyx_t_5 = 0;
-          } else if (unlikely(__pyx_t_21 >= __pyx_v_a.shape[0])) __pyx_t_5 = 0;
-          if (unlikely(__pyx_t_5 != -1)) {
-            __Pyx_RaiseBufferIndexError(__pyx_t_5);
+            if (unlikely(__pyx_t_21 < 0)) __pyx_t_7 = 0;
+          } else if (unlikely(__pyx_t_21 >= __pyx_v_a.shape[0])) __pyx_t_7 = 0;
+          if (unlikely(__pyx_t_7 != -1)) {
+            __Pyx_RaiseBufferIndexError(__pyx_t_7);
             __PYX_ERR(0, 422, __pyx_L1_error)
           }
           __pyx_v_ocheck = (*((int *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_21 * __pyx_v_a.strides[0]) )));
@@ -6969,13 +6976,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                     best_pos = i
  */
             __pyx_t_23 = (-__pyx_v_oligo_counter);
-            __pyx_t_5 = -1;
+            __pyx_t_7 = -1;
             if (__pyx_t_23 < 0) {
               __pyx_t_23 += __pyx_v_a.shape[0];
-              if (unlikely(__pyx_t_23 < 0)) __pyx_t_5 = 0;
-            } else if (unlikely(__pyx_t_23 >= __pyx_v_a.shape[0])) __pyx_t_5 = 0;
-            if (unlikely(__pyx_t_5 != -1)) {
-              __Pyx_RaiseBufferIndexError(__pyx_t_5);
+              if (unlikely(__pyx_t_23 < 0)) __pyx_t_7 = 0;
+            } else if (unlikely(__pyx_t_23 >= __pyx_v_a.shape[0])) __pyx_t_7 = 0;
+            if (unlikely(__pyx_t_7 != -1)) {
+              __Pyx_RaiseBufferIndexError(__pyx_t_7);
               __PYX_ERR(0, 425, __pyx_L1_error)
             }
             __pyx_v_ocheck = (*((int *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_23 * __pyx_v_a.strides[0]) )));
@@ -7007,13 +7014,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                     while ham <= max_mismatch: # Keep track of how many mismatches are encountered during monomer extension
  */
           __pyx_t_24 = __pyx_v_i;
-          __pyx_t_5 = -1;
+          __pyx_t_7 = -1;
           if (__pyx_t_24 < 0) {
             __pyx_t_24 += __pyx_v_Q.shape[0];
-            if (unlikely(__pyx_t_24 < 0)) __pyx_t_5 = 0;
-          } else if (unlikely(__pyx_t_24 >= __pyx_v_Q.shape[0])) __pyx_t_5 = 0;
-          if (unlikely(__pyx_t_5 != -1)) {
-            __Pyx_RaiseBufferIndexError(__pyx_t_5);
+            if (unlikely(__pyx_t_24 < 0)) __pyx_t_7 = 0;
+          } else if (unlikely(__pyx_t_24 >= __pyx_v_Q.shape[0])) __pyx_t_7 = 0;
+          if (unlikely(__pyx_t_7 != -1)) {
+            __Pyx_RaiseBufferIndexError(__pyx_t_7);
             __PYX_ERR(0, 429, __pyx_L1_error)
           }
           __pyx_v_a_i = (*((int *) ( /* dim=0 */ (__pyx_v_Q.data + __pyx_t_24 * __pyx_v_Q.strides[0]) )));
@@ -7182,13 +7189,13 @@ __PYX_XDEC_MEMVIEW(&__pyx_v_b, 1);
  *                     if best_pos > i:
  */
             __pyx_t_25 = __pyx_v_n;
-            __pyx_t_5 = -1;
+            __pyx_t_7 = -1;
             if (__pyx_t_25 < 0) {
               __pyx_t_25 += __pyx_v_Q.shape[0];
-              if (unlikely(__pyx_t_25 < 0)) __pyx_t_5 = 0;
-            } else if (unlikely(__pyx_t_25 >= __pyx_v_Q.shape[0])) __pyx_t_5 = 0;
-            if (unlikely(__pyx_t_5 != -1)) {
-              __Pyx_RaiseBufferIndexError(__pyx_t_5);
+              if (unlikely(__pyx_t_25 < 0)) __pyx_t_7 = 0;
+            } else if (unlikely(__pyx_t_25 >= __pyx_v_Q.shape[0])) __pyx_t_7 = 0;
+            if (unlikely(__pyx_t_7 != -1)) {
+              __Pyx_RaiseBufferIndexError(__pyx_t_7);
               __PYX_ERR(0, 447, __pyx_L1_error)
             }
             __pyx_v_a_i = (*((int *) ( /* dim=0 */ (__pyx_v_Q.data + __pyx_t_25 * __pyx_v_Q.strides[0]) )));
@@ -10103,12 +10110,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   int __pyx_t_8;
   int __pyx_t_9;
   struct __pyx_opt_args_12_fasta_utils_trim_readstring __pyx_t_10;
-  __pyx_ctuple_int__and_int__and_int __pyx_t_11;
-  int __pyx_t_12;
-  struct __pyx_opt_args_12_fasta_utils_collapse_reads __pyx_t_13;
-  Py_ssize_t __pyx_t_14;
-  PyObject *__pyx_t_15 = NULL;
-  PyObject *__pyx_t_16 = NULL;
+  PyObject *__pyx_t_11 = NULL;
+  PyObject *__pyx_t_12 = NULL;
+  __pyx_ctuple_int__and_int__and_int __pyx_t_13;
+  int __pyx_t_14;
+  struct __pyx_opt_args_12_fasta_utils_collapse_reads __pyx_t_15;
+  Py_ssize_t __pyx_t_16;
   PyObject *__pyx_t_17 = NULL;
   PyObject *__pyx_t_18 = NULL;
   PyObject *__pyx_t_19 = NULL;
@@ -10430,7 +10437,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
  *             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)             # <<<<<<<<<<<<<<
  *             if S3ham1 != -1:
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
  */
       __pyx_t_7.__pyx_n = 3;
       __pyx_t_7.monomer = __pyx_v_S3monomer;
@@ -10446,8 +10453,8 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
  *             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
  *             if S3ham1 != -1:             # <<<<<<<<<<<<<<
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
- *                     pos1 = S3pos1
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+ *                     if trimtype1 == 1: # Can be shared with first trim
  */
       __pyx_t_5 = ((__pyx_v_S3ham1 != -1L) != 0);
       if (__pyx_t_5) {
@@ -10455,9 +10462,9 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
         /* "_fasta_utils.pyx":716
  *             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
  *             if S3ham1 != -1:
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match             # <<<<<<<<<<<<<<
- *                     pos1 = S3pos1
- *                     ham1 = S3ham1
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match             # <<<<<<<<<<<<<<
+ *                     if trimtype1 == 1: # Can be shared with first trim
+ *                         pos2 = S3pos1
  */
         __pyx_t_4 = ((__pyx_v_S3pos1 > __pyx_v_pos1) != 0);
         if (!__pyx_t_4) {
@@ -10466,49 +10473,132 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
           goto __pyx_L15_bool_binop_done;
         }
         __pyx_t_4 = ((__pyx_v_S3pos1 == __pyx_v_pos1) != 0);
-        if (__pyx_t_4) {
+        if (!__pyx_t_4) {
+          goto __pyx_L17_next_or;
+        } else {
+        }
+        __pyx_t_4 = ((__pyx_v_S3ham1 < __pyx_v_ham1) != 0);
+        if (!__pyx_t_4) {
         } else {
           __pyx_t_5 = __pyx_t_4;
           goto __pyx_L15_bool_binop_done;
         }
-        __pyx_t_4 = ((__pyx_v_S3ham1 < __pyx_v_ham1) != 0);
+        __pyx_L17_next_or:;
+        __pyx_t_4 = ((__pyx_v_trimtype1 == 1) != 0);
         __pyx_t_5 = __pyx_t_4;
         __pyx_L15_bool_binop_done:;
         if (__pyx_t_5) {
 
           /* "_fasta_utils.pyx":717
  *             if S3ham1 != -1:
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
- *                     pos1 = S3pos1             # <<<<<<<<<<<<<<
- *                     ham1 = S3ham1
- *                     trimtype1 = 2
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+ *                     if trimtype1 == 1: # Can be shared with first trim             # <<<<<<<<<<<<<<
+ *                         pos2 = S3pos1
+ *                         ham2 = S3ham1
  */
-          __pyx_v_pos1 = __pyx_v_S3pos1;
+          __pyx_t_5 = ((__pyx_v_trimtype1 == 1) != 0);
+          if (__pyx_t_5) {
 
-          /* "_fasta_utils.pyx":718
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
- *                     pos1 = S3pos1
- *                     ham1 = S3ham1             # <<<<<<<<<<<<<<
- *                     trimtype1 = 2
+            /* "_fasta_utils.pyx":718
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+ *                     if trimtype1 == 1: # Can be shared with first trim
+ *                         pos2 = S3pos1             # <<<<<<<<<<<<<<
+ *                         ham2 = S3ham1
+ *                         trimtype2 = 2
+ */
+            __pyx_v_pos2 = __pyx_v_S3pos1;
+
+            /* "_fasta_utils.pyx":719
+ *                     if trimtype1 == 1: # Can be shared with first trim
+ *                         pos2 = S3pos1
+ *                         ham2 = S3ham1             # <<<<<<<<<<<<<<
+ *                         trimtype2 = 2
+ *                     else: # Replaces first trim
+ */
+            __pyx_v_ham2 = __pyx_v_S3ham1;
+
+            /* "_fasta_utils.pyx":720
+ *                         pos2 = S3pos1
+ *                         ham2 = S3ham1
+ *                         trimtype2 = 2             # <<<<<<<<<<<<<<
+ *                     else: # Replaces first trim
+ *                         pos1 = S3pos1
+ */
+            __pyx_v_trimtype2 = 2;
+
+            /* "_fasta_utils.pyx":717
+ *             if S3ham1 != -1:
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+ *                     if trimtype1 == 1: # Can be shared with first trim             # <<<<<<<<<<<<<<
+ *                         pos2 = S3pos1
+ *                         ham2 = S3ham1
+ */
+            goto __pyx_L19;
+          }
+
+          /* "_fasta_utils.pyx":722
+ *                         trimtype2 = 2
+ *                     else: # Replaces first trim
+ *                         pos1 = S3pos1             # <<<<<<<<<<<<<<
+ *                         ham1 = S3ham1
+ *                         trimtype1 = 2
+ */
+          /*else*/ {
+            __pyx_v_pos1 = __pyx_v_S3pos1;
+
+            /* "_fasta_utils.pyx":723
+ *                     else: # Replaces first trim
+ *                         pos1 = S3pos1
+ *                         ham1 = S3ham1             # <<<<<<<<<<<<<<
+ *                         trimtype1 = 2
+ *                         pos2 = 0
+ */
+            __pyx_v_ham1 = __pyx_v_S3ham1;
+
+            /* "_fasta_utils.pyx":724
+ *                         pos1 = S3pos1
+ *                         ham1 = S3ham1
+ *                         trimtype1 = 2             # <<<<<<<<<<<<<<
+ *                         pos2 = 0
+ *                         ham2 = -1
+ */
+            __pyx_v_trimtype1 = 2;
+
+            /* "_fasta_utils.pyx":725
+ *                         ham1 = S3ham1
+ *                         trimtype1 = 2
+ *                         pos2 = 0             # <<<<<<<<<<<<<<
+ *                         ham2 = -1
+ *                         trimtype2 = -1
+ */
+            __pyx_v_pos2 = 0;
+
+            /* "_fasta_utils.pyx":726
+ *                         trimtype1 = 2
+ *                         pos2 = 0
+ *                         ham2 = -1             # <<<<<<<<<<<<<<
+ *                         trimtype2 = -1
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
  */
-          __pyx_v_ham1 = __pyx_v_S3ham1;
+            __pyx_v_ham2 = -1;
 
-          /* "_fasta_utils.pyx":719
- *                     pos1 = S3pos1
- *                     ham1 = S3ham1
- *                     trimtype1 = 2             # <<<<<<<<<<<<<<
+            /* "_fasta_utils.pyx":727
+ *                         pos2 = 0
+ *                         ham2 = -1
+ *                         trimtype2 = -1             # <<<<<<<<<<<<<<
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  */
-          __pyx_v_trimtype1 = 2;
+            __pyx_v_trimtype2 = -1;
+          }
+          __pyx_L19:;
 
           /* "_fasta_utils.pyx":716
  *             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
  *             if S3ham1 != -1:
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match             # <<<<<<<<<<<<<<
- *                     pos1 = S3pos1
- *                     ham1 = S3ham1
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match             # <<<<<<<<<<<<<<
+ *                     if trimtype1 == 1: # Can be shared with first trim
+ *                         pos2 = S3pos1
  */
         }
 
@@ -10516,8 +10606,8 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
  *             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
  *             if S3ham1 != -1:             # <<<<<<<<<<<<<<
- *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
- *                     pos1 = S3pos1
+ *                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+ *                     if trimtype1 == 1: # Can be shared with first trim
  */
       }
 
@@ -10530,23 +10620,23 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     }
 
-    /* "_fasta_utils.pyx":720
- *                     ham1 = S3ham1
- *                     trimtype1 = 2
+    /* "_fasta_utils.pyx":728
+ *                         ham2 = -1
+ *                         trimtype2 = -1
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)             # <<<<<<<<<<<<<<
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:
  */
-    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_reverse, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 720, __pyx_L1_error)
+    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_reverse, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 728, __pyx_L1_error)
     __pyx_t_4 = (__pyx_t_5 != 0);
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":721
- *                     trimtype1 = 2
+      /* "_fasta_utils.pyx":729
+ *                         trimtype2 = -1
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)             # <<<<<<<<<<<<<<
  *             if E3ham1 != -1:
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
  */
       __pyx_t_7.__pyx_n = 3;
       __pyx_t_7.monomer = __pyx_v_E3monomer;
@@ -10558,96 +10648,179 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_v_E3pos1 = __pyx_t_9;
       __pyx_v_E3ham1 = __pyx_t_8;
 
-      /* "_fasta_utils.pyx":722
+      /* "_fasta_utils.pyx":730
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:             # <<<<<<<<<<<<<<
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
- *                     pos1 = E3pos1
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+ *                     if trimtype1 == 0: # Can be shared with first trim
  */
       __pyx_t_4 = ((__pyx_v_E3ham1 != -1L) != 0);
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":723
+        /* "_fasta_utils.pyx":731
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match             # <<<<<<<<<<<<<<
- *                     pos1 = E3pos1
- *                     ham1 = E3ham1
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match             # <<<<<<<<<<<<<<
+ *                     if trimtype1 == 0: # Can be shared with first trim
+ *                         pos2 = E3pos1
  */
         __pyx_t_5 = ((__pyx_v_E3pos1 > __pyx_v_pos1) != 0);
         if (!__pyx_t_5) {
         } else {
           __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L21_bool_binop_done;
+          goto __pyx_L23_bool_binop_done;
         }
         __pyx_t_5 = ((__pyx_v_E3pos1 == __pyx_v_pos1) != 0);
-        if (__pyx_t_5) {
+        if (!__pyx_t_5) {
+          goto __pyx_L25_next_or;
         } else {
-          __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L21_bool_binop_done;
         }
         __pyx_t_5 = ((__pyx_v_E3ham1 < __pyx_v_ham1) != 0);
+        if (!__pyx_t_5) {
+        } else {
+          __pyx_t_4 = __pyx_t_5;
+          goto __pyx_L23_bool_binop_done;
+        }
+        __pyx_L25_next_or:;
+        __pyx_t_5 = ((__pyx_v_trimtype1 == 0) != 0);
         __pyx_t_4 = __pyx_t_5;
-        __pyx_L21_bool_binop_done:;
+        __pyx_L23_bool_binop_done:;
         if (__pyx_t_4) {
 
-          /* "_fasta_utils.pyx":724
+          /* "_fasta_utils.pyx":732
  *             if E3ham1 != -1:
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
- *                     pos1 = E3pos1             # <<<<<<<<<<<<<<
- *                     ham1 = E3ham1
- *                     trimtype1 = 3
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+ *                     if trimtype1 == 0: # Can be shared with first trim             # <<<<<<<<<<<<<<
+ *                         pos2 = E3pos1
+ *                         ham2 = E3ham1
  */
-          __pyx_v_pos1 = __pyx_v_E3pos1;
+          __pyx_t_4 = ((__pyx_v_trimtype1 == 0) != 0);
+          if (__pyx_t_4) {
 
-          /* "_fasta_utils.pyx":725
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
- *                     pos1 = E3pos1
- *                     ham1 = E3ham1             # <<<<<<<<<<<<<<
- *                     trimtype1 = 3
+            /* "_fasta_utils.pyx":733
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+ *                     if trimtype1 == 0: # Can be shared with first trim
+ *                         pos2 = E3pos1             # <<<<<<<<<<<<<<
+ *                         ham2 = E3ham1
+ *                         trimtype2 = 3
+ */
+            __pyx_v_pos2 = __pyx_v_E3pos1;
+
+            /* "_fasta_utils.pyx":734
+ *                     if trimtype1 == 0: # Can be shared with first trim
+ *                         pos2 = E3pos1
+ *                         ham2 = E3ham1             # <<<<<<<<<<<<<<
+ *                         trimtype2 = 3
+ *                     else: # Replaces first trim
+ */
+            __pyx_v_ham2 = __pyx_v_E3ham1;
+
+            /* "_fasta_utils.pyx":735
+ *                         pos2 = E3pos1
+ *                         ham2 = E3ham1
+ *                         trimtype2 = 3             # <<<<<<<<<<<<<<
+ *                     else: # Replaces first trim
+ *                         pos1 = E3pos1
+ */
+            __pyx_v_trimtype2 = 3;
+
+            /* "_fasta_utils.pyx":732
+ *             if E3ham1 != -1:
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+ *                     if trimtype1 == 0: # Can be shared with first trim             # <<<<<<<<<<<<<<
+ *                         pos2 = E3pos1
+ *                         ham2 = E3ham1
+ */
+            goto __pyx_L27;
+          }
+
+          /* "_fasta_utils.pyx":737
+ *                         trimtype2 = 3
+ *                     else: # Replaces first trim
+ *                         pos1 = E3pos1             # <<<<<<<<<<<<<<
+ *                         ham1 = E3ham1
+ *                         trimtype1 = 3
+ */
+          /*else*/ {
+            __pyx_v_pos1 = __pyx_v_E3pos1;
+
+            /* "_fasta_utils.pyx":738
+ *                     else: # Replaces first trim
+ *                         pos1 = E3pos1
+ *                         ham1 = E3ham1             # <<<<<<<<<<<<<<
+ *                         trimtype1 = 3
+ *                         pos2 = 0
+ */
+            __pyx_v_ham1 = __pyx_v_E3ham1;
+
+            /* "_fasta_utils.pyx":739
+ *                         pos1 = E3pos1
+ *                         ham1 = E3ham1
+ *                         trimtype1 = 3             # <<<<<<<<<<<<<<
+ *                         pos2 = 0
+ *                         ham2 = -1
+ */
+            __pyx_v_trimtype1 = 3;
+
+            /* "_fasta_utils.pyx":740
+ *                         ham1 = E3ham1
+ *                         trimtype1 = 3
+ *                         pos2 = 0             # <<<<<<<<<<<<<<
+ *                         ham2 = -1
+ *                         trimtype2 = -1
+ */
+            __pyx_v_pos2 = 0;
+
+            /* "_fasta_utils.pyx":741
+ *                         trimtype1 = 3
+ *                         pos2 = 0
+ *                         ham2 = -1             # <<<<<<<<<<<<<<
+ *                         trimtype2 = -1
  * 
  */
-          __pyx_v_ham1 = __pyx_v_E3ham1;
+            __pyx_v_ham2 = -1;
 
-          /* "_fasta_utils.pyx":726
- *                     pos1 = E3pos1
- *                     ham1 = E3ham1
- *                     trimtype1 = 3             # <<<<<<<<<<<<<<
+            /* "_fasta_utils.pyx":742
+ *                         pos2 = 0
+ *                         ham2 = -1
+ *                         trimtype2 = -1             # <<<<<<<<<<<<<<
  * 
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
  */
-          __pyx_v_trimtype1 = 3;
+            __pyx_v_trimtype2 = -1;
+          }
+          __pyx_L27:;
 
-          /* "_fasta_utils.pyx":723
+          /* "_fasta_utils.pyx":731
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match             # <<<<<<<<<<<<<<
- *                     pos1 = E3pos1
- *                     ham1 = E3ham1
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match             # <<<<<<<<<<<<<<
+ *                     if trimtype1 == 0: # Can be shared with first trim
+ *                         pos2 = E3pos1
  */
         }
 
-        /* "_fasta_utils.pyx":722
+        /* "_fasta_utils.pyx":730
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:             # <<<<<<<<<<<<<<
- *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
- *                     pos1 = E3pos1
+ *                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+ *                     if trimtype1 == 0: # Can be shared with first trim
  */
       }
 
-      /* "_fasta_utils.pyx":720
- *                     ham1 = S3ham1
- *                     trimtype1 = 2
+      /* "_fasta_utils.pyx":728
+ *                         ham2 = -1
+ *                         trimtype2 = -1
  *         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)             # <<<<<<<<<<<<<<
  *             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
  *             if E3ham1 != -1:
  */
     }
 
-    /* "_fasta_utils.pyx":728
- *                     trimtype1 = 3
+    /* "_fasta_utils.pyx":744
+ *                         trimtype2 = -1
  * 
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)             # <<<<<<<<<<<<<<
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
@@ -10655,12 +10828,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 0;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 728, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 744, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_trim1 = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":729
+    /* "_fasta_utils.pyx":745
  * 
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)             # <<<<<<<<<<<<<<
@@ -10669,86 +10842,242 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 1;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 729, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_qtrm1 = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":730
+    /* "_fasta_utils.pyx":746
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
  *         label1 = get_label(mate1, pos1, trimtype1)             # <<<<<<<<<<<<<<
  *         flipped1 = is_flipped(trimtype1)
- *         if len(trim1) < minlen: # trim1 length fail
+ *         if trimtype2 != -1: # A matching trim was found
  */
-    __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 730, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 746, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_label1 = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":731
+    /* "_fasta_utils.pyx":747
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
  *         label1 = get_label(mate1, pos1, trimtype1)
  *         flipped1 = is_flipped(trimtype1)             # <<<<<<<<<<<<<<
- *         if len(trim1) < minlen: # trim1 length fail
- *             return('', '', None, None, label1) # Return empty read with label
+ *         if trimtype2 != -1: # A matching trim was found
+ *             if trimtype1 == 0: # S5 + E3 trim
  */
     __pyx_v_flipped1 = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtype1);
 
-    /* "_fasta_utils.pyx":732
+    /* "_fasta_utils.pyx":748
  *         label1 = get_label(mate1, pos1, trimtype1)
  *         flipped1 = is_flipped(trimtype1)
+ *         if trimtype2 != -1: # A matching trim was found             # <<<<<<<<<<<<<<
+ *             if trimtype1 == 0: # S5 + E3 trim
+ *                 trim1 = trim1[:-pos2]
+ */
+    __pyx_t_4 = ((__pyx_v_trimtype2 != -1L) != 0);
+    if (__pyx_t_4) {
+
+      /* "_fasta_utils.pyx":749
+ *         flipped1 = is_flipped(trimtype1)
+ *         if trimtype2 != -1: # A matching trim was found
+ *             if trimtype1 == 0: # S5 + E3 trim             # <<<<<<<<<<<<<<
+ *                 trim1 = trim1[:-pos2]
+ *                 qtrm1 = qtrm1[:-pos2]
+ */
+      switch (__pyx_v_trimtype1) {
+        case 0:
+
+        /* "_fasta_utils.pyx":750
+ *         if trimtype2 != -1: # A matching trim was found
+ *             if trimtype1 == 0: # S5 + E3 trim
+ *                 trim1 = trim1[:-pos2]             # <<<<<<<<<<<<<<
+ *                 qtrm1 = qtrm1[:-pos2]
+ *                 label1 = label1+'E'+str(pos2)
+ */
+        if (unlikely(__pyx_v_trim1 == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 750, __pyx_L1_error)
+        }
+        __pyx_t_1 = __Pyx_PyUnicode_Substring(__pyx_v_trim1, 0, (-__pyx_v_pos2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 750, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_1));
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":751
+ *             if trimtype1 == 0: # S5 + E3 trim
+ *                 trim1 = trim1[:-pos2]
+ *                 qtrm1 = qtrm1[:-pos2]             # <<<<<<<<<<<<<<
+ *                 label1 = label1+'E'+str(pos2)
+ *             elif trimtype1 == 1: # E5 + S3 trim
+ */
+        if (unlikely(__pyx_v_qtrm1 == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 751, __pyx_L1_error)
+        }
+        __pyx_t_1 = __Pyx_PyUnicode_Substring(__pyx_v_qtrm1, 0, (-__pyx_v_pos2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 751, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_1));
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":752
+ *                 trim1 = trim1[:-pos2]
+ *                 qtrm1 = qtrm1[:-pos2]
+ *                 label1 = label1+'E'+str(pos2)             # <<<<<<<<<<<<<<
+ *             elif trimtype1 == 1: # E5 + S3 trim
+ *                 trim1 = trim1[pos2:]
+ */
+        __pyx_t_1 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_label1, __pyx_n_u_E); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 752, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_11 = __Pyx_PyInt_From_int(__pyx_v_pos2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 752, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __pyx_t_12 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 752, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        __pyx_t_11 = __Pyx_PyUnicode_Concat(__pyx_t_1, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 752, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_11));
+        __pyx_t_11 = 0;
+
+        /* "_fasta_utils.pyx":749
+ *         flipped1 = is_flipped(trimtype1)
+ *         if trimtype2 != -1: # A matching trim was found
+ *             if trimtype1 == 0: # S5 + E3 trim             # <<<<<<<<<<<<<<
+ *                 trim1 = trim1[:-pos2]
+ *                 qtrm1 = qtrm1[:-pos2]
+ */
+        break;
+        case 1:
+
+        /* "_fasta_utils.pyx":754
+ *                 label1 = label1+'E'+str(pos2)
+ *             elif trimtype1 == 1: # E5 + S3 trim
+ *                 trim1 = trim1[pos2:]             # <<<<<<<<<<<<<<
+ *                 qtrm1 = qtrm1[pos2:]
+ *                 label1 = 'S'+str(pos2)+label1
+ */
+        if (unlikely(__pyx_v_trim1 == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 754, __pyx_L1_error)
+        }
+        __pyx_t_11 = __Pyx_PyUnicode_Substring(__pyx_v_trim1, __pyx_v_pos2, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 754, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_11));
+        __pyx_t_11 = 0;
+
+        /* "_fasta_utils.pyx":755
+ *             elif trimtype1 == 1: # E5 + S3 trim
+ *                 trim1 = trim1[pos2:]
+ *                 qtrm1 = qtrm1[pos2:]             # <<<<<<<<<<<<<<
+ *                 label1 = 'S'+str(pos2)+label1
+ * 
+ */
+        if (unlikely(__pyx_v_qtrm1 == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 755, __pyx_L1_error)
+        }
+        __pyx_t_11 = __Pyx_PyUnicode_Substring(__pyx_v_qtrm1, __pyx_v_pos2, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 755, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_11));
+        __pyx_t_11 = 0;
+
+        /* "_fasta_utils.pyx":756
+ *                 trim1 = trim1[pos2:]
+ *                 qtrm1 = qtrm1[pos2:]
+ *                 label1 = 'S'+str(pos2)+label1             # <<<<<<<<<<<<<<
+ * 
+ *         if len(trim1) < minlen: # trim1 length fail
+ */
+        __pyx_t_11 = __Pyx_PyInt_From_int(__pyx_v_pos2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 756, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __pyx_t_12 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 756, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        __pyx_t_11 = __Pyx_PyUnicode_Concat(__pyx_n_u_S, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 756, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __pyx_t_12 = __Pyx_PyUnicode_ConcatSafe(__pyx_t_11, __pyx_v_label1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 756, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_12));
+        __pyx_t_12 = 0;
+
+        /* "_fasta_utils.pyx":753
+ *                 qtrm1 = qtrm1[:-pos2]
+ *                 label1 = label1+'E'+str(pos2)
+ *             elif trimtype1 == 1: # E5 + S3 trim             # <<<<<<<<<<<<<<
+ *                 trim1 = trim1[pos2:]
+ *                 qtrm1 = qtrm1[pos2:]
+ */
+        break;
+        default: break;
+      }
+
+      /* "_fasta_utils.pyx":748
+ *         label1 = get_label(mate1, pos1, trimtype1)
+ *         flipped1 = is_flipped(trimtype1)
+ *         if trimtype2 != -1: # A matching trim was found             # <<<<<<<<<<<<<<
+ *             if trimtype1 == 0: # S5 + E3 trim
+ *                 trim1 = trim1[:-pos2]
+ */
+    }
+
+    /* "_fasta_utils.pyx":758
+ *                 label1 = 'S'+str(pos2)+label1
+ * 
  *         if len(trim1) < minlen: # trim1 length fail             # <<<<<<<<<<<<<<
  *             return('', '', None, None, label1) # Return empty read with label
  *         else:
  */
     if (unlikely(__pyx_v_trim1 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 732, __pyx_L1_error)
+      __PYX_ERR(0, 758, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 732, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 758, __pyx_L1_error)
     __pyx_t_4 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":733
- *         flipped1 = is_flipped(trimtype1)
+      /* "_fasta_utils.pyx":759
+ * 
  *         if len(trim1) < minlen: # trim1 length fail
  *             return('', '', None, None, label1) # Return empty read with label             # <<<<<<<<<<<<<<
  *         else:
  *             qualscore1 = quality_score(qtrm1)
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 733, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 759, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_12);
       __Pyx_INCREF(__pyx_kp_u_);
       __Pyx_GIVEREF(__pyx_kp_u_);
-      PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_);
+      PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_kp_u_);
       __Pyx_INCREF(__pyx_kp_u_);
       __Pyx_GIVEREF(__pyx_kp_u_);
-      PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u_);
+      PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_kp_u_);
       __Pyx_INCREF(Py_None);
       __Pyx_GIVEREF(Py_None);
-      PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
+      PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
       __Pyx_INCREF(Py_None);
       __Pyx_GIVEREF(Py_None);
-      PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
+      PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
       __Pyx_INCREF(__pyx_v_label1);
       __Pyx_GIVEREF(__pyx_v_label1);
-      PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
-      __pyx_r = __pyx_t_1;
-      __pyx_t_1 = 0;
+      PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+      __pyx_r = __pyx_t_12;
+      __pyx_t_12 = 0;
       goto __pyx_L0;
 
-      /* "_fasta_utils.pyx":732
- *         label1 = get_label(mate1, pos1, trimtype1)
- *         flipped1 = is_flipped(trimtype1)
+      /* "_fasta_utils.pyx":758
+ *                 label1 = 'S'+str(pos2)+label1
+ * 
  *         if len(trim1) < minlen: # trim1 length fail             # <<<<<<<<<<<<<<
  *             return('', '', None, None, label1) # Return empty read with label
  *         else:
  */
     }
 
-    /* "_fasta_utils.pyx":735
+    /* "_fasta_utils.pyx":761
  *             return('', '', None, None, label1) # Return empty read with label
  *         else:
  *             qualscore1 = quality_score(qtrm1)             # <<<<<<<<<<<<<<
@@ -10758,7 +11087,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
     /*else*/ {
       __pyx_v_qualscore1 = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm1, 0);
 
-      /* "_fasta_utils.pyx":736
+      /* "_fasta_utils.pyx":762
  *         else:
  *             qualscore1 = quality_score(qtrm1)
  *             if qualscore1 < minqual: # trim1 quality fail             # <<<<<<<<<<<<<<
@@ -10768,7 +11097,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_t_4 = ((__pyx_v_qualscore1 < __pyx_v_minqual) != 0);
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":737
+        /* "_fasta_utils.pyx":763
  *             qualscore1 = quality_score(qtrm1)
  *             if qualscore1 < minqual: # trim1 quality fail
  *                 return('', '', None, None, label1) # Return empty read with NO label             # <<<<<<<<<<<<<<
@@ -10776,28 +11105,28 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         return (trim1, qtrm1, None, None, label1) # Checks passed, return trimmed read
  */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 737, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 763, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
         __Pyx_INCREF(__pyx_kp_u_);
         __Pyx_GIVEREF(__pyx_kp_u_);
-        PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_);
+        PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_kp_u_);
         __Pyx_INCREF(__pyx_kp_u_);
         __Pyx_GIVEREF(__pyx_kp_u_);
-        PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u_);
+        PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_kp_u_);
         __Pyx_INCREF(Py_None);
         __Pyx_GIVEREF(Py_None);
-        PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
+        PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
         __Pyx_INCREF(Py_None);
         __Pyx_GIVEREF(Py_None);
-        PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
+        PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
         __Pyx_INCREF(__pyx_v_label1);
         __Pyx_GIVEREF(__pyx_v_label1);
-        PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
-        __pyx_r = __pyx_t_1;
-        __pyx_t_1 = 0;
+        PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+        __pyx_r = __pyx_t_12;
+        __pyx_t_12 = 0;
         goto __pyx_L0;
 
-        /* "_fasta_utils.pyx":736
+        /* "_fasta_utils.pyx":762
  *         else:
  *             qualscore1 = quality_score(qtrm1)
  *             if qualscore1 < minqual: # trim1 quality fail             # <<<<<<<<<<<<<<
@@ -10807,7 +11136,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       }
     }
 
-    /* "_fasta_utils.pyx":739
+    /* "_fasta_utils.pyx":765
  *                 return('', '', None, None, label1) # Return empty read with NO label
  * 
  *         return (trim1, qtrm1, None, None, label1) # Checks passed, return trimmed read             # <<<<<<<<<<<<<<
@@ -10815,25 +11144,25 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         # (3) Calculate 2 possible forward trims on mate2
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 739, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 765, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
     __Pyx_INCREF(__pyx_v_trim1);
     __Pyx_GIVEREF(__pyx_v_trim1);
-    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_trim1);
+    PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_trim1);
     __Pyx_INCREF(__pyx_v_qtrm1);
     __Pyx_GIVEREF(__pyx_v_qtrm1);
-    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm1);
+    PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrm1);
     __Pyx_INCREF(Py_None);
     __Pyx_GIVEREF(Py_None);
-    PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
+    PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
     __Pyx_INCREF(Py_None);
     __Pyx_GIVEREF(Py_None);
-    PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
+    PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
     __Pyx_INCREF(__pyx_v_label1);
     __Pyx_GIVEREF(__pyx_v_label1);
-    PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
-    __pyx_r = __pyx_t_1;
-    __pyx_t_1 = 0;
+    PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+    __pyx_r = __pyx_t_12;
+    __pyx_t_12 = 0;
     goto __pyx_L0;
 
     /* "_fasta_utils.pyx":710
@@ -10845,7 +11174,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "_fasta_utils.pyx":742
+  /* "_fasta_utils.pyx":768
  *     else: # PAIRED-END: mate2 exists, find the best mate2 trim
  *         # (3) Calculate 2 possible forward trims on mate2
  *         pos2 = 0             # <<<<<<<<<<<<<<
@@ -10855,7 +11184,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   /*else*/ {
     __pyx_v_pos2 = 0;
 
-    /* "_fasta_utils.pyx":743
+    /* "_fasta_utils.pyx":769
  *         # (3) Calculate 2 possible forward trims on mate2
  *         pos2 = 0
  *         ham2 = len(mate2array)             # <<<<<<<<<<<<<<
@@ -10864,12 +11193,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     if (unlikely(((PyObject *)__pyx_v_mate2array) == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 743, __pyx_L1_error)
+      __PYX_ERR(0, 769, __pyx_L1_error)
     }
-    __pyx_t_3 = Py_SIZE(((PyObject *)__pyx_v_mate2array)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 743, __pyx_L1_error)
+    __pyx_t_3 = Py_SIZE(((PyObject *)__pyx_v_mate2array)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 769, __pyx_L1_error)
     __pyx_v_ham2 = __pyx_t_3;
 
-    /* "_fasta_utils.pyx":744
+    /* "_fasta_utils.pyx":770
  *         pos2 = 0
  *         ham2 = len(mate2array)
  *         trimtype2 = -1             # <<<<<<<<<<<<<<
@@ -10878,18 +11207,18 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_v_trimtype2 = -1;
 
-    /* "_fasta_utils.pyx":745
+    /* "_fasta_utils.pyx":771
  *         ham2 = len(mate2array)
  *         trimtype2 = -1
  *         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)             # <<<<<<<<<<<<<<
  *             S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)
  *             if S5ham2 != -1: # A match was found
  */
-    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_forward, Py_NE)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 745, __pyx_L1_error)
+    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_forward, Py_NE)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 771, __pyx_L1_error)
     __pyx_t_5 = (__pyx_t_4 != 0);
     if (__pyx_t_5) {
 
-      /* "_fasta_utils.pyx":746
+      /* "_fasta_utils.pyx":772
  *         trimtype2 = -1
  *         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)
  *             S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)             # <<<<<<<<<<<<<<
@@ -10906,7 +11235,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_v_S5pos2 = __pyx_t_8;
       __pyx_v_S5ham2 = __pyx_t_9;
 
-      /* "_fasta_utils.pyx":747
+      /* "_fasta_utils.pyx":773
  *         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)
  *             S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)
  *             if S5ham2 != -1: # A match was found             # <<<<<<<<<<<<<<
@@ -10916,7 +11245,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_t_5 = ((__pyx_v_S5ham2 != -1L) != 0);
       if (__pyx_t_5) {
 
-        /* "_fasta_utils.pyx":748
+        /* "_fasta_utils.pyx":774
  *             S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)
  *             if S5ham2 != -1: # A match was found
  *                 pos2 = S5pos2             # <<<<<<<<<<<<<<
@@ -10925,7 +11254,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_v_pos2 = __pyx_v_S5pos2;
 
-        /* "_fasta_utils.pyx":749
+        /* "_fasta_utils.pyx":775
  *             if S5ham2 != -1: # A match was found
  *                 pos2 = S5pos2
  *                 ham2 = S5ham2             # <<<<<<<<<<<<<<
@@ -10934,7 +11263,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_v_ham2 = __pyx_v_S5ham2;
 
-        /* "_fasta_utils.pyx":750
+        /* "_fasta_utils.pyx":776
  *                 pos2 = S5pos2
  *                 ham2 = S5ham2
  *                 trimtype2 = 0             # <<<<<<<<<<<<<<
@@ -10943,7 +11272,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_v_trimtype2 = 0;
 
-        /* "_fasta_utils.pyx":747
+        /* "_fasta_utils.pyx":773
  *         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)
  *             S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)
  *             if S5ham2 != -1: # A match was found             # <<<<<<<<<<<<<<
@@ -10952,7 +11281,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
       }
 
-      /* "_fasta_utils.pyx":745
+      /* "_fasta_utils.pyx":771
  *         ham2 = len(mate2array)
  *         trimtype2 = -1
  *         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)             # <<<<<<<<<<<<<<
@@ -10961,18 +11290,18 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     }
 
-    /* "_fasta_utils.pyx":752
+    /* "_fasta_utils.pyx":778
  *                 trimtype2 = 0
  * 
  *         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)             # <<<<<<<<<<<<<<
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
  *             if E5ham2 != -1:
  */
-    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_reverse, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 752, __pyx_L1_error)
+    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_strand, __pyx_n_u_reverse, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 778, __pyx_L1_error)
     __pyx_t_4 = (__pyx_t_5 != 0);
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":753
+      /* "_fasta_utils.pyx":779
  * 
  *         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)             # <<<<<<<<<<<<<<
@@ -10989,7 +11318,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_v_E5pos2 = __pyx_t_9;
       __pyx_v_E5ham2 = __pyx_t_8;
 
-      /* "_fasta_utils.pyx":754
+      /* "_fasta_utils.pyx":780
  *         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
  *             if E5ham2 != -1:             # <<<<<<<<<<<<<<
@@ -10999,7 +11328,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_t_4 = ((__pyx_v_E5ham2 != -1L) != 0);
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":755
+        /* "_fasta_utils.pyx":781
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
  *             if E5ham2 != -1:
  *                 if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match             # <<<<<<<<<<<<<<
@@ -11010,20 +11339,20 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
         if (!__pyx_t_5) {
         } else {
           __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L31_bool_binop_done;
+          goto __pyx_L36_bool_binop_done;
         }
         __pyx_t_5 = ((__pyx_v_E5pos2 == __pyx_v_pos2) != 0);
         if (__pyx_t_5) {
         } else {
           __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L31_bool_binop_done;
+          goto __pyx_L36_bool_binop_done;
         }
         __pyx_t_5 = ((__pyx_v_E5ham2 < __pyx_v_ham2) != 0);
         __pyx_t_4 = __pyx_t_5;
-        __pyx_L31_bool_binop_done:;
+        __pyx_L36_bool_binop_done:;
         if (__pyx_t_4) {
 
-          /* "_fasta_utils.pyx":756
+          /* "_fasta_utils.pyx":782
  *             if E5ham2 != -1:
  *                 if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match
  *                     pos2 = E5pos2             # <<<<<<<<<<<<<<
@@ -11032,7 +11361,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
           __pyx_v_pos2 = __pyx_v_E5pos2;
 
-          /* "_fasta_utils.pyx":757
+          /* "_fasta_utils.pyx":783
  *                 if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match
  *                     pos2 = E5pos2
  *                     ham2 = E5ham2             # <<<<<<<<<<<<<<
@@ -11041,7 +11370,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
           __pyx_v_ham2 = __pyx_v_E5ham2;
 
-          /* "_fasta_utils.pyx":758
+          /* "_fasta_utils.pyx":784
  *                     pos2 = E5pos2
  *                     ham2 = E5ham2
  *                     trimtype2 = 1             # <<<<<<<<<<<<<<
@@ -11050,7 +11379,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
           __pyx_v_trimtype2 = 1;
 
-          /* "_fasta_utils.pyx":755
+          /* "_fasta_utils.pyx":781
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
  *             if E5ham2 != -1:
  *                 if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match             # <<<<<<<<<<<<<<
@@ -11059,7 +11388,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         }
 
-        /* "_fasta_utils.pyx":754
+        /* "_fasta_utils.pyx":780
  *         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
  *             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
  *             if E5ham2 != -1:             # <<<<<<<<<<<<<<
@@ -11068,7 +11397,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
       }
 
-      /* "_fasta_utils.pyx":752
+      /* "_fasta_utils.pyx":778
  *                 trimtype2 = 0
  * 
  *         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)             # <<<<<<<<<<<<<<
@@ -11077,7 +11406,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     }
 
-    /* "_fasta_utils.pyx":761
+    /* "_fasta_utils.pyx":787
  * 
  *         # Generate the trimmmed sequences that represent the best match for mate1 and mate2
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)             # <<<<<<<<<<<<<<
@@ -11086,12 +11415,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 0;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 761, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_trim1 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 787, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_trim1 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":762
+    /* "_fasta_utils.pyx":788
  *         # Generate the trimmmed sequences that represent the best match for mate1 and mate2
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)             # <<<<<<<<<<<<<<
@@ -11100,24 +11429,24 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 1;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 762, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_qtrm1 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_pos1, __pyx_v_trimtype1, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 788, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_qtrm1 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":763
+    /* "_fasta_utils.pyx":789
  *         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
  *         label1 = get_label(mate1, pos1, trimtype1)             # <<<<<<<<<<<<<<
  *         flipped1 = is_flipped(trimtype1)
  * 
  */
-    __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 763, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_label1 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_pos1, __pyx_v_trimtype1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 789, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_label1 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":764
+    /* "_fasta_utils.pyx":790
  *         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
  *         label1 = get_label(mate1, pos1, trimtype1)
  *         flipped1 = is_flipped(trimtype1)             # <<<<<<<<<<<<<<
@@ -11126,7 +11455,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_v_flipped1 = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtype1);
 
-    /* "_fasta_utils.pyx":766
+    /* "_fasta_utils.pyx":792
  *         flipped1 = is_flipped(trimtype1)
  * 
  *         trim2 = trim_readstring(mate2, pos2, trimtype2, qual=False)             # <<<<<<<<<<<<<<
@@ -11135,12 +11464,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 0;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate2, __pyx_v_pos2, __pyx_v_trimtype2, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 766, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_trim2 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate2, __pyx_v_pos2, __pyx_v_trimtype2, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 792, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_trim2 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":767
+    /* "_fasta_utils.pyx":793
  * 
  *         trim2 = trim_readstring(mate2, pos2, trimtype2, qual=False)
  *         qtrm2 = trim_readstring(qual2, pos2, trimtype2, qual=True)             # <<<<<<<<<<<<<<
@@ -11149,24 +11478,24 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_t_10.__pyx_n = 1;
     __pyx_t_10.qual = 1;
-    __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual2, __pyx_v_pos2, __pyx_v_trimtype2, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 767, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_qtrm2 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual2, __pyx_v_pos2, __pyx_v_trimtype2, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 793, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_qtrm2 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":768
+    /* "_fasta_utils.pyx":794
  *         trim2 = trim_readstring(mate2, pos2, trimtype2, qual=False)
  *         qtrm2 = trim_readstring(qual2, pos2, trimtype2, qual=True)
  *         label2 = get_label(mate2, pos2, trimtype2)             # <<<<<<<<<<<<<<
  *         flipped2 = is_flipped(trimtype2)
  * 
  */
-    __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate2, __pyx_v_pos2, __pyx_v_trimtype2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 768, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_label2 = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate2, __pyx_v_pos2, __pyx_v_trimtype2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 794, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_label2 = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":769
+    /* "_fasta_utils.pyx":795
  *         qtrm2 = trim_readstring(qual2, pos2, trimtype2, qual=True)
  *         label2 = get_label(mate2, pos2, trimtype2)
  *         flipped2 = is_flipped(trimtype2)             # <<<<<<<<<<<<<<
@@ -11175,7 +11504,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     __pyx_v_flipped2 = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtype2);
 
-    /* "_fasta_utils.pyx":772
+    /* "_fasta_utils.pyx":798
  * 
  *         # Determine which of the two trims above is better
  *         if trimtype1 == -1 and trimtype2 == -1: # No trimming was performed at all             # <<<<<<<<<<<<<<
@@ -11186,14 +11515,14 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
     if (__pyx_t_5) {
     } else {
       __pyx_t_4 = __pyx_t_5;
-      goto __pyx_L35_bool_binop_done;
+      goto __pyx_L40_bool_binop_done;
     }
     __pyx_t_5 = ((__pyx_v_trimtype2 == -1L) != 0);
     __pyx_t_4 = __pyx_t_5;
-    __pyx_L35_bool_binop_done:;
+    __pyx_L40_bool_binop_done:;
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":773
+      /* "_fasta_utils.pyx":799
  *         # Determine which of the two trims above is better
  *         if trimtype1 == -1 and trimtype2 == -1: # No trimming was performed at all
  *             return (mate1, qual1, mate2, qual2, '')             # <<<<<<<<<<<<<<
@@ -11201,28 +11530,28 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 773, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 799, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_12);
       __Pyx_INCREF(__pyx_v_mate1);
       __Pyx_GIVEREF(__pyx_v_mate1);
-      PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_mate1);
+      PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_mate1);
       __Pyx_INCREF(__pyx_v_qual1);
       __Pyx_GIVEREF(__pyx_v_qual1);
-      PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qual1);
+      PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qual1);
       __Pyx_INCREF(__pyx_v_mate2);
       __Pyx_GIVEREF(__pyx_v_mate2);
-      PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_mate2);
+      PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_v_mate2);
       __Pyx_INCREF(__pyx_v_qual2);
       __Pyx_GIVEREF(__pyx_v_qual2);
-      PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_v_qual2);
+      PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_v_qual2);
       __Pyx_INCREF(__pyx_kp_u_);
       __Pyx_GIVEREF(__pyx_kp_u_);
-      PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u_);
-      __pyx_r = __pyx_t_1;
-      __pyx_t_1 = 0;
+      PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_kp_u_);
+      __pyx_r = __pyx_t_12;
+      __pyx_t_12 = 0;
       goto __pyx_L0;
 
-      /* "_fasta_utils.pyx":772
+      /* "_fasta_utils.pyx":798
  * 
  *         # Determine which of the two trims above is better
  *         if trimtype1 == -1 and trimtype2 == -1: # No trimming was performed at all             # <<<<<<<<<<<<<<
@@ -11231,7 +11560,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     }
 
-    /* "_fasta_utils.pyx":775
+    /* "_fasta_utils.pyx":801
  *             return (mate1, qual1, mate2, qual2, '')
  * 
  *         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)             # <<<<<<<<<<<<<<
@@ -11242,35 +11571,35 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
     if (!__pyx_t_5) {
     } else {
       __pyx_t_4 = __pyx_t_5;
-      goto __pyx_L38_bool_binop_done;
+      goto __pyx_L43_bool_binop_done;
     }
     __pyx_t_5 = ((__pyx_v_pos1 == __pyx_v_pos2) != 0);
     if (__pyx_t_5) {
     } else {
       __pyx_t_4 = __pyx_t_5;
-      goto __pyx_L38_bool_binop_done;
+      goto __pyx_L43_bool_binop_done;
     }
     __pyx_t_5 = ((__pyx_v_ham1 <= __pyx_v_ham2) != 0);
     __pyx_t_4 = __pyx_t_5;
-    __pyx_L38_bool_binop_done:;
+    __pyx_L43_bool_binop_done:;
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":777
+      /* "_fasta_utils.pyx":803
  *         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)
  *             # Check for complement of mate1's trim
  *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)             # <<<<<<<<<<<<<<
  *             if trimtypeC != -1: # The complement putatively exists
  *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
  */
-      __pyx_t_11 = __pyx_f_12_fasta_utils_complementary_trim(__pyx_v_mate2array, __pyx_v_trimtype1, __pyx_v_S5array, __pyx_v_S5monomer, __pyx_v_S3array, __pyx_v_S3monomer, __pyx_v_E5array, __pyx_v_E5monomer, __pyx_v_E3array, __pyx_v_E3monomer, __pyx_v_minstart, __pyx_v_minend, __pyx_v_mm_rate, 0);
-      __pyx_t_8 = __pyx_t_11.f0;
-      __pyx_t_9 = __pyx_t_11.f1;
-      __pyx_t_12 = __pyx_t_11.f2;
+      __pyx_t_13 = __pyx_f_12_fasta_utils_complementary_trim(__pyx_v_mate2array, __pyx_v_trimtype1, __pyx_v_S5array, __pyx_v_S5monomer, __pyx_v_S3array, __pyx_v_S3monomer, __pyx_v_E5array, __pyx_v_E5monomer, __pyx_v_E3array, __pyx_v_E3monomer, __pyx_v_minstart, __pyx_v_minend, __pyx_v_mm_rate, 0);
+      __pyx_t_8 = __pyx_t_13.f0;
+      __pyx_t_9 = __pyx_t_13.f1;
+      __pyx_t_14 = __pyx_t_13.f2;
       __pyx_v_posC = __pyx_t_8;
       __pyx_v_hamC = __pyx_t_9;
-      __pyx_v_trimtypeC = __pyx_t_12;
+      __pyx_v_trimtypeC = __pyx_t_14;
 
-      /* "_fasta_utils.pyx":778
+      /* "_fasta_utils.pyx":804
  *             # Check for complement of mate1's trim
  *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
  *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
@@ -11280,7 +11609,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_t_4 = ((__pyx_v_trimtypeC != -1L) != 0);
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":779
+        /* "_fasta_utils.pyx":805
  *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
  *             if trimtypeC != -1: # The complement putatively exists
  *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)             # <<<<<<<<<<<<<<
@@ -11289,12 +11618,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_t_10.__pyx_n = 1;
         __pyx_t_10.qual = 0;
-        __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate2, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 779, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        __pyx_v_trimC = ((PyObject*)__pyx_t_1);
-        __pyx_t_1 = 0;
+        __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate2, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 805, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_v_trimC = ((PyObject*)__pyx_t_12);
+        __pyx_t_12 = 0;
 
-        /* "_fasta_utils.pyx":780
+        /* "_fasta_utils.pyx":806
  *             if trimtypeC != -1: # The complement putatively exists
  *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
  *                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)             # <<<<<<<<<<<<<<
@@ -11303,24 +11632,24 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_t_10.__pyx_n = 1;
         __pyx_t_10.qual = 1;
-        __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual2, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 780, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        __pyx_v_qtrmC = ((PyObject*)__pyx_t_1);
-        __pyx_t_1 = 0;
+        __pyx_t_12 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual2, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 806, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_v_qtrmC = ((PyObject*)__pyx_t_12);
+        __pyx_t_12 = 0;
 
-        /* "_fasta_utils.pyx":781
+        /* "_fasta_utils.pyx":807
  *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
  *                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)
  *                 labelC = get_label(mate2, posC, trimtypeC)             # <<<<<<<<<<<<<<
  *                 flippedC = is_flipped(trimtypeC)
  * 
  */
-        __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate2, __pyx_v_posC, __pyx_v_trimtypeC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 781, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        __pyx_v_labelC = ((PyObject*)__pyx_t_1);
-        __pyx_t_1 = 0;
+        __pyx_t_12 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate2, __pyx_v_posC, __pyx_v_trimtypeC); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 807, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_v_labelC = ((PyObject*)__pyx_t_12);
+        __pyx_t_12 = 0;
 
-        /* "_fasta_utils.pyx":782
+        /* "_fasta_utils.pyx":808
  *                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)
  *                 labelC = get_label(mate2, posC, trimtypeC)
  *                 flippedC = is_flipped(trimtypeC)             # <<<<<<<<<<<<<<
@@ -11329,33 +11658,33 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
         __pyx_v_flippedC = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtypeC);
 
-        /* "_fasta_utils.pyx":784
+        /* "_fasta_utils.pyx":810
  *                 flippedC = is_flipped(trimtypeC)
  * 
  *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)             # <<<<<<<<<<<<<<
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read
  *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
  */
-        __pyx_t_13.__pyx_n = 2;
-        __pyx_t_13.mm_rate = __pyx_v_mm_rate;
-        __pyx_t_13.qualmask = __pyx_v_qualmask;
-        __pyx_t_1 = __pyx_f_12_fasta_utils_collapse_reads(__pyx_v_trim1, __pyx_v_trimC, __pyx_v_qtrm1, __pyx_v_qtrmC, 0, &__pyx_t_13); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 784, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        __pyx_v_collapsed = ((PyObject*)__pyx_t_1);
-        __pyx_t_1 = 0;
+        __pyx_t_15.__pyx_n = 2;
+        __pyx_t_15.mm_rate = __pyx_v_mm_rate;
+        __pyx_t_15.qualmask = __pyx_v_qualmask;
+        __pyx_t_12 = __pyx_f_12_fasta_utils_collapse_reads(__pyx_v_trim1, __pyx_v_trimC, __pyx_v_qtrm1, __pyx_v_qtrmC, 0, &__pyx_t_15); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 810, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_12);
+        __pyx_v_collapsed = ((PyObject*)__pyx_t_12);
+        __pyx_t_12 = 0;
 
-        /* "_fasta_utils.pyx":785
+        /* "_fasta_utils.pyx":811
  * 
  *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
  *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
  *                         return (collapsed, qtrm1, None, None, labelC)
  */
-        __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_collapsed, __pyx_kp_u_, Py_NE)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 785, __pyx_L1_error)
+        __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_collapsed, __pyx_kp_u_, Py_NE)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 811, __pyx_L1_error)
         __pyx_t_5 = (__pyx_t_4 != 0);
         if (__pyx_t_5) {
 
-          /* "_fasta_utils.pyx":786
+          /* "_fasta_utils.pyx":812
  *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read
  *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
@@ -11364,18 +11693,18 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
           if (unlikely(__pyx_v_qtrm1 == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 786, __pyx_L1_error)
+            __PYX_ERR(0, 812, __pyx_L1_error)
           }
-          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_qtrm1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 786, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_qtrm1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 812, __pyx_L1_error)
           if (unlikely(__pyx_v_collapsed == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 786, __pyx_L1_error)
+            __PYX_ERR(0, 812, __pyx_L1_error)
           }
-          __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_collapsed); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 786, __pyx_L1_error)
-          __pyx_t_5 = ((__pyx_t_3 == __pyx_t_14) != 0);
+          __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_collapsed); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 812, __pyx_L1_error)
+          __pyx_t_5 = ((__pyx_t_3 == __pyx_t_16) != 0);
           if (__pyx_t_5) {
 
-            /* "_fasta_utils.pyx":787
+            /* "_fasta_utils.pyx":813
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read
  *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
  *                         return (collapsed, qtrm1, None, None, labelC)             # <<<<<<<<<<<<<<
@@ -11383,14 +11712,605 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *                         return (collapsed, qtrmC, None, None, label1)
  */
             __Pyx_XDECREF(__pyx_r);
-            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 787, __pyx_L1_error)
+            __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 813, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_INCREF(__pyx_v_collapsed);
+            __Pyx_GIVEREF(__pyx_v_collapsed);
+            PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_collapsed);
+            __Pyx_INCREF(__pyx_v_qtrm1);
+            __Pyx_GIVEREF(__pyx_v_qtrm1);
+            PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrm1);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+            __Pyx_INCREF(__pyx_v_labelC);
+            __Pyx_GIVEREF(__pyx_v_labelC);
+            PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_labelC);
+            __pyx_r = __pyx_t_12;
+            __pyx_t_12 = 0;
+            goto __pyx_L0;
+
+            /* "_fasta_utils.pyx":812
+ *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read
+ *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
+ *                         return (collapsed, qtrm1, None, None, labelC)
+ *                     else: # mate2 was the longer sequence
+ */
+          }
+
+          /* "_fasta_utils.pyx":815
+ *                         return (collapsed, qtrm1, None, None, labelC)
+ *                     else: # mate2 was the longer sequence
+ *                         return (collapsed, qtrmC, None, None, label1)             # <<<<<<<<<<<<<<
+ *                 else: # Pick a solo output with the higher quality score
+ *                     qualscore1 = quality_score(qtrm1)
+ */
+          /*else*/ {
+            __Pyx_XDECREF(__pyx_r);
+            __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 815, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_INCREF(__pyx_v_collapsed);
+            __Pyx_GIVEREF(__pyx_v_collapsed);
+            PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_collapsed);
+            __Pyx_INCREF(__pyx_v_qtrmC);
+            __Pyx_GIVEREF(__pyx_v_qtrmC);
+            PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrmC);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+            __Pyx_INCREF(__pyx_v_label1);
+            __Pyx_GIVEREF(__pyx_v_label1);
+            PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+            __pyx_r = __pyx_t_12;
+            __pyx_t_12 = 0;
+            goto __pyx_L0;
+          }
+
+          /* "_fasta_utils.pyx":811
+ * 
+ *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
+ *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
+ *                         return (collapsed, qtrm1, None, None, labelC)
+ */
+        }
+
+        /* "_fasta_utils.pyx":817
+ *                         return (collapsed, qtrmC, None, None, label1)
+ *                 else: # Pick a solo output with the higher quality score
+ *                     qualscore1 = quality_score(qtrm1)             # <<<<<<<<<<<<<<
+ *                     qualscoreC = quality_score(qtrmC)
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ */
+        /*else*/ {
+          __pyx_v_qualscore1 = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm1, 0);
+
+          /* "_fasta_utils.pyx":818
+ *                 else: # Pick a solo output with the higher quality score
+ *                     qualscore1 = quality_score(qtrm1)
+ *                     qualscoreC = quality_score(qtrmC)             # <<<<<<<<<<<<<<
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
+ */
+          __pyx_v_qualscoreC = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrmC, 0);
+
+          /* "_fasta_utils.pyx":819
+ *                     qualscore1 = quality_score(qtrm1)
+ *                     qualscoreC = quality_score(qtrmC)
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail             # <<<<<<<<<<<<<<
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
+ *                             return('', '', None, None, '') # Return empty read
+ */
+          if (unlikely(__pyx_v_trim1 == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+            __PYX_ERR(0, 819, __pyx_L1_error)
+          }
+          __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 819, __pyx_L1_error)
+          __pyx_t_4 = ((__pyx_t_16 < __pyx_v_minlen) != 0);
+          if (!__pyx_t_4) {
+          } else {
+            __pyx_t_5 = __pyx_t_4;
+            goto __pyx_L50_bool_binop_done;
+          }
+          __pyx_t_4 = ((__pyx_v_qualscore1 < __pyx_v_minqual) != 0);
+          __pyx_t_5 = __pyx_t_4;
+          __pyx_L50_bool_binop_done:;
+          if (__pyx_t_5) {
+
+            /* "_fasta_utils.pyx":820
+ *                     qualscoreC = quality_score(qtrmC)
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
+ *                             return('', '', None, None, '') # Return empty read
+ *                         else: # trimC pass
+ */
+            if (unlikely(__pyx_v_trimC == Py_None)) {
+              PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+              __PYX_ERR(0, 820, __pyx_L1_error)
+            }
+            __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 820, __pyx_L1_error)
+            __pyx_t_4 = ((__pyx_t_16 < __pyx_v_minlen) != 0);
+            if (!__pyx_t_4) {
+            } else {
+              __pyx_t_5 = __pyx_t_4;
+              goto __pyx_L53_bool_binop_done;
+            }
+            __pyx_t_4 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
+            __pyx_t_5 = __pyx_t_4;
+            __pyx_L53_bool_binop_done:;
+            if (__pyx_t_5) {
+
+              /* "_fasta_utils.pyx":821
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
+ *                             return('', '', None, None, '') # Return empty read             # <<<<<<<<<<<<<<
+ *                         else: # trimC pass
+ *                             return(trimC, qtrmC, None, None, labelC)
+ */
+              __Pyx_XDECREF(__pyx_r);
+              __Pyx_INCREF(__pyx_tuple__4);
+              __pyx_r = __pyx_tuple__4;
+              goto __pyx_L0;
+
+              /* "_fasta_utils.pyx":820
+ *                     qualscoreC = quality_score(qtrmC)
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
+ *                             return('', '', None, None, '') # Return empty read
+ *                         else: # trimC pass
+ */
+            }
+
+            /* "_fasta_utils.pyx":823
+ *                             return('', '', None, None, '') # Return empty read
+ *                         else: # trimC pass
+ *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
+ *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
+ *                         return(trim1, qtrm1, None, None, label1)
+ */
+            /*else*/ {
+              __Pyx_XDECREF(__pyx_r);
+              __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 823, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __Pyx_INCREF(__pyx_v_trimC);
+              __Pyx_GIVEREF(__pyx_v_trimC);
+              PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_trimC);
+              __Pyx_INCREF(__pyx_v_qtrmC);
+              __Pyx_GIVEREF(__pyx_v_qtrmC);
+              PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrmC);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+              __Pyx_INCREF(__pyx_v_labelC);
+              __Pyx_GIVEREF(__pyx_v_labelC);
+              PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_labelC);
+              __pyx_r = __pyx_t_12;
+              __pyx_t_12 = 0;
+              goto __pyx_L0;
+            }
+
+            /* "_fasta_utils.pyx":819
+ *                     qualscore1 = quality_score(qtrm1)
+ *                     qualscoreC = quality_score(qtrmC)
+ *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail             # <<<<<<<<<<<<<<
+ *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
+ *                             return('', '', None, None, '') # Return empty read
+ */
+          }
+
+          /* "_fasta_utils.pyx":824
+ *                         else: # trimC pass
+ *                             return(trimC, qtrmC, None, None, labelC)
+ *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
+ *                         return(trim1, qtrm1, None, None, label1)
+ *                     else: # both pass
+ */
+          if (unlikely(__pyx_v_trimC == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+            __PYX_ERR(0, 824, __pyx_L1_error)
+          }
+          __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 824, __pyx_L1_error)
+          __pyx_t_4 = ((__pyx_t_16 < __pyx_v_minlen) != 0);
+          if (!__pyx_t_4) {
+          } else {
+            __pyx_t_5 = __pyx_t_4;
+            goto __pyx_L55_bool_binop_done;
+          }
+          __pyx_t_4 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
+          __pyx_t_5 = __pyx_t_4;
+          __pyx_L55_bool_binop_done:;
+          if (__pyx_t_5) {
+
+            /* "_fasta_utils.pyx":825
+ *                             return(trimC, qtrmC, None, None, labelC)
+ *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
+ *                         return(trim1, qtrm1, None, None, label1)             # <<<<<<<<<<<<<<
+ *                     else: # both pass
+ *                         if qualscore1 >= qualscoreC:
+ */
+            __Pyx_XDECREF(__pyx_r);
+            __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 825, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_INCREF(__pyx_v_trim1);
+            __Pyx_GIVEREF(__pyx_v_trim1);
+            PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_trim1);
+            __Pyx_INCREF(__pyx_v_qtrm1);
+            __Pyx_GIVEREF(__pyx_v_qtrm1);
+            PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrm1);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+            __Pyx_INCREF(Py_None);
+            __Pyx_GIVEREF(Py_None);
+            PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+            __Pyx_INCREF(__pyx_v_label1);
+            __Pyx_GIVEREF(__pyx_v_label1);
+            PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+            __pyx_r = __pyx_t_12;
+            __pyx_t_12 = 0;
+            goto __pyx_L0;
+
+            /* "_fasta_utils.pyx":824
+ *                         else: # trimC pass
+ *                             return(trimC, qtrmC, None, None, labelC)
+ *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
+ *                         return(trim1, qtrm1, None, None, label1)
+ *                     else: # both pass
+ */
+          }
+
+          /* "_fasta_utils.pyx":827
+ *                         return(trim1, qtrm1, None, None, label1)
+ *                     else: # both pass
+ *                         if qualscore1 >= qualscoreC:             # <<<<<<<<<<<<<<
+ *                             return(trim1, qtrm1, None, None, label1)
+ *                         else:
+ */
+          /*else*/ {
+            __pyx_t_5 = ((__pyx_v_qualscore1 >= __pyx_v_qualscoreC) != 0);
+            if (__pyx_t_5) {
+
+              /* "_fasta_utils.pyx":828
+ *                     else: # both pass
+ *                         if qualscore1 >= qualscoreC:
+ *                             return(trim1, qtrm1, None, None, label1)             # <<<<<<<<<<<<<<
+ *                         else:
+ *                             return(trimC, qtrmC, None, None, labelC)
+ */
+              __Pyx_XDECREF(__pyx_r);
+              __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 828, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __Pyx_INCREF(__pyx_v_trim1);
+              __Pyx_GIVEREF(__pyx_v_trim1);
+              PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_trim1);
+              __Pyx_INCREF(__pyx_v_qtrm1);
+              __Pyx_GIVEREF(__pyx_v_qtrm1);
+              PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrm1);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+              __Pyx_INCREF(__pyx_v_label1);
+              __Pyx_GIVEREF(__pyx_v_label1);
+              PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_label1);
+              __pyx_r = __pyx_t_12;
+              __pyx_t_12 = 0;
+              goto __pyx_L0;
+
+              /* "_fasta_utils.pyx":827
+ *                         return(trim1, qtrm1, None, None, label1)
+ *                     else: # both pass
+ *                         if qualscore1 >= qualscoreC:             # <<<<<<<<<<<<<<
+ *                             return(trim1, qtrm1, None, None, label1)
+ *                         else:
+ */
+            }
+
+            /* "_fasta_utils.pyx":830
+ *                             return(trim1, qtrm1, None, None, label1)
+ *                         else:
+ *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
+ *             else: # Could not find complementary trim
+ *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable
+ */
+            /*else*/ {
+              __Pyx_XDECREF(__pyx_r);
+              __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 830, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __Pyx_INCREF(__pyx_v_trimC);
+              __Pyx_GIVEREF(__pyx_v_trimC);
+              PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_trimC);
+              __Pyx_INCREF(__pyx_v_qtrmC);
+              __Pyx_GIVEREF(__pyx_v_qtrmC);
+              PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qtrmC);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+              __Pyx_INCREF(Py_None);
+              __Pyx_GIVEREF(Py_None);
+              PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+              __Pyx_INCREF(__pyx_v_labelC);
+              __Pyx_GIVEREF(__pyx_v_labelC);
+              PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_v_labelC);
+              __pyx_r = __pyx_t_12;
+              __pyx_t_12 = 0;
+              goto __pyx_L0;
+            }
+          }
+        }
+
+        /* "_fasta_utils.pyx":804
+ *             # Check for complement of mate1's trim
+ *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+ *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
+ *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
+ *                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)
+ */
+      }
+
+      /* "_fasta_utils.pyx":832
+ *                             return(trimC, qtrmC, None, None, labelC)
+ *             else: # Could not find complementary trim
+ *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
+ *                     return(mate2, qual2, None, None, '') # Return empty read
+ * 
+ */
+      /*else*/ {
+        if (unlikely(__pyx_v_trim1 == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+          __PYX_ERR(0, 832, __pyx_L1_error)
+        }
+        __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 832, __pyx_L1_error)
+        __pyx_t_4 = ((__pyx_t_16 < __pyx_v_minlen) != 0);
+        if (!__pyx_t_4) {
+        } else {
+          __pyx_t_5 = __pyx_t_4;
+          goto __pyx_L59_bool_binop_done;
+        }
+        __pyx_t_4 = ((__pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm1, 0) < __pyx_v_minqual) != 0);
+        __pyx_t_5 = __pyx_t_4;
+        __pyx_L59_bool_binop_done:;
+        if (__pyx_t_5) {
+
+          /* "_fasta_utils.pyx":833
+ *             else: # Could not find complementary trim
+ *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable
+ *                     return(mate2, qual2, None, None, '') # Return empty read             # <<<<<<<<<<<<<<
+ * 
+ *             # Check if the original trim was compatible)
+ */
+          __Pyx_XDECREF(__pyx_r);
+          __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 833, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_12);
+          __Pyx_INCREF(__pyx_v_mate2);
+          __Pyx_GIVEREF(__pyx_v_mate2);
+          PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_mate2);
+          __Pyx_INCREF(__pyx_v_qual2);
+          __Pyx_GIVEREF(__pyx_v_qual2);
+          PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_qual2);
+          __Pyx_INCREF(Py_None);
+          __Pyx_GIVEREF(Py_None);
+          PyTuple_SET_ITEM(__pyx_t_12, 2, Py_None);
+          __Pyx_INCREF(Py_None);
+          __Pyx_GIVEREF(Py_None);
+          PyTuple_SET_ITEM(__pyx_t_12, 3, Py_None);
+          __Pyx_INCREF(__pyx_kp_u_);
+          __Pyx_GIVEREF(__pyx_kp_u_);
+          PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_kp_u_);
+          __pyx_r = __pyx_t_12;
+          __pyx_t_12 = 0;
+          goto __pyx_L0;
+
+          /* "_fasta_utils.pyx":832
+ *                             return(trimC, qtrmC, None, None, labelC)
+ *             else: # Could not find complementary trim
+ *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
+ *                     return(mate2, qual2, None, None, '') # Return empty read
+ * 
+ */
+        }
+      }
+
+      /* "_fasta_utils.pyx":836
+ * 
+ *             # Check if the original trim was compatible)
+ *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
+ *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1
+ *         else: # Mate2's trim is the best supported.
+ */
+      __pyx_t_5 = ((__pyx_v_trimtype1 == __pyx_v_trimtype2) != 0);
+      if (__pyx_t_5) {
+
+        /* "_fasta_utils.pyx":837
+ *             # Check if the original trim was compatible)
+ *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim
+ *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1             # <<<<<<<<<<<<<<
+ *         else: # Mate2's trim is the best supported.
+ *             # Check for complement of mate2's trim
+ */
+        __pyx_t_12 = __pyx_v_mate2;
+        __Pyx_INCREF(__pyx_t_12);
+        __pyx_t_11 = __pyx_v_qual2;
+        __Pyx_INCREF(__pyx_t_11);
+        __pyx_t_1 = __pyx_kp_u_;
+        __Pyx_INCREF(__pyx_t_1);
+        __pyx_t_14 = -1;
+        __Pyx_DECREF_SET(__pyx_v_trim2, ((PyObject*)__pyx_t_12));
+        __pyx_t_12 = 0;
+        __Pyx_DECREF_SET(__pyx_v_qtrm2, ((PyObject*)__pyx_t_11));
+        __pyx_t_11 = 0;
+        __Pyx_DECREF_SET(__pyx_v_label2, ((PyObject*)__pyx_t_1));
+        __pyx_t_1 = 0;
+        __pyx_v_trimtype2 = __pyx_t_14;
+
+        /* "_fasta_utils.pyx":836
+ * 
+ *             # Check if the original trim was compatible)
+ *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
+ *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1
+ *         else: # Mate2's trim is the best supported.
+ */
+      }
+
+      /* "_fasta_utils.pyx":801
+ *             return (mate1, qual1, mate2, qual2, '')
+ * 
+ *         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)             # <<<<<<<<<<<<<<
+ *             # Check for complement of mate1's trim
+ *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+ */
+      goto __pyx_L42;
+    }
+
+    /* "_fasta_utils.pyx":840
+ *         else: # Mate2's trim is the best supported.
+ *             # Check for complement of mate2's trim
+ *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)             # <<<<<<<<<<<<<<
+ *             if trimtypeC != -1: # The complement putatively exists
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
+ */
+    /*else*/ {
+      __pyx_t_13 = __pyx_f_12_fasta_utils_complementary_trim(__pyx_v_mate1array, __pyx_v_trimtype2, __pyx_v_S5array, __pyx_v_S5monomer, __pyx_v_S3array, __pyx_v_S3monomer, __pyx_v_E5array, __pyx_v_E5monomer, __pyx_v_E3array, __pyx_v_E3monomer, __pyx_v_minstart, __pyx_v_minend, __pyx_v_mm_rate, 0);
+      __pyx_t_14 = __pyx_t_13.f0;
+      __pyx_t_9 = __pyx_t_13.f1;
+      __pyx_t_8 = __pyx_t_13.f2;
+      __pyx_v_posC = __pyx_t_14;
+      __pyx_v_hamC = __pyx_t_9;
+      __pyx_v_trimtypeC = __pyx_t_8;
+
+      /* "_fasta_utils.pyx":841
+ *             # Check for complement of mate2's trim
+ *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+ *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
+ */
+      __pyx_t_5 = ((__pyx_v_trimtypeC != -1L) != 0);
+      if (__pyx_t_5) {
+
+        /* "_fasta_utils.pyx":842
+ *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+ *             if trimtypeC != -1: # The complement putatively exists
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)             # <<<<<<<<<<<<<<
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
+ *                 labelC = get_label(mate1, posC, trimtypeC)
+ */
+        __pyx_t_10.__pyx_n = 1;
+        __pyx_t_10.qual = 0;
+        __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 842, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_v_trimC = ((PyObject*)__pyx_t_1);
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":843
+ *             if trimtypeC != -1: # The complement putatively exists
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)             # <<<<<<<<<<<<<<
+ *                 labelC = get_label(mate1, posC, trimtypeC)
+ *                 flippedC = is_flipped(trimtypeC)
+ */
+        __pyx_t_10.__pyx_n = 1;
+        __pyx_t_10.qual = 1;
+        __pyx_t_1 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 843, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_v_qtrmC = ((PyObject*)__pyx_t_1);
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":844
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
+ *                 labelC = get_label(mate1, posC, trimtypeC)             # <<<<<<<<<<<<<<
+ *                 flippedC = is_flipped(trimtypeC)
+ * 
+ */
+        __pyx_t_1 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_posC, __pyx_v_trimtypeC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 844, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_v_labelC = ((PyObject*)__pyx_t_1);
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":845
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
+ *                 labelC = get_label(mate1, posC, trimtypeC)
+ *                 flippedC = is_flipped(trimtypeC)             # <<<<<<<<<<<<<<
+ * 
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
+ */
+        __pyx_v_flippedC = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtypeC);
+
+        /* "_fasta_utils.pyx":847
+ *                 flippedC = is_flipped(trimtypeC)
+ * 
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)             # <<<<<<<<<<<<<<
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
+ */
+        __pyx_t_15.__pyx_n = 2;
+        __pyx_t_15.mm_rate = __pyx_v_mm_rate;
+        __pyx_t_15.qualmask = __pyx_v_qualmask;
+        __pyx_t_1 = __pyx_f_12_fasta_utils_collapse_reads(__pyx_v_trim2, __pyx_v_trimC, __pyx_v_qtrm2, __pyx_v_qtrmC, 0, &__pyx_t_15); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 847, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_v_collapsed = ((PyObject*)__pyx_t_1);
+        __pyx_t_1 = 0;
+
+        /* "_fasta_utils.pyx":848
+ * 
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
+ *                         return (collapsed, qtrm2, None, None, labelC)
+ */
+        __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_collapsed, __pyx_kp_u_, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 848, __pyx_L1_error)
+        __pyx_t_4 = (__pyx_t_5 != 0);
+        if (__pyx_t_4) {
+
+          /* "_fasta_utils.pyx":849
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
+ *                         return (collapsed, qtrm2, None, None, labelC)
+ *                     else: # mate1 was the longer sequence
+ */
+          if (unlikely(__pyx_v_qtrm2 == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+            __PYX_ERR(0, 849, __pyx_L1_error)
+          }
+          __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_qtrm2); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 849, __pyx_L1_error)
+          if (unlikely(__pyx_v_collapsed == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+            __PYX_ERR(0, 849, __pyx_L1_error)
+          }
+          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_collapsed); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 849, __pyx_L1_error)
+          __pyx_t_4 = ((__pyx_t_16 == __pyx_t_3) != 0);
+          if (__pyx_t_4) {
+
+            /* "_fasta_utils.pyx":850
+ *                 if collapsed != '': # Complementary trimming is compatible, output solo read
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
+ *                         return (collapsed, qtrm2, None, None, labelC)             # <<<<<<<<<<<<<<
+ *                     else: # mate1 was the longer sequence
+ *                         return (collapsed, qtrmC, None, None, label2)
+ */
+            __Pyx_XDECREF(__pyx_r);
+            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 850, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_INCREF(__pyx_v_collapsed);
             __Pyx_GIVEREF(__pyx_v_collapsed);
             PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_collapsed);
-            __Pyx_INCREF(__pyx_v_qtrm1);
-            __Pyx_GIVEREF(__pyx_v_qtrm1);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm1);
+            __Pyx_INCREF(__pyx_v_qtrm2);
+            __Pyx_GIVEREF(__pyx_v_qtrm2);
+            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm2);
             __Pyx_INCREF(Py_None);
             __Pyx_GIVEREF(Py_None);
             PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
@@ -11404,25 +12324,25 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
             __pyx_t_1 = 0;
             goto __pyx_L0;
 
-            /* "_fasta_utils.pyx":786
- *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
+            /* "_fasta_utils.pyx":849
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read
- *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
- *                         return (collapsed, qtrm1, None, None, labelC)
- *                     else: # mate2 was the longer sequence
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
+ *                         return (collapsed, qtrm2, None, None, labelC)
+ *                     else: # mate1 was the longer sequence
  */
           }
 
-          /* "_fasta_utils.pyx":789
- *                         return (collapsed, qtrm1, None, None, labelC)
- *                     else: # mate2 was the longer sequence
- *                         return (collapsed, qtrmC, None, None, label1)             # <<<<<<<<<<<<<<
- *                 else: # Pick a solo output with the higher quality score
- *                     qualscore1 = quality_score(qtrm1)
+          /* "_fasta_utils.pyx":852
+ *                         return (collapsed, qtrm2, None, None, labelC)
+ *                     else: # mate1 was the longer sequence
+ *                         return (collapsed, qtrmC, None, None, label2)             # <<<<<<<<<<<<<<
+ *                 else: # Pick the higher quality solo-mapper
+ *                     qualscore2 = quality_score(qtrm2)
  */
           /*else*/ {
             __Pyx_XDECREF(__pyx_r);
-            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 789, __pyx_L1_error)
+            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 852, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_INCREF(__pyx_v_collapsed);
             __Pyx_GIVEREF(__pyx_v_collapsed);
@@ -11436,90 +12356,90 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
             __Pyx_INCREF(Py_None);
             __Pyx_GIVEREF(Py_None);
             PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
-            __Pyx_INCREF(__pyx_v_label1);
-            __Pyx_GIVEREF(__pyx_v_label1);
-            PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
+            __Pyx_INCREF(__pyx_v_label2);
+            __Pyx_GIVEREF(__pyx_v_label2);
+            PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label2);
             __pyx_r = __pyx_t_1;
             __pyx_t_1 = 0;
             goto __pyx_L0;
           }
 
-          /* "_fasta_utils.pyx":785
+          /* "_fasta_utils.pyx":848
  * 
- *                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
+ *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
  *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
- *                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
- *                         return (collapsed, qtrm1, None, None, labelC)
+ *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
+ *                         return (collapsed, qtrm2, None, None, labelC)
  */
         }
 
-        /* "_fasta_utils.pyx":791
- *                         return (collapsed, qtrmC, None, None, label1)
- *                 else: # Pick a solo output with the higher quality score
- *                     qualscore1 = quality_score(qtrm1)             # <<<<<<<<<<<<<<
+        /* "_fasta_utils.pyx":854
+ *                         return (collapsed, qtrmC, None, None, label2)
+ *                 else: # Pick the higher quality solo-mapper
+ *                     qualscore2 = quality_score(qtrm2)             # <<<<<<<<<<<<<<
  *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
  */
         /*else*/ {
-          __pyx_v_qualscore1 = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm1, 0);
+          __pyx_v_qualscore2 = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm2, 0);
 
-          /* "_fasta_utils.pyx":792
- *                 else: # Pick a solo output with the higher quality score
- *                     qualscore1 = quality_score(qtrm1)
+          /* "_fasta_utils.pyx":855
+ *                 else: # Pick the higher quality solo-mapper
+ *                     qualscore2 = quality_score(qtrm2)
  *                     qualscoreC = quality_score(qtrmC)             # <<<<<<<<<<<<<<
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
  */
           __pyx_v_qualscoreC = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrmC, 0);
 
-          /* "_fasta_utils.pyx":793
- *                     qualscore1 = quality_score(qtrm1)
+          /* "_fasta_utils.pyx":856
+ *                     qualscore2 = quality_score(qtrm2)
  *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail             # <<<<<<<<<<<<<<
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail             # <<<<<<<<<<<<<<
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
  *                             return('', '', None, None, '') # Return empty read
  */
-          if (unlikely(__pyx_v_trim1 == Py_None)) {
+          if (unlikely(__pyx_v_trim2 == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 793, __pyx_L1_error)
+            __PYX_ERR(0, 856, __pyx_L1_error)
           }
-          __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 793, __pyx_L1_error)
-          __pyx_t_4 = ((__pyx_t_14 < __pyx_v_minlen) != 0);
-          if (!__pyx_t_4) {
+          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 856, __pyx_L1_error)
+          __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
+          if (!__pyx_t_5) {
           } else {
-            __pyx_t_5 = __pyx_t_4;
-            goto __pyx_L45_bool_binop_done;
+            __pyx_t_4 = __pyx_t_5;
+            goto __pyx_L66_bool_binop_done;
           }
-          __pyx_t_4 = ((__pyx_v_qualscore1 < __pyx_v_minqual) != 0);
-          __pyx_t_5 = __pyx_t_4;
-          __pyx_L45_bool_binop_done:;
-          if (__pyx_t_5) {
+          __pyx_t_5 = ((__pyx_v_qualscore2 < __pyx_v_minqual) != 0);
+          __pyx_t_4 = __pyx_t_5;
+          __pyx_L66_bool_binop_done:;
+          if (__pyx_t_4) {
 
-            /* "_fasta_utils.pyx":794
+            /* "_fasta_utils.pyx":857
  *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
  *                             return('', '', None, None, '') # Return empty read
  *                         else: # trimC pass
  */
             if (unlikely(__pyx_v_trimC == Py_None)) {
               PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-              __PYX_ERR(0, 794, __pyx_L1_error)
+              __PYX_ERR(0, 857, __pyx_L1_error)
             }
-            __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 794, __pyx_L1_error)
-            __pyx_t_4 = ((__pyx_t_14 < __pyx_v_minlen) != 0);
-            if (!__pyx_t_4) {
+            __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 857, __pyx_L1_error)
+            __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
+            if (!__pyx_t_5) {
             } else {
-              __pyx_t_5 = __pyx_t_4;
-              goto __pyx_L48_bool_binop_done;
+              __pyx_t_4 = __pyx_t_5;
+              goto __pyx_L69_bool_binop_done;
             }
-            __pyx_t_4 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
-            __pyx_t_5 = __pyx_t_4;
-            __pyx_L48_bool_binop_done:;
-            if (__pyx_t_5) {
+            __pyx_t_5 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
+            __pyx_t_4 = __pyx_t_5;
+            __pyx_L69_bool_binop_done:;
+            if (__pyx_t_4) {
 
-              /* "_fasta_utils.pyx":795
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+              /* "_fasta_utils.pyx":858
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
  *                             return('', '', None, None, '') # Return empty read             # <<<<<<<<<<<<<<
  *                         else: # trimC pass
@@ -11530,25 +12450,25 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
               __pyx_r = __pyx_tuple__4;
               goto __pyx_L0;
 
-              /* "_fasta_utils.pyx":794
+              /* "_fasta_utils.pyx":857
  *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
  *                             return('', '', None, None, '') # Return empty read
  *                         else: # trimC pass
  */
             }
 
-            /* "_fasta_utils.pyx":797
+            /* "_fasta_utils.pyx":860
  *                             return('', '', None, None, '') # Return empty read
  *                         else: # trimC pass
  *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
  *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
- *                         return(trim1, qtrm1, None, None, label1)
+ *                         return(trim2, qtrm2, None, None, label2)
  */
             /*else*/ {
               __Pyx_XDECREF(__pyx_r);
-              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 797, __pyx_L1_error)
+              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 860, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_1);
               __Pyx_INCREF(__pyx_v_trimC);
               __Pyx_GIVEREF(__pyx_v_trimC);
@@ -11570,135 +12490,135 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
               goto __pyx_L0;
             }
 
-            /* "_fasta_utils.pyx":793
- *                     qualscore1 = quality_score(qtrm1)
+            /* "_fasta_utils.pyx":856
+ *                     qualscore2 = quality_score(qtrm2)
  *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail             # <<<<<<<<<<<<<<
+ *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail             # <<<<<<<<<<<<<<
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
  *                             return('', '', None, None, '') # Return empty read
  */
           }
 
-          /* "_fasta_utils.pyx":798
+          /* "_fasta_utils.pyx":861
  *                         else: # trimC pass
  *                             return(trimC, qtrmC, None, None, labelC)
  *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
- *                         return(trim1, qtrm1, None, None, label1)
+ *                         return(trim2, qtrm2, None, None, label2)
  *                     else: # both pass
  */
           if (unlikely(__pyx_v_trimC == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 798, __pyx_L1_error)
+            __PYX_ERR(0, 861, __pyx_L1_error)
           }
-          __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 798, __pyx_L1_error)
-          __pyx_t_4 = ((__pyx_t_14 < __pyx_v_minlen) != 0);
-          if (!__pyx_t_4) {
+          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 861, __pyx_L1_error)
+          __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
+          if (!__pyx_t_5) {
           } else {
-            __pyx_t_5 = __pyx_t_4;
-            goto __pyx_L50_bool_binop_done;
+            __pyx_t_4 = __pyx_t_5;
+            goto __pyx_L71_bool_binop_done;
           }
-          __pyx_t_4 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
-          __pyx_t_5 = __pyx_t_4;
-          __pyx_L50_bool_binop_done:;
-          if (__pyx_t_5) {
+          __pyx_t_5 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
+          __pyx_t_4 = __pyx_t_5;
+          __pyx_L71_bool_binop_done:;
+          if (__pyx_t_4) {
 
-            /* "_fasta_utils.pyx":799
+            /* "_fasta_utils.pyx":862
  *                             return(trimC, qtrmC, None, None, labelC)
  *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
- *                         return(trim1, qtrm1, None, None, label1)             # <<<<<<<<<<<<<<
+ *                         return(trim2, qtrm2, None, None, label2)             # <<<<<<<<<<<<<<
  *                     else: # both pass
- *                         if qualscore1 >= qualscoreC:
+ *                         if qualscore2 >= qualscoreC:
  */
             __Pyx_XDECREF(__pyx_r);
-            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 799, __pyx_L1_error)
+            __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 862, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
-            __Pyx_INCREF(__pyx_v_trim1);
-            __Pyx_GIVEREF(__pyx_v_trim1);
-            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_trim1);
-            __Pyx_INCREF(__pyx_v_qtrm1);
-            __Pyx_GIVEREF(__pyx_v_qtrm1);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm1);
+            __Pyx_INCREF(__pyx_v_trim2);
+            __Pyx_GIVEREF(__pyx_v_trim2);
+            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_trim2);
+            __Pyx_INCREF(__pyx_v_qtrm2);
+            __Pyx_GIVEREF(__pyx_v_qtrm2);
+            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm2);
             __Pyx_INCREF(Py_None);
             __Pyx_GIVEREF(Py_None);
             PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
             __Pyx_INCREF(Py_None);
             __Pyx_GIVEREF(Py_None);
             PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
-            __Pyx_INCREF(__pyx_v_label1);
-            __Pyx_GIVEREF(__pyx_v_label1);
-            PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
+            __Pyx_INCREF(__pyx_v_label2);
+            __Pyx_GIVEREF(__pyx_v_label2);
+            PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label2);
             __pyx_r = __pyx_t_1;
             __pyx_t_1 = 0;
             goto __pyx_L0;
 
-            /* "_fasta_utils.pyx":798
+            /* "_fasta_utils.pyx":861
  *                         else: # trimC pass
  *                             return(trimC, qtrmC, None, None, labelC)
  *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
- *                         return(trim1, qtrm1, None, None, label1)
+ *                         return(trim2, qtrm2, None, None, label2)
  *                     else: # both pass
  */
           }
 
-          /* "_fasta_utils.pyx":801
- *                         return(trim1, qtrm1, None, None, label1)
+          /* "_fasta_utils.pyx":864
+ *                         return(trim2, qtrm2, None, None, label2)
  *                     else: # both pass
- *                         if qualscore1 >= qualscoreC:             # <<<<<<<<<<<<<<
- *                             return(trim1, qtrm1, None, None, label1)
+ *                         if qualscore2 >= qualscoreC:             # <<<<<<<<<<<<<<
+ *                             return(trim2, qtrm2, None, None, label2)
  *                         else:
  */
           /*else*/ {
-            __pyx_t_5 = ((__pyx_v_qualscore1 >= __pyx_v_qualscoreC) != 0);
-            if (__pyx_t_5) {
+            __pyx_t_4 = ((__pyx_v_qualscore2 >= __pyx_v_qualscoreC) != 0);
+            if (__pyx_t_4) {
 
-              /* "_fasta_utils.pyx":802
+              /* "_fasta_utils.pyx":865
  *                     else: # both pass
- *                         if qualscore1 >= qualscoreC:
- *                             return(trim1, qtrm1, None, None, label1)             # <<<<<<<<<<<<<<
+ *                         if qualscore2 >= qualscoreC:
+ *                             return(trim2, qtrm2, None, None, label2)             # <<<<<<<<<<<<<<
  *                         else:
  *                             return(trimC, qtrmC, None, None, labelC)
  */
               __Pyx_XDECREF(__pyx_r);
-              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 802, __pyx_L1_error)
+              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 865, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_1);
-              __Pyx_INCREF(__pyx_v_trim1);
-              __Pyx_GIVEREF(__pyx_v_trim1);
-              PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_trim1);
-              __Pyx_INCREF(__pyx_v_qtrm1);
-              __Pyx_GIVEREF(__pyx_v_qtrm1);
-              PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm1);
+              __Pyx_INCREF(__pyx_v_trim2);
+              __Pyx_GIVEREF(__pyx_v_trim2);
+              PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_trim2);
+              __Pyx_INCREF(__pyx_v_qtrm2);
+              __Pyx_GIVEREF(__pyx_v_qtrm2);
+              PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qtrm2);
               __Pyx_INCREF(Py_None);
               __Pyx_GIVEREF(Py_None);
               PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
               __Pyx_INCREF(Py_None);
               __Pyx_GIVEREF(Py_None);
               PyTuple_SET_ITEM(__pyx_t_1, 3, Py_None);
-              __Pyx_INCREF(__pyx_v_label1);
-              __Pyx_GIVEREF(__pyx_v_label1);
-              PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label1);
+              __Pyx_INCREF(__pyx_v_label2);
+              __Pyx_GIVEREF(__pyx_v_label2);
+              PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_v_label2);
               __pyx_r = __pyx_t_1;
               __pyx_t_1 = 0;
               goto __pyx_L0;
 
-              /* "_fasta_utils.pyx":801
- *                         return(trim1, qtrm1, None, None, label1)
+              /* "_fasta_utils.pyx":864
+ *                         return(trim2, qtrm2, None, None, label2)
  *                     else: # both pass
- *                         if qualscore1 >= qualscoreC:             # <<<<<<<<<<<<<<
- *                             return(trim1, qtrm1, None, None, label1)
+ *                         if qualscore2 >= qualscoreC:             # <<<<<<<<<<<<<<
+ *                             return(trim2, qtrm2, None, None, label2)
  *                         else:
  */
             }
 
-            /* "_fasta_utils.pyx":804
- *                             return(trim1, qtrm1, None, None, label1)
+            /* "_fasta_utils.pyx":867
+ *                             return(trim2, qtrm2, None, None, label2)
  *                         else:
  *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
  *             else: # Could not find complementary trim
- *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable
+ *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable
  */
             /*else*/ {
               __Pyx_XDECREF(__pyx_r);
-              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 804, __pyx_L1_error)
+              __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 867, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_1);
               __Pyx_INCREF(__pyx_v_trimC);
               __Pyx_GIVEREF(__pyx_v_trimC);
@@ -11722,55 +12642,55 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
           }
         }
 
-        /* "_fasta_utils.pyx":778
- *             # Check for complement of mate1's trim
- *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+        /* "_fasta_utils.pyx":841
+ *             # Check for complement of mate2's trim
+ *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
  *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
- *                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
- *                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)
+ *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
+ *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
  */
       }
 
-      /* "_fasta_utils.pyx":806
+      /* "_fasta_utils.pyx":869
  *                             return(trimC, qtrmC, None, None, labelC)
  *             else: # Could not find complementary trim
- *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
- *                     return(mate2, qual2, None, None, '') # Return empty read
+ *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
+ *                     return(mate1, qual1, None, None, '') # Return empty read
  * 
  */
       /*else*/ {
-        if (unlikely(__pyx_v_trim1 == Py_None)) {
+        if (unlikely(__pyx_v_trim2 == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-          __PYX_ERR(0, 806, __pyx_L1_error)
+          __PYX_ERR(0, 869, __pyx_L1_error)
         }
-        __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 806, __pyx_L1_error)
-        __pyx_t_4 = ((__pyx_t_14 < __pyx_v_minlen) != 0);
-        if (!__pyx_t_4) {
+        __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 869, __pyx_L1_error)
+        __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
+        if (!__pyx_t_5) {
         } else {
-          __pyx_t_5 = __pyx_t_4;
-          goto __pyx_L54_bool_binop_done;
+          __pyx_t_4 = __pyx_t_5;
+          goto __pyx_L75_bool_binop_done;
         }
-        __pyx_t_4 = ((__pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm1, 0) < __pyx_v_minqual) != 0);
-        __pyx_t_5 = __pyx_t_4;
-        __pyx_L54_bool_binop_done:;
-        if (__pyx_t_5) {
+        __pyx_t_5 = ((__pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm2, 0) < __pyx_v_minqual) != 0);
+        __pyx_t_4 = __pyx_t_5;
+        __pyx_L75_bool_binop_done:;
+        if (__pyx_t_4) {
 
-          /* "_fasta_utils.pyx":807
+          /* "_fasta_utils.pyx":870
  *             else: # Could not find complementary trim
- *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable
- *                     return(mate2, qual2, None, None, '') # Return empty read             # <<<<<<<<<<<<<<
+ *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable
+ *                     return(mate1, qual1, None, None, '') # Return empty read             # <<<<<<<<<<<<<<
  * 
  *             # Check if the original trim was compatible)
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 807, __pyx_L1_error)
+          __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 870, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
-          __Pyx_INCREF(__pyx_v_mate2);
-          __Pyx_GIVEREF(__pyx_v_mate2);
-          PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_mate2);
-          __Pyx_INCREF(__pyx_v_qual2);
-          __Pyx_GIVEREF(__pyx_v_qual2);
-          PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qual2);
+          __Pyx_INCREF(__pyx_v_mate1);
+          __Pyx_GIVEREF(__pyx_v_mate1);
+          PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_mate1);
+          __Pyx_INCREF(__pyx_v_qual1);
+          __Pyx_GIVEREF(__pyx_v_qual1);
+          PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_qual1);
           __Pyx_INCREF(Py_None);
           __Pyx_GIVEREF(Py_None);
           PyTuple_SET_ITEM(__pyx_t_1, 2, Py_None);
@@ -11784,598 +12704,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
           __pyx_t_1 = 0;
           goto __pyx_L0;
 
-          /* "_fasta_utils.pyx":806
- *                             return(trimC, qtrmC, None, None, labelC)
- *             else: # Could not find complementary trim
- *                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
- *                     return(mate2, qual2, None, None, '') # Return empty read
- * 
- */
-        }
-      }
-
-      /* "_fasta_utils.pyx":810
- * 
- *             # Check if the original trim was compatible)
- *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
- *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1
- *         else: # Mate2's trim is the best supported.
- */
-      __pyx_t_5 = ((__pyx_v_trimtype1 == __pyx_v_trimtype2) != 0);
-      if (__pyx_t_5) {
-
-        /* "_fasta_utils.pyx":811
- *             # Check if the original trim was compatible)
- *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim
- *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1             # <<<<<<<<<<<<<<
- *         else: # Mate2's trim is the best supported.
- *             # Check for complement of mate2's trim
- */
-        __pyx_t_1 = __pyx_v_mate2;
-        __Pyx_INCREF(__pyx_t_1);
-        __pyx_t_15 = __pyx_v_qual2;
-        __Pyx_INCREF(__pyx_t_15);
-        __pyx_t_16 = __pyx_kp_u_;
-        __Pyx_INCREF(__pyx_t_16);
-        __pyx_t_12 = -1;
-        __Pyx_DECREF_SET(__pyx_v_trim2, ((PyObject*)__pyx_t_1));
-        __pyx_t_1 = 0;
-        __Pyx_DECREF_SET(__pyx_v_qtrm2, ((PyObject*)__pyx_t_15));
-        __pyx_t_15 = 0;
-        __Pyx_DECREF_SET(__pyx_v_label2, ((PyObject*)__pyx_t_16));
-        __pyx_t_16 = 0;
-        __pyx_v_trimtype2 = __pyx_t_12;
-
-        /* "_fasta_utils.pyx":810
- * 
- *             # Check if the original trim was compatible)
- *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
- *                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1
- *         else: # Mate2's trim is the best supported.
- */
-      }
-
-      /* "_fasta_utils.pyx":775
- *             return (mate1, qual1, mate2, qual2, '')
- * 
- *         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)             # <<<<<<<<<<<<<<
- *             # Check for complement of mate1's trim
- *             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
- */
-      goto __pyx_L37;
-    }
-
-    /* "_fasta_utils.pyx":814
- *         else: # Mate2's trim is the best supported.
- *             # Check for complement of mate2's trim
- *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)             # <<<<<<<<<<<<<<
- *             if trimtypeC != -1: # The complement putatively exists
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
- */
-    /*else*/ {
-      __pyx_t_11 = __pyx_f_12_fasta_utils_complementary_trim(__pyx_v_mate1array, __pyx_v_trimtype2, __pyx_v_S5array, __pyx_v_S5monomer, __pyx_v_S3array, __pyx_v_S3monomer, __pyx_v_E5array, __pyx_v_E5monomer, __pyx_v_E3array, __pyx_v_E3monomer, __pyx_v_minstart, __pyx_v_minend, __pyx_v_mm_rate, 0);
-      __pyx_t_12 = __pyx_t_11.f0;
-      __pyx_t_9 = __pyx_t_11.f1;
-      __pyx_t_8 = __pyx_t_11.f2;
-      __pyx_v_posC = __pyx_t_12;
-      __pyx_v_hamC = __pyx_t_9;
-      __pyx_v_trimtypeC = __pyx_t_8;
-
-      /* "_fasta_utils.pyx":815
- *             # Check for complement of mate2's trim
- *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
- *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
- */
-      __pyx_t_5 = ((__pyx_v_trimtypeC != -1L) != 0);
-      if (__pyx_t_5) {
-
-        /* "_fasta_utils.pyx":816
- *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
- *             if trimtypeC != -1: # The complement putatively exists
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)             # <<<<<<<<<<<<<<
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
- *                 labelC = get_label(mate1, posC, trimtypeC)
- */
-        __pyx_t_10.__pyx_n = 1;
-        __pyx_t_10.qual = 0;
-        __pyx_t_16 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_mate1, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 816, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_16);
-        __pyx_v_trimC = ((PyObject*)__pyx_t_16);
-        __pyx_t_16 = 0;
-
-        /* "_fasta_utils.pyx":817
- *             if trimtypeC != -1: # The complement putatively exists
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)             # <<<<<<<<<<<<<<
- *                 labelC = get_label(mate1, posC, trimtypeC)
- *                 flippedC = is_flipped(trimtypeC)
- */
-        __pyx_t_10.__pyx_n = 1;
-        __pyx_t_10.qual = 1;
-        __pyx_t_16 = __pyx_f_12_fasta_utils_trim_readstring(__pyx_v_qual1, __pyx_v_posC, __pyx_v_trimtypeC, &__pyx_t_10); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 817, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_16);
-        __pyx_v_qtrmC = ((PyObject*)__pyx_t_16);
-        __pyx_t_16 = 0;
-
-        /* "_fasta_utils.pyx":818
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
- *                 labelC = get_label(mate1, posC, trimtypeC)             # <<<<<<<<<<<<<<
- *                 flippedC = is_flipped(trimtypeC)
- * 
- */
-        __pyx_t_16 = __pyx_f_12_fasta_utils_get_label(__pyx_v_mate1, __pyx_v_posC, __pyx_v_trimtypeC); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 818, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_16);
-        __pyx_v_labelC = ((PyObject*)__pyx_t_16);
-        __pyx_t_16 = 0;
-
-        /* "_fasta_utils.pyx":819
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
- *                 labelC = get_label(mate1, posC, trimtypeC)
- *                 flippedC = is_flipped(trimtypeC)             # <<<<<<<<<<<<<<
- * 
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
- */
-        __pyx_v_flippedC = __pyx_f_12_fasta_utils_is_flipped(__pyx_v_trimtypeC);
-
-        /* "_fasta_utils.pyx":821
- *                 flippedC = is_flipped(trimtypeC)
- * 
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)             # <<<<<<<<<<<<<<
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
- */
-        __pyx_t_13.__pyx_n = 2;
-        __pyx_t_13.mm_rate = __pyx_v_mm_rate;
-        __pyx_t_13.qualmask = __pyx_v_qualmask;
-        __pyx_t_16 = __pyx_f_12_fasta_utils_collapse_reads(__pyx_v_trim2, __pyx_v_trimC, __pyx_v_qtrm2, __pyx_v_qtrmC, 0, &__pyx_t_13); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 821, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_16);
-        __pyx_v_collapsed = ((PyObject*)__pyx_t_16);
-        __pyx_t_16 = 0;
-
-        /* "_fasta_utils.pyx":822
- * 
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
- *                         return (collapsed, qtrm2, None, None, labelC)
- */
-        __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_collapsed, __pyx_kp_u_, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 822, __pyx_L1_error)
-        __pyx_t_4 = (__pyx_t_5 != 0);
-        if (__pyx_t_4) {
-
-          /* "_fasta_utils.pyx":823
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
- *                         return (collapsed, qtrm2, None, None, labelC)
- *                     else: # mate1 was the longer sequence
- */
-          if (unlikely(__pyx_v_qtrm2 == Py_None)) {
-            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 823, __pyx_L1_error)
-          }
-          __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_qtrm2); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 823, __pyx_L1_error)
-          if (unlikely(__pyx_v_collapsed == Py_None)) {
-            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 823, __pyx_L1_error)
-          }
-          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_collapsed); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 823, __pyx_L1_error)
-          __pyx_t_4 = ((__pyx_t_14 == __pyx_t_3) != 0);
-          if (__pyx_t_4) {
-
-            /* "_fasta_utils.pyx":824
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
- *                         return (collapsed, qtrm2, None, None, labelC)             # <<<<<<<<<<<<<<
- *                     else: # mate1 was the longer sequence
- *                         return (collapsed, qtrmC, None, None, label2)
- */
-            __Pyx_XDECREF(__pyx_r);
-            __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 824, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_16);
-            __Pyx_INCREF(__pyx_v_collapsed);
-            __Pyx_GIVEREF(__pyx_v_collapsed);
-            PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_collapsed);
-            __Pyx_INCREF(__pyx_v_qtrm2);
-            __Pyx_GIVEREF(__pyx_v_qtrm2);
-            PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrm2);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-            __Pyx_INCREF(__pyx_v_labelC);
-            __Pyx_GIVEREF(__pyx_v_labelC);
-            PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_labelC);
-            __pyx_r = __pyx_t_16;
-            __pyx_t_16 = 0;
-            goto __pyx_L0;
-
-            /* "_fasta_utils.pyx":823
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence             # <<<<<<<<<<<<<<
- *                         return (collapsed, qtrm2, None, None, labelC)
- *                     else: # mate1 was the longer sequence
- */
-          }
-
-          /* "_fasta_utils.pyx":826
- *                         return (collapsed, qtrm2, None, None, labelC)
- *                     else: # mate1 was the longer sequence
- *                         return (collapsed, qtrmC, None, None, label2)             # <<<<<<<<<<<<<<
- *                 else: # Pick the higher quality solo-mapper
- *                     qualscore2 = quality_score(qtrm2)
- */
-          /*else*/ {
-            __Pyx_XDECREF(__pyx_r);
-            __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 826, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_16);
-            __Pyx_INCREF(__pyx_v_collapsed);
-            __Pyx_GIVEREF(__pyx_v_collapsed);
-            PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_collapsed);
-            __Pyx_INCREF(__pyx_v_qtrmC);
-            __Pyx_GIVEREF(__pyx_v_qtrmC);
-            PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrmC);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-            __Pyx_INCREF(__pyx_v_label2);
-            __Pyx_GIVEREF(__pyx_v_label2);
-            PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_label2);
-            __pyx_r = __pyx_t_16;
-            __pyx_t_16 = 0;
-            goto __pyx_L0;
-          }
-
-          /* "_fasta_utils.pyx":822
- * 
- *                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
- *                 if collapsed != '': # Complementary trimming is compatible, output solo read             # <<<<<<<<<<<<<<
- *                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
- *                         return (collapsed, qtrm2, None, None, labelC)
- */
-        }
-
-        /* "_fasta_utils.pyx":828
- *                         return (collapsed, qtrmC, None, None, label2)
- *                 else: # Pick the higher quality solo-mapper
- *                     qualscore2 = quality_score(qtrm2)             # <<<<<<<<<<<<<<
- *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
- */
-        /*else*/ {
-          __pyx_v_qualscore2 = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm2, 0);
-
-          /* "_fasta_utils.pyx":829
- *                 else: # Pick the higher quality solo-mapper
- *                     qualscore2 = quality_score(qtrm2)
- *                     qualscoreC = quality_score(qtrmC)             # <<<<<<<<<<<<<<
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
- */
-          __pyx_v_qualscoreC = __pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrmC, 0);
-
-          /* "_fasta_utils.pyx":830
- *                     qualscore2 = quality_score(qtrm2)
- *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail             # <<<<<<<<<<<<<<
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
- *                             return('', '', None, None, '') # Return empty read
- */
-          if (unlikely(__pyx_v_trim2 == Py_None)) {
-            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 830, __pyx_L1_error)
-          }
-          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 830, __pyx_L1_error)
-          __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
-          if (!__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L61_bool_binop_done;
-          }
-          __pyx_t_5 = ((__pyx_v_qualscore2 < __pyx_v_minqual) != 0);
-          __pyx_t_4 = __pyx_t_5;
-          __pyx_L61_bool_binop_done:;
-          if (__pyx_t_4) {
-
-            /* "_fasta_utils.pyx":831
- *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
- *                             return('', '', None, None, '') # Return empty read
- *                         else: # trimC pass
- */
-            if (unlikely(__pyx_v_trimC == Py_None)) {
-              PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-              __PYX_ERR(0, 831, __pyx_L1_error)
-            }
-            __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 831, __pyx_L1_error)
-            __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
-            if (!__pyx_t_5) {
-            } else {
-              __pyx_t_4 = __pyx_t_5;
-              goto __pyx_L64_bool_binop_done;
-            }
-            __pyx_t_5 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
-            __pyx_t_4 = __pyx_t_5;
-            __pyx_L64_bool_binop_done:;
-            if (__pyx_t_4) {
-
-              /* "_fasta_utils.pyx":832
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
- *                             return('', '', None, None, '') # Return empty read             # <<<<<<<<<<<<<<
- *                         else: # trimC pass
- *                             return(trimC, qtrmC, None, None, labelC)
- */
-              __Pyx_XDECREF(__pyx_r);
-              __Pyx_INCREF(__pyx_tuple__4);
-              __pyx_r = __pyx_tuple__4;
-              goto __pyx_L0;
-
-              /* "_fasta_utils.pyx":831
- *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail             # <<<<<<<<<<<<<<
- *                             return('', '', None, None, '') # Return empty read
- *                         else: # trimC pass
- */
-            }
-
-            /* "_fasta_utils.pyx":834
- *                             return('', '', None, None, '') # Return empty read
- *                         else: # trimC pass
- *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
- *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
- *                         return(trim2, qtrm2, None, None, label2)
- */
-            /*else*/ {
-              __Pyx_XDECREF(__pyx_r);
-              __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 834, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_16);
-              __Pyx_INCREF(__pyx_v_trimC);
-              __Pyx_GIVEREF(__pyx_v_trimC);
-              PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_trimC);
-              __Pyx_INCREF(__pyx_v_qtrmC);
-              __Pyx_GIVEREF(__pyx_v_qtrmC);
-              PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrmC);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-              __Pyx_INCREF(__pyx_v_labelC);
-              __Pyx_GIVEREF(__pyx_v_labelC);
-              PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_labelC);
-              __pyx_r = __pyx_t_16;
-              __pyx_t_16 = 0;
-              goto __pyx_L0;
-            }
-
-            /* "_fasta_utils.pyx":830
- *                     qualscore2 = quality_score(qtrm2)
- *                     qualscoreC = quality_score(qtrmC)
- *                     if len(trim2) < minlen or qualscore2 < minqual: # trim2 fail             # <<<<<<<<<<<<<<
- *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
- *                             return('', '', None, None, '') # Return empty read
- */
-          }
-
-          /* "_fasta_utils.pyx":835
- *                         else: # trimC pass
- *                             return(trimC, qtrmC, None, None, labelC)
- *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
- *                         return(trim2, qtrm2, None, None, label2)
- *                     else: # both pass
- */
-          if (unlikely(__pyx_v_trimC == Py_None)) {
-            PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 835, __pyx_L1_error)
-          }
-          __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trimC); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 835, __pyx_L1_error)
-          __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
-          if (!__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L66_bool_binop_done;
-          }
-          __pyx_t_5 = ((__pyx_v_qualscoreC < __pyx_v_minqual) != 0);
-          __pyx_t_4 = __pyx_t_5;
-          __pyx_L66_bool_binop_done:;
-          if (__pyx_t_4) {
-
-            /* "_fasta_utils.pyx":836
- *                             return(trimC, qtrmC, None, None, labelC)
- *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
- *                         return(trim2, qtrm2, None, None, label2)             # <<<<<<<<<<<<<<
- *                     else: # both pass
- *                         if qualscore2 >= qualscoreC:
- */
-            __Pyx_XDECREF(__pyx_r);
-            __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 836, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_16);
-            __Pyx_INCREF(__pyx_v_trim2);
-            __Pyx_GIVEREF(__pyx_v_trim2);
-            PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_trim2);
-            __Pyx_INCREF(__pyx_v_qtrm2);
-            __Pyx_GIVEREF(__pyx_v_qtrm2);
-            PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrm2);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-            __Pyx_INCREF(Py_None);
-            __Pyx_GIVEREF(Py_None);
-            PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-            __Pyx_INCREF(__pyx_v_label2);
-            __Pyx_GIVEREF(__pyx_v_label2);
-            PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_label2);
-            __pyx_r = __pyx_t_16;
-            __pyx_t_16 = 0;
-            goto __pyx_L0;
-
-            /* "_fasta_utils.pyx":835
- *                         else: # trimC pass
- *                             return(trimC, qtrmC, None, None, labelC)
- *                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail             # <<<<<<<<<<<<<<
- *                         return(trim2, qtrm2, None, None, label2)
- *                     else: # both pass
- */
-          }
-
-          /* "_fasta_utils.pyx":838
- *                         return(trim2, qtrm2, None, None, label2)
- *                     else: # both pass
- *                         if qualscore2 >= qualscoreC:             # <<<<<<<<<<<<<<
- *                             return(trim2, qtrm2, None, None, label2)
- *                         else:
- */
-          /*else*/ {
-            __pyx_t_4 = ((__pyx_v_qualscore2 >= __pyx_v_qualscoreC) != 0);
-            if (__pyx_t_4) {
-
-              /* "_fasta_utils.pyx":839
- *                     else: # both pass
- *                         if qualscore2 >= qualscoreC:
- *                             return(trim2, qtrm2, None, None, label2)             # <<<<<<<<<<<<<<
- *                         else:
- *                             return(trimC, qtrmC, None, None, labelC)
- */
-              __Pyx_XDECREF(__pyx_r);
-              __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 839, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_16);
-              __Pyx_INCREF(__pyx_v_trim2);
-              __Pyx_GIVEREF(__pyx_v_trim2);
-              PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_trim2);
-              __Pyx_INCREF(__pyx_v_qtrm2);
-              __Pyx_GIVEREF(__pyx_v_qtrm2);
-              PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrm2);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-              __Pyx_INCREF(__pyx_v_label2);
-              __Pyx_GIVEREF(__pyx_v_label2);
-              PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_label2);
-              __pyx_r = __pyx_t_16;
-              __pyx_t_16 = 0;
-              goto __pyx_L0;
-
-              /* "_fasta_utils.pyx":838
- *                         return(trim2, qtrm2, None, None, label2)
- *                     else: # both pass
- *                         if qualscore2 >= qualscoreC:             # <<<<<<<<<<<<<<
- *                             return(trim2, qtrm2, None, None, label2)
- *                         else:
- */
-            }
-
-            /* "_fasta_utils.pyx":841
- *                             return(trim2, qtrm2, None, None, label2)
- *                         else:
- *                             return(trimC, qtrmC, None, None, labelC)             # <<<<<<<<<<<<<<
- *             else: # Could not find complementary trim
- *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable
- */
-            /*else*/ {
-              __Pyx_XDECREF(__pyx_r);
-              __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 841, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_16);
-              __Pyx_INCREF(__pyx_v_trimC);
-              __Pyx_GIVEREF(__pyx_v_trimC);
-              PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_trimC);
-              __Pyx_INCREF(__pyx_v_qtrmC);
-              __Pyx_GIVEREF(__pyx_v_qtrmC);
-              PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qtrmC);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-              __Pyx_INCREF(Py_None);
-              __Pyx_GIVEREF(Py_None);
-              PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-              __Pyx_INCREF(__pyx_v_labelC);
-              __Pyx_GIVEREF(__pyx_v_labelC);
-              PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_v_labelC);
-              __pyx_r = __pyx_t_16;
-              __pyx_t_16 = 0;
-              goto __pyx_L0;
-            }
-          }
-        }
-
-        /* "_fasta_utils.pyx":815
- *             # Check for complement of mate2's trim
- *             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
- *             if trimtypeC != -1: # The complement putatively exists             # <<<<<<<<<<<<<<
- *                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
- *                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
- */
-      }
-
-      /* "_fasta_utils.pyx":843
- *                             return(trimC, qtrmC, None, None, labelC)
- *             else: # Could not find complementary trim
- *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
- *                     return(mate1, qual1, None, None, '') # Return empty read
- * 
- */
-      /*else*/ {
-        if (unlikely(__pyx_v_trim2 == Py_None)) {
-          PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-          __PYX_ERR(0, 843, __pyx_L1_error)
-        }
-        __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 843, __pyx_L1_error)
-        __pyx_t_5 = ((__pyx_t_3 < __pyx_v_minlen) != 0);
-        if (!__pyx_t_5) {
-        } else {
-          __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L70_bool_binop_done;
-        }
-        __pyx_t_5 = ((__pyx_f_12_fasta_utils_quality_score(__pyx_v_qtrm2, 0) < __pyx_v_minqual) != 0);
-        __pyx_t_4 = __pyx_t_5;
-        __pyx_L70_bool_binop_done:;
-        if (__pyx_t_4) {
-
-          /* "_fasta_utils.pyx":844
- *             else: # Could not find complementary trim
- *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable
- *                     return(mate1, qual1, None, None, '') # Return empty read             # <<<<<<<<<<<<<<
- * 
- *             # Check if the original trim was compatible)
- */
-          __Pyx_XDECREF(__pyx_r);
-          __pyx_t_16 = PyTuple_New(5); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 844, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_16);
-          __Pyx_INCREF(__pyx_v_mate1);
-          __Pyx_GIVEREF(__pyx_v_mate1);
-          PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_v_mate1);
-          __Pyx_INCREF(__pyx_v_qual1);
-          __Pyx_GIVEREF(__pyx_v_qual1);
-          PyTuple_SET_ITEM(__pyx_t_16, 1, __pyx_v_qual1);
-          __Pyx_INCREF(Py_None);
-          __Pyx_GIVEREF(Py_None);
-          PyTuple_SET_ITEM(__pyx_t_16, 2, Py_None);
-          __Pyx_INCREF(Py_None);
-          __Pyx_GIVEREF(Py_None);
-          PyTuple_SET_ITEM(__pyx_t_16, 3, Py_None);
-          __Pyx_INCREF(__pyx_kp_u_);
-          __Pyx_GIVEREF(__pyx_kp_u_);
-          PyTuple_SET_ITEM(__pyx_t_16, 4, __pyx_kp_u_);
-          __pyx_r = __pyx_t_16;
-          __pyx_t_16 = 0;
-          goto __pyx_L0;
-
-          /* "_fasta_utils.pyx":843
+          /* "_fasta_utils.pyx":869
  *                             return(trimC, qtrmC, None, None, labelC)
  *             else: # Could not find complementary trim
  *                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable             # <<<<<<<<<<<<<<
@@ -12385,7 +12714,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
         }
       }
 
-      /* "_fasta_utils.pyx":847
+      /* "_fasta_utils.pyx":873
  * 
  *             # Check if the original trim was compatible)
  *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
@@ -12395,29 +12724,29 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
       __pyx_t_4 = ((__pyx_v_trimtype1 == __pyx_v_trimtype2) != 0);
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":848
+        /* "_fasta_utils.pyx":874
  *             # Check if the original trim was compatible)
  *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim
  *                 trim1, qtrm1, label1, trimtype1 = mate1, qual1, '', -1             # <<<<<<<<<<<<<<
  * 
  *     if 'E' in label1:
  */
-        __pyx_t_16 = __pyx_v_mate1;
-        __Pyx_INCREF(__pyx_t_16);
-        __pyx_t_15 = __pyx_v_qual1;
-        __Pyx_INCREF(__pyx_t_15);
-        __pyx_t_1 = __pyx_kp_u_;
+        __pyx_t_1 = __pyx_v_mate1;
         __Pyx_INCREF(__pyx_t_1);
+        __pyx_t_11 = __pyx_v_qual1;
+        __Pyx_INCREF(__pyx_t_11);
+        __pyx_t_12 = __pyx_kp_u_;
+        __Pyx_INCREF(__pyx_t_12);
         __pyx_t_8 = -1;
-        __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_16));
-        __pyx_t_16 = 0;
-        __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_15));
-        __pyx_t_15 = 0;
-        __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_1));
+        __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_1));
         __pyx_t_1 = 0;
+        __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_11));
+        __pyx_t_11 = 0;
+        __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_12));
+        __pyx_t_12 = 0;
         __pyx_v_trimtype1 = __pyx_t_8;
 
-        /* "_fasta_utils.pyx":847
+        /* "_fasta_utils.pyx":873
  * 
  *             # Check if the original trim was compatible)
  *             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim             # <<<<<<<<<<<<<<
@@ -12426,10 +12755,10 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
       }
     }
-    __pyx_L37:;
+    __pyx_L42:;
   }
 
-  /* "_fasta_utils.pyx":850
+  /* "_fasta_utils.pyx":876
  *                 trim1, qtrm1, label1, trimtype1 = mate1, qual1, '', -1
  * 
  *     if 'E' in label1:             # <<<<<<<<<<<<<<
@@ -12438,35 +12767,35 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   if (unlikely(__pyx_v_label1 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 850, __pyx_L1_error)
+    __PYX_ERR(0, 876, __pyx_L1_error)
   }
-  __pyx_t_4 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_E, __pyx_v_label1, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 850, __pyx_L1_error)
+  __pyx_t_4 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_E, __pyx_v_label1, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 876, __pyx_L1_error)
   __pyx_t_5 = (__pyx_t_4 != 0);
   if (__pyx_t_5) {
 
-    /* "_fasta_utils.pyx":851
+    /* "_fasta_utils.pyx":877
  * 
  *     if 'E' in label1:
  *         label = label2+label1             # <<<<<<<<<<<<<<
  *     else:
  *         label = label1+label2
  */
-    __pyx_t_1 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_label2, __pyx_v_label1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 851, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_label = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_label2, __pyx_v_label1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 877, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_label = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
 
-    /* "_fasta_utils.pyx":850
+    /* "_fasta_utils.pyx":876
  *                 trim1, qtrm1, label1, trimtype1 = mate1, qual1, '', -1
  * 
  *     if 'E' in label1:             # <<<<<<<<<<<<<<
  *         label = label2+label1
  *     else:
  */
-    goto __pyx_L73;
+    goto __pyx_L78;
   }
 
-  /* "_fasta_utils.pyx":853
+  /* "_fasta_utils.pyx":879
  *         label = label2+label1
  *     else:
  *         label = label1+label2             # <<<<<<<<<<<<<<
@@ -12474,14 +12803,14 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  *     reverse = reads_are_reversed(trimtype1,trimtype2)
  */
   /*else*/ {
-    __pyx_t_1 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_label1, __pyx_v_label2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 853, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_label = ((PyObject*)__pyx_t_1);
-    __pyx_t_1 = 0;
+    __pyx_t_12 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_label1, __pyx_v_label2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 879, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_v_label = ((PyObject*)__pyx_t_12);
+    __pyx_t_12 = 0;
   }
-  __pyx_L73:;
+  __pyx_L78:;
 
-  /* "_fasta_utils.pyx":855
+  /* "_fasta_utils.pyx":881
  *         label = label1+label2
  * 
  *     reverse = reads_are_reversed(trimtype1,trimtype2)             # <<<<<<<<<<<<<<
@@ -12490,7 +12819,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   __pyx_v_reverse = __pyx_f_12_fasta_utils_reads_are_reversed(__pyx_v_trimtype1, __pyx_v_trimtype2);
 
-  /* "_fasta_utils.pyx":856
+  /* "_fasta_utils.pyx":882
  * 
  *     reverse = reads_are_reversed(trimtype1,trimtype2)
  *     if reverse:             # <<<<<<<<<<<<<<
@@ -12500,19 +12829,19 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   __pyx_t_5 = (__pyx_v_reverse != 0);
   if (__pyx_t_5) {
 
-    /* "_fasta_utils.pyx":858
+    /* "_fasta_utils.pyx":884
  *     if reverse:
  *         # mates 1 and 2 must be swapped
  *         trim1, qtrm1, label1, flipped1, trim2, qtrm2, label2, flipped2 = trim2, qtrm2, label2, flipped2, trim1, qtrm1, label1, flipped1             # <<<<<<<<<<<<<<
  * 
  *     if 'S' in label and 'E' in label: # Special case: mate1 S, mate2 E
  */
-    __pyx_t_1 = __pyx_v_trim2;
+    __pyx_t_12 = __pyx_v_trim2;
+    __Pyx_INCREF(__pyx_t_12);
+    __pyx_t_11 = __pyx_v_qtrm2;
+    __Pyx_INCREF(__pyx_t_11);
+    __pyx_t_1 = __pyx_v_label2;
     __Pyx_INCREF(__pyx_t_1);
-    __pyx_t_15 = __pyx_v_qtrm2;
-    __Pyx_INCREF(__pyx_t_15);
-    __pyx_t_16 = __pyx_v_label2;
-    __Pyx_INCREF(__pyx_t_16);
     __pyx_t_5 = __pyx_v_flipped2;
     __pyx_t_17 = __pyx_v_trim1;
     __Pyx_INCREF(__pyx_t_17);
@@ -12521,12 +12850,12 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
     __pyx_t_19 = __pyx_v_label1;
     __Pyx_INCREF(__pyx_t_19);
     __pyx_t_4 = __pyx_v_flipped1;
-    __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_1));
+    __Pyx_DECREF_SET(__pyx_v_trim1, ((PyObject*)__pyx_t_12));
+    __pyx_t_12 = 0;
+    __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_11));
+    __pyx_t_11 = 0;
+    __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
-    __Pyx_DECREF_SET(__pyx_v_qtrm1, ((PyObject*)__pyx_t_15));
-    __pyx_t_15 = 0;
-    __Pyx_DECREF_SET(__pyx_v_label1, ((PyObject*)__pyx_t_16));
-    __pyx_t_16 = 0;
     __pyx_v_flipped1 = __pyx_t_5;
     __Pyx_DECREF_SET(__pyx_v_trim2, ((PyObject*)__pyx_t_17));
     __pyx_t_17 = 0;
@@ -12536,7 +12865,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
     __pyx_t_19 = 0;
     __pyx_v_flipped2 = __pyx_t_4;
 
-    /* "_fasta_utils.pyx":856
+    /* "_fasta_utils.pyx":882
  * 
  *     reverse = reads_are_reversed(trimtype1,trimtype2)
  *     if reverse:             # <<<<<<<<<<<<<<
@@ -12545,43 +12874,43 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "_fasta_utils.pyx":860
+  /* "_fasta_utils.pyx":886
  *         trim1, qtrm1, label1, flipped1, trim2, qtrm2, label2, flipped2 = trim2, qtrm2, label2, flipped2, trim1, qtrm1, label1, flipped1
  * 
  *     if 'S' in label and 'E' in label: # Special case: mate1 S, mate2 E             # <<<<<<<<<<<<<<
  *         # Because trim_readstring() flipped both mates, one must be flipped back
  *         trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  */
-  __pyx_t_5 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_S, __pyx_v_label, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 860, __pyx_L1_error)
+  __pyx_t_5 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_S, __pyx_v_label, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 886, __pyx_L1_error)
   __pyx_t_20 = (__pyx_t_5 != 0);
   if (__pyx_t_20) {
   } else {
     __pyx_t_4 = __pyx_t_20;
-    goto __pyx_L76_bool_binop_done;
+    goto __pyx_L81_bool_binop_done;
   }
-  __pyx_t_20 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_E, __pyx_v_label, Py_EQ)); if (unlikely(__pyx_t_20 < 0)) __PYX_ERR(0, 860, __pyx_L1_error)
+  __pyx_t_20 = (__Pyx_PyUnicode_ContainsTF(__pyx_n_u_E, __pyx_v_label, Py_EQ)); if (unlikely(__pyx_t_20 < 0)) __PYX_ERR(0, 886, __pyx_L1_error)
   __pyx_t_5 = (__pyx_t_20 != 0);
   __pyx_t_4 = __pyx_t_5;
-  __pyx_L76_bool_binop_done:;
+  __pyx_L81_bool_binop_done:;
   if (__pyx_t_4) {
 
-    /* "_fasta_utils.pyx":862
+    /* "_fasta_utils.pyx":888
  *     if 'S' in label and 'E' in label: # Special case: mate1 S, mate2 E
  *         # Because trim_readstring() flipped both mates, one must be flipped back
  *         trim2, qtrm2 = rc(trim2), qtrm2[::-1]             # <<<<<<<<<<<<<<
  * 
  *     if label:
  */
-    __pyx_t_19 = __pyx_f_12_fasta_utils_rc(__pyx_v_trim2, 0); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 862, __pyx_L1_error)
+    __pyx_t_19 = __pyx_f_12_fasta_utils_rc(__pyx_v_trim2, 0); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 888, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_19);
-    __pyx_t_18 = __Pyx_PyObject_GetItem(__pyx_v_qtrm2, __pyx_slice__3); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 862, __pyx_L1_error)
+    __pyx_t_18 = __Pyx_PyObject_GetItem(__pyx_v_qtrm2, __pyx_slice__3); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 888, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_18);
     __Pyx_DECREF_SET(__pyx_v_trim2, ((PyObject*)__pyx_t_19));
     __pyx_t_19 = 0;
     __Pyx_DECREF_SET(__pyx_v_qtrm2, ((PyObject*)__pyx_t_18));
     __pyx_t_18 = 0;
 
-    /* "_fasta_utils.pyx":860
+    /* "_fasta_utils.pyx":886
  *         trim1, qtrm1, label1, flipped1, trim2, qtrm2, label2, flipped2 = trim2, qtrm2, label2, flipped2, trim1, qtrm1, label1, flipped1
  * 
  *     if 'S' in label and 'E' in label: # Special case: mate1 S, mate2 E             # <<<<<<<<<<<<<<
@@ -12590,7 +12919,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "_fasta_utils.pyx":864
+  /* "_fasta_utils.pyx":890
  *         trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  * 
  *     if label:             # <<<<<<<<<<<<<<
@@ -12600,78 +12929,78 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   __pyx_t_4 = (__Pyx_PyUnicode_IS_TRUE(__pyx_v_label) != 0);
   if (__pyx_t_4) {
 
-    /* "_fasta_utils.pyx":865
+    /* "_fasta_utils.pyx":891
  * 
  *     if label:
  *         if label[0] == 'E':             # <<<<<<<<<<<<<<
  *             trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  *             if int(label[1:]) == len(mate1) and len(trim1) == len(mate1):
  */
-    __pyx_t_21 = __Pyx_GetItemInt_Unicode(__pyx_v_label, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_21 == (Py_UCS4)-1)) __PYX_ERR(0, 865, __pyx_L1_error)
+    __pyx_t_21 = __Pyx_GetItemInt_Unicode(__pyx_v_label, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_21 == (Py_UCS4)-1)) __PYX_ERR(0, 891, __pyx_L1_error)
     __pyx_t_4 = ((__pyx_t_21 == 69) != 0);
     if (__pyx_t_4) {
 
-      /* "_fasta_utils.pyx":866
+      /* "_fasta_utils.pyx":892
  *     if label:
  *         if label[0] == 'E':
  *             trim2, qtrm2 = rc(trim2), qtrm2[::-1]             # <<<<<<<<<<<<<<
  *             if int(label[1:]) == len(mate1) and len(trim1) == len(mate1):
  *                 # One fully trimmed and one fully untrimmed read exist. This is uninformative as an end
  */
-      __pyx_t_18 = __pyx_f_12_fasta_utils_rc(__pyx_v_trim2, 0); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 866, __pyx_L1_error)
+      __pyx_t_18 = __pyx_f_12_fasta_utils_rc(__pyx_v_trim2, 0); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 892, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_18);
-      __pyx_t_19 = __Pyx_PyObject_GetItem(__pyx_v_qtrm2, __pyx_slice__3); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 866, __pyx_L1_error)
+      __pyx_t_19 = __Pyx_PyObject_GetItem(__pyx_v_qtrm2, __pyx_slice__3); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 892, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_19);
       __Pyx_DECREF_SET(__pyx_v_trim2, ((PyObject*)__pyx_t_18));
       __pyx_t_18 = 0;
       __Pyx_DECREF_SET(__pyx_v_qtrm2, ((PyObject*)__pyx_t_19));
       __pyx_t_19 = 0;
 
-      /* "_fasta_utils.pyx":867
+      /* "_fasta_utils.pyx":893
  *         if label[0] == 'E':
  *             trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  *             if int(label[1:]) == len(mate1) and len(trim1) == len(mate1):             # <<<<<<<<<<<<<<
  *                 # One fully trimmed and one fully untrimmed read exist. This is uninformative as an end
  *                 label = ''
  */
-      __pyx_t_19 = __Pyx_PyUnicode_Substring(__pyx_v_label, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_19 = __Pyx_PyUnicode_Substring(__pyx_v_label, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 893, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_19);
-      __pyx_t_18 = __Pyx_PyNumber_Int(__pyx_t_19); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_18 = __Pyx_PyNumber_Int(__pyx_t_19); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 893, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_18);
       __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
       if (unlikely(__pyx_v_mate1 == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-        __PYX_ERR(0, 867, __pyx_L1_error)
+        __PYX_ERR(0, 893, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_mate1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 867, __pyx_L1_error)
-      __pyx_t_19 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_mate1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 893, __pyx_L1_error)
+      __pyx_t_19 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 893, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_19);
-      __pyx_t_17 = PyObject_RichCompare(__pyx_t_18, __pyx_t_19, Py_EQ); __Pyx_XGOTREF(__pyx_t_17); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_17 = PyObject_RichCompare(__pyx_t_18, __pyx_t_19, Py_EQ); __Pyx_XGOTREF(__pyx_t_17); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 893, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
       __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-      __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_17); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_17); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 893, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
       if (__pyx_t_5) {
       } else {
         __pyx_t_4 = __pyx_t_5;
-        goto __pyx_L81_bool_binop_done;
+        goto __pyx_L86_bool_binop_done;
       }
       if (unlikely(__pyx_v_trim1 == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-        __PYX_ERR(0, 867, __pyx_L1_error)
+        __PYX_ERR(0, 893, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 867, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_trim1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 893, __pyx_L1_error)
       if (unlikely(__pyx_v_mate1 == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-        __PYX_ERR(0, 867, __pyx_L1_error)
+        __PYX_ERR(0, 893, __pyx_L1_error)
       }
-      __pyx_t_14 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_mate1); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 867, __pyx_L1_error)
-      __pyx_t_5 = ((__pyx_t_3 == __pyx_t_14) != 0);
+      __pyx_t_16 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_mate1); if (unlikely(__pyx_t_16 == ((Py_ssize_t)-1))) __PYX_ERR(0, 893, __pyx_L1_error)
+      __pyx_t_5 = ((__pyx_t_3 == __pyx_t_16) != 0);
       __pyx_t_4 = __pyx_t_5;
-      __pyx_L81_bool_binop_done:;
+      __pyx_L86_bool_binop_done:;
       if (__pyx_t_4) {
 
-        /* "_fasta_utils.pyx":869
+        /* "_fasta_utils.pyx":895
  *             if int(label[1:]) == len(mate1) and len(trim1) == len(mate1):
  *                 # One fully trimmed and one fully untrimmed read exist. This is uninformative as an end
  *                 label = ''             # <<<<<<<<<<<<<<
@@ -12681,7 +13010,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
         __Pyx_INCREF(__pyx_kp_u_);
         __Pyx_DECREF_SET(__pyx_v_label, __pyx_kp_u_);
 
-        /* "_fasta_utils.pyx":867
+        /* "_fasta_utils.pyx":893
  *         if label[0] == 'E':
  *             trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  *             if int(label[1:]) == len(mate1) and len(trim1) == len(mate1):             # <<<<<<<<<<<<<<
@@ -12690,7 +13019,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
       }
 
-      /* "_fasta_utils.pyx":865
+      /* "_fasta_utils.pyx":891
  * 
  *     if label:
  *         if label[0] == 'E':             # <<<<<<<<<<<<<<
@@ -12699,7 +13028,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
     }
 
-    /* "_fasta_utils.pyx":864
+    /* "_fasta_utils.pyx":890
  *         trim2, qtrm2 = rc(trim2), qtrm2[::-1]
  * 
  *     if label:             # <<<<<<<<<<<<<<
@@ -12708,7 +13037,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "_fasta_utils.pyx":871
+  /* "_fasta_utils.pyx":897
  *                 label = ''
  * 
  *     return (trim1, qtrm1, trim2, qtrm2, label)             # <<<<<<<<<<<<<<
@@ -12716,7 +13045,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
  * # Importing a FASTA file as a genome object
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_17 = PyTuple_New(5); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 871, __pyx_L1_error)
+  __pyx_t_17 = PyTuple_New(5); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 897, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_17);
   __Pyx_INCREF(__pyx_v_trim1);
   __Pyx_GIVEREF(__pyx_v_trim1);
@@ -12748,8 +13077,8 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_15);
-  __Pyx_XDECREF(__pyx_t_16);
+  __Pyx_XDECREF(__pyx_t_11);
+  __Pyx_XDECREF(__pyx_t_12);
   __Pyx_XDECREF(__pyx_t_17);
   __Pyx_XDECREF(__pyx_t_18);
   __Pyx_XDECREF(__pyx_t_19);
@@ -12775,7 +13104,7 @@ static PyObject *__pyx_pf_12_fasta_utils_26terminal_trim(CYTHON_UNUSED PyObject 
   return __pyx_r;
 }
 
-/* "_fasta_utils.pyx":874
+/* "_fasta_utils.pyx":900
  * 
  * # Importing a FASTA file as a genome object
  * cpdef import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True, bint indexed=False):             # <<<<<<<<<<<<<<
@@ -12832,31 +13161,31 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     }
   }
 
-  /* "_fasta_utils.pyx":879
+  /* "_fasta_utils.pyx":905
  *         str rawline, line, chromname, chromstring, firstchar, index
  *         long linelen, start_position, trimmed_length, untrimmed_length
  *         list current_lines = []             # <<<<<<<<<<<<<<
  *         dict genome = {}
  *         bint length_mismatch
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 905, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_current_lines = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":880
+  /* "_fasta_utils.pyx":906
  *         long linelen, start_position, trimmed_length, untrimmed_length
  *         list current_lines = []
  *         dict genome = {}             # <<<<<<<<<<<<<<
  *         bint length_mismatch
  * 
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 880, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 906, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_genome = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":883
+  /* "_fasta_utils.pyx":909
  *         bint length_mismatch
  * 
  *     chromname = 'none'             # <<<<<<<<<<<<<<
@@ -12866,7 +13195,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __Pyx_INCREF(__pyx_n_u_none);
   __pyx_v_chromname = __pyx_n_u_none;
 
-  /* "_fasta_utils.pyx":884
+  /* "_fasta_utils.pyx":910
  * 
  *     chromname = 'none'
  *     chromstring = ''             # <<<<<<<<<<<<<<
@@ -12876,7 +13205,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __Pyx_INCREF(__pyx_kp_u_);
   __pyx_v_chromstring = __pyx_kp_u_;
 
-  /* "_fasta_utils.pyx":885
+  /* "_fasta_utils.pyx":911
  *     chromname = 'none'
  *     chromstring = ''
  *     trimmed_length = untrimmed_length = start_position = 0             # <<<<<<<<<<<<<<
@@ -12887,7 +13216,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __pyx_v_untrimmed_length = 0;
   __pyx_v_start_position = 0;
 
-  /* "_fasta_utils.pyx":886
+  /* "_fasta_utils.pyx":912
  *     chromstring = ''
  *     trimmed_length = untrimmed_length = start_position = 0
  *     length_mismatch = False             # <<<<<<<<<<<<<<
@@ -12896,7 +13225,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
   __pyx_v_length_mismatch = 0;
 
-  /* "_fasta_utils.pyx":887
+  /* "_fasta_utils.pyx":913
  *     trimmed_length = untrimmed_length = start_position = 0
  *     length_mismatch = False
  *     if indexed:             # <<<<<<<<<<<<<<
@@ -12906,16 +13235,16 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __pyx_t_2 = (__pyx_v_indexed != 0);
   if (__pyx_t_2) {
 
-    /* "_fasta_utils.pyx":888
+    /* "_fasta_utils.pyx":914
  *     length_mismatch = False
  *     if indexed:
  *         index = open(genome_FASTA+'.fai','r').read()             # <<<<<<<<<<<<<<
  *     else:
  *         index = ''
  */
-    __pyx_t_3 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_genome_FASTA, __pyx_kp_u_fai); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 888, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_ConcatSafe(__pyx_v_genome_FASTA, __pyx_kp_u_fai); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 914, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 888, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 914, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_3);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
@@ -12923,10 +13252,10 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     __Pyx_GIVEREF(__pyx_n_u_r);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_n_u_r);
     __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 888, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 914, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_read); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 888, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_read); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 914, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -12941,14 +13270,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     }
     __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 888, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 914, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 888, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 914, __pyx_L1_error)
     __pyx_v_index = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":887
+    /* "_fasta_utils.pyx":913
  *     trimmed_length = untrimmed_length = start_position = 0
  *     length_mismatch = False
  *     if indexed:             # <<<<<<<<<<<<<<
@@ -12958,7 +13287,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     goto __pyx_L3;
   }
 
-  /* "_fasta_utils.pyx":890
+  /* "_fasta_utils.pyx":916
  *         index = open(genome_FASTA+'.fai','r').read()
  *     else:
  *         index = ''             # <<<<<<<<<<<<<<
@@ -12971,26 +13300,26 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   }
   __pyx_L3:;
 
-  /* "_fasta_utils.pyx":892
+  /* "_fasta_utils.pyx":918
  *         index = ''
  * 
  *     genome_file = open(genome_FASTA)             # <<<<<<<<<<<<<<
  *     rawline = genome_file.readline()
  *     while rawline:
  */
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_open, __pyx_v_genome_FASTA); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 892, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_open, __pyx_v_genome_FASTA); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 918, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_genome_file = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":893
+  /* "_fasta_utils.pyx":919
  * 
  *     genome_file = open(genome_FASTA)
  *     rawline = genome_file.readline()             # <<<<<<<<<<<<<<
  *     while rawline:
  *         line = rawline.rstrip()
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 893, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 919, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -13004,14 +13333,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 893, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 919, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 893, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 919, __pyx_L1_error)
   __pyx_v_rawline = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":894
+  /* "_fasta_utils.pyx":920
  *     genome_file = open(genome_FASTA)
  *     rawline = genome_file.readline()
  *     while rawline:             # <<<<<<<<<<<<<<
@@ -13022,20 +13351,20 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     __pyx_t_2 = (__pyx_v_rawline != Py_None)&&(__Pyx_PyUnicode_IS_TRUE(__pyx_v_rawline) != 0);
     if (!__pyx_t_2) break;
 
-    /* "_fasta_utils.pyx":895
+    /* "_fasta_utils.pyx":921
  *     rawline = genome_file.readline()
  *     while rawline:
  *         line = rawline.rstrip()             # <<<<<<<<<<<<<<
  *         linelen = len(line)
  *         if linelen == 0:
  */
-    __pyx_t_1 = __Pyx_CallUnboundCMethod0(&__pyx_umethod_PyUnicode_Type_rstrip, __pyx_v_rawline); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 895, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_CallUnboundCMethod0(&__pyx_umethod_PyUnicode_Type_rstrip, __pyx_v_rawline); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 921, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 895, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 921, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_line, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":896
+    /* "_fasta_utils.pyx":922
  *     while rawline:
  *         line = rawline.rstrip()
  *         linelen = len(line)             # <<<<<<<<<<<<<<
@@ -13044,12 +13373,12 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
     if (unlikely(__pyx_v_line == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 896, __pyx_L1_error)
+      __PYX_ERR(0, 922, __pyx_L1_error)
     }
-    __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 922, __pyx_L1_error)
     __pyx_v_linelen = __pyx_t_5;
 
-    /* "_fasta_utils.pyx":897
+    /* "_fasta_utils.pyx":923
  *         line = rawline.rstrip()
  *         linelen = len(line)
  *         if linelen == 0:             # <<<<<<<<<<<<<<
@@ -13059,14 +13388,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     __pyx_t_2 = ((__pyx_v_linelen == 0) != 0);
     if (__pyx_t_2) {
 
-      /* "_fasta_utils.pyx":898
+      /* "_fasta_utils.pyx":924
  *         linelen = len(line)
  *         if linelen == 0:
  *             rawline = genome_file.readline()             # <<<<<<<<<<<<<<
  *             continue
  * 
  */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 898, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 924, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_3 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -13080,14 +13409,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       }
       __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 898, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 924, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 898, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 924, __pyx_L1_error)
       __Pyx_DECREF_SET(__pyx_v_rawline, ((PyObject*)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "_fasta_utils.pyx":899
+      /* "_fasta_utils.pyx":925
  *         if linelen == 0:
  *             rawline = genome_file.readline()
  *             continue             # <<<<<<<<<<<<<<
@@ -13096,7 +13425,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       goto __pyx_L4_continue;
 
-      /* "_fasta_utils.pyx":897
+      /* "_fasta_utils.pyx":923
  *         line = rawline.rstrip()
  *         linelen = len(line)
  *         if linelen == 0:             # <<<<<<<<<<<<<<
@@ -13105,64 +13434,64 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
     }
 
-    /* "_fasta_utils.pyx":901
+    /* "_fasta_utils.pyx":927
  *             continue
  * 
  *         firstchar = line[0]             # <<<<<<<<<<<<<<
  *         if firstchar == '>':
  *             if chromname != 'none':
  */
-    __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 901, __pyx_L1_error)
-    __pyx_t_1 = PyUnicode_FromOrdinal(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 901, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_1 = PyUnicode_FromOrdinal(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 927, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 901, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 927, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_firstchar, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":902
+    /* "_fasta_utils.pyx":928
  * 
  *         firstchar = line[0]
  *         if firstchar == '>':             # <<<<<<<<<<<<<<
  *             if chromname != 'none':
  *                 chromstring = ''.join(current_lines)
  */
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_firstchar, __pyx_kp_u__6, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 902, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_firstchar, __pyx_kp_u__6, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 928, __pyx_L1_error)
     __pyx_t_7 = (__pyx_t_2 != 0);
     if (__pyx_t_7) {
 
-      /* "_fasta_utils.pyx":903
+      /* "_fasta_utils.pyx":929
  *         firstchar = line[0]
  *         if firstchar == '>':
  *             if chromname != 'none':             # <<<<<<<<<<<<<<
  *                 chromstring = ''.join(current_lines)
  *                 genome[chromname] = chromstring
  */
-      __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_chromname, __pyx_n_u_none, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 903, __pyx_L1_error)
+      __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_chromname, __pyx_n_u_none, Py_NE)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 929, __pyx_L1_error)
       __pyx_t_2 = (__pyx_t_7 != 0);
       if (__pyx_t_2) {
 
-        /* "_fasta_utils.pyx":904
+        /* "_fasta_utils.pyx":930
  *         if firstchar == '>':
  *             if chromname != 'none':
  *                 chromstring = ''.join(current_lines)             # <<<<<<<<<<<<<<
  *                 genome[chromname] = chromstring
  *                 if not indexed:
  */
-        __pyx_t_1 = PyUnicode_Join(__pyx_kp_u_, __pyx_v_current_lines); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 904, __pyx_L1_error)
+        __pyx_t_1 = PyUnicode_Join(__pyx_kp_u_, __pyx_v_current_lines); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 930, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF_SET(__pyx_v_chromstring, ((PyObject*)__pyx_t_1));
         __pyx_t_1 = 0;
 
-        /* "_fasta_utils.pyx":905
+        /* "_fasta_utils.pyx":931
  *             if chromname != 'none':
  *                 chromstring = ''.join(current_lines)
  *                 genome[chromname] = chromstring             # <<<<<<<<<<<<<<
  *                 if not indexed:
  *                     index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
  */
-        if (unlikely(PyDict_SetItem(__pyx_v_genome, __pyx_v_chromname, __pyx_v_chromstring) < 0)) __PYX_ERR(0, 905, __pyx_L1_error)
+        if (unlikely(PyDict_SetItem(__pyx_v_genome, __pyx_v_chromname, __pyx_v_chromstring) < 0)) __PYX_ERR(0, 931, __pyx_L1_error)
 
-        /* "_fasta_utils.pyx":906
+        /* "_fasta_utils.pyx":932
  *                 chromstring = ''.join(current_lines)
  *                 genome[chromname] = chromstring
  *                 if not indexed:             # <<<<<<<<<<<<<<
@@ -13172,27 +13501,27 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
         __pyx_t_2 = ((!(__pyx_v_indexed != 0)) != 0);
         if (__pyx_t_2) {
 
-          /* "_fasta_utils.pyx":907
+          /* "_fasta_utils.pyx":933
  *                 genome[chromname] = chromstring
  *                 if not indexed:
  *                     index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)             # <<<<<<<<<<<<<<
  * 
  *             chromname = line[1:].split(split_on)[0]
  */
-          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u__7, __pyx_n_s_format); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u__7, __pyx_n_s_format); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           if (unlikely(__pyx_v_chromstring == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-            __PYX_ERR(0, 907, __pyx_L1_error)
+            __PYX_ERR(0, 933, __pyx_L1_error)
           }
-          __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_chromstring); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 907, __pyx_L1_error)
-          __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_chromstring); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 933, __pyx_L1_error)
+          __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_8 = __Pyx_PyInt_From_long(__pyx_v_start_position); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_8 = __Pyx_PyInt_From_long(__pyx_v_start_position); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
-          __pyx_t_9 = __Pyx_PyInt_From_long(__pyx_v_trimmed_length); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_9 = __Pyx_PyInt_From_long(__pyx_v_trimmed_length); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
-          __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_v_untrimmed_length); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_v_untrimmed_length); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_10);
           __pyx_t_11 = NULL;
           __pyx_t_12 = 0;
@@ -13209,7 +13538,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[6] = {__pyx_t_11, __pyx_v_chromname, __pyx_t_3, __pyx_t_8, __pyx_t_9, __pyx_t_10};
-            __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 907, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 933, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13221,7 +13550,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[6] = {__pyx_t_11, __pyx_v_chromname, __pyx_t_3, __pyx_t_8, __pyx_t_9, __pyx_t_10};
-            __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 907, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 933, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13231,7 +13560,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
           } else
           #endif
           {
-            __pyx_t_13 = PyTuple_New(5+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 907, __pyx_L1_error)
+            __pyx_t_13 = PyTuple_New(5+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 933, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             if (__pyx_t_11) {
               __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_11); __pyx_t_11 = NULL;
@@ -13251,19 +13580,19 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
             __pyx_t_8 = 0;
             __pyx_t_9 = 0;
             __pyx_t_10 = 0;
-            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 907, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 933, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           }
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_index, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 907, __pyx_L1_error)
+          __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_index, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-          if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 907, __pyx_L1_error)
+          if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 933, __pyx_L1_error)
           __Pyx_DECREF_SET(__pyx_v_index, ((PyObject*)__pyx_t_4));
           __pyx_t_4 = 0;
 
-          /* "_fasta_utils.pyx":906
+          /* "_fasta_utils.pyx":932
  *                 chromstring = ''.join(current_lines)
  *                 genome[chromname] = chromstring
  *                 if not indexed:             # <<<<<<<<<<<<<<
@@ -13272,7 +13601,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
         }
 
-        /* "_fasta_utils.pyx":903
+        /* "_fasta_utils.pyx":929
  *         firstchar = line[0]
  *         if firstchar == '>':
  *             if chromname != 'none':             # <<<<<<<<<<<<<<
@@ -13281,7 +13610,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       }
 
-      /* "_fasta_utils.pyx":909
+      /* "_fasta_utils.pyx":935
  *                     index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
  * 
  *             chromname = line[1:].split(split_on)[0]             # <<<<<<<<<<<<<<
@@ -13290,28 +13619,28 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       if (unlikely(__pyx_v_line == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 909, __pyx_L1_error)
+        __PYX_ERR(0, 935, __pyx_L1_error)
       }
-      __pyx_t_4 = __Pyx_PyUnicode_Substring(__pyx_v_line, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 909, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyUnicode_Substring(__pyx_v_line, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 935, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_1 = PyUnicode_Split(((PyObject*)__pyx_t_4), __pyx_v_split_on, -1L); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 909, __pyx_L1_error)
+      __pyx_t_1 = PyUnicode_Split(((PyObject*)__pyx_t_4), __pyx_v_split_on, -1L); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 935, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 909, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 935, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 909, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 935, __pyx_L1_error)
       __Pyx_DECREF_SET(__pyx_v_chromname, ((PyObject*)__pyx_t_4));
       __pyx_t_4 = 0;
 
-      /* "_fasta_utils.pyx":910
+      /* "_fasta_utils.pyx":936
  * 
  *             chromname = line[1:].split(split_on)[0]
  *             start_position = genome_file.tell()             # <<<<<<<<<<<<<<
  *             trimmed_length = 0
  *             length_mismatch = False
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_tell); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 910, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_tell); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 936, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_13 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -13325,14 +13654,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       }
       __pyx_t_4 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
       __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 910, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 936, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_14 = __Pyx_PyInt_As_long(__pyx_t_4); if (unlikely((__pyx_t_14 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 910, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyInt_As_long(__pyx_t_4); if (unlikely((__pyx_t_14 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 936, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_v_start_position = __pyx_t_14;
 
-      /* "_fasta_utils.pyx":911
+      /* "_fasta_utils.pyx":937
  *             chromname = line[1:].split(split_on)[0]
  *             start_position = genome_file.tell()
  *             trimmed_length = 0             # <<<<<<<<<<<<<<
@@ -13341,7 +13670,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       __pyx_v_trimmed_length = 0;
 
-      /* "_fasta_utils.pyx":912
+      /* "_fasta_utils.pyx":938
  *             start_position = genome_file.tell()
  *             trimmed_length = 0
  *             length_mismatch = False             # <<<<<<<<<<<<<<
@@ -13350,7 +13679,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       __pyx_v_length_mismatch = 0;
 
-      /* "_fasta_utils.pyx":913
+      /* "_fasta_utils.pyx":939
  *             trimmed_length = 0
  *             length_mismatch = False
  *             chromstring = ''             # <<<<<<<<<<<<<<
@@ -13360,26 +13689,26 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       __Pyx_INCREF(__pyx_kp_u_);
       __Pyx_DECREF_SET(__pyx_v_chromstring, __pyx_kp_u_);
 
-      /* "_fasta_utils.pyx":914
+      /* "_fasta_utils.pyx":940
  *             length_mismatch = False
  *             chromstring = ''
  *             current_lines = []             # <<<<<<<<<<<<<<
  *             rawline = genome_file.readline()
  *             continue
  */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 914, __pyx_L1_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 940, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF_SET(__pyx_v_current_lines, ((PyObject*)__pyx_t_4));
       __pyx_t_4 = 0;
 
-      /* "_fasta_utils.pyx":915
+      /* "_fasta_utils.pyx":941
  *             chromstring = ''
  *             current_lines = []
  *             rawline = genome_file.readline()             # <<<<<<<<<<<<<<
  *             continue
  *         elif not indexed:
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 915, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 941, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_13 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -13393,14 +13722,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       }
       __pyx_t_4 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
       __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 915, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 941, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 915, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 941, __pyx_L1_error)
       __Pyx_DECREF_SET(__pyx_v_rawline, ((PyObject*)__pyx_t_4));
       __pyx_t_4 = 0;
 
-      /* "_fasta_utils.pyx":916
+      /* "_fasta_utils.pyx":942
  *             current_lines = []
  *             rawline = genome_file.readline()
  *             continue             # <<<<<<<<<<<<<<
@@ -13409,7 +13738,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       goto __pyx_L4_continue;
 
-      /* "_fasta_utils.pyx":902
+      /* "_fasta_utils.pyx":928
  * 
  *         firstchar = line[0]
  *         if firstchar == '>':             # <<<<<<<<<<<<<<
@@ -13418,7 +13747,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
     }
 
-    /* "_fasta_utils.pyx":917
+    /* "_fasta_utils.pyx":943
  *             rawline = genome_file.readline()
  *             continue
  *         elif not indexed:             # <<<<<<<<<<<<<<
@@ -13428,7 +13757,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     __pyx_t_2 = ((!(__pyx_v_indexed != 0)) != 0);
     if (__pyx_t_2) {
 
-      /* "_fasta_utils.pyx":918
+      /* "_fasta_utils.pyx":944
  *             continue
  *         elif not indexed:
  *             if length_mismatch:             # <<<<<<<<<<<<<<
@@ -13438,16 +13767,16 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       __pyx_t_2 = (__pyx_v_length_mismatch != 0);
       if (__pyx_t_2) {
 
-        /* "_fasta_utils.pyx":919
+        /* "_fasta_utils.pyx":945
  *         elif not indexed:
  *             if length_mismatch:
  *                 print("Indexing error: [{}] line length mismatch. Indexing ignored.".format(genome_file.tell()))             # <<<<<<<<<<<<<<
  *                 indexed = True
  * 
  */
-        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u_Indexing_error_line_length_misma, __pyx_n_s_format); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 919, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u_Indexing_error_line_length_misma, __pyx_n_s_format); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 945, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_tell); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 919, __pyx_L1_error)
+        __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_tell); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 945, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_10);
         __pyx_t_9 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_10))) {
@@ -13461,7 +13790,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
         }
         __pyx_t_13 = (__pyx_t_9) ? __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_t_9) : __Pyx_PyObject_CallNoArg(__pyx_t_10);
         __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-        if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 919, __pyx_L1_error)
+        if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 945, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
         __pyx_t_10 = NULL;
@@ -13477,15 +13806,15 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
         __pyx_t_4 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_10, __pyx_t_13) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_13);
         __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 919, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 945, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 919, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 945, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "_fasta_utils.pyx":920
+        /* "_fasta_utils.pyx":946
  *             if length_mismatch:
  *                 print("Indexing error: [{}] line length mismatch. Indexing ignored.".format(genome_file.tell()))
  *                 indexed = True             # <<<<<<<<<<<<<<
@@ -13494,7 +13823,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
         __pyx_v_indexed = 1;
 
-        /* "_fasta_utils.pyx":918
+        /* "_fasta_utils.pyx":944
  *             continue
  *         elif not indexed:
  *             if length_mismatch:             # <<<<<<<<<<<<<<
@@ -13503,7 +13832,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       }
 
-      /* "_fasta_utils.pyx":922
+      /* "_fasta_utils.pyx":948
  *                 indexed = True
  * 
  *             if trimmed_length == 0:             # <<<<<<<<<<<<<<
@@ -13513,7 +13842,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       __pyx_t_2 = ((__pyx_v_trimmed_length == 0) != 0);
       if (__pyx_t_2) {
 
-        /* "_fasta_utils.pyx":923
+        /* "_fasta_utils.pyx":949
  * 
  *             if trimmed_length == 0:
  *                 trimmed_length = len(line)             # <<<<<<<<<<<<<<
@@ -13522,12 +13851,12 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
         if (unlikely(__pyx_v_line == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-          __PYX_ERR(0, 923, __pyx_L1_error)
+          __PYX_ERR(0, 949, __pyx_L1_error)
         }
-        __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 923, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 949, __pyx_L1_error)
         __pyx_v_trimmed_length = __pyx_t_5;
 
-        /* "_fasta_utils.pyx":924
+        /* "_fasta_utils.pyx":950
  *             if trimmed_length == 0:
  *                 trimmed_length = len(line)
  *                 untrimmed_length = len(rawline)             # <<<<<<<<<<<<<<
@@ -13536,12 +13865,12 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
         if (unlikely(__pyx_v_rawline == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-          __PYX_ERR(0, 924, __pyx_L1_error)
+          __PYX_ERR(0, 950, __pyx_L1_error)
         }
-        __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_rawline); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 924, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_rawline); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 950, __pyx_L1_error)
         __pyx_v_untrimmed_length = __pyx_t_5;
 
-        /* "_fasta_utils.pyx":922
+        /* "_fasta_utils.pyx":948
  *                 indexed = True
  * 
  *             if trimmed_length == 0:             # <<<<<<<<<<<<<<
@@ -13551,7 +13880,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
         goto __pyx_L11;
       }
 
-      /* "_fasta_utils.pyx":925
+      /* "_fasta_utils.pyx":951
  *                 trimmed_length = len(line)
  *                 untrimmed_length = len(rawline)
  *             elif trimmed_length != len(line):             # <<<<<<<<<<<<<<
@@ -13560,13 +13889,13 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
       if (unlikely(__pyx_v_line == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-        __PYX_ERR(0, 925, __pyx_L1_error)
+        __PYX_ERR(0, 951, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 925, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_line); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 951, __pyx_L1_error)
       __pyx_t_2 = ((__pyx_v_trimmed_length != __pyx_t_5) != 0);
       if (__pyx_t_2) {
 
-        /* "_fasta_utils.pyx":926
+        /* "_fasta_utils.pyx":952
  *                 untrimmed_length = len(rawline)
  *             elif trimmed_length != len(line):
  *                 length_mismatch = True             # <<<<<<<<<<<<<<
@@ -13575,7 +13904,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
         __pyx_v_length_mismatch = 1;
 
-        /* "_fasta_utils.pyx":925
+        /* "_fasta_utils.pyx":951
  *                 trimmed_length = len(line)
  *                 untrimmed_length = len(rawline)
  *             elif trimmed_length != len(line):             # <<<<<<<<<<<<<<
@@ -13585,7 +13914,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       }
       __pyx_L11:;
 
-      /* "_fasta_utils.pyx":917
+      /* "_fasta_utils.pyx":943
  *             rawline = genome_file.readline()
  *             continue
  *         elif not indexed:             # <<<<<<<<<<<<<<
@@ -13594,7 +13923,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
     }
 
-    /* "_fasta_utils.pyx":928
+    /* "_fasta_utils.pyx":954
  *                 length_mismatch = True
  * 
  *         if not keep_case:             # <<<<<<<<<<<<<<
@@ -13604,14 +13933,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     __pyx_t_2 = ((!(__pyx_v_keep_case != 0)) != 0);
     if (__pyx_t_2) {
 
-      /* "_fasta_utils.pyx":929
+      /* "_fasta_utils.pyx":955
  * 
  *         if not keep_case:
  *             line = line.upper()             # <<<<<<<<<<<<<<
  * 
  *         current_lines.append(line)
  */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_upper); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 929, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_upper); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 955, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_13 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -13625,14 +13954,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       }
       __pyx_t_1 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 929, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 955, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 929, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 955, __pyx_L1_error)
       __Pyx_DECREF_SET(__pyx_v_line, ((PyObject*)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "_fasta_utils.pyx":928
+      /* "_fasta_utils.pyx":954
  *                 length_mismatch = True
  * 
  *         if not keep_case:             # <<<<<<<<<<<<<<
@@ -13641,23 +13970,23 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
     }
 
-    /* "_fasta_utils.pyx":931
+    /* "_fasta_utils.pyx":957
  *             line = line.upper()
  * 
  *         current_lines.append(line)             # <<<<<<<<<<<<<<
  *         rawline = genome_file.readline()
  * 
  */
-    __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_current_lines, __pyx_v_line); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 931, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_current_lines, __pyx_v_line); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 957, __pyx_L1_error)
 
-    /* "_fasta_utils.pyx":932
+    /* "_fasta_utils.pyx":958
  * 
  *         current_lines.append(line)
  *         rawline = genome_file.readline()             # <<<<<<<<<<<<<<
  * 
  *     chromstring = ''.join(current_lines)
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 932, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_readline); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 958, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_13 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -13671,37 +14000,37 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     }
     __pyx_t_1 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 932, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 958, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 932, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 958, __pyx_L1_error)
     __Pyx_DECREF_SET(__pyx_v_rawline, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
     __pyx_L4_continue:;
   }
 
-  /* "_fasta_utils.pyx":934
+  /* "_fasta_utils.pyx":960
  *         rawline = genome_file.readline()
  * 
  *     chromstring = ''.join(current_lines)             # <<<<<<<<<<<<<<
  *     genome[chromname] = chromstring
  *     if not indexed:
  */
-  __pyx_t_1 = PyUnicode_Join(__pyx_kp_u_, __pyx_v_current_lines); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 934, __pyx_L1_error)
+  __pyx_t_1 = PyUnicode_Join(__pyx_kp_u_, __pyx_v_current_lines); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 960, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF_SET(__pyx_v_chromstring, ((PyObject*)__pyx_t_1));
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":935
+  /* "_fasta_utils.pyx":961
  * 
  *     chromstring = ''.join(current_lines)
  *     genome[chromname] = chromstring             # <<<<<<<<<<<<<<
  *     if not indexed:
  *         index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
  */
-  if (unlikely(PyDict_SetItem(__pyx_v_genome, __pyx_v_chromname, __pyx_v_chromstring) < 0)) __PYX_ERR(0, 935, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_genome, __pyx_v_chromname, __pyx_v_chromstring) < 0)) __PYX_ERR(0, 961, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":936
+  /* "_fasta_utils.pyx":962
  *     chromstring = ''.join(current_lines)
  *     genome[chromname] = chromstring
  *     if not indexed:             # <<<<<<<<<<<<<<
@@ -13711,27 +14040,27 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __pyx_t_2 = ((!(__pyx_v_indexed != 0)) != 0);
   if (__pyx_t_2) {
 
-    /* "_fasta_utils.pyx":937
+    /* "_fasta_utils.pyx":963
  *     genome[chromname] = chromstring
  *     if not indexed:
  *         index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)             # <<<<<<<<<<<<<<
  * 
  *     genome_file.close()
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u__7, __pyx_n_s_format); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u__7, __pyx_n_s_format); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     if (unlikely(__pyx_v_chromstring == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 937, __pyx_L1_error)
+      __PYX_ERR(0, 963, __pyx_L1_error)
     }
-    __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_chromstring); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 937, __pyx_L1_error)
-    __pyx_t_13 = PyInt_FromSsize_t(__pyx_t_5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_chromstring); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 963, __pyx_L1_error)
+    __pyx_t_13 = PyInt_FromSsize_t(__pyx_t_5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_13);
-    __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_v_start_position); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_v_start_position); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_9 = __Pyx_PyInt_From_long(__pyx_v_trimmed_length); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyInt_From_long(__pyx_v_trimmed_length); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
-    __pyx_t_8 = __Pyx_PyInt_From_long(__pyx_v_untrimmed_length); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyInt_From_long(__pyx_v_untrimmed_length); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __pyx_t_3 = NULL;
     __pyx_t_12 = 0;
@@ -13748,7 +14077,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[6] = {__pyx_t_3, __pyx_v_chromname, __pyx_t_13, __pyx_t_10, __pyx_t_9, __pyx_t_8};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 937, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 963, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -13760,7 +14089,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[6] = {__pyx_t_3, __pyx_v_chromname, __pyx_t_13, __pyx_t_10, __pyx_t_9, __pyx_t_8};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 937, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 5+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 963, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -13770,7 +14099,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
     } else
     #endif
     {
-      __pyx_t_11 = PyTuple_New(5+__pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 937, __pyx_L1_error)
+      __pyx_t_11 = PyTuple_New(5+__pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 963, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       if (__pyx_t_3) {
         __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -13790,19 +14119,19 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
       __pyx_t_10 = 0;
       __pyx_t_9 = 0;
       __pyx_t_8 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 937, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 963, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_index, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 937, __pyx_L1_error)
+    __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_index, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 937, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 963, __pyx_L1_error)
     __Pyx_DECREF_SET(__pyx_v_index, ((PyObject*)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "_fasta_utils.pyx":936
+    /* "_fasta_utils.pyx":962
  *     chromstring = ''.join(current_lines)
  *     genome[chromname] = chromstring
  *     if not indexed:             # <<<<<<<<<<<<<<
@@ -13811,14 +14140,14 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  */
   }
 
-  /* "_fasta_utils.pyx":939
+  /* "_fasta_utils.pyx":965
  *         index += '{}\t{}\t{}\t{}\t{}\n'.format(chromname, len(chromstring), start_position, trimmed_length, untrimmed_length)
  * 
  *     genome_file.close()             # <<<<<<<<<<<<<<
  *     return genome, index
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 939, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome_file, __pyx_n_s_close); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 965, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_11 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -13832,12 +14161,12 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   }
   __pyx_t_4 = (__pyx_t_11) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_11) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 939, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 965, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "_fasta_utils.pyx":940
+  /* "_fasta_utils.pyx":966
  * 
  *     genome_file.close()
  *     return genome, index             # <<<<<<<<<<<<<<
@@ -13845,7 +14174,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 940, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 966, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_genome);
   __Pyx_GIVEREF(__pyx_v_genome);
@@ -13857,7 +14186,7 @@ static PyObject *__pyx_f_12_fasta_utils_import_genome(PyObject *__pyx_v_genome_F
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "_fasta_utils.pyx":874
+  /* "_fasta_utils.pyx":900
  * 
  * # Importing a FASTA file as a genome object
  * cpdef import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True, bint indexed=False):             # <<<<<<<<<<<<<<
@@ -13947,7 +14276,7 @@ static PyObject *__pyx_pw_12_fasta_utils_29import_genome(PyObject *__pyx_self, P
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "import_genome") < 0)) __PYX_ERR(0, 874, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "import_genome") < 0)) __PYX_ERR(0, 900, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -13965,26 +14294,26 @@ static PyObject *__pyx_pw_12_fasta_utils_29import_genome(PyObject *__pyx_self, P
     __pyx_v_genome_FASTA = ((PyObject*)values[0]);
     __pyx_v_split_on = ((PyObject*)values[1]);
     if (values[2]) {
-      __pyx_v_keep_case = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_keep_case == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 874, __pyx_L3_error)
+      __pyx_v_keep_case = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_keep_case == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 900, __pyx_L3_error)
     } else {
       __pyx_v_keep_case = ((int)1);
     }
     if (values[3]) {
-      __pyx_v_indexed = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_indexed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 874, __pyx_L3_error)
+      __pyx_v_indexed = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_indexed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 900, __pyx_L3_error)
     } else {
       __pyx_v_indexed = ((int)0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("import_genome", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 874, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("import_genome", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 900, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_fasta_utils.import_genome", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_genome_FASTA), (&PyUnicode_Type), 1, "genome_FASTA", 1))) __PYX_ERR(0, 874, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_split_on), (&PyUnicode_Type), 1, "split_on", 1))) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_genome_FASTA), (&PyUnicode_Type), 1, "genome_FASTA", 1))) __PYX_ERR(0, 900, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_split_on), (&PyUnicode_Type), 1, "split_on", 1))) __PYX_ERR(0, 900, __pyx_L1_error)
   __pyx_r = __pyx_pf_12_fasta_utils_28import_genome(__pyx_self, __pyx_v_genome_FASTA, __pyx_v_split_on, __pyx_v_keep_case, __pyx_v_indexed);
 
   /* function exit code */
@@ -14007,7 +14336,7 @@ static PyObject *__pyx_pf_12_fasta_utils_28import_genome(CYTHON_UNUSED PyObject 
   __pyx_t_2.split_on = __pyx_v_split_on;
   __pyx_t_2.keep_case = __pyx_v_keep_case;
   __pyx_t_2.indexed = __pyx_v_indexed;
-  __pyx_t_1 = __pyx_f_12_fasta_utils_import_genome(__pyx_v_genome_FASTA, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 874, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_12_fasta_utils_import_genome(__pyx_v_genome_FASTA, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 900, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -14025,7 +14354,7 @@ static PyObject *__pyx_pf_12_fasta_utils_28import_genome(CYTHON_UNUSED PyObject 
 }
 static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "_fasta_utils.pyx":943
+/* "_fasta_utils.pyx":969
  * 
  * 
  * def generate_softbridges(dict genome_dict, int minlen, int maxlen):             # <<<<<<<<<<<<<<
@@ -14069,17 +14398,17 @@ static PyObject *__pyx_pw_12_fasta_utils_31generate_softbridges(PyObject *__pyx_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_minlen)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, 1); __PYX_ERR(0, 943, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, 1); __PYX_ERR(0, 969, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_maxlen)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, 2); __PYX_ERR(0, 943, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, 2); __PYX_ERR(0, 969, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_softbridges") < 0)) __PYX_ERR(0, 943, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_softbridges") < 0)) __PYX_ERR(0, 969, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -14089,18 +14418,18 @@ static PyObject *__pyx_pw_12_fasta_utils_31generate_softbridges(PyObject *__pyx_
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_genome_dict = ((PyObject*)values[0]);
-    __pyx_v_minlen = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_minlen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 943, __pyx_L3_error)
-    __pyx_v_maxlen = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_maxlen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 943, __pyx_L3_error)
+    __pyx_v_minlen = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_minlen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 969, __pyx_L3_error)
+    __pyx_v_maxlen = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_maxlen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 969, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 943, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("generate_softbridges", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 969, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_fasta_utils.generate_softbridges", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_genome_dict), (&PyDict_Type), 1, "genome_dict", 1))) __PYX_ERR(0, 943, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_genome_dict), (&PyDict_Type), 1, "genome_dict", 1))) __PYX_ERR(0, 969, __pyx_L1_error)
   __pyx_r = __pyx_pf_12_fasta_utils_30generate_softbridges(__pyx_self, __pyx_v_genome_dict, __pyx_v_minlen, __pyx_v_maxlen);
 
   /* function exit code */
@@ -14121,7 +14450,7 @@ static PyObject *__pyx_pf_12_fasta_utils_30generate_softbridges(CYTHON_UNUSED Py
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_12_fasta_utils___pyx_scope_struct__generate_softbridges *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 943, __pyx_L1_error)
+    __PYX_ERR(0, 969, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -14131,7 +14460,7 @@ static PyObject *__pyx_pf_12_fasta_utils_30generate_softbridges(CYTHON_UNUSED Py
   __pyx_cur_scope->__pyx_v_minlen = __pyx_v_minlen;
   __pyx_cur_scope->__pyx_v_maxlen = __pyx_v_maxlen;
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_12_fasta_utils_32generator, __pyx_codeobj__8, (PyObject *) __pyx_cur_scope, __pyx_n_s_generate_softbridges, __pyx_n_s_generate_softbridges, __pyx_n_s_fasta_utils); if (unlikely(!gen)) __PYX_ERR(0, 943, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_12_fasta_utils_32generator, __pyx_codeobj__8, (PyObject *) __pyx_cur_scope, __pyx_n_s_generate_softbridges, __pyx_n_s_generate_softbridges, __pyx_n_s_fasta_utils); if (unlikely(!gen)) __PYX_ERR(0, 969, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -14178,9 +14507,9 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 943, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 969, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":954
+  /* "_fasta_utils.pyx":980
  *         Py_ssize_t i
  * 
  *     soft_toggle = False             # <<<<<<<<<<<<<<
@@ -14189,7 +14518,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
   __pyx_cur_scope->__pyx_v_soft_toggle = 0;
 
-  /* "_fasta_utils.pyx":955
+  /* "_fasta_utils.pyx":981
  * 
  *     soft_toggle = False
  *     current_pos = start_pos = end_pos = sb_length = 0             # <<<<<<<<<<<<<<
@@ -14201,7 +14530,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
   __pyx_cur_scope->__pyx_v_end_pos = 0;
   __pyx_cur_scope->__pyx_v_sb_length = 0;
 
-  /* "_fasta_utils.pyx":956
+  /* "_fasta_utils.pyx":982
  *     soft_toggle = False
  *     current_pos = start_pos = end_pos = sb_length = 0
  *     for chromname in sorted(list(genome_dict.keys())):             # <<<<<<<<<<<<<<
@@ -14210,40 +14539,40 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
   if (unlikely(__pyx_cur_scope->__pyx_v_genome_dict == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "keys");
-    __PYX_ERR(0, 956, __pyx_L1_error)
+    __PYX_ERR(0, 982, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_PyDict_Keys(__pyx_cur_scope->__pyx_v_genome_dict); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 956, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_Keys(__pyx_cur_scope->__pyx_v_genome_dict); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 982, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PySequence_List(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 956, __pyx_L1_error)
+  __pyx_t_3 = PySequence_List(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 982, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PySequence_List(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 956, __pyx_L1_error)
+  __pyx_t_2 = PySequence_List(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 982, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_1 = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_4 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(0, 956, __pyx_L1_error)
+  __pyx_t_4 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(0, 982, __pyx_L1_error)
   if (unlikely(__pyx_t_1 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 956, __pyx_L1_error)
+    __PYX_ERR(0, 982, __pyx_L1_error)
   }
   __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
     if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_2)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 956, __pyx_L1_error)
+    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 982, __pyx_L1_error)
     #else
-    __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 956, __pyx_L1_error)
+    __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 982, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     #endif
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 956, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 982, __pyx_L1_error)
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_chromname);
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_chromname, ((PyObject*)__pyx_t_1));
     __Pyx_GIVEREF(__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":957
+    /* "_fasta_utils.pyx":983
  *     current_pos = start_pos = end_pos = sb_length = 0
  *     for chromname in sorted(list(genome_dict.keys())):
  *         soft_toggle = False             # <<<<<<<<<<<<<<
@@ -14252,7 +14581,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     __pyx_cur_scope->__pyx_v_soft_toggle = 0;
 
-    /* "_fasta_utils.pyx":958
+    /* "_fasta_utils.pyx":984
  *     for chromname in sorted(list(genome_dict.keys())):
  *         soft_toggle = False
  *         current_pos = 0             # <<<<<<<<<<<<<<
@@ -14261,7 +14590,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     __pyx_cur_scope->__pyx_v_current_pos = 0;
 
-    /* "_fasta_utils.pyx":959
+    /* "_fasta_utils.pyx":985
  *         soft_toggle = False
  *         current_pos = 0
  *         start_pos = 0             # <<<<<<<<<<<<<<
@@ -14270,7 +14599,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     __pyx_cur_scope->__pyx_v_start_pos = 0;
 
-    /* "_fasta_utils.pyx":960
+    /* "_fasta_utils.pyx":986
  *         current_pos = 0
  *         start_pos = 0
  *         end_pos = 0             # <<<<<<<<<<<<<<
@@ -14279,7 +14608,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     __pyx_cur_scope->__pyx_v_end_pos = 0;
 
-    /* "_fasta_utils.pyx":961
+    /* "_fasta_utils.pyx":987
  *         start_pos = 0
  *         end_pos = 0
  *         chromstring = genome_dict[chromname]             # <<<<<<<<<<<<<<
@@ -14288,17 +14617,17 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     if (unlikely(__pyx_cur_scope->__pyx_v_genome_dict == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 961, __pyx_L1_error)
+      __PYX_ERR(0, 987, __pyx_L1_error)
     }
-    __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_cur_scope->__pyx_v_genome_dict, __pyx_cur_scope->__pyx_v_chromname); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 961, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_cur_scope->__pyx_v_genome_dict, __pyx_cur_scope->__pyx_v_chromname); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 961, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_chromstring);
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_chromstring, ((PyObject*)__pyx_t_1));
     __Pyx_GIVEREF(__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":962
+    /* "_fasta_utils.pyx":988
  *         end_pos = 0
  *         chromstring = genome_dict[chromname]
  *         for i in range(len(chromstring)):             # <<<<<<<<<<<<<<
@@ -14307,37 +14636,37 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
     if (unlikely(__pyx_cur_scope->__pyx_v_chromstring == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 962, __pyx_L1_error)
+      __PYX_ERR(0, 988, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyUnicode_GET_LENGTH(__pyx_cur_scope->__pyx_v_chromstring); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 962, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_GET_LENGTH(__pyx_cur_scope->__pyx_v_chromstring); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 988, __pyx_L1_error)
     __pyx_t_7 = __pyx_t_6;
     for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
       __pyx_cur_scope->__pyx_v_i = __pyx_t_8;
 
-      /* "_fasta_utils.pyx":963
+      /* "_fasta_utils.pyx":989
  *         chromstring = genome_dict[chromname]
  *         for i in range(len(chromstring)):
  *             c = chromstring[i]             # <<<<<<<<<<<<<<
  *             lowercase = c.islower()
  *             if lowercase:
  */
-      __pyx_t_9 = __Pyx_GetItemInt_Unicode(__pyx_cur_scope->__pyx_v_chromstring, __pyx_cur_scope->__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(__pyx_t_9 == (Py_UCS4)-1)) __PYX_ERR(0, 963, __pyx_L1_error)
-      __pyx_t_1 = PyUnicode_FromOrdinal(__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 963, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_GetItemInt_Unicode(__pyx_cur_scope->__pyx_v_chromstring, __pyx_cur_scope->__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(__pyx_t_9 == (Py_UCS4)-1)) __PYX_ERR(0, 989, __pyx_L1_error)
+      __pyx_t_1 = PyUnicode_FromOrdinal(__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 989, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 963, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 989, __pyx_L1_error)
       __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_c);
       __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_c, ((PyObject*)__pyx_t_1));
       __Pyx_GIVEREF(__pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "_fasta_utils.pyx":964
+      /* "_fasta_utils.pyx":990
  *         for i in range(len(chromstring)):
  *             c = chromstring[i]
  *             lowercase = c.islower()             # <<<<<<<<<<<<<<
  *             if lowercase:
  *                 if not soft_toggle: # Start a softbridge
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_c, __pyx_n_s_islower); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 964, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_c, __pyx_n_s_islower); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 990, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_10 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -14351,14 +14680,14 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
       }
       __pyx_t_1 = (__pyx_t_10) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_10) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 964, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 990, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 964, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 990, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_cur_scope->__pyx_v_lowercase = __pyx_t_11;
 
-      /* "_fasta_utils.pyx":965
+      /* "_fasta_utils.pyx":991
  *             c = chromstring[i]
  *             lowercase = c.islower()
  *             if lowercase:             # <<<<<<<<<<<<<<
@@ -14368,7 +14697,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
       __pyx_t_11 = (__pyx_cur_scope->__pyx_v_lowercase != 0);
       if (__pyx_t_11) {
 
-        /* "_fasta_utils.pyx":966
+        /* "_fasta_utils.pyx":992
  *             lowercase = c.islower()
  *             if lowercase:
  *                 if not soft_toggle: # Start a softbridge             # <<<<<<<<<<<<<<
@@ -14378,7 +14707,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
         __pyx_t_11 = ((!(__pyx_cur_scope->__pyx_v_soft_toggle != 0)) != 0);
         if (__pyx_t_11) {
 
-          /* "_fasta_utils.pyx":967
+          /* "_fasta_utils.pyx":993
  *             if lowercase:
  *                 if not soft_toggle: # Start a softbridge
  *                     soft_toggle = True             # <<<<<<<<<<<<<<
@@ -14387,7 +14716,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
           __pyx_cur_scope->__pyx_v_soft_toggle = 1;
 
-          /* "_fasta_utils.pyx":968
+          /* "_fasta_utils.pyx":994
  *                 if not soft_toggle: # Start a softbridge
  *                     soft_toggle = True
  *                     start_pos = current_pos             # <<<<<<<<<<<<<<
@@ -14396,7 +14725,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
           __pyx_cur_scope->__pyx_v_start_pos = __pyx_cur_scope->__pyx_v_current_pos;
 
-          /* "_fasta_utils.pyx":966
+          /* "_fasta_utils.pyx":992
  *             lowercase = c.islower()
  *             if lowercase:
  *                 if not soft_toggle: # Start a softbridge             # <<<<<<<<<<<<<<
@@ -14405,7 +14734,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
         }
 
-        /* "_fasta_utils.pyx":965
+        /* "_fasta_utils.pyx":991
  *             c = chromstring[i]
  *             lowercase = c.islower()
  *             if lowercase:             # <<<<<<<<<<<<<<
@@ -14415,7 +14744,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
         goto __pyx_L8;
       }
 
-      /* "_fasta_utils.pyx":969
+      /* "_fasta_utils.pyx":995
  *                     soft_toggle = True
  *                     start_pos = current_pos
  *             elif soft_toggle: # End a softbridge             # <<<<<<<<<<<<<<
@@ -14425,7 +14754,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
       __pyx_t_11 = (__pyx_cur_scope->__pyx_v_soft_toggle != 0);
       if (__pyx_t_11) {
 
-        /* "_fasta_utils.pyx":970
+        /* "_fasta_utils.pyx":996
  *                     start_pos = current_pos
  *             elif soft_toggle: # End a softbridge
  *                 soft_toggle = False             # <<<<<<<<<<<<<<
@@ -14434,7 +14763,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
         __pyx_cur_scope->__pyx_v_soft_toggle = 0;
 
-        /* "_fasta_utils.pyx":971
+        /* "_fasta_utils.pyx":997
  *             elif soft_toggle: # End a softbridge
  *                 soft_toggle = False
  *                 end_pos = current_pos             # <<<<<<<<<<<<<<
@@ -14443,7 +14772,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
         __pyx_cur_scope->__pyx_v_end_pos = __pyx_cur_scope->__pyx_v_current_pos;
 
-        /* "_fasta_utils.pyx":972
+        /* "_fasta_utils.pyx":998
  *                 soft_toggle = False
  *                 end_pos = current_pos
  *                 sb_length = end_pos - start_pos             # <<<<<<<<<<<<<<
@@ -14452,7 +14781,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
         __pyx_cur_scope->__pyx_v_sb_length = (__pyx_cur_scope->__pyx_v_end_pos - __pyx_cur_scope->__pyx_v_start_pos);
 
-        /* "_fasta_utils.pyx":973
+        /* "_fasta_utils.pyx":999
  *                 end_pos = current_pos
  *                 sb_length = end_pos - start_pos
  *                 if sb_length >= minlen and sb_length <= maxlen:             # <<<<<<<<<<<<<<
@@ -14470,28 +14799,28 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
         __pyx_L11_bool_binop_done:;
         if (__pyx_t_11) {
 
-          /* "_fasta_utils.pyx":974
+          /* "_fasta_utils.pyx":1000
  *                 sb_length = end_pos - start_pos
  *                 if sb_length >= minlen and sb_length <= maxlen:
  *                     out_string = '{}\t{}\t{}\t.\t0.01\t.\t0\t0\t204,204,180\t1\t{}\t0\t0.01\tsoftbridge\t..\n'.format(             # <<<<<<<<<<<<<<
  *                         chromname, start_pos, end_pos, sb_length
  *                     )
  */
-          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u_0_01_0_0_204_204_180_1_0_0_01_s, __pyx_n_s_format); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 974, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_kp_u_0_01_0_0_204_204_180_1_0_0_01_s, __pyx_n_s_format); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1000, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
 
-          /* "_fasta_utils.pyx":975
+          /* "_fasta_utils.pyx":1001
  *                 if sb_length >= minlen and sb_length <= maxlen:
  *                     out_string = '{}\t{}\t{}\t.\t0.01\t.\t0\t0\t204,204,180\t1\t{}\t0\t0.01\tsoftbridge\t..\n'.format(
  *                         chromname, start_pos, end_pos, sb_length             # <<<<<<<<<<<<<<
  *                     )
  *                     yield out_string
  */
-          __pyx_t_10 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_start_pos); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 975, __pyx_L1_error)
+          __pyx_t_10 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_start_pos); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1001, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_end_pos); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 975, __pyx_L1_error)
+          __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_end_pos); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 1001, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_13);
-          __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_sb_length); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 975, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_sb_length); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1001, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_14);
           __pyx_t_15 = NULL;
           __pyx_t_16 = 0;
@@ -14508,7 +14837,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[5] = {__pyx_t_15, __pyx_cur_scope->__pyx_v_chromname, __pyx_t_10, __pyx_t_13, __pyx_t_14};
-            __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_16, 4+__pyx_t_16); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 974, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_16, 4+__pyx_t_16); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1000, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -14519,7 +14848,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[5] = {__pyx_t_15, __pyx_cur_scope->__pyx_v_chromname, __pyx_t_10, __pyx_t_13, __pyx_t_14};
-            __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_16, 4+__pyx_t_16); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 974, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_16, 4+__pyx_t_16); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1000, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -14528,7 +14857,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
           } else
           #endif
           {
-            __pyx_t_17 = PyTuple_New(4+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 974, __pyx_L1_error)
+            __pyx_t_17 = PyTuple_New(4+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1000, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_17);
             if (__pyx_t_15) {
               __Pyx_GIVEREF(__pyx_t_15); PyTuple_SET_ITEM(__pyx_t_17, 0, __pyx_t_15); __pyx_t_15 = NULL;
@@ -14545,26 +14874,26 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
             __pyx_t_10 = 0;
             __pyx_t_13 = 0;
             __pyx_t_14 = 0;
-            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 974, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1000, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
           }
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-          /* "_fasta_utils.pyx":974
+          /* "_fasta_utils.pyx":1000
  *                 sb_length = end_pos - start_pos
  *                 if sb_length >= minlen and sb_length <= maxlen:
  *                     out_string = '{}\t{}\t{}\t.\t0.01\t.\t0\t0\t204,204,180\t1\t{}\t0\t0.01\tsoftbridge\t..\n'.format(             # <<<<<<<<<<<<<<
  *                         chromname, start_pos, end_pos, sb_length
  *                     )
  */
-          if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 974, __pyx_L1_error)
+          if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 1000, __pyx_L1_error)
           __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_out_string);
           __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_out_string, ((PyObject*)__pyx_t_1));
           __Pyx_GIVEREF(__pyx_t_1);
           __pyx_t_1 = 0;
 
-          /* "_fasta_utils.pyx":977
+          /* "_fasta_utils.pyx":1003
  *                         chromname, start_pos, end_pos, sb_length
  *                     )
  *                     yield out_string             # <<<<<<<<<<<<<<
@@ -14593,9 +14922,9 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
           __pyx_t_6 = __pyx_cur_scope->__pyx_t_2;
           __pyx_t_7 = __pyx_cur_scope->__pyx_t_3;
           __pyx_t_8 = __pyx_cur_scope->__pyx_t_4;
-          if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 977, __pyx_L1_error)
+          if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 1003, __pyx_L1_error)
 
-          /* "_fasta_utils.pyx":973
+          /* "_fasta_utils.pyx":999
  *                 end_pos = current_pos
  *                 sb_length = end_pos - start_pos
  *                 if sb_length >= minlen and sb_length <= maxlen:             # <<<<<<<<<<<<<<
@@ -14604,7 +14933,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
  */
         }
 
-        /* "_fasta_utils.pyx":969
+        /* "_fasta_utils.pyx":995
  *                     soft_toggle = True
  *                     start_pos = current_pos
  *             elif soft_toggle: # End a softbridge             # <<<<<<<<<<<<<<
@@ -14614,7 +14943,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
       }
       __pyx_L8:;
 
-      /* "_fasta_utils.pyx":979
+      /* "_fasta_utils.pyx":1005
  *                     yield out_string
  * 
  *             current_pos += 1             # <<<<<<<<<<<<<<
@@ -14624,7 +14953,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
       __pyx_cur_scope->__pyx_v_current_pos = (__pyx_cur_scope->__pyx_v_current_pos + 1);
     }
 
-    /* "_fasta_utils.pyx":956
+    /* "_fasta_utils.pyx":982
  *     soft_toggle = False
  *     current_pos = start_pos = end_pos = sb_length = 0
  *     for chromname in sorted(list(genome_dict.keys())):             # <<<<<<<<<<<<<<
@@ -14635,7 +14964,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   CYTHON_MAYBE_UNUSED_VAR(__pyx_cur_scope);
 
-  /* "_fasta_utils.pyx":943
+  /* "_fasta_utils.pyx":969
  * 
  * 
  * def generate_softbridges(dict genome_dict, int minlen, int maxlen):             # <<<<<<<<<<<<<<
@@ -14667,7 +14996,7 @@ static PyObject *__pyx_gb_12_fasta_utils_32generator(__pyx_CoroutineObject *__py
   return __pyx_r;
 }
 
-/* "_fasta_utils.pyx":982
+/* "_fasta_utils.pyx":1008
  * 
  * 
  * def number_chromosomes(genome):             # <<<<<<<<<<<<<<
@@ -14704,7 +15033,7 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   Py_ssize_t __pyx_t_6;
   __Pyx_RefNannySetupContext("number_chromosomes", 0);
 
-  /* "_fasta_utils.pyx":984
+  /* "_fasta_utils.pyx":1010
  * def number_chromosomes(genome):
  *     """Returns a sorted index of chromosome starting positions in a genome."""
  *     running_count = 0             # <<<<<<<<<<<<<<
@@ -14714,26 +15043,26 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   __Pyx_INCREF(__pyx_int_0);
   __pyx_v_running_count = __pyx_int_0;
 
-  /* "_fasta_utils.pyx":985
+  /* "_fasta_utils.pyx":1011
  *     """Returns a sorted index of chromosome starting positions in a genome."""
  *     running_count = 0
  *     chromosome_number = {}             # <<<<<<<<<<<<<<
  *     for c in sorted(genome.keys()):
  *         chromosome_number[c] = running_count
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 985, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1011, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_chromosome_number = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":986
+  /* "_fasta_utils.pyx":1012
  *     running_count = 0
  *     chromosome_number = {}
  *     for c in sorted(genome.keys()):             # <<<<<<<<<<<<<<
  *         chromosome_number[c] = running_count
  *         running_count += 1
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 986, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_genome, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1012, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -14747,54 +15076,54 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   }
   __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 986, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1012, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PySequence_List(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 986, __pyx_L1_error)
+  __pyx_t_3 = PySequence_List(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1012, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_5 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_5 == ((int)-1))) __PYX_ERR(0, 986, __pyx_L1_error)
+  __pyx_t_5 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_5 == ((int)-1))) __PYX_ERR(0, 1012, __pyx_L1_error)
   if (unlikely(__pyx_t_1 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 986, __pyx_L1_error)
+    __PYX_ERR(0, 1012, __pyx_L1_error)
   }
   __pyx_t_3 = __pyx_t_1; __Pyx_INCREF(__pyx_t_3); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
     if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_3)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 986, __pyx_L1_error)
+    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 1012, __pyx_L1_error)
     #else
-    __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 986, __pyx_L1_error)
+    __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1012, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_c, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":987
+    /* "_fasta_utils.pyx":1013
  *     chromosome_number = {}
  *     for c in sorted(genome.keys()):
  *         chromosome_number[c] = running_count             # <<<<<<<<<<<<<<
  *         running_count += 1
  * 
  */
-    if (unlikely(PyDict_SetItem(__pyx_v_chromosome_number, __pyx_v_c, __pyx_v_running_count) < 0)) __PYX_ERR(0, 987, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_chromosome_number, __pyx_v_c, __pyx_v_running_count) < 0)) __PYX_ERR(0, 1013, __pyx_L1_error)
 
-    /* "_fasta_utils.pyx":988
+    /* "_fasta_utils.pyx":1014
  *     for c in sorted(genome.keys()):
  *         chromosome_number[c] = running_count
  *         running_count += 1             # <<<<<<<<<<<<<<
  * 
  *     return chromosome_number
  */
-    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_running_count, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 988, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_running_count, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1014, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF_SET(__pyx_v_running_count, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "_fasta_utils.pyx":986
+    /* "_fasta_utils.pyx":1012
  *     running_count = 0
  *     chromosome_number = {}
  *     for c in sorted(genome.keys()):             # <<<<<<<<<<<<<<
@@ -14804,7 +15133,7 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "_fasta_utils.pyx":990
+  /* "_fasta_utils.pyx":1016
  *         running_count += 1
  * 
  *     return chromosome_number             # <<<<<<<<<<<<<<
@@ -14816,7 +15145,7 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   __pyx_r = __pyx_v_chromosome_number;
   goto __pyx_L0;
 
-  /* "_fasta_utils.pyx":982
+  /* "_fasta_utils.pyx":1008
  * 
  * 
  * def number_chromosomes(genome):             # <<<<<<<<<<<<<<
@@ -14841,7 +15170,7 @@ static PyObject *__pyx_pf_12_fasta_utils_33number_chromosomes(CYTHON_UNUSED PyOb
   return __pyx_r;
 }
 
-/* "_fasta_utils.pyx":992
+/* "_fasta_utils.pyx":1018
  *     return chromosome_number
  * 
  * def translate(codon):             # <<<<<<<<<<<<<<
@@ -14877,27 +15206,27 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
   PyObject *__pyx_t_7 = NULL;
   __Pyx_RefNannySetupContext("translate", 0);
 
-  /* "_fasta_utils.pyx":994
+  /* "_fasta_utils.pyx":1020
  * def translate(codon):
  *     """Looks up a nucleotide triplet in the codon hashtables."""
  *     if len(codon) == 3:             # <<<<<<<<<<<<<<
  *         c = CODONhash.get(codon, '?')
  *     else:
  */
-  __pyx_t_1 = PyObject_Length(__pyx_v_codon); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 994, __pyx_L1_error)
+  __pyx_t_1 = PyObject_Length(__pyx_v_codon); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1020, __pyx_L1_error)
   __pyx_t_2 = ((__pyx_t_1 == 3) != 0);
   if (__pyx_t_2) {
 
-    /* "_fasta_utils.pyx":995
+    /* "_fasta_utils.pyx":1021
  *     """Looks up a nucleotide triplet in the codon hashtables."""
  *     if len(codon) == 3:
  *         c = CODONhash.get(codon, '?')             # <<<<<<<<<<<<<<
  *     else:
  *         return ''
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_CODONhash); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 995, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_CODONhash); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1021, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_get); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 995, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_get); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1021, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -14915,7 +15244,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_codon, __pyx_kp_u__9};
-      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 995, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1021, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_GOTREF(__pyx_t_3);
     } else
@@ -14923,13 +15252,13 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
       PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_codon, __pyx_kp_u__9};
-      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 995, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1021, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_GOTREF(__pyx_t_3);
     } else
     #endif
     {
-      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 995, __pyx_L1_error)
+      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1021, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       if (__pyx_t_4) {
         __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -14940,7 +15269,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
       __Pyx_INCREF(__pyx_kp_u__9);
       __Pyx_GIVEREF(__pyx_kp_u__9);
       PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_kp_u__9);
-      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 995, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1021, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     }
@@ -14948,7 +15277,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     __pyx_v_c = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "_fasta_utils.pyx":994
+    /* "_fasta_utils.pyx":1020
  * def translate(codon):
  *     """Looks up a nucleotide triplet in the codon hashtables."""
  *     if len(codon) == 3:             # <<<<<<<<<<<<<<
@@ -14958,7 +15287,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     goto __pyx_L3;
   }
 
-  /* "_fasta_utils.pyx":997
+  /* "_fasta_utils.pyx":1023
  *         c = CODONhash.get(codon, '?')
  *     else:
  *         return ''             # <<<<<<<<<<<<<<
@@ -14973,17 +15302,17 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
   }
   __pyx_L3:;
 
-  /* "_fasta_utils.pyx":999
+  /* "_fasta_utils.pyx":1025
  *         return ''
  * 
  *     if c == '?':             # <<<<<<<<<<<<<<
  *         return AMBIGhash.get(codon,'X')
  *     else:
  */
-  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_c, __pyx_kp_u__9, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 999, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_c, __pyx_kp_u__9, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1025, __pyx_L1_error)
   if (__pyx_t_2) {
 
-    /* "_fasta_utils.pyx":1000
+    /* "_fasta_utils.pyx":1026
  * 
  *     if c == '?':
  *         return AMBIGhash.get(codon,'X')             # <<<<<<<<<<<<<<
@@ -14991,9 +15320,9 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
  *         return c
  */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_AMBIGhash); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1000, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_AMBIGhash); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1026, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_get); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1000, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_get); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1026, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -15011,7 +15340,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_7)) {
       PyObject *__pyx_temp[3] = {__pyx_t_5, __pyx_v_codon, __pyx_n_u_X};
-      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1000, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1026, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_3);
     } else
@@ -15019,13 +15348,13 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_7)) {
       PyObject *__pyx_temp[3] = {__pyx_t_5, __pyx_v_codon, __pyx_n_u_X};
-      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1000, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1026, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_GOTREF(__pyx_t_3);
     } else
     #endif
     {
-      __pyx_t_4 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1000, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1026, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -15036,7 +15365,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
       __Pyx_INCREF(__pyx_n_u_X);
       __Pyx_GIVEREF(__pyx_n_u_X);
       PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_6, __pyx_n_u_X);
-      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1000, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1026, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
@@ -15045,7 +15374,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "_fasta_utils.pyx":999
+    /* "_fasta_utils.pyx":1025
  *         return ''
  * 
  *     if c == '?':             # <<<<<<<<<<<<<<
@@ -15054,7 +15383,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
  */
   }
 
-  /* "_fasta_utils.pyx":1002
+  /* "_fasta_utils.pyx":1028
  *         return AMBIGhash.get(codon,'X')
  *     else:
  *         return c             # <<<<<<<<<<<<<<
@@ -15068,7 +15397,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
     goto __pyx_L0;
   }
 
-  /* "_fasta_utils.pyx":992
+  /* "_fasta_utils.pyx":1018
  *     return chromosome_number
  * 
  * def translate(codon):             # <<<<<<<<<<<<<<
@@ -15091,7 +15420,7 @@ static PyObject *__pyx_pf_12_fasta_utils_35translate(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "_fasta_utils.pyx":1004
+/* "_fasta_utils.pyx":1030
  *         return c
  * 
  * def longest_orf(sequence,allow_truncation=True):             # <<<<<<<<<<<<<<
@@ -15137,7 +15466,7 @@ static PyObject *__pyx_pw_12_fasta_utils_38longest_orf(PyObject *__pyx_self, PyO
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "longest_orf") < 0)) __PYX_ERR(0, 1004, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "longest_orf") < 0)) __PYX_ERR(0, 1030, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -15153,7 +15482,7 @@ static PyObject *__pyx_pw_12_fasta_utils_38longest_orf(PyObject *__pyx_self, PyO
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("longest_orf", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1004, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("longest_orf", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1030, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_fasta_utils.longest_orf", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -15210,14 +15539,14 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   __Pyx_RefNannySetupContext("longest_orf", 0);
   __Pyx_INCREF(__pyx_v_sequence);
 
-  /* "_fasta_utils.pyx":1012
+  /* "_fasta_utils.pyx":1038
  *         Is the codon full or truncated? (bool)
  *     """
  *     sequence = sequence.upper()             # <<<<<<<<<<<<<<
  *     frame  = {}
  *     frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_sequence, __pyx_n_s_upper); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1012, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_sequence, __pyx_n_s_upper); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1038, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -15231,25 +15560,25 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1012, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1038, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF_SET(__pyx_v_sequence, __pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1013
+  /* "_fasta_utils.pyx":1039
  *     """
  *     sequence = sequence.upper()
  *     frame  = {}             # <<<<<<<<<<<<<<
  *     frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]
  *     frame[1] = [sequence[i:(i+3)] for i in range(1,len(sequence),3)]
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1013, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1039, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_frame = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1014
+  /* "_fasta_utils.pyx":1040
  *     sequence = sequence.upper()
  *     frame  = {}
  *     frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]             # <<<<<<<<<<<<<<
@@ -15257,12 +15586,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *     frame[2] = [sequence[i:(i+3)] for i in range(2,len(sequence),3)]
  */
   { /* enter inner scope */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1014, __pyx_L5_error)
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1040, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1014, __pyx_L5_error)
-    __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1014, __pyx_L5_error)
+    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1040, __pyx_L5_error)
+    __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1040, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1014, __pyx_L5_error)
+    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1040, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_GIVEREF(__pyx_int_0);
@@ -15273,16 +15602,16 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     __Pyx_GIVEREF(__pyx_int_3);
     PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_int_3);
     __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1014, __pyx_L5_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1040, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
       __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_4 = 0;
       __pyx_t_5 = NULL;
     } else {
-      __pyx_t_4 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1014, __pyx_L5_error)
+      __pyx_t_4 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1040, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_5 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1014, __pyx_L5_error)
+      __pyx_t_5 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1040, __pyx_L5_error)
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     for (;;) {
@@ -15290,17 +15619,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         if (likely(PyList_CheckExact(__pyx_t_3))) {
           if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_3)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1014, __pyx_L5_error)
+          __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1040, __pyx_L5_error)
           #else
-          __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1014, __pyx_L5_error)
+          __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1040, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_2);
           #endif
         } else {
           if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1014, __pyx_L5_error)
+          __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1040, __pyx_L5_error)
           #else
-          __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1014, __pyx_L5_error)
+          __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1040, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_2);
           #endif
         }
@@ -15310,7 +15639,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 1014, __pyx_L5_error)
+            else __PYX_ERR(0, 1040, __pyx_L5_error)
           }
           break;
         }
@@ -15318,12 +15647,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       }
       __Pyx_XDECREF_SET(__pyx_8genexpr4__pyx_v_i, __pyx_t_2);
       __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_8genexpr4__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1014, __pyx_L5_error)
+      __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_8genexpr4__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1040, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_6 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr4__pyx_v_i, &__pyx_t_2, NULL, 0, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1014, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr4__pyx_v_i, &__pyx_t_2, NULL, 0, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1040, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1014, __pyx_L5_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1040, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15334,10 +15663,10 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     goto __pyx_L1_error;
     __pyx_L8_exit_scope:;
   } /* exit inner scope */
-  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_0, __pyx_t_1) < 0)) __PYX_ERR(0, 1014, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_0, __pyx_t_1) < 0)) __PYX_ERR(0, 1040, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1015
+  /* "_fasta_utils.pyx":1041
  *     frame  = {}
  *     frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]
  *     frame[1] = [sequence[i:(i+3)] for i in range(1,len(sequence),3)]             # <<<<<<<<<<<<<<
@@ -15345,12 +15674,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *     orf = ''
  */
   { /* enter inner scope */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1015, __pyx_L11_error)
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1041, __pyx_L11_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1015, __pyx_L11_error)
-    __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1015, __pyx_L11_error)
+    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1041, __pyx_L11_error)
+    __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L11_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = PyTuple_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1015, __pyx_L11_error)
+    __pyx_t_6 = PyTuple_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1041, __pyx_L11_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_INCREF(__pyx_int_1);
     __Pyx_GIVEREF(__pyx_int_1);
@@ -15361,16 +15690,16 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     __Pyx_GIVEREF(__pyx_int_3);
     PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_int_3);
     __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1015, __pyx_L11_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L11_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
       __pyx_t_6 = __pyx_t_3; __Pyx_INCREF(__pyx_t_6); __pyx_t_4 = 0;
       __pyx_t_5 = NULL;
     } else {
-      __pyx_t_4 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1015, __pyx_L11_error)
+      __pyx_t_4 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1041, __pyx_L11_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1015, __pyx_L11_error)
+      __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1041, __pyx_L11_error)
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     for (;;) {
@@ -15378,17 +15707,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         if (likely(PyList_CheckExact(__pyx_t_6))) {
           if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_6)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1015, __pyx_L11_error)
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1041, __pyx_L11_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1015, __pyx_L11_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         } else {
           if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1015, __pyx_L11_error)
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1041, __pyx_L11_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1015, __pyx_L11_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         }
@@ -15398,7 +15727,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 1015, __pyx_L11_error)
+            else __PYX_ERR(0, 1041, __pyx_L11_error)
           }
           break;
         }
@@ -15406,12 +15735,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       }
       __Pyx_XDECREF_SET(__pyx_8genexpr5__pyx_v_i, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_8genexpr5__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1015, __pyx_L11_error)
+      __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_8genexpr5__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L11_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr5__pyx_v_i, &__pyx_t_3, NULL, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1015, __pyx_L11_error)
+      __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr5__pyx_v_i, &__pyx_t_3, NULL, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1041, __pyx_L11_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 1015, __pyx_L11_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 1041, __pyx_L11_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -15422,10 +15751,10 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     goto __pyx_L1_error;
     __pyx_L14_exit_scope:;
   } /* exit inner scope */
-  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_1, __pyx_t_1) < 0)) __PYX_ERR(0, 1015, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_1, __pyx_t_1) < 0)) __PYX_ERR(0, 1041, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1016
+  /* "_fasta_utils.pyx":1042
  *     frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]
  *     frame[1] = [sequence[i:(i+3)] for i in range(1,len(sequence),3)]
  *     frame[2] = [sequence[i:(i+3)] for i in range(2,len(sequence),3)]             # <<<<<<<<<<<<<<
@@ -15433,12 +15762,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *     span = []
  */
   { /* enter inner scope */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1016, __pyx_L17_error)
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1042, __pyx_L17_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1016, __pyx_L17_error)
-    __pyx_t_6 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1016, __pyx_L17_error)
+    __pyx_t_4 = PyObject_Length(__pyx_v_sequence); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1042, __pyx_L17_error)
+    __pyx_t_6 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1042, __pyx_L17_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1016, __pyx_L17_error)
+    __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1042, __pyx_L17_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_int_2);
     __Pyx_GIVEREF(__pyx_int_2);
@@ -15449,16 +15778,16 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     __Pyx_GIVEREF(__pyx_int_3);
     PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_int_3);
     __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_2, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1016, __pyx_L17_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_2, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1042, __pyx_L17_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (likely(PyList_CheckExact(__pyx_t_6)) || PyTuple_CheckExact(__pyx_t_6)) {
       __pyx_t_2 = __pyx_t_6; __Pyx_INCREF(__pyx_t_2); __pyx_t_4 = 0;
       __pyx_t_5 = NULL;
     } else {
-      __pyx_t_4 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1016, __pyx_L17_error)
+      __pyx_t_4 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1042, __pyx_L17_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1016, __pyx_L17_error)
+      __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1042, __pyx_L17_error)
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     for (;;) {
@@ -15466,17 +15795,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_6 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1016, __pyx_L17_error)
+          __pyx_t_6 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1042, __pyx_L17_error)
           #else
-          __pyx_t_6 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1016, __pyx_L17_error)
+          __pyx_t_6 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1042, __pyx_L17_error)
           __Pyx_GOTREF(__pyx_t_6);
           #endif
         } else {
           if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_6 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1016, __pyx_L17_error)
+          __pyx_t_6 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1042, __pyx_L17_error)
           #else
-          __pyx_t_6 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1016, __pyx_L17_error)
+          __pyx_t_6 = PySequence_ITEM(__pyx_t_2, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1042, __pyx_L17_error)
           __Pyx_GOTREF(__pyx_t_6);
           #endif
         }
@@ -15486,7 +15815,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 1016, __pyx_L17_error)
+            else __PYX_ERR(0, 1042, __pyx_L17_error)
           }
           break;
         }
@@ -15494,12 +15823,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       }
       __Pyx_XDECREF_SET(__pyx_8genexpr6__pyx_v_i, __pyx_t_6);
       __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyInt_AddObjC(__pyx_8genexpr6__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1016, __pyx_L17_error)
+      __pyx_t_6 = __Pyx_PyInt_AddObjC(__pyx_8genexpr6__pyx_v_i, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1042, __pyx_L17_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_3 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr6__pyx_v_i, &__pyx_t_6, NULL, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1016, __pyx_L17_error)
+      __pyx_t_3 = __Pyx_PyObject_GetSlice(__pyx_v_sequence, 0, 0, &__pyx_8genexpr6__pyx_v_i, &__pyx_t_6, NULL, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1042, __pyx_L17_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 1016, __pyx_L17_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 1042, __pyx_L17_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15510,10 +15839,10 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     goto __pyx_L1_error;
     __pyx_L20_exit_scope:;
   } /* exit inner scope */
-  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_2, __pyx_t_1) < 0)) __PYX_ERR(0, 1016, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_frame, __pyx_int_2, __pyx_t_1) < 0)) __PYX_ERR(0, 1042, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1017
+  /* "_fasta_utils.pyx":1043
  *     frame[1] = [sequence[i:(i+3)] for i in range(1,len(sequence),3)]
  *     frame[2] = [sequence[i:(i+3)] for i in range(2,len(sequence),3)]
  *     orf = ''             # <<<<<<<<<<<<<<
@@ -15523,19 +15852,19 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   __Pyx_INCREF(__pyx_kp_u_);
   __pyx_v_orf = __pyx_kp_u_;
 
-  /* "_fasta_utils.pyx":1018
+  /* "_fasta_utils.pyx":1044
  *     frame[2] = [sequence[i:(i+3)] for i in range(2,len(sequence),3)]
  *     orf = ''
  *     span = []             # <<<<<<<<<<<<<<
  *     stopless = False
  *     start_met = re.compile('^.*?(M.*)$')
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1018, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1044, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_span = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1019
+  /* "_fasta_utils.pyx":1045
  *     orf = ''
  *     span = []
  *     stopless = False             # <<<<<<<<<<<<<<
@@ -15545,16 +15874,16 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   __Pyx_INCREF(Py_False);
   __pyx_v_stopless = Py_False;
 
-  /* "_fasta_utils.pyx":1020
+  /* "_fasta_utils.pyx":1046
  *     span = []
  *     stopless = False
  *     start_met = re.compile('^.*?(M.*)$')             # <<<<<<<<<<<<<<
  *     for f in [0,1,2]:
  *         translation = ''.join([translate(i) for i in frame[f]])
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1020, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_re); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1046, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_compile); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1020, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_compile); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1046, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -15569,13 +15898,13 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_kp_u_M) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_kp_u_M);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1020, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1046, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_start_met = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1021
+  /* "_fasta_utils.pyx":1047
  *     stopless = False
  *     start_met = re.compile('^.*?(M.*)$')
  *     for f in [0,1,2]:             # <<<<<<<<<<<<<<
@@ -15586,15 +15915,15 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   for (;;) {
     if (__pyx_t_4 >= 3) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1021, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_3); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 1047, __pyx_L1_error)
     #else
-    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1021, __pyx_L1_error)
+    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1047, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_f, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "_fasta_utils.pyx":1022
+    /* "_fasta_utils.pyx":1048
  *     start_met = re.compile('^.*?(M.*)$')
  *     for f in [0,1,2]:
  *         translation = ''.join([translate(i) for i in frame[f]])             # <<<<<<<<<<<<<<
@@ -15602,17 +15931,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]
  */
     { /* enter inner scope */
-      __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1022, __pyx_L25_error)
+      __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1048, __pyx_L25_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_frame, __pyx_v_f); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1022, __pyx_L25_error)
+      __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_frame, __pyx_v_f); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1048, __pyx_L25_error)
       __Pyx_GOTREF(__pyx_t_2);
       if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
         __pyx_t_6 = __pyx_t_2; __Pyx_INCREF(__pyx_t_6); __pyx_t_7 = 0;
         __pyx_t_5 = NULL;
       } else {
-        __pyx_t_7 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1022, __pyx_L25_error)
+        __pyx_t_7 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1048, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1022, __pyx_L25_error)
+        __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1048, __pyx_L25_error)
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       for (;;) {
@@ -15620,17 +15949,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           if (likely(PyList_CheckExact(__pyx_t_6))) {
             if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_6)) break;
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_2 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_2); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1022, __pyx_L25_error)
+            __pyx_t_2 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_2); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1048, __pyx_L25_error)
             #else
-            __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1022, __pyx_L25_error)
+            __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1048, __pyx_L25_error)
             __Pyx_GOTREF(__pyx_t_2);
             #endif
           } else {
             if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_2); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1022, __pyx_L25_error)
+            __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_2); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1048, __pyx_L25_error)
             #else
-            __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1022, __pyx_L25_error)
+            __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1048, __pyx_L25_error)
             __Pyx_GOTREF(__pyx_t_2);
             #endif
           }
@@ -15640,7 +15969,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
               if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-              else __PYX_ERR(0, 1022, __pyx_L25_error)
+              else __PYX_ERR(0, 1048, __pyx_L25_error)
             }
             break;
           }
@@ -15648,7 +15977,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         }
         __Pyx_XDECREF_SET(__pyx_8genexpr7__pyx_v_i, __pyx_t_2);
         __pyx_t_2 = 0;
-        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_translate); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1022, __pyx_L25_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_translate); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1048, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_8);
         __pyx_t_9 = NULL;
         if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_8))) {
@@ -15662,10 +15991,10 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         }
         __pyx_t_2 = (__pyx_t_9) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_9, __pyx_8genexpr7__pyx_v_i) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_8genexpr7__pyx_v_i);
         __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1022, __pyx_L25_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1048, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 1022, __pyx_L25_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_2))) __PYX_ERR(0, 1048, __pyx_L25_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       }
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -15676,13 +16005,13 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       goto __pyx_L1_error;
       __pyx_L28_exit_scope:;
     } /* exit inner scope */
-    __pyx_t_6 = PyUnicode_Join(__pyx_kp_u_, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1022, __pyx_L1_error)
+    __pyx_t_6 = PyUnicode_Join(__pyx_kp_u_, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1048, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_translation, ((PyObject*)__pyx_t_6));
     __pyx_t_6 = 0;
 
-    /* "_fasta_utils.pyx":1023
+    /* "_fasta_utils.pyx":1049
  *     for f in [0,1,2]:
  *         translation = ''.join([translate(i) for i in frame[f]])
  *         potential_orfs = translation.split('-')             # <<<<<<<<<<<<<<
@@ -15691,22 +16020,22 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  */
     if (unlikely(__pyx_v_translation == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "split");
-      __PYX_ERR(0, 1023, __pyx_L1_error)
+      __PYX_ERR(0, 1049, __pyx_L1_error)
     }
-    __pyx_t_6 = PyUnicode_Split(__pyx_v_translation, __pyx_kp_u__11, -1L); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1023, __pyx_L1_error)
+    __pyx_t_6 = PyUnicode_Split(__pyx_v_translation, __pyx_kp_u__11, -1L); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1049, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF_SET(__pyx_v_potential_orfs, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "_fasta_utils.pyx":1024
+    /* "_fasta_utils.pyx":1050
  *         translation = ''.join([translate(i) for i in frame[f]])
  *         potential_orfs = translation.split('-')
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]             # <<<<<<<<<<<<<<
  *         if not allow_truncation:
  *             potential_orfs = potential_orfs[:-1]
  */
-    __pyx_t_7 = PyObject_Length(__pyx_v_potential_orfs); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1024, __pyx_L1_error)
-    __pyx_t_6 = PyList_New(1 * (((__pyx_t_7 - 1)<0) ? 0:(__pyx_t_7 - 1))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1024, __pyx_L1_error)
+    __pyx_t_7 = PyObject_Length(__pyx_v_potential_orfs); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1050, __pyx_L1_error)
+    __pyx_t_6 = PyList_New(1 * (((__pyx_t_7 - 1)<0) ? 0:(__pyx_t_7 - 1))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1050, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     { Py_ssize_t __pyx_temp;
       for (__pyx_temp=0; __pyx_temp < (__pyx_t_7 - 1); __pyx_temp++) {
@@ -15715,54 +16044,54 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         PyList_SET_ITEM(__pyx_t_6, __pyx_temp, Py_False);
       }
     }
-    __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1024, __pyx_L1_error)
+    __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1050, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF(Py_True);
     __Pyx_GIVEREF(Py_True);
     PyList_SET_ITEM(__pyx_t_3, 0, Py_True);
-    __pyx_t_2 = PyNumber_Add(__pyx_t_6, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1024, __pyx_L1_error)
+    __pyx_t_2 = PyNumber_Add(__pyx_t_6, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1050, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_stopless_list, ((PyObject*)__pyx_t_2));
     __pyx_t_2 = 0;
 
-    /* "_fasta_utils.pyx":1025
+    /* "_fasta_utils.pyx":1051
  *         potential_orfs = translation.split('-')
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]
  *         if not allow_truncation:             # <<<<<<<<<<<<<<
  *             potential_orfs = potential_orfs[:-1]
  *             stopless = stopless_list[:-1]
  */
-    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_allow_truncation); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 1025, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_v_allow_truncation); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 1051, __pyx_L1_error)
     __pyx_t_11 = ((!__pyx_t_10) != 0);
     if (__pyx_t_11) {
 
-      /* "_fasta_utils.pyx":1026
+      /* "_fasta_utils.pyx":1052
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]
  *         if not allow_truncation:
  *             potential_orfs = potential_orfs[:-1]             # <<<<<<<<<<<<<<
  *             stopless = stopless_list[:-1]
  *         for p,s in zip(potential_orfs,stopless_list):
  */
-      __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_potential_orfs, 0, -1L, NULL, NULL, &__pyx_slice__12, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1026, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetSlice(__pyx_v_potential_orfs, 0, -1L, NULL, NULL, &__pyx_slice__12, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1052, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF_SET(__pyx_v_potential_orfs, __pyx_t_2);
       __pyx_t_2 = 0;
 
-      /* "_fasta_utils.pyx":1027
+      /* "_fasta_utils.pyx":1053
  *         if not allow_truncation:
  *             potential_orfs = potential_orfs[:-1]
  *             stopless = stopless_list[:-1]             # <<<<<<<<<<<<<<
  *         for p,s in zip(potential_orfs,stopless_list):
  *             M_match = start_met.match(p)
  */
-      __pyx_t_2 = __Pyx_PyList_GetSlice(__pyx_v_stopless_list, 0, -1L); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1027, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyList_GetSlice(__pyx_v_stopless_list, 0, -1L); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1053, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF_SET(__pyx_v_stopless, __pyx_t_2);
       __pyx_t_2 = 0;
 
-      /* "_fasta_utils.pyx":1025
+      /* "_fasta_utils.pyx":1051
  *         potential_orfs = translation.split('-')
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]
  *         if not allow_truncation:             # <<<<<<<<<<<<<<
@@ -15771,14 +16100,14 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  */
     }
 
-    /* "_fasta_utils.pyx":1028
+    /* "_fasta_utils.pyx":1054
  *             potential_orfs = potential_orfs[:-1]
  *             stopless = stopless_list[:-1]
  *         for p,s in zip(potential_orfs,stopless_list):             # <<<<<<<<<<<<<<
  *             M_match = start_met.match(p)
  *             if M_match:
  */
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1028, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1054, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_v_potential_orfs);
     __Pyx_GIVEREF(__pyx_v_potential_orfs);
@@ -15786,16 +16115,16 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     __Pyx_INCREF(__pyx_v_stopless_list);
     __Pyx_GIVEREF(__pyx_v_stopless_list);
     PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_stopless_list);
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1028, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1054, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
       __pyx_t_2 = __pyx_t_3; __Pyx_INCREF(__pyx_t_2); __pyx_t_7 = 0;
       __pyx_t_5 = NULL;
     } else {
-      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1028, __pyx_L1_error)
+      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1054, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1028, __pyx_L1_error)
+      __pyx_t_5 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1054, __pyx_L1_error)
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     for (;;) {
@@ -15803,17 +16132,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1028, __pyx_L1_error)
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1054, __pyx_L1_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1028, __pyx_L1_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1054, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         } else {
           if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1028, __pyx_L1_error)
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1054, __pyx_L1_error)
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1028, __pyx_L1_error)
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1054, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           #endif
         }
@@ -15823,7 +16152,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 1028, __pyx_L1_error)
+            else __PYX_ERR(0, 1054, __pyx_L1_error)
           }
           break;
         }
@@ -15835,7 +16164,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         if (unlikely(size != 2)) {
           if (size > 2) __Pyx_RaiseTooManyValuesError(2);
           else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-          __PYX_ERR(0, 1028, __pyx_L1_error)
+          __PYX_ERR(0, 1054, __pyx_L1_error)
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
         if (likely(PyTuple_CheckExact(sequence))) {
@@ -15848,15 +16177,15 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         __Pyx_INCREF(__pyx_t_6);
         __Pyx_INCREF(__pyx_t_8);
         #else
-        __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1028, __pyx_L1_error)
+        __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1054, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1028, __pyx_L1_error)
+        __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1054, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         #endif
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       } else {
         Py_ssize_t index = -1;
-        __pyx_t_9 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1028, __pyx_L1_error)
+        __pyx_t_9 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1054, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __pyx_t_12 = Py_TYPE(__pyx_t_9)->tp_iternext;
@@ -15864,7 +16193,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         __Pyx_GOTREF(__pyx_t_6);
         index = 1; __pyx_t_8 = __pyx_t_12(__pyx_t_9); if (unlikely(!__pyx_t_8)) goto __pyx_L32_unpacking_failed;
         __Pyx_GOTREF(__pyx_t_8);
-        if (__Pyx_IternextUnpackEndCheck(__pyx_t_12(__pyx_t_9), 2) < 0) __PYX_ERR(0, 1028, __pyx_L1_error)
+        if (__Pyx_IternextUnpackEndCheck(__pyx_t_12(__pyx_t_9), 2) < 0) __PYX_ERR(0, 1054, __pyx_L1_error)
         __pyx_t_12 = NULL;
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
         goto __pyx_L33_unpacking_done;
@@ -15872,7 +16201,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
         __pyx_t_12 = NULL;
         if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-        __PYX_ERR(0, 1028, __pyx_L1_error)
+        __PYX_ERR(0, 1054, __pyx_L1_error)
         __pyx_L33_unpacking_done:;
       }
       __Pyx_XDECREF_SET(__pyx_v_p, __pyx_t_6);
@@ -15880,14 +16209,14 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       __Pyx_XDECREF_SET(__pyx_v_s, __pyx_t_8);
       __pyx_t_8 = 0;
 
-      /* "_fasta_utils.pyx":1029
+      /* "_fasta_utils.pyx":1055
  *             stopless = stopless_list[:-1]
  *         for p,s in zip(potential_orfs,stopless_list):
  *             M_match = start_met.match(p)             # <<<<<<<<<<<<<<
  *             if M_match:
  *                 o = M_match.groups()[0]
  */
-      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_start_met, __pyx_n_s_match); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1029, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_start_met, __pyx_n_s_match); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1055, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_t_6 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_8))) {
@@ -15901,30 +16230,30 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
       }
       __pyx_t_3 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_6, __pyx_v_p) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_v_p);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1029, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1055, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_XDECREF_SET(__pyx_v_M_match, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "_fasta_utils.pyx":1030
+      /* "_fasta_utils.pyx":1056
  *         for p,s in zip(potential_orfs,stopless_list):
  *             M_match = start_met.match(p)
  *             if M_match:             # <<<<<<<<<<<<<<
  *                 o = M_match.groups()[0]
  *                 if len(o) > len(orf):
  */
-      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_v_M_match); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1030, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_v_M_match); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1056, __pyx_L1_error)
       if (__pyx_t_11) {
 
-        /* "_fasta_utils.pyx":1031
+        /* "_fasta_utils.pyx":1057
  *             M_match = start_met.match(p)
  *             if M_match:
  *                 o = M_match.groups()[0]             # <<<<<<<<<<<<<<
  *                 if len(o) > len(orf):
  *                     orf = o
  */
-        __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_M_match, __pyx_n_s_groups); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1031, __pyx_L1_error)
+        __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_M_match, __pyx_n_s_groups); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1057, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __pyx_t_6 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_8))) {
@@ -15938,28 +16267,28 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
         }
         __pyx_t_3 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_8);
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1031, __pyx_L1_error)
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1057, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1031, __pyx_L1_error)
+        __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1057, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_XDECREF_SET(__pyx_v_o, __pyx_t_8);
         __pyx_t_8 = 0;
 
-        /* "_fasta_utils.pyx":1032
+        /* "_fasta_utils.pyx":1058
  *             if M_match:
  *                 o = M_match.groups()[0]
  *                 if len(o) > len(orf):             # <<<<<<<<<<<<<<
  *                     orf = o
  *                     if s:
  */
-        __pyx_t_13 = PyObject_Length(__pyx_v_o); if (unlikely(__pyx_t_13 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1032, __pyx_L1_error)
-        __pyx_t_14 = PyObject_Length(__pyx_v_orf); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1032, __pyx_L1_error)
+        __pyx_t_13 = PyObject_Length(__pyx_v_o); if (unlikely(__pyx_t_13 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1058, __pyx_L1_error)
+        __pyx_t_14 = PyObject_Length(__pyx_v_orf); if (unlikely(__pyx_t_14 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1058, __pyx_L1_error)
         __pyx_t_11 = ((__pyx_t_13 > __pyx_t_14) != 0);
         if (__pyx_t_11) {
 
-          /* "_fasta_utils.pyx":1033
+          /* "_fasta_utils.pyx":1059
  *                 o = M_match.groups()[0]
  *                 if len(o) > len(orf):
  *                     orf = o             # <<<<<<<<<<<<<<
@@ -15969,17 +16298,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           __Pyx_INCREF(__pyx_v_o);
           __Pyx_DECREF_SET(__pyx_v_orf, __pyx_v_o);
 
-          /* "_fasta_utils.pyx":1034
+          /* "_fasta_utils.pyx":1060
  *                 if len(o) > len(orf):
  *                     orf = o
  *                     if s:             # <<<<<<<<<<<<<<
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(
  */
-          __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_v_s); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1034, __pyx_L1_error)
+          __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_v_s); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1060, __pyx_L1_error)
           if (__pyx_t_11) {
 
-            /* "_fasta_utils.pyx":1035
+            /* "_fasta_utils.pyx":1061
  *                     orf = o
  *                     if s:
  *                         stopless = True             # <<<<<<<<<<<<<<
@@ -15989,7 +16318,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
             __Pyx_INCREF(Py_True);
             __Pyx_DECREF_SET(__pyx_v_stopless, Py_True);
 
-            /* "_fasta_utils.pyx":1036
+            /* "_fasta_utils.pyx":1062
  *                     if s:
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
@@ -15997,31 +16326,31 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *                     else:
  */
             { /* enter inner scope */
-              __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1036, __pyx_L39_error)
+              __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1062, __pyx_L39_error)
               __Pyx_GOTREF(__pyx_t_8);
 
-              /* "_fasta_utils.pyx":1037
+              /* "_fasta_utils.pyx":1063
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(
  *                             o,translation).span()]             # <<<<<<<<<<<<<<
  *                     else:
  *                         stopless = False
  */
-              __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_re); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1036, __pyx_L39_error)
+              __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_re); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1062, __pyx_L39_error)
               __Pyx_GOTREF(__pyx_t_9);
 
-              /* "_fasta_utils.pyx":1036
+              /* "_fasta_utils.pyx":1062
  *                     if s:
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
  *                             o,translation).span()]
  *                     else:
  */
-              __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_search); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1036, __pyx_L39_error)
+              __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_search); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1062, __pyx_L39_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-              /* "_fasta_utils.pyx":1037
+              /* "_fasta_utils.pyx":1063
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(
  *                             o,translation).span()]             # <<<<<<<<<<<<<<
@@ -16043,7 +16372,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_15)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_9, __pyx_v_o, __pyx_v_translation};
-                __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
                 __Pyx_GOTREF(__pyx_t_6);
               } else
@@ -16051,13 +16380,13 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_15)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_9, __pyx_v_o, __pyx_v_translation};
-                __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_15, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
                 __Pyx_GOTREF(__pyx_t_6);
               } else
               #endif
               {
-                __pyx_t_17 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_17 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_GOTREF(__pyx_t_17);
                 if (__pyx_t_9) {
                   __Pyx_GIVEREF(__pyx_t_9); PyTuple_SET_ITEM(__pyx_t_17, 0, __pyx_t_9); __pyx_t_9 = NULL;
@@ -16068,12 +16397,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 __Pyx_INCREF(__pyx_v_translation);
                 __Pyx_GIVEREF(__pyx_v_translation);
                 PyTuple_SET_ITEM(__pyx_t_17, 1+__pyx_t_16, __pyx_v_translation);
-                __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_15, __pyx_t_17, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_15, __pyx_t_17, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
               }
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-              __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_span); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1037, __pyx_L39_error)
+              __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_span); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1063, __pyx_L39_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
               __pyx_t_6 = NULL;
@@ -16088,11 +16417,11 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               }
               __pyx_t_3 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_15, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_15);
               __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-              if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1037, __pyx_L39_error)
+              if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1063, __pyx_L39_error)
               __Pyx_GOTREF(__pyx_t_3);
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "_fasta_utils.pyx":1036
+              /* "_fasta_utils.pyx":1062
  *                     if s:
  *                         stopless = True
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
@@ -16103,9 +16432,9 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 __pyx_t_15 = __pyx_t_3; __Pyx_INCREF(__pyx_t_15); __pyx_t_14 = 0;
                 __pyx_t_18 = NULL;
               } else {
-                __pyx_t_14 = -1; __pyx_t_15 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_14 = -1; __pyx_t_15 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_GOTREF(__pyx_t_15);
-                __pyx_t_18 = Py_TYPE(__pyx_t_15)->tp_iternext; if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_18 = Py_TYPE(__pyx_t_15)->tp_iternext; if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1062, __pyx_L39_error)
               }
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
               for (;;) {
@@ -16113,17 +16442,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                   if (likely(PyList_CheckExact(__pyx_t_15))) {
                     if (__pyx_t_14 >= PyList_GET_SIZE(__pyx_t_15)) break;
                     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_15, __pyx_t_14); __Pyx_INCREF(__pyx_t_3); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_15, __pyx_t_14); __Pyx_INCREF(__pyx_t_3); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1062, __pyx_L39_error)
                     #else
-                    __pyx_t_3 = PySequence_ITEM(__pyx_t_15, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                    __pyx_t_3 = PySequence_ITEM(__pyx_t_15, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1062, __pyx_L39_error)
                     __Pyx_GOTREF(__pyx_t_3);
                     #endif
                   } else {
                     if (__pyx_t_14 >= PyTuple_GET_SIZE(__pyx_t_15)) break;
                     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                    __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_15, __pyx_t_14); __Pyx_INCREF(__pyx_t_3); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                    __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_15, __pyx_t_14); __Pyx_INCREF(__pyx_t_3); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1062, __pyx_L39_error)
                     #else
-                    __pyx_t_3 = PySequence_ITEM(__pyx_t_15, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                    __pyx_t_3 = PySequence_ITEM(__pyx_t_15, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1062, __pyx_L39_error)
                     __Pyx_GOTREF(__pyx_t_3);
                     #endif
                   }
@@ -16133,7 +16462,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                     PyObject* exc_type = PyErr_Occurred();
                     if (exc_type) {
                       if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                      else __PYX_ERR(0, 1036, __pyx_L39_error)
+                      else __PYX_ERR(0, 1062, __pyx_L39_error)
                     }
                     break;
                   }
@@ -16141,12 +16470,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 }
                 __Pyx_XDECREF_SET(__pyx_8genexpr8__pyx_v_i, __pyx_t_3);
                 __pyx_t_3 = 0;
-                __pyx_t_3 = PyNumber_Multiply(__pyx_8genexpr8__pyx_v_i, __pyx_int_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_3 = PyNumber_Multiply(__pyx_8genexpr8__pyx_v_i, __pyx_int_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_GOTREF(__pyx_t_3);
-                __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1036, __pyx_L39_error)
+                __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-                if (unlikely(__Pyx_ListComp_Append(__pyx_t_8, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1036, __pyx_L39_error)
+                if (unlikely(__Pyx_ListComp_Append(__pyx_t_8, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1062, __pyx_L39_error)
                 __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
               }
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
@@ -16160,7 +16489,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
             __Pyx_DECREF_SET(__pyx_v_span, ((PyObject*)__pyx_t_8));
             __pyx_t_8 = 0;
 
-            /* "_fasta_utils.pyx":1034
+            /* "_fasta_utils.pyx":1060
  *                 if len(o) > len(orf):
  *                     orf = o
  *                     if s:             # <<<<<<<<<<<<<<
@@ -16170,7 +16499,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
             goto __pyx_L36;
           }
 
-          /* "_fasta_utils.pyx":1039
+          /* "_fasta_utils.pyx":1065
  *                             o,translation).span()]
  *                     else:
  *                         stopless = False             # <<<<<<<<<<<<<<
@@ -16181,7 +16510,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
             __Pyx_INCREF(Py_False);
             __Pyx_DECREF_SET(__pyx_v_stopless, Py_False);
 
-            /* "_fasta_utils.pyx":1040
+            /* "_fasta_utils.pyx":1066
  *                     else:
  *                         stopless = False
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
@@ -16189,36 +16518,36 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  *     return (orf,span,stopless)
  */
             { /* enter inner scope */
-              __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1040, __pyx_L45_error)
+              __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1066, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_8);
 
-              /* "_fasta_utils.pyx":1041
+              /* "_fasta_utils.pyx":1067
  *                         stopless = False
  *                         span = [i*3+f for i in re.search(
  *                             o+'-',translation).span()]             # <<<<<<<<<<<<<<
  *     return (orf,span,stopless)
  */
-              __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_re); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1040, __pyx_L45_error)
+              __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_re); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1066, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_3);
 
-              /* "_fasta_utils.pyx":1040
+              /* "_fasta_utils.pyx":1066
  *                     else:
  *                         stopless = False
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
  *                             o+'-',translation).span()]
  *     return (orf,span,stopless)
  */
-              __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_search); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1040, __pyx_L45_error)
+              __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_search); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1066, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_17);
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-              /* "_fasta_utils.pyx":1041
+              /* "_fasta_utils.pyx":1067
  *                         stopless = False
  *                         span = [i*3+f for i in re.search(
  *                             o+'-',translation).span()]             # <<<<<<<<<<<<<<
  *     return (orf,span,stopless)
  */
-              __pyx_t_3 = PyNumber_Add(__pyx_v_o, __pyx_kp_u__11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1041, __pyx_L45_error)
+              __pyx_t_3 = PyNumber_Add(__pyx_v_o, __pyx_kp_u__11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1067, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_3);
               __pyx_t_9 = NULL;
               __pyx_t_16 = 0;
@@ -16235,7 +16564,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_17)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_9, __pyx_t_3, __pyx_v_translation};
-                __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_17, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_17, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -16244,14 +16573,14 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_17)) {
                 PyObject *__pyx_temp[3] = {__pyx_t_9, __pyx_t_3, __pyx_v_translation};
-                __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_17, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_17, __pyx_temp+1-__pyx_t_16, 2+__pyx_t_16); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
               } else
               #endif
               {
-                __pyx_t_19 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_19 = PyTuple_New(2+__pyx_t_16); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_GOTREF(__pyx_t_19);
                 if (__pyx_t_9) {
                   __Pyx_GIVEREF(__pyx_t_9); PyTuple_SET_ITEM(__pyx_t_19, 0, __pyx_t_9); __pyx_t_9 = NULL;
@@ -16262,12 +16591,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 __Pyx_GIVEREF(__pyx_v_translation);
                 PyTuple_SET_ITEM(__pyx_t_19, 1+__pyx_t_16, __pyx_v_translation);
                 __pyx_t_3 = 0;
-                __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_17, __pyx_t_19, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_17, __pyx_t_19, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
               }
               __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-              __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_span); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1041, __pyx_L45_error)
+              __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_span); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1067, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_17);
               __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
               __pyx_t_6 = NULL;
@@ -16282,11 +16611,11 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
               }
               __pyx_t_15 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_17, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_17);
               __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-              if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1041, __pyx_L45_error)
+              if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1067, __pyx_L45_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
 
-              /* "_fasta_utils.pyx":1040
+              /* "_fasta_utils.pyx":1066
  *                     else:
  *                         stopless = False
  *                         span = [i*3+f for i in re.search(             # <<<<<<<<<<<<<<
@@ -16297,9 +16626,9 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 __pyx_t_17 = __pyx_t_15; __Pyx_INCREF(__pyx_t_17); __pyx_t_14 = 0;
                 __pyx_t_18 = NULL;
               } else {
-                __pyx_t_14 = -1; __pyx_t_17 = PyObject_GetIter(__pyx_t_15); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_14 = -1; __pyx_t_17 = PyObject_GetIter(__pyx_t_15); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_GOTREF(__pyx_t_17);
-                __pyx_t_18 = Py_TYPE(__pyx_t_17)->tp_iternext; if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_18 = Py_TYPE(__pyx_t_17)->tp_iternext; if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1066, __pyx_L45_error)
               }
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               for (;;) {
@@ -16307,17 +16636,17 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                   if (likely(PyList_CheckExact(__pyx_t_17))) {
                     if (__pyx_t_14 >= PyList_GET_SIZE(__pyx_t_17)) break;
                     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                    __pyx_t_15 = PyList_GET_ITEM(__pyx_t_17, __pyx_t_14); __Pyx_INCREF(__pyx_t_15); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                    __pyx_t_15 = PyList_GET_ITEM(__pyx_t_17, __pyx_t_14); __Pyx_INCREF(__pyx_t_15); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1066, __pyx_L45_error)
                     #else
-                    __pyx_t_15 = PySequence_ITEM(__pyx_t_17, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                    __pyx_t_15 = PySequence_ITEM(__pyx_t_17, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1066, __pyx_L45_error)
                     __Pyx_GOTREF(__pyx_t_15);
                     #endif
                   } else {
                     if (__pyx_t_14 >= PyTuple_GET_SIZE(__pyx_t_17)) break;
                     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-                    __pyx_t_15 = PyTuple_GET_ITEM(__pyx_t_17, __pyx_t_14); __Pyx_INCREF(__pyx_t_15); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                    __pyx_t_15 = PyTuple_GET_ITEM(__pyx_t_17, __pyx_t_14); __Pyx_INCREF(__pyx_t_15); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 1066, __pyx_L45_error)
                     #else
-                    __pyx_t_15 = PySequence_ITEM(__pyx_t_17, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                    __pyx_t_15 = PySequence_ITEM(__pyx_t_17, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1066, __pyx_L45_error)
                     __Pyx_GOTREF(__pyx_t_15);
                     #endif
                   }
@@ -16327,7 +16656,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                     PyObject* exc_type = PyErr_Occurred();
                     if (exc_type) {
                       if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                      else __PYX_ERR(0, 1040, __pyx_L45_error)
+                      else __PYX_ERR(0, 1066, __pyx_L45_error)
                     }
                     break;
                   }
@@ -16335,12 +16664,12 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
                 }
                 __Pyx_XDECREF_SET(__pyx_8genexpr9__pyx_v_i, __pyx_t_15);
                 __pyx_t_15 = 0;
-                __pyx_t_15 = PyNumber_Multiply(__pyx_8genexpr9__pyx_v_i, __pyx_int_3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_15 = PyNumber_Multiply(__pyx_8genexpr9__pyx_v_i, __pyx_int_3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_GOTREF(__pyx_t_15);
-                __pyx_t_6 = PyNumber_Add(__pyx_t_15, __pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1040, __pyx_L45_error)
+                __pyx_t_6 = PyNumber_Add(__pyx_t_15, __pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_GOTREF(__pyx_t_6);
                 __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-                if (unlikely(__Pyx_ListComp_Append(__pyx_t_8, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1040, __pyx_L45_error)
+                if (unlikely(__Pyx_ListComp_Append(__pyx_t_8, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 1066, __pyx_L45_error)
                 __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
               }
               __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
@@ -16356,7 +16685,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
           }
           __pyx_L36:;
 
-          /* "_fasta_utils.pyx":1032
+          /* "_fasta_utils.pyx":1058
  *             if M_match:
  *                 o = M_match.groups()[0]
  *                 if len(o) > len(orf):             # <<<<<<<<<<<<<<
@@ -16365,7 +16694,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  */
         }
 
-        /* "_fasta_utils.pyx":1030
+        /* "_fasta_utils.pyx":1056
  *         for p,s in zip(potential_orfs,stopless_list):
  *             M_match = start_met.match(p)
  *             if M_match:             # <<<<<<<<<<<<<<
@@ -16374,7 +16703,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
  */
       }
 
-      /* "_fasta_utils.pyx":1028
+      /* "_fasta_utils.pyx":1054
  *             potential_orfs = potential_orfs[:-1]
  *             stopless = stopless_list[:-1]
  *         for p,s in zip(potential_orfs,stopless_list):             # <<<<<<<<<<<<<<
@@ -16384,7 +16713,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "_fasta_utils.pyx":1021
+    /* "_fasta_utils.pyx":1047
  *     stopless = False
  *     start_met = re.compile('^.*?(M.*)$')
  *     for f in [0,1,2]:             # <<<<<<<<<<<<<<
@@ -16394,13 +16723,13 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_fasta_utils.pyx":1042
+  /* "_fasta_utils.pyx":1068
  *                         span = [i*3+f for i in re.search(
  *                             o+'-',translation).span()]
  *     return (orf,span,stopless)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1042, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1068, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_orf);
   __Pyx_GIVEREF(__pyx_v_orf);
@@ -16415,7 +16744,7 @@ static PyObject *__pyx_pf_12_fasta_utils_37longest_orf(CYTHON_UNUSED PyObject *_
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "_fasta_utils.pyx":1004
+  /* "_fasta_utils.pyx":1030
  *         return c
  * 
  * def longest_orf(sequence,allow_truncation=True):             # <<<<<<<<<<<<<<
@@ -31284,7 +31613,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_map = __Pyx_GetBuiltinName(__pyx_n_s_map); if (!__pyx_builtin_map) __PYX_ERR(0, 314, __pyx_L1_error)
   __pyx_builtin_chr = __Pyx_GetBuiltinName(__pyx_n_s_chr); if (!__pyx_builtin_chr) __PYX_ERR(0, 314, __pyx_L1_error)
   __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 412, __pyx_L1_error)
-  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 888, __pyx_L1_error)
+  __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 914, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 109, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(2, 133, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(2, 2, __pyx_L1_error)
@@ -31322,36 +31651,36 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_slice__3);
   __Pyx_GIVEREF(__pyx_slice__3);
 
-  /* "_fasta_utils.pyx":795
+  /* "_fasta_utils.pyx":821
  *                     if len(trim1) < minlen or qualscore1 < minqual: # trim1 fail
  *                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
  *                             return('', '', None, None, '') # Return empty read             # <<<<<<<<<<<<<<
  *                         else: # trimC pass
  *                             return(trimC, qtrmC, None, None, labelC)
  */
-  __pyx_tuple__4 = PyTuple_Pack(5, __pyx_kp_u_, __pyx_kp_u_, Py_None, Py_None, __pyx_kp_u_); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 795, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(5, __pyx_kp_u_, __pyx_kp_u_, Py_None, Py_None, __pyx_kp_u_); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 821, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "_fasta_utils.pyx":1021
+  /* "_fasta_utils.pyx":1047
  *     stopless = False
  *     start_met = re.compile('^.*?(M.*)$')
  *     for f in [0,1,2]:             # <<<<<<<<<<<<<<
  *         translation = ''.join([translate(i) for i in frame[f]])
  *         potential_orfs = translation.split('-')
  */
-  __pyx_tuple__10 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_2); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 1021, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_2); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 1047, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
 
-  /* "_fasta_utils.pyx":1026
+  /* "_fasta_utils.pyx":1052
  *         stopless_list = [False]*(len(potential_orfs)-1)+[True]
  *         if not allow_truncation:
  *             potential_orfs = potential_orfs[:-1]             # <<<<<<<<<<<<<<
  *             stopless = stopless_list[:-1]
  *         for p,s in zip(potential_orfs,stopless_list):
  */
-  __pyx_slice__12 = PySlice_New(Py_None, __pyx_int_neg_1, Py_None); if (unlikely(!__pyx_slice__12)) __PYX_ERR(0, 1026, __pyx_L1_error)
+  __pyx_slice__12 = PySlice_New(Py_None, __pyx_int_neg_1, Py_None); if (unlikely(!__pyx_slice__12)) __PYX_ERR(0, 1052, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_slice__12);
   __Pyx_GIVEREF(__pyx_slice__12);
 
@@ -31607,53 +31936,53 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__58);
   __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(19, 0, 61, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_terminal_trim, 656, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) __PYX_ERR(0, 656, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":943
+  /* "_fasta_utils.pyx":969
  * 
  * 
  * def generate_softbridges(dict genome_dict, int minlen, int maxlen):             # <<<<<<<<<<<<<<
  *     """From a genome dict, yields one BED12 line for each start/stop
  *     of a softmasked region of the FASTA file, demarcated by lowercase letters.
  */
-  __pyx_tuple__60 = PyTuple_Pack(14, __pyx_n_s_genome_dict, __pyx_n_s_minlen, __pyx_n_s_maxlen, __pyx_n_s_soft_toggle, __pyx_n_s_chromname, __pyx_n_s_chromstring, __pyx_n_s_c, __pyx_n_s_out_string, __pyx_n_s_current_pos, __pyx_n_s_start_pos, __pyx_n_s_end_pos, __pyx_n_s_sb_length, __pyx_n_s_lowercase, __pyx_n_s_i); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 943, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(14, __pyx_n_s_genome_dict, __pyx_n_s_minlen, __pyx_n_s_maxlen, __pyx_n_s_soft_toggle, __pyx_n_s_chromname, __pyx_n_s_chromstring, __pyx_n_s_c, __pyx_n_s_out_string, __pyx_n_s_current_pos, __pyx_n_s_start_pos, __pyx_n_s_end_pos, __pyx_n_s_sb_length, __pyx_n_s_lowercase, __pyx_n_s_i); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 969, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__60);
   __Pyx_GIVEREF(__pyx_tuple__60);
-  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_generate_softbridges, 943, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 943, __pyx_L1_error)
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_generate_softbridges, 969, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 969, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":982
+  /* "_fasta_utils.pyx":1008
  * 
  * 
  * def number_chromosomes(genome):             # <<<<<<<<<<<<<<
  *     """Returns a sorted index of chromosome starting positions in a genome."""
  *     running_count = 0
  */
-  __pyx_tuple__61 = PyTuple_Pack(4, __pyx_n_s_genome, __pyx_n_s_running_count, __pyx_n_s_chromosome_number, __pyx_n_s_c); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 982, __pyx_L1_error)
+  __pyx_tuple__61 = PyTuple_Pack(4, __pyx_n_s_genome, __pyx_n_s_running_count, __pyx_n_s_chromosome_number, __pyx_n_s_c); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 1008, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__61);
   __Pyx_GIVEREF(__pyx_tuple__61);
-  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_number_chromosomes, 982, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 982, __pyx_L1_error)
+  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_number_chromosomes, 1008, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 1008, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":992
+  /* "_fasta_utils.pyx":1018
  *     return chromosome_number
  * 
  * def translate(codon):             # <<<<<<<<<<<<<<
  *     """Looks up a nucleotide triplet in the codon hashtables."""
  *     if len(codon) == 3:
  */
-  __pyx_tuple__63 = PyTuple_Pack(2, __pyx_n_s_codon, __pyx_n_s_c); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 992, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(2, __pyx_n_s_codon, __pyx_n_s_c); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 1018, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__63);
   __Pyx_GIVEREF(__pyx_tuple__63);
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_translate, 992, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 992, __pyx_L1_error)
+  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_translate, 1018, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 1018, __pyx_L1_error)
 
-  /* "_fasta_utils.pyx":1004
+  /* "_fasta_utils.pyx":1030
  *         return c
  * 
  * def longest_orf(sequence,allow_truncation=True):             # <<<<<<<<<<<<<<
  *     """Locates the longest open reading frame.
  * 
  */
-  __pyx_tuple__65 = PyTuple_Pack(21, __pyx_n_s_sequence, __pyx_n_s_allow_truncation, __pyx_n_s_frame, __pyx_n_s_orf, __pyx_n_s_span, __pyx_n_s_stopless, __pyx_n_s_start_met, __pyx_n_s_f, __pyx_n_s_translation, __pyx_n_s_potential_orfs, __pyx_n_s_stopless_list, __pyx_n_s_p, __pyx_n_s_s, __pyx_n_s_M_match, __pyx_n_s_o, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 1004, __pyx_L1_error)
+  __pyx_tuple__65 = PyTuple_Pack(21, __pyx_n_s_sequence, __pyx_n_s_allow_truncation, __pyx_n_s_frame, __pyx_n_s_orf, __pyx_n_s_span, __pyx_n_s_stopless, __pyx_n_s_start_met, __pyx_n_s_f, __pyx_n_s_translation, __pyx_n_s_potential_orfs, __pyx_n_s_stopless_list, __pyx_n_s_p, __pyx_n_s_s, __pyx_n_s_M_match, __pyx_n_s_o, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i, __pyx_n_s_i); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 1030, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__65);
   __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(2, 0, 21, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_longest_orf, 1004, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 1004, __pyx_L1_error)
+  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(2, 0, 21, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_fasta_utils_pyx, __pyx_n_s_longest_orf, 1030, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 1030, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -31785,7 +32114,7 @@ static int __Pyx_modinit_type_init_code(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_12_fasta_utils___pyx_scope_struct__generate_softbridges) < 0) __PYX_ERR(0, 943, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_12_fasta_utils___pyx_scope_struct__generate_softbridges) < 0) __PYX_ERR(0, 969, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_12_fasta_utils___pyx_scope_struct__generate_softbridges.tp_print = 0;
   #endif
@@ -34838,52 +35167,52 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_terminal_trim, __pyx_t_14) < 0) __PYX_ERR(0, 656, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-  /* "_fasta_utils.pyx":943
+  /* "_fasta_utils.pyx":969
  * 
  * 
  * def generate_softbridges(dict genome_dict, int minlen, int maxlen):             # <<<<<<<<<<<<<<
  *     """From a genome dict, yields one BED12 line for each start/stop
  *     of a softmasked region of the FASTA file, demarcated by lowercase letters.
  */
-  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_31generate_softbridges, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 943, __pyx_L1_error)
+  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_31generate_softbridges, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 969, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_softbridges, __pyx_t_14) < 0) __PYX_ERR(0, 943, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_softbridges, __pyx_t_14) < 0) __PYX_ERR(0, 969, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-  /* "_fasta_utils.pyx":982
+  /* "_fasta_utils.pyx":1008
  * 
  * 
  * def number_chromosomes(genome):             # <<<<<<<<<<<<<<
  *     """Returns a sorted index of chromosome starting positions in a genome."""
  *     running_count = 0
  */
-  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_34number_chromosomes, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 982, __pyx_L1_error)
+  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_34number_chromosomes, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1008, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_number_chromosomes, __pyx_t_14) < 0) __PYX_ERR(0, 982, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_number_chromosomes, __pyx_t_14) < 0) __PYX_ERR(0, 1008, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-  /* "_fasta_utils.pyx":992
+  /* "_fasta_utils.pyx":1018
  *     return chromosome_number
  * 
  * def translate(codon):             # <<<<<<<<<<<<<<
  *     """Looks up a nucleotide triplet in the codon hashtables."""
  *     if len(codon) == 3:
  */
-  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_36translate, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 992, __pyx_L1_error)
+  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_36translate, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1018, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_translate, __pyx_t_14) < 0) __PYX_ERR(0, 992, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_translate, __pyx_t_14) < 0) __PYX_ERR(0, 1018, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-  /* "_fasta_utils.pyx":1004
+  /* "_fasta_utils.pyx":1030
  *         return c
  * 
  * def longest_orf(sequence,allow_truncation=True):             # <<<<<<<<<<<<<<
  *     """Locates the longest open reading frame.
  * 
  */
-  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_38longest_orf, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1004, __pyx_L1_error)
+  __pyx_t_14 = PyCFunction_NewEx(&__pyx_mdef_12_fasta_utils_38longest_orf, NULL, __pyx_n_s_fasta_utils); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1030, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_longest_orf, __pyx_t_14) < 0) __PYX_ERR(0, 1004, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_longest_orf, __pyx_t_14) < 0) __PYX_ERR(0, 1030, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
   /* "_fasta_utils.pyx":1
