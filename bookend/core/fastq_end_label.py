@@ -3,6 +3,7 @@
 
 import re
 import sys
+import gzip
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
@@ -30,18 +31,17 @@ class EndLabeler:
         self.suppress_untrimmed = args['SUPPRESS_UNTRIMMED']
         self.out1 = args['OUT1']
         self.out2 = args['OUT2']
-        self.single_out = args['SINGLE_OUT']
+        self.pseudomates = args['PSEUDOMATES']
+        if self.pseudomates:
+            self.single_out = None
+        else:
+            self.single_out = args['SINGLE_OUT']
+        
         self.mm_rate = args['MM_RATE']
         self.labeldict = Counter()
-        if len(self.input) == 2:
-            self.experiment_type = "PE"
-            self.file1 = open(self.input[0],'r')
-            self.file2 = open(self.input[1],'r')
-        elif len(self.input) == 1:
-            self.experiment_type = "SE"
-            self.file1 = open(self.input[0],'r')
-        
-        self.s_label = '' if args['START'] == 'none' else args['START']
+        self.open_input_files()
+       
+        self.s_label = '' if args['START'].lower() == 'none' else args['START']
         self.S5string = self.s_label
         if len(self.S5string) > 1:
             if self.S5string[-1] == '+': # 3'-terminal monomer is specified
@@ -71,7 +71,9 @@ class EndLabeler:
         self.S3array = fu.nuc_to_int(self.S3string, 'J'*len(self.S3string))
         self.E5array = fu.nuc_to_int(self.E5string, 'J'*len(self.E5string))
         self.E3array = fu.nuc_to_int(self.E3string, 'J'*len(self.E3string))
-        self.outfile_single=open(self.single_out,'w')
+        if self.single_out is not None:
+            self.outfile_single=open(self.single_out,'w')
+        
         if self.file2 is None: # Single-end input
             self.out1 = self.outfile1 = self.out2 = self.outfile2 =  None
         else: # Paired-end input
@@ -86,13 +88,29 @@ class EndLabeler:
         for fastq_entry in self.fastq_generator:
             self.label_fastq_entry(fastq_entry)
         
-        self.outfile_single.close()
+        if self.single_out is not None:
+            self.outfile_single.close()
+        
         if self.file2 is not None:
             self.outfile1.close()
             self.outfile2.close()
         
         print(self.display_label_summary())
-
+    
+    def open_input_files(self):
+        self.experiment_type = "SE"
+        if self.input[0].endswith('gz'):
+            self.file1 = gzip.open(self.input[0], 'rt')
+        else:
+            self.file1 = open(self.input[0],'r')
+        
+        if len(self.input) == 2:
+            self.experiment_type = "PE"
+            if self.input[1].endswith('gz'):
+                self.file2 = gzip.open(self.input[1], 'rt')
+            else:
+                self.file2 = open(self.input[1],'r')
+    
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend label |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
@@ -112,6 +130,7 @@ class EndLabeler:
         options_string += "  Trimmed length min (--minlen):     {}\n".format(self.minlen)
         options_string += "  Min avg. phred score (--minqual):  {}\n".format(self.minqual)
         options_string += "  Phred to mask as N (--qualmask):   {}\n".format(self.qualmask)
+        options_string += "  Write pseudomates (--pseudomates): {}\n".format(self.pseudomates)
         return options_string
 
     def display_trim(self, mate1, mate2, trim1, trim2, label):
@@ -143,18 +162,24 @@ class EndLabeler:
             summary_string += "Removed (qual):  {} ({}%)\n".format(xq_tag, int(xq_tag/total*1000)/10)
             summary_string += "Total output:    {} ({}%)\n".format(kept, int(kept/total*1000)/10)
 
-            multilabel = sorted([k for k in self.labeldict.keys() if 'S' in k and 'E' in k])
+            multilabel = set([k for k in self.labeldict.keys() if 'S' in k and 'E' in k])
+            for m in multilabel:
+                s, e = m.lstrip('S').split('E')
+                self.labeldict['S{}'.format(s)] += self.labeldict[m]
+                self.labeldict['E{}'.format(e)] += self.labeldict[m]
+            
             label_lengths = [int(i.strip('SE')) for i in self.labeldict.keys() if i != '' and i not in multilabel and 'X' not in i]
             if len(label_lengths) > 0:
                 summary_string += "\nlen\tS_tag\tE_tag\n"
                 max_len = max(label_lengths)
                 for i in range(1, max_len+1):
-                    summary_string += '{}\t{}\t{}\n'.format(i, self.labeldict['S{}'.format(i)], self.labeldict['E{}'.format(i)])
+                    s_count = self.labeldict['S{}'.format(i)]
+                    e_count = self.labeldict['E{}'.format(i)]
+                    if s_count > 0 or e_count > 0:
+                        summary_string += '{}\t{}\t{}\n'.format(i, s_count, e_count)
                 
                 if len(multilabel) > 0:
-                    summary_string += "Multi-label reads:\n"
-                    for m in multilabel:
-                        summary_string += '{}:{}\t'.format(m, self.labeldict[m])
+                    summary_string += "Multi-label reads: {}".format(sum([self.labeldict[m] for m in multilabel]))
         
         return summary_string
     
@@ -218,7 +243,12 @@ class EndLabeler:
                             if fu.is_homopolymer(trim1):
                                 self.labeldict['XQ'] += 1
                             else:
-                                self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                if self.pseudomates:
+                                    self.outfile1.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                    self.outfile2.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, fu.rc(trim1), file1_read[2], qtrm1[::-1]))
+                                else:
+                                    self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
+                                
                                 self.labeldict[label] += 1
                         else:
                             self.labeldict['XL'] += 1

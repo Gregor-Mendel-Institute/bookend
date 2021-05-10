@@ -17,6 +17,20 @@ class GTFconverter:
         self.gtf_child = args['GTF_CHILD']
         self.gff_parent = args['GFF_PARENT']
         self.gff_child = args['GFF_CHILD']
+        self.parent_key_gene = args['PARENT_ATTR_GENE']
+        self.child_key_gene = args['CHILD_ATTR_GENE']
+        self.parent_key_transcript = args['PARENT_ATTR_TRANSCRIPT']
+        self.child_key_transcript = args['CHILD_ATTR_TRANSCRIPT']
+        self.color_key = args['COLOR_KEY']
+        self.name_attr = args['NAME_ATTR']
+        if self.color_key is None:
+            self.color_code = ru.gtf_colorcode
+            self.color_key = 'anno_type'
+        elif args['COLOR_CODE'] is not None:
+            self.color_code = self.parse_color_code(args['COLOR_CODE'])
+        else:
+            self.color_code = ru.gtf_colorcode
+        
         self.linecount = 0
         self.outlinecount = 0
 
@@ -72,6 +86,14 @@ class GTFconverter:
             extension = split_name[-1].lower()
             return extension
     
+    @staticmethod
+    def parse_color_code(filename):
+        f = open(filename)
+        lines = f.read()
+        f.close()
+        pairs = [l.split('\t') for l in lines.rstrip().split('\n')]
+        return {k:v for k,v in pairs}
+    
     def make_config_dicts(self):
         """Converts commandline input into three config dicts
         to pass to the AnnotationDataset."""
@@ -85,6 +107,22 @@ class GTFconverter:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
+        if self.parent_key_transcript is not None:
+            gtf_defaults['parent_key_transcript'] += self.parent_key_transcript
+            gff_defaults['parent_key_transcript'] += self.parent_key_transcript
+        
+        if self.child_key_transcript is not None:
+            gtf_defaults['child_key_transcript'] += self.child_key_transcript
+            gff_defaults['child_key_transcript'] += self.child_key_transcript
+        
+        if self.parent_key_gene is not None:
+            gtf_defaults['parent_key_gene'] = self.parent_key_gene
+            gff_defaults['parent_key_gene'] = self.parent_key_gene
+        
+        if self.child_key_gene is not None:
+            gtf_defaults['child_key_gene'] = self.child_key_gene
+            gff_defaults['child_key_gene'] = self.child_key_gene    
+        
         return config_defaults, gtf_defaults, gff_defaults
     
     def process_locus(self, locus):
@@ -95,7 +133,8 @@ class GTFconverter:
                 out_string = mapping_object.write_as_elr()
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
-                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr='transcript_id')
+                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80')
+                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color)
                 out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
             self.output_line(out_string)

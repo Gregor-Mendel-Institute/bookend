@@ -17,10 +17,7 @@ class Assembler:
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
-        self.genome = args['GENOME']
         self.incomplete = args['INCOMPLETE']
-        self.infer_starts = args['INFER_STARTS']
-        self.infer_ends = args['INFER_ENDS']
         self.max_gap = args['MAX_GAP']
         self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
@@ -28,20 +25,22 @@ class Assembler:
         self.min_unstranded_cov = args['MIN_UNSTRANDED']
         self.min_start = args['MIN_S']
         self.min_end = args['MIN_E']
+        self.min_intron_length = args['MIN_INTRON_LEN']
         self.intron_filter = args['INTRON_FILTER']
         self.min_proportion = args['MIN_PROPORTION']
-        self.cap_percent = args['CAP_PERCENT']
+        self.cap_bonus = args['CAP_BONUS']
+        self.cap_filter = args['CAP_FILTER']
         self.minlen = args['MINLEN']
         self.verbose = args['VERBOSE']
         self.input = args['INPUT']
+        self.ignore_labels = args['IGNORE_LABELS']
+        self.ignore_sources = args['IGNORE_SOURCES']
+        self.antisense_filter = 0.001
+        if self.ignore_labels:
+            self.incomplete = True
         
         if self.incomplete: # Some settings are incompatible with writing incomplete transcripts.
-            self.infer_starts = self.infer_ends = True
-        
-        if self.infer_starts:
             self.min_start = 0
-        
-        if self.infer_ends:
             self.min_end = 0
         
         if self.input_is_valid(self.input):
@@ -61,7 +60,7 @@ class Assembler:
         if self.output_type is None:
             self.output_type = 'gtf'
         
-        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap)
+        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, self.min_proportion)
         self.chunk_counter = 0
         self.output_file = open(self.output,'w')
     
@@ -79,41 +78,54 @@ class Assembler:
 
     def process_entry(self, chunk):
         STOP_AT=float('inf')
-        # STOP_AT=3624
+        # STOP_AT=1000000
         if len(chunk) > 0:
             chrom = chunk[0].chrom
-            subchunks = ru.split_chunk(chunk, self.min_proportion, self.max_gap)
-            for subchunk in subchunks:
-                self.chunk_counter += 1
-                if len(subchunk) > 0:
-                    if self.verbose:
-                        print('\n[{}:{}-{}] Processing chunk.'.format(self.dataset.chrom_array[chrom], subchunk[0].left(),subchunk[-1].right()))
-                    
-                    locus = au.Locus(chrom, self.chunk_counter, subchunk, self.max_gap, self.end_cluster, self.min_overhang, True, self.min_proportion, self.cap_percent, 0, self.complete, verbose=self.verbose, naive=False, intron_filter=self.intron_filter)
-                    total_reads = locus.weight
-                    if locus.graph:
-                        locus.assemble_transcripts(complete=self.complete)
-                    else:
-                        continue
-                    
-                    if self.verbose:
-                        reads_used = 0
-                        transcripts_written = 0
-                    
-                    for transcript in locus.transcripts:
-                        if self.passes_all_checks(transcript):
-                            self.output_transcripts(transcript, self.output_type)
-                            if self.verbose:
-                                reads_used += transcript.weight
-                                transcripts_written += 1
-                    
-                    if self.verbose:
-                        print('\t{} transcripts assembled from {} of {} reads ({}%)'.format(
-                            transcripts_written, round(reads_used,1), round(total_reads,1), round(reads_used/total_reads*100,2)))
-                    
-                    if subchunk[0].left() >= STOP_AT:
-                        sys.exit()
-    
+            self.chunk_counter += 1
+            if self.verbose:
+                print('\n[{}:{}-{}] '.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()), end=" ")
+            
+            locus = au.Locus(
+                chrom=chrom, 
+                chunk_number=self.chunk_counter, 
+                list_of_reads=chunk, 
+                max_gap=self.max_gap,
+                end_cluster=self.end_cluster,
+                min_overhang=self.min_overhang, 
+                reduce=True, 
+                minimum_proportion=self.min_proportion, 
+                min_intron_length=self.min_intron_length, 
+                antisense_filter=self.antisense_filter, 
+                cap_bonus=self.cap_bonus,
+                cap_filter=self.cap_filter, 
+                complete=False, 
+                verbose=self.verbose, 
+                naive=self.ignore_sources, 
+                intron_filter=self.intron_filter, 
+                ignore_ends=self.ignore_labels, 
+                allow_incomplete=self.incomplete
+            )
+            total_bases = locus.bases
+            if total_bases > 0:
+                locus.assemble_transcripts()
+                if self.verbose:
+                    bases_used = 0
+                    transcripts_written = 0
+                
+                for transcript in locus.transcripts:
+                    if self.passes_all_checks(transcript):
+                        self.output_transcripts(transcript, self.output_type)
+                        if self.verbose:
+                            bases_used += transcript.attributes['bases']
+                            transcripts_written += 1
+                
+                if self.verbose:
+                    print('{} transcripts from {}/{} bases ({}%)'.format(
+                        transcripts_written, round(bases_used,1), round(total_bases,1), round(bases_used/total_bases*100,2)), end=" ")
+                
+                if chunk[0].left() >= STOP_AT:
+                    sys.exit()
+
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend assemble |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
@@ -122,18 +134,19 @@ class Assembler:
         options_string += "  Source name (--source):                           {}\n".format(self.source)
         options_string += "  *** Experiment parameters ***\n"
         options_string += "  Max allowed gap in coverage (--max_gap):          {}\n".format(self.max_gap)
-        options_string += "  Cluster distance for ends (--end_cluster):        {}\n".format(self.end_cluster)
+        options_string += "  Max end cluster distance (--end_cluster):         {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
-        options_string += "  Infer 5' ends from cov change (--infer_starts):   {}\n".format(self.infer_starts)
-        options_string += "  Infer 3' ends from cov change (--infer_ends):     {}\n".format(self.infer_ends)
+        options_string += "  Split read sources (--ignore_sources):            {}\n".format(self.ignore_sources)
+        options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
         options_string += "  Min bp transcript length (--minlen):              {}\n".format(self.minlen)
         options_string += "  Min isoform coverage (--min_cov):                 {}\n".format(self.min_cov)
+        options_string += "  Min unstranded coverage (--min_unstranded_cov):   {}\n".format(self.min_unstranded_cov)
         options_string += "  Min isoform contribution (--min_proportion):      {}\n".format(self.min_proportion)
         options_string += "  Min retained intron proportion (--intron_filter): {}\n".format(self.intron_filter)
         options_string += "  Min number of 5' reads (--min_start):             {}\n".format(self.min_start)
         options_string += "  Min number of 3' reads (--min_end):               {}\n".format(self.min_end)
-        options_string += "  Min percent 5' end reads w/ uuG (--cap_percent):  {}\n".format(self.cap_percent)
+        options_string += "  Min percent 5' end reads w/ uuG (--cap_bonus):    {}\n".format(self.cap_bonus)
         options_string += "  Keep fragmented assemblies (--allow_incomplete):  {}\n".format(self.incomplete)
         return options_string
     
@@ -165,11 +178,11 @@ class Assembler:
         """
         if transcript.coverage < self.min_cov: return False
         if not self.incomplete and not transcript.complete: return False
-        if transcript.get_length() < self.minlen: return False
+        if transcript.attributes['length'] < self.minlen: return False
         if transcript.attributes['S.reads'] < self.min_start: return False
         if transcript.attributes['E.reads'] < self.min_end: return False
         # if not args.INCOMPLETE and True not in transcript.splice and transcript.attributes['S.capped']/transcript.attributes['S.reads'] < args.CAP_PERCENT: return False
-        if transcript.strand == '.' and transcript.coverage < self.min_unstranded: return False
+        if transcript.strand == 0 and transcript.coverage < self.min_unstranded_cov: return False
         return True
     
     def run(self):

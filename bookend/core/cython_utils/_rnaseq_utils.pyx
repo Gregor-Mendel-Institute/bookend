@@ -4,7 +4,6 @@ import array
 from cpython cimport array
 import numpy as np
 cimport numpy as np
-import json
 import bookend.core.cython_utils._fasta_utils as fu
 from collections import namedtuple, Counter
 from ast import literal_eval
@@ -121,8 +120,40 @@ cdef class RNAseqMapping():
     
     cpdef (int, int) overlap_range(self, RNAseqMapping other):
         """Returns 0-indexed open range of overlap between self and other"""
-        edges = sorted([self.span, other.span])
-        return (edges[1][0], edges[0][1])
+        return (max([self.span[0],other.span[0]]), min([self.span[1],other.span[1]]))
+    
+    cpdef int shared_bases(self, RNAseqMapping other):
+        """Returns the number of exonic nucleotides that overlap between
+        self and other."""
+        cdef int index_self, index_other, exlen_self, exlen_other, l1, r1, l2, r2, shared
+        if not self.overlaps(other):
+            return 0
+        
+        shared = 0
+        exlen_self = len(self.ranges)
+        exlen_other = len(other.ranges)
+        index_self, index_other = 0, 0
+        while index_self < exlen_self and index_other < exlen_other:
+            l1, r1 = self.ranges[index_self]
+            l2, r2 = other.ranges[index_other]
+            if l2 > r1: # other is fully right of self
+                index_self += 1
+                continue
+            
+            if l1 > r2: # self is fully right of other
+                index_other += 1
+                continue
+            
+            shared += max(0, min(r1,r2)-max(l1,l2))
+            if r1 > r2: # self is right of other, advance other
+                index_other += 1
+            elif r2 > r1: # other is right of self, advance self
+                index_self += 1
+            else: # right edges are the same, advance both
+                index_other += 1
+                index_self += 1
+        
+        return shared
     
     cpdef bint ends_clash(self, RNAseqMapping other):
         """Returns a boolean of whether the combination of end tags between
@@ -328,7 +359,7 @@ cdef class RNAseqMapping():
         else:
             return elr_line
      
-    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
         labels = self.get_node_labels(record_artifacts)
@@ -341,16 +372,20 @@ cdef class RNAseqMapping():
         l = labels[0]
         r = labels[-1]
         ends = l+r
-        if ends in ['SE','ES']:
-            rgb = bed_colors['SE']
-        elif 'C' in ends:
-            rgb = bed_colors['C']
-        elif 'S' in ends:
-            rgb = bed_colors['S']
-        elif 'E' in ends:
-            rgb = bed_colors['E']
+        if color is None:
+            rgb = '0,0,0'
+            if ends in ['SE','ES']:
+                rgb = bed_colors['SE']
+            elif 'C' in ends:
+                rgb = bed_colors['C']
+            elif 'S' in ends:
+                rgb = bed_colors['S']
+            elif 'E' in ends:
+                rgb = bed_colors['E']
+            else:
+                rgb = bed_colors['U']
         else:
-            rgb = bed_colors['U']
+            rgb = color
         
         name = '.'
         if name_attr is not None:
@@ -407,33 +442,6 @@ cdef class RNAseqMapping():
         elif format == 'gff':
             return ' '.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
 
-    def write_as_json(self, chrom_array=None, source_array=None):
-        """Returns a string that represents the ReadObject
-        in a JSON format"""
-        if chrom_array is None:
-            chrom = self.chrom
-        else:
-            chrom = chrom_array[self.chrom]
-        
-        if source_array is None:
-            source = self.source
-        else:
-            source = source_array[self.source]
-        
-        json_line = f'{{ \
-        "chrom": {json.dumps(chrom)}, \
-        "strand": {json.dumps(self.strand)} \
-        "span": {json.dumps(self.span)}\
-        "ranges": {json.dumps(self.ranges)}\
-        "splice": {json.dumps(self.splice)}\
-        "s_tag": {json.dumps(self.s_tag)}\
-        "e_tag": {json.dumps(self.e_tag)}\
-        "capped": {json.dumps(self.capped)}\
-        "weight": {json.dumps(self.weight)}\
-        "source": {json.dumps(source)}\
-        }};'
-        
-        return json_line
 
 ############################################################
 # Object for defining a collection of RNA sequencing reads #
@@ -450,8 +458,9 @@ config_defaults = {
     'minlen_loose':25,
     'mismatch_rate':0.2,
     'min_reps':2,
-    'cap_percent':0.05,
-    'confidence_threshold':0.5
+    'cap_bonus':5,
+    'confidence_threshold':0.5,
+    'gene_delim':'.'
 }
 
 cdef class RNAseqDataset():
@@ -484,21 +493,24 @@ cdef class RNAseqDataset():
         self.mismatch_rate = self.config['mismatch_rate']
         self.start_array = fu.nuc_to_int(self.start_seq)
         self.end_array = fu.nuc_to_int(self.end_seq)
+        self.chrom_lengths = chrom_lengths
+        self.chrom_dict = {}
+        self.chrom_index = 0
+        self.chrom_array = []
+        if chrom_array is not None:
+            for c in chrom_array:
+                self.add_chrom(c)
+        
         if genome_fasta is not None:
             self.genome, index = fu.import_genome(genome_fasta)
-            self.chrom_array = sorted(self.genome.keys())
-            self.chrom_index = len(self.chrom_array)
-            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
-            self.chrom_lengths = [len(self.genome[chrom]) for chrom in self.chrom_array]
+            if chrom_array is None:
+                index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
+                self.chrom_array = [l[0] for l in index_lines]
+                self.chrom_lengths = [int(l[1]) for l in index_lines]
+                self.chrom_index = len(self.chrom_array)
+                self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
         else:
             self.genome = {}
-            self.chrom_lengths = chrom_lengths
-            self.chrom_dict = {}
-            self.chrom_index = 0
-            self.chrom_array = []
-            if chrom_array is not None:
-                for c in chrom_array:
-                    self.add_chrom(c)
         
         self.source_dict = {}
         self.source_index = 0
@@ -607,23 +619,93 @@ cdef class RNAseqDataset():
 ######################################
 gtf_defaults = {
     'parent_types':set(['transcript']),
-    'parent_key_transcript':'transcript_id',
+    'parent_key_transcript':['transcript_id', 'Name'],
     'parent_key_gene':'gene_id',
     'child_types':set(['exon']),
-    'child_key_transcript':'transcript_id',
+    'child_key_transcript':['transcript_id', 'Parent'],
     'child_key_gene':'gene_id'
 }
 gff_defaults = {
-    'parent_types':set([
+    'parent_types':set([    
         'mRNA','transcript',
-        'snoRNA','tRNA','snRNA','rRNA','miRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
-        'antisense_lncRNA','antisense_RNA','lnc_RNA']),
-    'parent_key_transcript':'ID',
-    'parent_key_gene':'Parent',
+        'snoRNA','tRNA','snRNA', 'miRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
+        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
+        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
+    'parent_key_transcript':['transcript_id'],
+    'parent_key_gene':'gene',
     'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':'Parent',
-    'child_key_gene':'gene_id'
+    'child_key_transcript':['transcript_id', 'Parent'],
+    'child_key_gene':'gene'
 }
+gtf_colorcode = {
+    '3prime_overlapping_ncRNA': '203,98,130',
+    'antisense': '194,71,71', 
+    'antisense_RNA': '194,71,71', 
+    'atlncRNA': '56,114,168', 
+    'atRNA': '56,114,168', 
+    'bidirectional_promoter_lncRNA': '153,108,206', 
+    'IG_C_gene': '110,66,19', 
+    'IG_C_pseudogene': '80,80,80', 
+    'IG_D_gene': '110,66,19', 
+    'IG_D_pseudogene': '80,80,80', 
+    'IG_J_gene': '110,66,19', 
+    'IG_LV_gene': '110,66,19', 
+    'IG_pseudogene': '80,80,80', 
+    'IG_V_gene': '110,66,19', 
+    'IG_V_pseudogene': '80,80,80', 
+    'lincRNA': '56,114,168', 
+    'lncRNA': '56,114,168', 
+    'lnc_RNA': '56,114,168', 
+    'macro_lncRNA': '6,74,140', 
+    'miRNA': '198,95,84', 
+    'misc_RNA': '249,185,54', 
+    'Mt_rRNA': '0,0,0', 
+    'Mt_tRNA': '0,0,0', 
+    'mRNA_TE_gene': '120,120,120',
+    'ncRNA': '56,114,168',
+    'nonsense_mediated_decay': '180,155,100', 
+    'non_stop_decay': '180,155,100', 
+    'nontranslating_CDS': '180,155,100',
+    'otherRNA': '56,114,168',
+    'polymorphic_pseudogene': '80,80,80', 
+    'pseudogenic_transcript': '80,80,80', 
+    'pre_miRNA': '198,95,84', 
+    'processed_pseudogene': '80,80,80', 
+    'processed_transcript': '180,155,100', 
+    'primary_transcript': '198,95,84',
+    'protein_coding': '49,132,44', 
+    'mRNA': '49,132,44', 
+    'transcript': '0,0,0', 
+    'pseudogene': '80,80,80', 
+    'retained_intron': '180,155,100', 
+    'ribozyme': '249,185,54', 
+    'rRNA': '0,0,0', 
+    'RNase_MRP_RNA': '249,185,54', 
+    'scaRNA': '249,185,54', 
+    'scRNA': '249,185,54', 
+    'sense_intronic': '56,114,168', 
+    'sense_overlapping': '56,114,168', 
+    'snoRNA': '249,185,54', 
+    'snRNA': '249,185,54', 
+    'SRP_RNA': '249,185,54', 
+    'sRNA': '249,185,54', 
+    'TEC': '120,120,120', 
+    'transcribed_processed_pseudogene': '80,80,80', 
+    'transcribed_unitary_pseudogene': '80,80,80', 
+    'transcribed_unprocessed_pseudogene': '120,120,120', 
+    'translated_processed_pseudogene': '80,80,80', 
+    'translated_unprocessed_pseudogene': '120,120,120', 
+    'tRNA': '0,0,0',
+    'TR_C_gene': '110,66,19', 
+    'TR_D_gene': '110,66,19', 
+    'TR_J_gene': '110,66,19', 
+    'TR_J_pseudogene': '80,80,80', 
+    'TR_V_gene': '110,66,19', 
+    'TR_V_pseudogene': '80,80,80', 
+    'unitary_pseudogene': '80,80,80', 
+    'unprocessed_pseudogene': '120,120,120'
+}
+
 
 cdef class AnnotationObject:
     cdef public dict attributes
@@ -637,7 +719,8 @@ cdef class AnnotationObject:
         This will not completely represent a transcript, only one exon."""
         cdef:
             set child_types, parent_types
-            str gene_id_key, transcript_id_key
+            str gene_id_key, t_id
+            list transcript_id_keys
         
         anno_string = anno_string.rstrip()
         self.format = format
@@ -666,16 +749,22 @@ cdef class AnnotationObject:
                     self.span = (int(self.fields[3])-1, int(self.fields[4]))
                     self.attributes = self.parse_attributes(self.fields[8], self.format)
                     if self.parent:
-                        gene_id_key=config_dict['parent_key_gene']
-                        transcript_id_key=config_dict['parent_key_transcript']
+                        gene_id_key = config_dict['parent_key_gene']
+                        transcript_id_keys = config_dict['parent_key_transcript']
                     else:
-                        gene_id_key=config_dict['child_key_gene']
-                        transcript_id_key=config_dict['child_key_transcript']
+                        gene_id_key = config_dict['child_key_gene']
+                        transcript_id_keys = config_dict['child_key_transcript']
                     
                     self.gene_id = self.attributes.get(gene_id_key,'')
-                    self.transcript_id = self.attributes.get(transcript_id_key,'')
+                    self.transcript_id = ''
+                    for t_id in transcript_id_keys:
+                        self.transcript_id = self.attributes.get(t_id,'')
+                        if self.transcript_id != '':
+                            break
+                    
                     self.attributes['gene_id'] = self.gene_id
                     self.attributes['transcript_id'] = self.transcript_id
+                    self.attributes['anno_type'] = self.anno_type
                     if self.fields[6] == '+':
                         self.strand = 1
                     elif self.fields[6] == '-':
@@ -687,7 +776,10 @@ cdef class AnnotationObject:
         """Converts a GTF or GFF3 formatted string to """
         cdef dict attr_dict = {}
         if attr_format == 'GTF':
-            attr_dict = {k:v for k,v in [attr.rstrip('";').split(' "') for attr in attr_string.split('; ')]}
+            try:
+                attr_dict = {k:v.rstrip('";') for k,v in [attr.split(' "') for attr in attr_string.split('"; ')]}
+            except: # Failure case: attribute values aren't all surrounded by quotes
+                attr_dict = {k:v.strip('"') for k,v in [attr.rstrip(';').split(' ') for attr in attr_string.split('; ')]}
         elif attr_format == 'GFF':
             attr_dict = {k:v for k,v in [attr.rstrip(';').split('=') for attr in attr_string.split(';')]}
         
@@ -708,19 +800,47 @@ cdef class AnnotationDataset(RNAseqDataset):
     cdef public dict annotations, gtf_config, gff_config
     cdef public object generator
     cdef public int number_of_assemblies, counter, min_reps, confidence
-    cdef public float cap_percent
+    cdef public float cap_bonus
     cdef public bint verbose
+    cdef public str gene_delim
     def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults, confidence=1):
         RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
         self.min_reps = config['min_reps']
-        self.cap_percent = config['cap_percent']
+        self.cap_bonus = config['cap_bonus']
         self.verbose = config.get('verbose',False)
+        self.gene_delim = self.config['gene_delim']
         self.number_of_assemblies = len(annotation_files)
         self.confidence = confidence
         self.gtf_config = gtf_config
         self.gff_config = gff_config
         cdef str f, name, k
         cdef RNAseqMapping v
+        self.chrom_dict = {}
+        self.source_dict = {}
+        # self.chrom_index = 0
+        # self.chrom_array = []
+        # if chrom_array is not None:
+        #     for c in chrom_array:
+        #         self.add_chrom(c)
+        
+        # if genome_fasta is not None:
+        #     self.genome, index = fu.import_genome(genome_fasta)
+        #     if chrom_array is None:
+        #         index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
+        #         self.chrom_array = [l[0] for l in index_lines]
+        #         self.chrom_lengths = [int(l[1]) for l in index_lines]
+        #         self.chrom_index = len(self.chrom_array)
+        #         self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
+        # else:
+        #     self.genome = {}
+        
+        # self.source_dict = {}
+        # self.source_index = 0
+        # self.source_array = []
+        # if source_array is not None:
+        #     for s in source_array:
+        #         self.add_source(s)
+        
         self.annotations = {}
         for f in annotation_files:
             name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
@@ -742,13 +862,12 @@ cdef class AnnotationDataset(RNAseqDataset):
         Each key:value pair is a chromosome:position-sorted list of objects."""
         cdef:
             RNAseqMapping item
-            AnnotationObject line_object
+            AnnotationObject current_object, current_parent, last_child
             str file_extension, format, chrom
             dict object_dict, config_dict
-            AnnotationObject current_object, current_parent
             list children
             int counter
-            float total_coverage, total_s, total_e
+            float total_coverage, total_s, total_e, coverage, s, e
         
         if self.verbose:
             print('Importing {}...'.format(filename))
@@ -773,41 +892,44 @@ cdef class AnnotationDataset(RNAseqDataset):
             format = 'ELR'
         
         file = open(filename,'r')
-        current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
-        children = []
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
+            current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
+            current_object = AnnotationObject('', format, config_dict) # An empty annotation object
+            last_child = current_object
+            children = []
             for line in file:
+                if line[0] == '#':continue
                 current_object = AnnotationObject(line, format, config_dict)
                 if current_object.keep:
                     if current_object.parent: # Add the old object to object_dict and start a new one
                         if current_parent.parent: # Ignore the first empty annotation object
-                            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
-                            item.attributes['source'] = name
-                            total_coverage += item.weight
-                            total_s += float(item.attributes.get('S.reads', 0))
-                            total_s += float(item.attributes.get('S.capped', 0))
-                            total_e += float(item.attributes.get('E.reads', 0))
-                            chrom = self.chrom_array[item.chrom]
-                            if chrom not in object_dict.keys(): object_dict[chrom] = []
-                            object_dict[chrom].append(item)
+                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+                            total_coverage += coverage
+                            total_s += s
+                            total_e += e
                         
                         current_parent = current_object
                         children = []
-                    elif current_object.transcript_id == current_parent.transcript_id:
-                        children.append(current_object)
+                    else:
+                        if current_object.transcript_id and current_object.transcript_id == last_child.transcript_id or len(children) == 0:
+                            children.append(current_object)
+                        else: # New transcript from same parent
+                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+                            total_coverage += coverage
+                            total_s += s
+                            total_e += e
+                            children = [current_object]
+                        
+                        last_child = current_object
             
-            item = self.anno_to_mapping_object(current_parent, children, int(name=='reference'))
-            item.attributes['source'] = name
-            total_coverage += item.weight
-            total_s += float(item.attributes.get('S.reads', 0))
-            total_s += float(item.attributes.get('S.capped', 0))
-            total_e += float(item.attributes.get('E.reads', 0))
-            chrom = self.chrom_array[item.chrom]
-            if chrom not in object_dict.keys(): object_dict[chrom] = []
-            object_dict[chrom].append(item)
+            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
+            total_coverage += coverage
+            total_s += s
+            total_e += e
         elif format == 'BED':
             for line in file:
-                item = self.parse_bed_line(line)
+                if line[0] == '#':continue
+                item = self.parse_bed_line(line, name)
                 item.attributes['source'] = name
                 total_coverage += item.weight
                 chrom = self.chrom_array[item.chrom]
@@ -816,6 +938,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         elif format == 'ELR':
             counter = 0
             for line in file:
+                if line[0] == '#':continue
                 item = self.parse_elr_line(line, name, counter)
                 item.attributes['source'] = name
                 total_coverage += item.weight
@@ -834,20 +957,11 @@ cdef class AnnotationDataset(RNAseqDataset):
         for chrom in object_dict.keys():
             object_dict[chrom].sort()
             for item in object_dict[chrom]:
-                item.attributes['TPM'] = item.weight/total_coverage*1000000
+                item.attributes['TPM'] = round(item.weight/total_coverage*1000000,2)
                 if format in ['ELR','BED']:
                     item.attributes['S.reads'] = item.attributes['TPM'] if item.s_tag else 0
                     item.attributes['S.capped'] = item.attributes['TPM'] if item.capped else 0
                     item.attributes['E.reads'] = item.attributes['TPM'] if item.e_tag else 0
-                
-                if 'S.reads' in item.attributes:
-                    item.attributes['S.ppm'] = float(item.attributes['S.reads'])/total_s*1000000
-                
-                if 'S.capped' in item.attributes:
-                    item.attributes['C.ppm'] = float(item.attributes['S.capped'])/total_s*1000000
-                
-                if 'E.reads' in item.attributes:
-                    item.attributes['E.ppm'] = float(item.attributes['E.reads'])/total_e*1000000
         
         return object_dict
     
@@ -862,11 +976,33 @@ cdef class AnnotationDataset(RNAseqDataset):
             fasta = fu.rc(fasta)
         
         return fasta
-
-    cdef RNAseqMapping parse_bed_line(self, str line):
+    
+    cpdef (float, float, float) add_mapping_object(self, AnnotationObject parent, list children, str name, int source, dict object_dict):
+        """Converts a GTF/GFF collection of AnnotationObjects to a single RNAseqMapping object"""
+        cdef RNAseqMapping item
+        cdef AnnotationObject child
+        cdef str transcript_id, chrom
+        if len(children) == 0:return (0., 0., 0.)
+        transcript_id = children[0].transcript_id
+        if not transcript_id:
+            return (0., 0., 0.)
+        
+        for child in children:
+            if len(child.gene_id)>0 and child.gene_id != parent.gene_id:return (0., 0., 0.)
+            if child.transcript_id != transcript_id:return (0., 0., 0.)
+        
+        item = self.anno_to_mapping_object(parent, children, source)
+        item.attributes['source'] = name
+        item.attributes['transcript_id'] = transcript_id
+        chrom = self.chrom_array[item.chrom]
+        if chrom not in object_dict.keys(): object_dict[chrom] = []
+        object_dict[chrom].append(item)
+        return (item.weight, float(item.attributes.get('S.reads', 0))+float(item.attributes.get('S.capped', 0)), float(item.attributes.get('E.reads', 0)))
+    
+    cdef RNAseqMapping parse_bed_line(self, str line, str source_string):
         cdef RNAseqMapping new_read
         cdef list bed_elements
-        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict)
+        input_data = parse_BED_line(line, self.chrom_dict, self.source_dict, source_string, s_tag=True, e_tag=True, capped=True, gaps_are_junctions=True, keep_readname=True)
         if type(input_data.chrom) is str: # Chromosome wasn't in chrom_dict
             chrom_string = input_data.chrom
             input_data = input_data._replace(chrom=self.chrom_index)
@@ -879,7 +1015,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         new_read = RNAseqMapping(input_data)
         bed_elements = line.rstrip().split('\t')
-        new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split('.')[:-1])
+        new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split(self.gene_delim)[:-1])
         new_read.attributes['transcript_id'] = bed_elements[3]
         new_read.attributes['S.reads'] = new_read.weight if new_read.s_tag else 0
         new_read.attributes['S.capped'] = new_read.weight if new_read.capped else 0
@@ -914,7 +1050,8 @@ cdef class AnnotationDataset(RNAseqDataset):
             ranges += [child.span]
 
         input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1)
-        mapping_object = RNAseqMapping(input_data, parent.attributes)
+        mapping_object = RNAseqMapping(input_data, copy.copy(parent.attributes))
+        mapping_object.attributes['transcript_id'] = child.transcript_id
         if 'cov' in mapping_object.attributes.keys():
             mapping_object.weight = float(mapping_object.attributes['cov'])
         
@@ -1123,7 +1260,112 @@ cdef parse_ELR_line(str elr_line):
     # chrom source strand ranges splice s_tag e_tag capped weight
     return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
 
-cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False):
+cpdef list get_sources(list list_of_reads):
+    cdef:
+        RNAseqMapping read
+        set sources
+        dict source_lookup
+    
+    sources = set([read.source for read in list_of_reads])
+    return sorted(list(sources))
+
+cpdef dict get_source_dict(list list_of_sources):
+    cdef:
+        set sources
+        dict source_lookup
+    
+    sources = set(list_of_sources)
+    source_lookup = dict(zip(sources, range(len(sources))))
+    return source_lookup
+
+cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=False):
+    """Stores a numpy array of feature-specific coverage depth for the read list.
+    Populates an 11-row matrix:
+    S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
+    Additionally, records splice junction D-A pairs in dicts J_plus and J_minus"""
+    cdef:
+        Py_ssize_t Sp, Ep, Sm, Em, Dp, Ap, Dm, Am, covp, covm, covn, covrow
+        int array_length, l, r, pos
+        float weight, s_weight, e_weight, c_weight
+        (int, int) span, block
+        str junction_hash
+        dict J_plus, J_minus
+        RNAseqMapping read
+        np.ndarray depth_matrix
+    
+    Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+    array_length = rightmost - leftmost
+    depth_matrix = np.zeros(shape=(9, array_length), dtype=np.float32)
+    J_plus, J_minus = {}, {}
+    for read in reads:
+        if use_attributes: # Check a read's attributes for different values of each type
+            weight = read.weight
+            s_weight = float(read.attributes.get('S.reads', weight))
+            e_weight = float(read.attributes.get('E.reads', weight))
+            c_weight = float(read.attributes.get('C.reads', weight))
+        else:
+            weight = s_weight = e_weight = c_weight = read.weight
+        
+        if read.strand == 1:
+            covrow = covp
+            for span in read.junctions():
+                l = span[0] - leftmost
+                r = span[1] - leftmost
+                block = (l,r)
+                junction_hash = span_to_string(block)
+                J_plus[junction_hash] = J_plus.get(junction_hash, 0) + weight
+            
+            if read.s_tag:
+                pos = read.span[0] - leftmost
+                if read.capped:
+                    depth_matrix[Cp, pos] += c_weight
+                else:
+                    depth_matrix[Sp, pos] += s_weight
+            
+            if read.e_tag:
+                pos = read.span[1] - leftmost - 1
+                depth_matrix[Ep, pos] += e_weight
+        elif read.strand == -1:
+            covrow = covm
+            for span in read.junctions():
+                l = span[0] - leftmost
+                r = span[1] - leftmost
+                block = (l,r)
+                junction_hash = span_to_string(block)
+                J_minus[junction_hash] = J_minus.get(junction_hash, 0) + weight
+            
+            if read.e_tag:
+                pos = read.span[0] - leftmost
+                depth_matrix[Em, pos] += e_weight
+            
+            if read.s_tag:
+                pos = read.span[1] - leftmost - 1
+                if read.capped:
+                    depth_matrix[Cm, pos] += c_weight
+                else:
+                    depth_matrix[Sm, pos] += s_weight
+        else: # The read has no features other than non-stranded coverage
+            covrow = covn
+        
+        for span in read.ranges:
+            l = span[0] - leftmost
+            r = span[1] - leftmost
+            depth_matrix[covrow, l:r] += weight
+        
+    return depth_matrix, J_plus, J_minus
+
+cdef str span_to_string((int, int) span):
+    """Converts a tuple of two ints to a string connected by ':'"""
+    return '{}:{}'.format(span[0], span[1])
+
+
+cdef (int, int) string_to_span(str string):
+    """Converts a string from span_to_string() back into a span"""
+    cdef list splitstring = string.split(':')
+    return (int(splitstring[0]), int(splitstring[1]))
+
+
+cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag=False, e_tag=False, capped=False, gaps_are_junctions=False, keep_readname=False):
     """Parses one line of a 12- or 15-column BED file into an ELdata namedtuple.
     Examples:
       Ath_chr1 6787 8737 AT1G01020.6 . - 6787 8737 0,0,0 6 282,294,86,90,48,144 0,369,776,1448,1629,1806
@@ -1243,74 +1485,6 @@ cpdef np.ndarray calculate_coverage(list reads, int left, int right):
             coverage[l:r] += read.weight
     
     return coverage
-
-def split_chunk(list reads, float minimum_proportion, int max_gap):
-    """Takes a list of reads and cuts it at the first span of
-    > max_gap nucleotides at a coverage < minimum_proportion * max_cov
-    of the piece being traversed.
-    """
-    cdef:
-        RNAseqMapping read
-        int leftmost, rightmost, gap, number_of_reads, index, last_index
-        (int, int) span
-        np.ndarray coverage, is_gap
-        Py_ssize_t array_length, i, l, r
-        float c, max_cov
-        bint was_gap
-    
-    # Iterate over reads to populate a coverage numpy array
-    leftmost, rightmost = range_of_reads(reads)
-    coverage = calculate_coverage(reads, leftmost, rightmost)
-    array_length = rightmost-leftmost
-    is_gap = np.zeros(array_length, dtype=np.bool)
-    max_cov = 0
-    # Iterate over the array, keeping track of places where a gap was found
-    cdef float32[:] COV = coverage
-    for i in range(array_length):
-        c = COV[i]
-        if c > max_cov:
-            max_cov = c
-            gap = 0
-        elif c <= max_cov * minimum_proportion:
-            gap += 1
-            if gap > max_gap:
-                if gap == max_gap + 1: # Gap just began, backfill
-                    is_gap[i-max_gap:i] = True
-                
-                is_gap[i] = True
-        else:
-            if gap > 0: # A gap just terminated
-                max_cov = c
-            
-            gap = 0
-    
-    # A final iteration over reads gives our generator:
-    # IF the read is on the leading edge (extends rightmost)
-    # AND IF the read is unspliced (no True in read.splice)
-    # AND IF the read encounters a gap
-    # THEN yield the set of reads up to (and not including)
-    number_of_reads = len(reads)
-    leading_edge = l = r = -1
-    last_index = 0
-    was_gap = False
-    for index in range(number_of_reads): 
-        read = reads[index]
-        if read.span[1] > leading_edge: # Extends leading edge
-            leading_edge = read.span[1]
-            if not True in read.splice: # No splice junctions
-                span = read.ranges[-1]
-                l = span[0] - leftmost
-                r = span[1] - leftmost
-                if np.all(is_gap[l:r]): # The entire read is in a gap
-                    if not was_gap: # First time encountering the gap
-                        yield reads[last_index:index]
-                    
-                    last_index = index
-                    was_gap = True
-                else:
-                    was_gap = False
-    
-    yield reads[last_index:]
 
 cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type, int label_len):
     """Gets flanking region to a genomic position to compare to an end label
@@ -1543,7 +1717,7 @@ cdef class BAMobject:
             str ID, chrom, js, seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
-            list splice, gaps, ranges, introns
+            list splice, gaps, ranges, introns, mapping_list
             bint stranded, stranded_method, fiveprime, threeprime, junction_exists
             (int, int) g
             array.array flankmatch
@@ -1612,9 +1786,12 @@ cdef class BAMobject:
             
             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
             try:
-                errors = line.get_tag('NM')
+                errors = line.get_tag('nM')
             except KeyError:
-                errors = 0
+                try:
+                    errors = line.get_tag('NM')
+                except KeyError:
+                    errors = 0
             
             try:
                 mdstring = line.get_tag('MD')
@@ -1629,7 +1806,7 @@ cdef class BAMobject:
                 alignment_strand = 0
                 splice = []
             else:
-                alignment_strand = self.get_alignment_strand(line)
+                alignment_strand = self.get_alignment_strand(line, strand)
                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand) # Check which gaps between exon blocks are present in intron blocks
             
             if tail == 0:
@@ -1687,7 +1864,7 @@ cdef class BAMobject:
             
             # Generate a ReadObject with the parsed attributes above
             read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
-            current_mapping = RNAseqMapping(read_data)
+            current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
             current_mapping.e_len = e_tag_len
             current_mapping.s_len = s_tag_len
             if map_number not in mappings:
@@ -1696,8 +1873,28 @@ cdef class BAMobject:
                 mate_read = mappings[map_number]
                 mate_read.merge(current_mapping)
         
-        return list(mappings.values())
-
+        mapping_list = self.resolve_overlapping_mappings(mappings)
+        return mapping_list
+    
+    cdef list resolve_overlapping_mappings(self, dict mappings):
+        """Decision tree for simplifying multimappers """
+        cdef RNAseqMapping mapping, v, previous_mapping
+        cdef list output_mappings, ordered_mappings
+        cdef int length
+        if len(mappings.values()) <= 1:
+            output_mappings = list(mappings.values())
+        else:
+            output_mappings = []
+            ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
+            for mapping in ordered_mappings:
+                for previous_mapping in output_mappings:
+                    if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get(['errors'],0) <= mapping.attributes.get(['errors'], 0):
+                        continue
+                    
+                    output_mappings.append(mapping)
+        
+        return output_mappings
+    
     cdef int get_mapping_number(self):  
         """Given a list of pysam objects, determine
         how many locations in the genome the read (pair) mapped."""
@@ -1755,23 +1952,24 @@ cdef class BAMobject:
         
         return False
 
-    cdef int get_alignment_strand(self, line):
+    cdef int get_alignment_strand(self, line, int strand):
         """Returns 1(+), -1(-), or 0(.) if one of the BAM
         splice tags (XS, ts) contains strand information."""
         cdef str js
-        cdef alignment_strand = 0
+        cdef int alignment_strand
+        alignment_strand = 0
         try:
             js = line.get_tag('XS')
+            if js == '+':
+                alignment_strand = 1
+            elif js == '-':
+                alignment_strand = -1
         except KeyError:
             try:
                 js = line.get_tag('ts')
+                alignment_strand = {'+':strand, '-':-strand}[js]
             except KeyError:
-                js = '.'
-        
-        if js == '+':
-            alignment_strand = 1
-        elif js == '-':
-            alignment_strand = -1
+                alignment_strand = 0
         
         return alignment_strand
 
@@ -1872,11 +2070,14 @@ cdef class BAMobject:
         return False
 
 
-def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
+def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):
     """Yields a contiguous chunk of reads from the input file
     separated on either side by a gaps > max_gap"""
-    cdef RNAseqMapping last_read
-    cdef int rightmost, last_chrom
+    cdef RNAseqMapping read, outread
+    cdef int l, r, old_chrom, old_l, old_r, rightmost, k
+    cdef float read_weight, span_weight, current_cov
+    cdef set covered_positions
+    cdef list passed_positions
     if file_type == 'elr':
         add_read = dataset.add_read_from_ELR
     elif file_type == 'bed':
@@ -1886,8 +2087,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
     else:
         return
     
-    rightmost = -1
-    last_chrom = -1
+    end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
+    old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1
+    current_cov = 0
+    span_weight = 0
     for line in fileconn:
         if type(line) is str:
             if line[0] == '#':
@@ -1896,692 +2099,50 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap):
                     dataset.add_source(header_line[-1])
                 elif header_line[0] == '#C':
                     dataset.add_chrom(header_line[-1])
-
+                
                 continue
         
         add_read(line)
-        last_read = dataset.read_list[-1]
-        if rightmost > 0:
-            if last_read.left() > (max_gap + rightmost): # A sufficiently large gap was jumped
-                yield dataset.read_list[:-1]
-                dataset.read_list = [last_read]
-            elif last_read.chrom != last_chrom:
-                yield dataset.read_list[:-1]
-                dataset.read_list = [last_read]
-                rightmost = -1
+        read = dataset.read_list[-1]
+        l, r = read.span
+        read_weight = read.weight * (r-l)
+        current_cov += read.weight
+        if old_chrom == -1: # Uninitialized; add the read and make no other decisions
+            span_start = l
+            span_length = r - span_start
+            rightmost = r
+        elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
+            yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
+            dataset.read_list = [read]
+            span_start = l
+            span_weight = 0
+            current_cov = read.weight
+            end_positions = Counter()
+            rightmost = r
+        elif l > old_l: # Read advanced, but not by enough to automatically cut
+            passed_positions = [k for k in end_positions.keys() if k <= l]
+            for k in passed_positions:
+                current_cov -= end_positions.pop(k)
+            
+            if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
+                yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
+                dataset.read_list = [read]
+                span_start = l
+                span_weight = 0
+                current_cov = read.weight
+                end_positions = Counter()
+                rightmost = r
         
-        if last_read.span[1] > rightmost:
-            rightmost = last_read.right()
-        
-        last_chrom = last_read.chrom
-
+        end_positions[r] += read.weight # Add the read's weight to the position where the read ends
+        span_weight += read_weight
+        if r > rightmost: rightmost = r
+        span_length = rightmost - span_start
+        old_chrom, old_l, old_r = read.chrom, l, r
+    
+    # Dump the remaining reads
     yield dataset.read_list
     fileconn.close()
 
-
-
-#############################################################################################
-# Object for summarizing the coverage and features of a collection of RNAseqMapping objects #
-#############################################################################################
-
-cdef class BranchpointArray:
-    cdef readonly dict S_plus, S_minus, E_plus, E_minus, J_plus, J_minus
-    cdef readonly int leftmost, rightmost, extend, end_extend, length, min_overhang
-    cdef readonly tuple branchpoints
-    cdef readonly float weight, threshold, cap_percent, minimum_proportion
-    cdef readonly np.ndarray depth
-    cdef public OrderedArray bp_plus, bp_minus
-    cdef readonly bint infer_starts, infer_ends, use_attributes
-    def __init__(self, int leftmost, int rightmost, tuple reads, int extend, int end_extend, float minimum_proportion, float cap_percent=0.0, int min_overhang=0, bint infer_starts=False, bint infer_ends=False, bint use_attributes=False):
-        """Makes a collection of positions in the locus that act as dividing
-        points for all nodes of the graph. Every donor (D) and acceptor (A) 
-        site are retained as-is, but start (S) and end (E) are collapsed into
-        a set of reference points."""
-        cdef:
-            BranchPoint BP, bp, lbp, rbp, lterm, rterm
-            RNAseqMapping read
-            float e_threshold, s_threshold, s_counter, e_counter, weight, wt, threshold_depth, s_weight, c_weight, e_weight
-            str branchtype, junction_hash
-            int pos, dist, bt, length, i, number_of_reads
-            char strand
-            list s_rank, e_rank, rank_sort, merged_plus, merged_minus, to_remove, donors, acceptors, gaps, gap_branchpoints
-            (float, int, int, int) ranking
-            (int, float) item
-            (int, int) block
-            dict lookup, end_counts, Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict 
-            set donor_sites, acceptor_sites
-            bint first_element, s_added
-            tuple branchpoints
-        
-        Sp, Sm, Cp, Cm, Ep, Em, Dp, Dm, Ap, Am, S, E, bp_dict = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-        self.J_plus = {}
-        self.J_minus = {}
-        self.extend = extend
-        self.end_extend = end_extend
-        self.weight = 0
-        self.minimum_proportion = minimum_proportion
-        self.min_overhang = min_overhang
-        self.threshold = 1 - self.minimum_proportion
-        self.cap_percent = cap_percent
-        self.leftmost = leftmost
-        self.rightmost = rightmost
-        self.infer_starts = infer_starts
-        self.infer_ends = infer_ends
-        self.use_attributes = use_attributes
-        length = self.rightmost-self.leftmost
-        self.depth = calculate_coverage(list(reads), self.leftmost, self.rightmost)
-        self.weight = np.sum(self.depth)
-        number_of_reads = len(reads)
-        for i in range(number_of_reads):
-            read = reads[i]
-            if self.use_attributes: # Check a read's attributes for different values of each type
-                weight = read.weight
-                s_weight = float(read.attributes.get('S.ppm', read.weight))
-                e_weight = float(read.attributes.get('E.ppm', read.weight))
-                c_weight = float(read.attributes.get('C.ppm', read.weight))
-            else:
-                weight = s_weight = e_weight = c_weight = read.weight
-            
-            if read.strand == 1:
-                for l,r in read.junctions():
-                    Dp[l] = Dp.get(l, 0.0) + weight
-                    Ap[r] = Ap.get(r, 0.0) + weight
-                    block = (l,r)
-                    junction_hash = str(block)
-                    self.J_plus[junction_hash] = self.J_plus.get(junction_hash, 0) + weight
-                
-                if read.s_tag:
-                    pos = read.span[0]
-                    Sp[pos] = Sp.get(pos, 0.0) + s_weight
-                    if read.capped:
-                        Cp[pos] = Cp.get(pos, 0.0) + c_weight
-                
-                if read.e_tag:
-                    pos = read.span[1]
-                    Ep[pos] = Ep.get(pos, 0.0) + e_weight
-            elif read.strand == -1:
-                for l,r in read.junctions():
-                    Am[l] = Am.get(l, 0.0) + weight
-                    Dm[r] = Dm.get(r, 0.0) + weight
-                    block = (l,r)
-                    junction_hash = str(block)
-                    self.J_minus[junction_hash] = self.J_minus.get(junction_hash, 0) + weight
-                
-                if read.e_tag:
-                    pos = read.span[0]
-                    Em[pos] = Em.get(pos, 0.0) + e_weight
-                
-                if read.s_tag:
-                    pos = read.span[1]
-                    Sm[pos] = Sm.get(pos, 0.0) + s_weight
-                    if read.capped:
-                        Cm[pos] = Cm.get(pos, 0.0) + c_weight
-        
-        # Populate the two BP arrays with D/A sites
-        #TODO: Remove D/A sites below minimum_proportion of their position's coverage
-        donors = self.bp_from_counter(Dp, 'D', 1)
-        acceptors = self.bp_from_counter(Ap, 'A', 1)
-        # Remove junctions from the lookup dicts if their donor and/or acceptor was filtered out
-        donor_sites = set([bp.pos for bp in donors])
-        acceptor_sites = set([bp.pos for bp in acceptors])
-        for junction_hash in list(self.J_plus.keys()):
-            block = literal_eval(junction_hash)
-            if block[0] not in donor_sites or block[1] not in acceptor_sites:
-                del self.J_plus[junction_hash]
-        
-        self.bp_plus = OrderedArray(donors + acceptors)
-        
-        donors = self.bp_from_counter(Dm, 'D', -1)
-        acceptors = self.bp_from_counter(Am, 'A', -1)
-        donor_sites = set([bp.pos for bp in donors])
-        acceptor_sites = set([bp.pos for bp in acceptors])
-        for junction_hash in list(self.J_minus.keys()):
-            block = literal_eval(junction_hash)
-            if block[1] not in donor_sites or block[0] not in acceptor_sites:
-                del self.J_minus[junction_hash]
-        
-        self.bp_minus = OrderedArray(donors + acceptors)
-        # Generate a priority queue for adding S/E branchpoints
-        for strand in [1, -1]:
-            if strand == -1:
-                S, E, C = Sm, Em, Cm
-            else:
-                S, E, C = Sp, Ep, Cp
-
-            s_threshold = sum(S.values()) * self.threshold
-            e_threshold = sum(E.values()) * self.threshold
-            
-            s_rank = [
-                (-S[pos], self.distance_from_edge(pos, strand, 'S'), 2, pos)
-                for pos in sorted(S, reverse=True, key=S.get)
-            ]
-            e_rank = [
-                (-E[pos], self.distance_from_edge(pos, strand, 'E'), 1, pos)
-                for pos in sorted(E, reverse=True, key=E.get)
-            ]
-            s_counter = float(0)
-            e_counter = float(0)
-            rank_sort = sorted(s_rank + e_rank)
-            for ranking in rank_sort:
-                wt, dist, bt, pos = ranking
-                weight = -wt
-                if bt == 2:
-                    if s_counter < s_threshold:
-                        s_counter += weight
-                        BP = StartPoint(strand, pos, weight, self.end_extend, C.get(pos, 0.0))
-                        self.add_endpoint(BP, True)
-                else:
-                    if e_counter < e_threshold:
-                        e_counter += weight
-                        BP = EndPoint(strand, pos, weight, self.end_extend)
-                        self.add_endpoint(BP, True)
-
-        # After termination, remove all S/E branchpoints < minimum_proportion of their type
-        end_counts = {branchtype:0.0 for branchtype in ['S','E','A','D','N']}
-        for bp in self.bp_plus:
-            if bp.branchtype == 'S':
-                end_counts['S'] += bp.weight
-            elif bp.branchtype == 'E':
-                end_counts['E'] += bp.weight
-            elif bp.branchtype in ['D','A']:
-                if bp.weight > end_counts[bp.branchtype]:
-                    end_counts[bp.branchtype] = bp.weight
-
-        merged_plus = []
-        first_element = True
-        for bp in self.bp_plus:
-            if bp.weight >= self.minimum_proportion * end_counts[bp.branchtype]:
-                if bp.branchtype != 'S': # No extra restrictions for non-S branchpoints
-                    merged_plus.append(bp)
-                elif first_element:  # Is the leftmost branchpoint
-                    merged_plus.append(bp)
-                elif bp.percent_capped() >= self.cap_percent: # Passes the cap threshold
-                    merged_plus.append(bp)
-                
-                first_element = False       
-
-        end_counts = {branchtype:0.0 for branchtype in ['S','E','A','D','N']}
-        for bp in self.bp_minus:
-            if bp.branchtype == 'S':
-                end_counts['S'] += bp.weight
-            elif bp.branchtype == 'E':
-                end_counts['E'] += bp.weight
-            elif bp.branchtype in ['D','A']:
-                if bp.weight > end_counts[bp.branchtype]:
-                    end_counts[bp.branchtype] = bp.weight
-
-        merged_minus = []
-        for  bp in self.bp_minus:
-            if bp.weight >= self.minimum_proportion * end_counts[bp.branchtype]:
-                if bp.branchtype != 'S': # No extra restrictions for non-S branchpoints
-                    merged_minus.append(bp)
-                elif bp.percent_capped() >= self.cap_percent: # Passes the cap threshold
-                    merged_minus.append(bp)
-        
-        # Allow the rightmost S- to be added regardless of cap_percent
-        i = self.bp_minus.n - 1
-        while i > 0:
-            bp = self.bp_minus.ordered_array[i][0]
-            if bp.weight < self.minimum_proportion * end_counts[bp.branchtype]: # BP will not be in bp_minus
-                i -= 1
-            elif bp.branchtype == 'S':
-                if bp not in merged_minus:
-                    merged_minus.append(bp)
-                
-                i = 0
-            else: # A passing bp was found
-                i = 0
-        
-        # Collapse all branchpoints into a single fixed tuple
-        # Make a constant-time lookup to point to the appropriate branchpoint for any S/E read
-        self.S_plus = {}
-        self.S_minus = {}
-        self.E_plus = {}
-        self.E_minus = {}
-        # Remove likely artifactual S/E branchpoints that are slightly overhanging from a heavier D/A element
-        to_remove = []
-        for i in range(len(merged_plus)):
-            bp = merged_plus[i]
-            if i > 0: # Check for an E < min_overhang right of a Donor site
-                if bp.branchtype == 'E':
-                    lbp = merged_plus[i-1]
-                    if lbp.branchtype == 'D' and lbp.weight > bp.weight:
-                        if bp.pos - lbp.pos < self.min_overhang:
-                            to_remove.append(bp)
-            
-            if i + 1 < len(merged_plus):
-                if bp.branchtype == 'S':
-                    rbp = merged_plus[i+1]
-                    if rbp.branchtype == 'A' and rbp.weight > bp.weight:
-                        if rbp.pos - bp.pos < self.min_overhang:
-                            to_remove.append(bp)
-        
-        merged_plus = [bp for bp in merged_plus if bp not in to_remove]
-
-        to_remove = []
-        for i in range(len(merged_minus)):
-            bp = merged_minus[i]
-            if i > 0: # Check for an E < min_overhang right of a Donor site
-                if bp.branchtype == 'S':
-                    lbp = merged_minus[i-1]
-                    if lbp.branchtype == 'A' and lbp.weight > bp.weight:
-                        if bp.pos - lbp.pos < self.min_overhang:
-                            to_remove.append(bp)
-            
-            if i + 1 < len(merged_minus):
-                if bp.branchtype == 'E':
-                    rbp = merged_minus[i+1]
-                    if rbp.branchtype == 'D' and rbp.weight > bp.weight:
-                        if rbp.pos - bp.pos < self.min_overhang:
-                            to_remove.append(bp)
-        
-        merged_minus = [bp for bp in merged_minus if bp not in to_remove]
-
-        prohibited_positions = set()
-        for bp in merged_plus:
-            prohibited_positions.update(range(bp.pos-self.min_overhang, bp.pos+self.min_overhang+1))
-        
-        for bp in merged_minus:
-            prohibited_positions.update(range(bp.pos-self.min_overhang, bp.pos+self.min_overhang+1))
-        
-        threshold_depth = np.max(self.depth)*self.minimum_proportion
-        gaps = get_gaps(self.depth, self.extend, max(threshold_depth,1))
-        gap_branchpoints = []
-        for block in gaps:
-            l = block[0]+self.leftmost
-            r = block[1]+self.leftmost
-            lbp = BranchPoint('N', 0, l, 0)
-            rbp = BranchPoint('N', 0, r, 0)
-            # Check if lbp and/or rbp should be added (>min_overhang from any existing branchpoint)
-            if l not in prohibited_positions:
-                gap_branchpoints.append(BranchPoint('N', 0, l, 0))
-            
-            if r not in prohibited_positions:
-                gap_branchpoints.append(BranchPoint('N', 0, r, 0))
-
-
-        branchpoints = tuple(sorted(merged_plus + merged_minus))
-        # Evaluate whether terminal branchpoints must be added.
-        # If no boundary Start/Endpoint exists, add a nonspecified one at leftmost/rightmost
-        passes_threshold = np.where(self.depth >= threshold_depth)[0]
-        if passes_threshold.shape[0] > 0:
-            lbp = BranchPoint('N', 0, self.leftmost+passes_threshold[0], 0)
-            rbp = BranchPoint('N', 0, self.leftmost+passes_threshold[-1], 0)
-        else: # No positions pass the threshold
-            lbp = BranchPoint('N', 0, self.leftmost, 0)
-            rbp = BranchPoint('N', 0, self.rightmost, 0)
-        
-        if len(branchpoints) == 0:
-            branchpoints = tuple([lbp, rbp])
-        else:
-            # Extend left border if S>/E< doesn't contain
-            lterm = branchpoints[0]
-            rterm = branchpoints[-1]
-            add_lbp = True
-            add_rbp = True
-            if (lterm.branchtype == 'S' and lterm.strand == 1) or (lterm.branchtype == 'E' and lterm.strand == -1):
-                if lbp.pos in lterm.span:
-                    add_lbp = False
-
-            # Extend right border if E>/S< doesn't contain
-            if (rterm.branchtype == 'S' and rterm.strand == -1) or (rterm.branchtype == 'E' and rterm.strand == 1):
-                if rbp.pos in rterm.span:
-                    add_rbp = False
-            
-            if add_lbp or add_rbp:
-                if add_lbp and add_rbp:
-                    branchpoints = tuple([lbp] + list(branchpoints) + [rbp])
-                elif add_lbp:
-                    branchpoints = tuple([lbp] + list(branchpoints))
-                else:
-                    branchpoints = tuple(list(branchpoints) + [rbp])
-
-        # Update 'N' branchpoints with their best inference
-        self.branchpoints = self.infer_unknown_branchpoints(branchpoints)
-
-        # Add an index for each branchpoint so a unique lookup can be used
-        for i,bp in enumerate(self.branchpoints):
-            bp.index = i
-        
-        # Add a lookup value for each S/E position to its corresponding branchpoint
-        no_lookups = set(['D','A','N'])
-        for bp in self.branchpoints:
-            if bp.branchtype in no_lookups:
-                continue
-            
-            if bp.branchtype == 'S':
-                if bp.strand == 1:
-                    bp_dict = Sp
-                    lookup = self.S_plus
-                else:
-                    bp_dict = Sm
-                    lookup = self.S_minus
-            else:
-                if bp.strand == 1:
-                    bp_dict = Ep
-                    lookup = self.E_plus
-                else:
-                    bp_dict = Em
-                    lookup = self.E_minus
-            
-            i = bp.index
-            span = bp.span
-            # if i > 0:
-            #     lb = self.branchpoints[bp.index - 1]
-            #     span = range(max(lb.right, span.start), span.stop)
-            
-            # if i < len(self.branchpoints)-1:
-            #     rb = self.branchpoints[bp.index + 1]
-            #     span = range(span.start, min(rb.left+1, span.stop))
-            
-            for pos in bp_dict.keys():
-                if pos in span:
-                    if pos not in lookup:
-                        lookup[pos] = i
-                    else: # Check other branchpoints
-                        otherBP = self.branchpoints[lookup[pos]]
-                        # if abs(bp.pos-pos) < abs(otherBP.pos-pos): # Pick the closer one
-                        if bp.weight > otherBP.weight: # Pick the heavier one
-                            lookup[pos] = i
-    
-    cpdef list bp_from_counter(self, dict counter, str branchtype, char strand):
-        """Generates a list of Branchpoint objects
-        of the given type and strand at the positions and weights
-        given by a counter object. If the weight of the Branchpoint
-        at pos fails to exceed minimum_proportion of coverage at
-        that position it is filtered out."""
-        cdef:
-            int pos
-            float weight
-            BranchPoint bp
-            list bp_list
-        
-        if branchtype == 'D': BP = DonorPoint
-        elif branchtype == 'A': BP = AcceptorPoint
-        elif branchtype == 'S': BP = StartPoint
-        elif branchtype == 'E': BP = EndPoint
-        else: BP = BranchPoint
-        bp_list = []
-        for pos in sorted(counter.keys()):
-            weight = counter[pos]
-            if weight >= self.minimum_proportion * self.depth[pos-self.leftmost]:
-                bp = BP(strand, pos, weight)
-                bp_list.append(bp)
-
-        return bp_list
-
-    cpdef int distance_from_edge(self, int pos, char strand, str branchtype):
-        """ Given a position (int), strand (1,-1), and branchtype (S,E,D,A),
-        returns the the distance to the most extreme edge of the locus."""
-        if branchtype == 'S' or branchtype == 'D': # Consider upstream
-            if strand == 1:
-                return pos - self.leftmost
-            else:
-                return self.rightmost - pos
-        else: # Consider downstream
-            if strand == 1:
-                return self.rightmost - pos
-            else:
-                return pos - self.leftmost
-    
-    cpdef void add_endpoint(self, BranchPoint BP, force=True):
-        """Add an S/E BranchPoint to the bp dict of OrderedArrays.
-        If at least one same-type branchpoint is in span, merge BP
-        with the higher-priority branchpoint. If BP is flanked by two
-        neighboring branchpoints, merge both BP and secondary into the first."""
-        cdef OrderedArray array
-        cdef BranchPoint left, right
-        cdef int lp, rp, insert_site
-        cdef bint l_in_range, r_in_range
-        array = self.bp_plus if BP.strand == 1 else self.bp_minus        
-        insert_site = array.probe(BP)
-        lp = rp = -1
-        l_in_range = r_in_range = False
-        if insert_site > 0:
-            left, lp = array.ordered_array[insert_site-1] # Get the left neighbor and its priority order
-            if left.branchtype == BP.branchtype:
-                if BP.pos in left.span: # BP could be merged with left
-                    l_in_range = True
-        
-        if insert_site < array.n:
-            right, rp = array.ordered_array[insert_site] # Get the right neighbor and its priority order
-            if right.branchtype == BP.branchtype:
-                if BP.pos in right.span: # BP could be merged with right
-                    r_in_range = True
-        
-        if l_in_range:
-            if r_in_range:
-                if lp < rp: # left is prioritized over right
-                    left.merge(BP)
-                    left.merge(right)
-                    array.delete(insert_site) # Remove right from the array
-                else: # right is prioritized over left
-                    right.merge(BP)
-                    right.merge(left)
-                    array.delete(insert_site-1) # Remove left from the array
-            else: # only left can merge BP
-                left.merge(BP)
-        elif r_in_range: # only right can merge BP
-            right.merge(BP)
-        else: # no compatible neighbors
-            if force:
-                array.add(BP)
-    
-    cpdef tuple infer_unknown_branchpoints(self, tuple branchpoints):
-        """Tries to use adjacent branchpoint features to infer the identity
-        of gaps marked by 'N' (unknown) branchpoints. Returns a modified
-        branchpoint tuple."""
-        cdef tuple adjusted_branchpoints = branchpoints
-        cdef BranchPoint FDP, FDM, LAP, LAM
-        # If no inference is allowed, return with no changes
-        if not self.infer_starts and not self.infer_ends:
-            return adjusted_branchpoints
-        
-        # Iterate over branchpoints to identify where an inference is needed
-        
-        return adjusted_branchpoints
-
-    cpdef void remove_branchpoint(self, str strand, int index):
-        """Remove the BranchPoint at index in the strand bp dict.
-        If the neighboring branchpoints are the same type and within range of each other,
-        merge the smaller into the larger."""
-        cdef OrderedArray array
-        if strand == '+':
-            array = self.bp_plus
-        else:
-            array = self.bp_minus
-        
-        array.delete(index)
-        
-        left, lp = array.ordered_array[index-1] # Get the left neighbor and its priority order
-        if index < array.n:
-            right, rp = array.ordered_array[index] # Get the right neighbor and its priority order
-            if left.branchtype == right.branchtype: # Both neighbors were the same type
-                if left.branchtype in ['S','E']: # Branchtype is terminal
-                    if left.span[-1] >= right.span[0]: # Neighbor spans overlap
-                        if lp < rp: # left is prioritized over right
-                            left.merge(right)
-                            array.delete(index) # Remove right from the array
-                        else: # right is prioritized over left
-                            right.merge(left)
-                            array.delete(index-1) # Remove left from the array
-
-
-bp_typeorder = {'N':-1, 'E':0, 'A':1, 'D':2, 'S':3} # Sort order for branchpoint types
-cdef class BranchPoint:
-    """Represents a reference point for a Start, End, Donor, or Acceptor site."""
-    cdef readonly str branchtype
-    cdef readonly char strand
-    cdef public int pos, index, left, right
-    cdef public float weight
-    cdef public (int, int) comparator
-    def __init__(self, str branchtype, char strand, int pos, float weight):
-        assert strand >= -1 and strand <= 1
-        self.strand = strand
-        self.branchtype = branchtype
-        self.pos = pos
-        self.left = self.right = self.pos
-        self.weight = float(weight)
-        if self.strand == 1:
-            self.comparator = (self.pos, bp_typeorder[self.branchtype])
-        else:
-            self.comparator = (self.pos, -bp_typeorder[self.branchtype])
-    
-    cpdef float percent_capped(self):
-        return 1.0
-
-    def __repr__(self):
-        strand = ['.','+','-'][self.strand]
-        return '{}{}{} ({})'.format(self.branchtype, strand, self.pos, self.weight)
-    
-    def __eq__(self, other): return self.comparator == other.comparator
-    def __ne__(self, other): return self.comparator != other.comparator
-    def __gt__(self, other): return self.comparator >  other.comparator
-    def __ge__(self, other): return self.comparator >= other.comparator
-    def __lt__(self, other): return self.comparator <  other.comparator
-    def __le__(self, other): return self.comparator <= other.comparator
-    
-    def write_as_bed(self, chrom):
-        print('{}\t{}\t{}\t{}\t{}\t{}'.format(chrom, self.left, self.right, self.index, self.weight, {-1:'-',1:'+',0:'.'}[self.strand]))
-
-
-cdef class StartPoint(BranchPoint):
-    """Represents a transcript start site"""
-    cdef public int extend
-    cdef public object span
-    cdef public float capped
-    def __init__(self, strand, pos, weight, extend=0, capped_weight=0):
-        BranchPoint.__init__(self, 'S', strand, pos, weight)
-        self.extend = extend
-        self.weight += capped_weight
-        self.capped = capped_weight
-        self.span = range(self.left-self.extend, self.right+self.extend+1)
-    
-    cpdef float percent_capped(self):
-        return self.capped/self.weight
-    
-    def merge(self, StartPoint other):
-        """Merge other into self"""
-        self.weight += other.weight
-        self.capped += other.capped
-        self.left = min(self.left, other.left)
-        self.right = max(self.right, other.right)
-        self.span = range(self.left-self.extend, self.right+self.extend+1)
-
-cdef class EndPoint(BranchPoint):
-    """Represents a transcript termination site"""
-    cdef public int extend
-    cdef public object span
-    def __init__(self, strand, pos, weight, extend=0):
-        BranchPoint.__init__(self, 'E', strand, pos, weight)
-        self.extend = extend
-        self.span = range(self.left-self.extend, self.right+self.extend+1)
-
-    def merge(self, EndPoint other):
-        """Merge other into self"""
-        self.weight += other.weight
-        self.left = min(self.left, other.left)
-        self.right = max(self.right, other.right)
-        self.span = range(self.left-self.extend, self.right+self.extend+1)
-
-cdef class DonorPoint(BranchPoint):
-    """Represents a transcript start site"""
-    def __init__(self, strand, pos, weight):
-        BranchPoint.__init__(self, 'D', strand, pos, weight)
-
-cdef class AcceptorPoint(BranchPoint):
-    """Represents a transcript start site"""
-    def __init__(self, strand, pos, weight):
-        BranchPoint.__init__(self, 'A', strand, pos, weight)
-
-cdef class OrderedArray:
-    """Maintains an array in sort order and a lookup dict for the location of each
-    item that was added."""
-    cdef readonly int n
-    cdef readonly list ordered_array
-    def __init__(self, array=[]):
-        self.n = len(array)
-        self.ordered_array = sorted([(v,i) for i,v in enumerate(array)])
-    
-    def __repr__(self):
-        return 'OA({})'.format(self.n)
-    
-    def ordered_index(self, position=None):
-        if position is None:
-            return [i for v,i in self.ordered_array]
-        else:
-            return self.ordered_array[position][-1]
-    
-    def ordered_values(self, position = None):
-        if position is None:
-            return [v for v,i in self.ordered_array]
-        else:
-            return self.ordered_array[position][0]
-    
-    def __iter__(self):
-        return iter(self.ordered_values())
-    
-    def __len__(self):
-        return len(self.ordered_array)
-    
-    def __add__(self,other):
-        new_OA = copy.deepcopy(self)
-        for item in other:
-            new_OA.add(item)
-        
-        return new_OA
-    
-    cdef int get_insert_pos(self, search_value, init=None):
-        """Runs a binary search, returns an insert position where 'search_value'
-        fits in array. Assumes array to be sorted. In the case of a tie,
-        priority goes to the existing item."""
-        cdef int insert_pos, first, last, mid
-        insert_pos = -1
-        if init is None:
-            first = 0
-            last = len(self.ordered_array) - 1
-        else: # Start at an initialized index position (if a good guess of the correct index exists)
-            if search_value == self.ordered_array[init]: # Exact match, insert pos is right of init
-                return init + 1
-            elif search_value > self.ordered_array[init]: # insert pos must be right of init
-                first = init + 1
-                last = len(self.ordered_array) - 1
-            else: # insert pos must be left of init
-                first = 0
-                last = init - 1
-        
-        while first <= last and insert_pos == -1:
-            mid = (first + last)//2 # Get the midpoint of the search space
-            if search_value == self.ordered_array[mid]: # Exact match, insert pos is right of mid
-                insert_pos = mid + 1
-            elif search_value > self.ordered_array[mid]: # insert pos must be right of the midpoint
-                first = mid + 1
-            else: # insert pos must be left of the midpoint
-                last = mid - 1
-        
-        if insert_pos == -1: # An exact match wasn't found, but the search converged
-            insert_pos = first
-        
-        return insert_pos
-    
-    def add(self, item, init=None):
-        """Add an item to the ordered array."""
-        self.n += 1
-        ipos = self.get_insert_pos((item, self.n), init)
-        self.ordered_array.insert(ipos, (item, self.n))
-    
-    def delete(self, index):
-        """Deletes the item at index position in the ordered array."""
-        self.n -= 1
-        del self.ordered_array[index]
-    
-    def add_list(self, list_to_add):
-        for item in list_to_add:
-            self.add(item)
-    
-    def probe(self, item, init=None):
-        """Return the insert position of an item if it were to be added to the array"""
-        return self.get_insert_pos((item, self.n + 1), init)
 
 cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
     """Returns two positions in the array that represent

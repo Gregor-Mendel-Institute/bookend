@@ -387,7 +387,7 @@ cpdef (int, int) best_sliding_fit(
     min_oligomer = 3
     i = minmatch
     while i <= q_len:
-        max_mismatch = int(mm_rate*i)
+        max_mismatch = int(mm_rate*min(i,t_len))
         spacer = i-t_len # Calculate whether the trim array is shorter than i
         if spacer > 0:
             a = Q[spacer:i] # Slice the query up to position i
@@ -713,22 +713,48 @@ def terminal_trim(
         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
             if S3ham1 != -1:
-                if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1): # Improved match
-                    pos1 = S3pos1
-                    ham1 = S3ham1
-                    trimtype1 = 2
+                if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+                    if trimtype1 == 1: # Can be shared with first trim
+                        pos2 = S3pos1
+                        ham2 = S3ham1
+                        trimtype2 = 2
+                    else: # Replaces first trim
+                        pos1 = S3pos1
+                        ham1 = S3ham1
+                        trimtype1 = 2
+                        pos2 = 0
+                        ham2 = -1
+                        trimtype2 = -1
         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
             if E3ham1 != -1:
-                if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1): # Improved match
-                    pos1 = E3pos1
-                    ham1 = E3ham1
-                    trimtype1 = 3
-
+                if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+                    if trimtype1 == 0: # Can be shared with first trim
+                        pos2 = E3pos1
+                        ham2 = E3ham1
+                        trimtype2 = 3
+                    else: # Replaces first trim
+                        pos1 = E3pos1
+                        ham1 = E3ham1
+                        trimtype1 = 3
+                        pos2 = 0
+                        ham2 = -1
+                        trimtype2 = -1
+        
         trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
         qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
         label1 = get_label(mate1, pos1, trimtype1)
         flipped1 = is_flipped(trimtype1)
+        if trimtype2 != -1: # A matching trim was found
+            if trimtype1 == 0: # S5 + E3 trim
+                trim1 = trim1[:-pos2]
+                qtrm1 = qtrm1[:-pos2]
+                label1 = label1+'E'+str(pos2)
+            elif trimtype1 == 1: # E5 + S3 trim
+                trim1 = trim1[pos2:]
+                qtrm1 = qtrm1[pos2:]
+                label1 = 'S'+str(pos2)+label1
+        
         if len(trim1) < minlen: # trim1 length fail
             return('', '', None, None, label1) # Return empty read with label
         else:

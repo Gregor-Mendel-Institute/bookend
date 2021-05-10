@@ -41,6 +41,8 @@ class AnnotationMerger:
         self.gtf_child = self.args['GTF_CHILD']
         self.gff_parent = self.args['GFF_PARENT']
         self.gff_child = self.args['GFF_CHILD']
+        self.refid_parent = self.args['REF_ID_PARENT']
+        self.refid_child = self.args['REF_ID_CHILD']
 
         if self.input_is_valid(self.output): # Check for valid file extension on output name
             self.output_type = self.file_extension(self.output)
@@ -87,16 +89,15 @@ class AnnotationMerger:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
-        return config_defaults, gtf_defaults, gff_defaults
-
-    def make_annotation_locus(self, chunk):
-        """Converts a chunk yielded by generate_loci() to an _assembly_utils.AnnotationLocus"""
-        if len(chunk) == 0:
-            return
+        if len(self.refid_parent)>0:
+            gff_defaults['parent_key_transcript'] += self.refid_parent
+            gtf_defaults['parent_key_transcript'] += self.refid_parent
         
-        self.locus_counter += 1
-        locus = au.AnnotationLocus(chunk[0].chrom, self.locus_counter, chunk, self.end_cluster, 0, 0, self.cap_percent, 0, True, self.min_reps, self.confidence)
-        return locus
+        if len(self.refid_child)>0:
+            gff_defaults['child_key_transcript'] += self.refid_child
+            gtf_defaults['child_key_transcript'] += self.refid_child
+        
+        return config_defaults, gtf_defaults, gff_defaults
     
     def integrate_assemblies_with_reference(self, locus):
         """Iterate over the set of filtered transcripts (highest TPM first)
@@ -189,6 +190,7 @@ class AnnotationMerger:
         self.output_file.write(output_line+'\n')
 
     def process_entry(self, chunk):
+        self.locus_counter += 1
         locus = self.make_annotation_locus(chunk)
         if locus: # Work needs to be done on non-reference transcripts
             locus.filter_fused_and_truncated_annotations()
