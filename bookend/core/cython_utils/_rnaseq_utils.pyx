@@ -756,10 +756,12 @@ cdef class AnnotationObject:
                         transcript_id_keys = config_dict['child_key_transcript']
                     
                     self.gene_id = self.attributes.get(gene_id_key,'')
+                    self.gene_id = self.gene_id.split(':')[-1]
                     self.transcript_id = ''
                     for t_id in transcript_id_keys:
                         self.transcript_id = self.attributes.get(t_id,'')
                         if self.transcript_id != '':
+                            self.transcript_id = self.transcript_id.split(':')[-1]
                             break
                     
                     self.attributes['gene_id'] = self.gene_id
