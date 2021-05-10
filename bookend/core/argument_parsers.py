@@ -237,7 +237,7 @@ sj_merge_parser.set_defaults(object='SJmerger')
 sj_to_bed_parser = subparsers.add_parser('sj-to-bed', help="Converts SJ.out.tab file to an SJ.bed file.")
 sj_to_bed_parser.add_argument("INPUT", type=str, help="Input SJ.out.tab file")
 sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='SJ.bed', help="Filepath to write SJ.bed file.")
-sj_merge_parser.set_defaults(object='SJtoBEDconverter')
+sj_to_bed_parser.set_defaults(object='SJtoBEDconverter')
 
 ### elr_sort.py ###
 elr_sort_parser = subparsers.add_parser('elr-sort',help="Sorts an End-Labeled Read (ELR) file.")
