@@ -384,7 +384,7 @@ cpdef (int, int) best_sliding_fit(
     
     cdef int[:] Q = query
     cdef int[:] T = trim
-    min_oligomer = 3
+    min_oligomer = min(3, minmatch)
     i = minmatch
     while i <= q_len:
         max_mismatch = int(mm_rate*min(i,t_len))
@@ -451,7 +451,7 @@ cpdef (int, int) best_sliding_fit(
                 else:
                     best_pos = i
                     best_ham = ham
-    
+
         i += 1
 
     return best_pos, best_ham

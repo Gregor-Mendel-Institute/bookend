@@ -54,7 +54,7 @@ class EndLabeler:
             self.S5monomer = self.S3monomer = -1
         
         self.S3string = fu.complement(self.S5string)
-        self.e_label = '' if args['END'] == 'none' else args['END']
+        self.e_label = '' if args['END'].lower() == 'none' else args['END']
         self.E5string = self.e_label
         if len(self.E5string) > 1:
             if self.E5string[-1] == '+': # Monomer is specified
