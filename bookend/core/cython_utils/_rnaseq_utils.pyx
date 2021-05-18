@@ -1501,7 +1501,7 @@ cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type,
         range_start = pos + 1
         range_end = pos + 1 + label_len
     
-    flank = genome[chrom][range_start:range_end].toupper()
+    flank = genome[chrom][range_start:range_end].upper()
     if strand == -1:
         flank = fu.rc(flank)
     
