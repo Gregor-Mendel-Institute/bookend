@@ -1501,7 +1501,7 @@ cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type,
         range_start = pos + 1
         range_end = pos + 1 + label_len
     
-    flank = genome[chrom][range_start:range_end]
+    flank = genome[chrom][range_start:range_end].toupper()
     if strand == -1:
         flank = fu.rc(flank)
     
@@ -2062,11 +2062,12 @@ cdef class BAMobject:
         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
         if len(flank) > 0:
             if readtype == 'S':
-                flankmatch = self.dataset.start_array[-length:]
+                flankmatch = self.dataset.start_array[-length:][::-1]
+                flank = flank[::-1]
             elif readtype == 'E':
                 flankmatch = self.dataset.end_array[:length]
-                
-            if fu.IUPACham(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate*length) <= self.dataset.mismatch_rate*length:
+            
+            if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):
                 return True
         
         return False

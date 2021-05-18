@@ -360,6 +360,39 @@ cpdef int IUPACham(array.array a, array.array b, int stop_at=-1):
     
     return ham
 
+cpdef bint oligo_match(array.array a, array.array b, float mm_rate):
+    """
+    Returns a bool indicating if a sufficiently close match was found.
+    For long oligos, allow a match <=mm_rate to any prefix of a >=half a's length
+    """
+    cdef int minmatch, max_ham, sub_ham
+    cdef int ham = -1
+    if a == b: # Equality check to avoid unnecessary calculations
+        return True
+    
+    cdef int len_A, len_B, i
+    cdef int[:] A = a
+    cdef int[:] B = b
+    len_A, len_B = len(A), len(B)
+    if len_A != len_B:
+        return False
+    
+    minmatch = min(len_A, max(int(len_A*.5), 10))
+    max_ham = int(len_A*mm_rate)
+    ham = 0
+    for i in range(len_A):
+        x, y = A[i], B[i]
+        if not x & y: # Bitwise-AND determines if two IUPAC characters match
+            ham += 1
+            if ham > max_ham:
+                return False
+        
+        if i >= minmatch:
+            sub_ham = int(i*mm_rate)
+            if ham <= sub_ham:
+                return True
+    
+    return ham <= max_ham
 
 cpdef (int, int) best_sliding_fit(
         array.array query, array.array trim,

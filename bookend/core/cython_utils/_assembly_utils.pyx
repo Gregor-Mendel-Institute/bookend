@@ -245,32 +245,35 @@ cdef class Locus:
             self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
             if endtype in [Sp, Sm]:
                 self.resolve_overlapping_ends(endtype)
+                self.enforce_cap_filter(endtype)
         
-        for endtype in [Ep, Em]:
+        for endtype in [Ep, Em, Sp, Sm]:
             for rng in self.end_ranges[endtype]:
                 self.branchpoints.add(rng.terminal)
                 bpset.add(rng.terminal)
-        
-        for rng in self.end_ranges[Sp]:
-            if self.require_cap:
-                l, r = rng.left, rng.right
-                if np.sum(self.depth_matrix[Cp, l:r]) < np.sum(self.depth_matrix[Sp, l:r])*self.cap_filter:
-                    continue
-            
-            self.branchpoints.add(rng.terminal)
-            bpset.add(rng.terminal)
-        
-        for rng in self.end_ranges[Sm]:
-            if self.require_cap:
-                l, r = rng.left, rng.right
-                if np.sum(self.depth_matrix[Cm, l:r]) < np.sum(self.depth_matrix[Sm, l:r])*self.cap_filter:
-                    continue
-            
-            self.branchpoints.add(rng.terminal)
-            bpset.add(rng.terminal)
-        
+                
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
+    
+    cpdef void enforce_cap_filter(self, int endtype):
+        cdef int caps
+        cdef np.ndarray allstarts
+        if not self.require_cap:
+            return
+        
+        if endtype == 0:
+            caps = 4
+        elif endtype == 2:
+            caps = 5
+        else:
+            return
+        
+        allstarts = self.depth_matrix[endtype,:]+self.depth_matrix[caps,:]
+        self.end_ranges[endtype] = [
+            rng for rng in self.end_ranges[endtype]
+            if np.sum(self.depth_matrix[caps, rng.left:rng.right]) >= np.sum(allstarts[rng.left:rng.right])*self.cap_filter
+        ]
+        return
     
     cpdef void resolve_overlapping_ends(self, int endtype):
         """If same-stranded start and end clusters overlap, split
