@@ -35,6 +35,7 @@ class Assembler:
         self.input = args['INPUT']
         self.ignore_labels = args['IGNORE_LABELS']
         self.ignore_sources = args['IGNORE_SOURCES']
+        self.require_cap = args['REQUIRE_CAP']
         self.antisense_filter = 0.001
         if self.ignore_labels:
             self.incomplete = True
@@ -103,7 +104,8 @@ class Assembler:
                 naive=self.ignore_sources, 
                 intron_filter=self.intron_filter, 
                 ignore_ends=self.ignore_labels, 
-                allow_incomplete=self.incomplete
+                allow_incomplete=self.incomplete,
+                require_cap=self.require_cap
             )
             total_bases = locus.bases
             if total_bases > 0:
