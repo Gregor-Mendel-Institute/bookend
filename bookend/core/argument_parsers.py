@@ -117,7 +117,7 @@ bam_to_elr_parser.add_argument("--bed", dest='BED_OUT', default=False, action='s
 bam_to_elr_parser.add_argument("--secondary", dest='SECONDARY', default=False, action='store_true', help="Keep secondary alignments.")
 bam_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 bam_to_elr_parser.add_argument("--start_seq", dest='START_SEQ', default='ACGGG', type=str, help="Sequence of the oligo that marks a 5' read (sense)")
-bam_to_elr_parser.add_argument("--end_seq", dest='END_SEQ', default='RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR', type=str, help="Sequence of the oligo that marks a 3' read (sense)")
+bam_to_elr_parser.add_argument("--end_seq", dest='END_SEQ', default='RRRRRRRRRRRRRRRRRRRR', type=str, help="Sequence of the oligo that marks a 3' read (sense)")
 bam_to_elr_parser.add_argument("--record_artifacts", dest='RECORD_ARTIFACTS', default=False, action='store_true', help="Reports artifact-masked S/E labels as lowercase s/e.")
 bam_to_elr_parser.add_argument("--split", dest='SPLIT', default=False, action='store_true', help="Separate reads into different files by their multimapping number.")
 bam_to_elr_parser.add_argument("--mismatch_rate", dest='MM_RATE', default=0.20, type=float, help="Mismatch tolerance of S label matches")
