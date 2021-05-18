@@ -253,7 +253,7 @@ cdef class Locus:
         
         for rng in self.end_ranges[Sp]:
             if self.require_cap:
-                l, r = rng.span()
+                l, r = rng.left, rng.right
                 if np.sum(self.depth_matrix[Cp, l:r]) < np.sum(self.depth_matrix[Sp, l:r])*self.cap_filter:
                     continue
             
@@ -262,7 +262,7 @@ cdef class Locus:
         
         for rng in self.end_ranges[Sm]:
             if self.require_cap:
-                l, r = rng.span()
+                l, r = rng.left, rng.right
                 if np.sum(self.depth_matrix[Cm, l:r]) < np.sum(self.depth_matrix[Sm, l:r])*self.cap_filter:
                     continue
             
