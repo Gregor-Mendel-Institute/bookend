@@ -127,7 +127,9 @@ class Assembler:
                 
                 if chunk[0].left() >= STOP_AT:
                     sys.exit()
-
+            
+            del locus
+    
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend assemble |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
