@@ -52,7 +52,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
-    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
@@ -61,7 +61,7 @@ cdef class Locus:
     cdef public object graph
     cdef EndRange nullRange
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -80,6 +80,7 @@ cdef class Locus:
         self.use_attributes = use_attributes
         self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
+        self.require_cap = require_cap
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
@@ -245,10 +246,28 @@ cdef class Locus:
             if endtype in [Sp, Sm]:
                 self.resolve_overlapping_ends(endtype)
         
-        for endtype in [Ep, Em, Sp, Sm]:
+        for endtype in [Ep, Em]:
             for rng in self.end_ranges[endtype]:
                 self.branchpoints.add(rng.terminal)
                 bpset.add(rng.terminal)
+        
+        for rng in self.end_ranges[Sp]:
+            if self.require_cap:
+                l, r = rng.span()
+                if np.sum(self.depth_matrix[Cp, l:r]) < np.sum(self.depth_matrix[Sp, l:r])*self.cap_filter:
+                    continue
+            
+            self.branchpoints.add(rng.terminal)
+            bpset.add(rng.terminal)
+        
+        for rng in self.end_ranges[Sm]:
+            if self.require_cap:
+                l, r = rng.span()
+                if np.sum(self.depth_matrix[Cm, l:r]) < np.sum(self.depth_matrix[Sm, l:r])*self.cap_filter:
+                    continue
+            
+            self.branchpoints.add(rng.terminal)
+            bpset.add(rng.terminal)
         
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
