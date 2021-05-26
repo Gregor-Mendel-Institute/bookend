@@ -120,6 +120,7 @@ bam_to_elr_parser.add_argument("--start_seq", dest='START_SEQ', default='ACGGG',
 bam_to_elr_parser.add_argument("--end_seq", dest='END_SEQ', default='RRRRRRRRRRRRRRRRRRRR', type=str, help="Sequence of the oligo that marks a 3' read (sense)")
 bam_to_elr_parser.add_argument("--record_artifacts", dest='RECORD_ARTIFACTS', default=False, action='store_true', help="Reports artifact-masked S/E labels as lowercase s/e.")
 bam_to_elr_parser.add_argument("--split", dest='SPLIT', default=False, action='store_true', help="Separate reads into different files by their multimapping number.")
+bam_to_elr_parser.add_argument("--remove_noncanonical", dest='REMOVE_NONCANONICAL', default=False, action='store_true', help="Require canonical splice junction motifs (GT/AG).")
 bam_to_elr_parser.add_argument("--mismatch_rate", dest='MM_RATE', default=0.20, type=float, help="Mismatch tolerance of S label matches")
 bam_to_elr_parser.add_argument("--sj_shift", dest='SJ_SHIFT', default=2, type=int, help="Shift up to this many bases to find a canonical splice junction")
 bam_to_elr_parser.add_argument("--minlen_strict", dest='MINLEN_STRICT', default=16, type=int, help="Keep reads down to this length only if perfectly aligned.")

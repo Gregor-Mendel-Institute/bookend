@@ -460,7 +460,8 @@ config_defaults = {
     'min_reps':2,
     'cap_bonus':5,
     'confidence_threshold':0.5,
-    'gene_delim':'.'
+    'gene_delim':'.',
+    'remove_noncanonical':False
 }
 
 cdef class RNAseqDataset():
@@ -491,6 +492,7 @@ cdef class RNAseqDataset():
         self.minlen_loose = self.config['minlen_loose']
         self.minlen = self.minlen_strict
         self.mismatch_rate = self.config['mismatch_rate']
+        self.remove_noncanonical = self.config['remove_noncanonical']
         self.start_array = fu.nuc_to_int(self.start_seq)
         self.end_array = fu.nuc_to_int(self.end_seq)
         self.chrom_lengths = chrom_lengths
@@ -574,7 +576,7 @@ cdef class RNAseqDataset():
         if type(bam_lines) is not list:
             bam_lines = [bam_lines]
         
-        BAM = BAMobject(self, bam_lines, ignore_ends, secondary)
+        BAM = BAMobject(self, bam_lines, ignore_ends, secondary, self.remove_noncanonical)
         new_read_list = BAM.generate_read()
         if len(new_read_list) > 0:
             read = new_read_list[0]
@@ -1697,7 +1699,7 @@ cdef class BAMobject:
     cdef readonly RNAseqDataset dataset
     cdef readonly list input_lines
     cdef readonly bint ignore_ends, secondary
-    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False):
+    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False, bint remove_noncanonical=False):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
         Quality control of end labels:
         1) An improperly mapped 5'/3' end of a read should be stripped of its tag
@@ -1809,7 +1811,7 @@ cdef class BAMobject:
                 splice = []
             else:
                 alignment_strand = self.get_alignment_strand(line, strand)
-                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand) # Check which gaps between exon blocks are present in intron blocks
+                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, remove_noncanonical=remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
             
             if tail == 0:
                 aligned_seq = seq[head:]
@@ -1975,7 +1977,7 @@ cdef class BAMobject:
         
         return alignment_strand
 
-    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand):
+    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=True):
         """Returns a list of booleans denoting whether each gap
         between ranges is a splice junction or not."""
         cdef list splice
@@ -1990,7 +1992,7 @@ cdef class BAMobject:
             g = gaps[i]
             if g in introns:
                 splice[i] = True
-                if self.dataset.genome:
+                if self.dataset.genome and remove_noncanonical:
                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
                     if junction_strand != alignment_strand: # Did not find a valid splice junction
                         splice[i] = False

@@ -32,7 +32,7 @@ class BAMtoELRconverter:
         self.minlen_strict = args['MINLEN_STRICT']
         self.minlen_loose = args['MINLEN_LOOSE']
         self.input = args['INPUT']
-        
+        self.remove_noncanonical = args['REMOVE_NONCANONICAL']
         if self.start or self.end or self.capped:
             self.stranded = True
         
@@ -68,7 +68,8 @@ class BAMtoELRconverter:
             'minlen_strict':self.minlen_strict,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
-            'sj_shift':self.sj_shift
+            'sj_shift':self.sj_shift,
+            'remove_noncanonical':self.remove_noncanonical
         }
         if self.no_ends:
             self.config_dict['s_tag'] = False
