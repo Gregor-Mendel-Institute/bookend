@@ -1712,6 +1712,7 @@ cdef class BAMobject:
         self.input_lines = input_lines
         self.ignore_ends = ignore_ends
         self.secondary = secondary
+        self.remove_noncanonical = remove_noncanonical
     
     cpdef list generate_read(self):
         cdef:
@@ -1811,7 +1812,7 @@ cdef class BAMobject:
                 splice = []
             else:
                 alignment_strand = self.get_alignment_strand(line, strand)
-                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
+                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
             
             if tail == 0:
                 aligned_seq = seq[head:]
