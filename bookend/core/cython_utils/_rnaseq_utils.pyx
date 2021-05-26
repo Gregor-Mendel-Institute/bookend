@@ -1811,7 +1811,7 @@ cdef class BAMobject:
                 splice = []
             else:
                 alignment_strand = self.get_alignment_strand(line, strand)
-                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, remove_noncanonical=remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
+                splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
             
             if tail == 0:
                 aligned_seq = seq[head:]
@@ -1977,7 +1977,7 @@ cdef class BAMobject:
         
         return alignment_strand
 
-    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=True):
+    cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=False):
         """Returns a list of booleans denoting whether each gap
         between ranges is a splice junction or not."""
         cdef list splice
