@@ -469,7 +469,7 @@ cdef class RNAseqDataset():
     cdef public int chrom_index, source_index
     cdef public dict chrom_dict, source_dict
     cdef readonly dict config, genome, label_tally
-    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends
+    cdef readonly bint s_tag, e_tag, capped, stranded, ignore_ends, remove_noncanonical
     cdef readonly str start_seq, end_seq
     cdef readonly int minlen, minlen_strict, minlen_loose
     cdef readonly float mismatch_rate
@@ -1698,7 +1698,7 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
 cdef class BAMobject:
     cdef readonly RNAseqDataset dataset
     cdef readonly list input_lines
-    cdef readonly bint ignore_ends, secondary
+    cdef readonly bint ignore_ends, secondary, remove_noncanonical
     def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False, bint remove_noncanonical=False):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
         Quality control of end labels:
