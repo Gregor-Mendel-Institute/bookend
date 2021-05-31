@@ -38,6 +38,12 @@ class BAMtoELRconverter:
         if self.output is None:
             self.output = self.input+'.elr'
         
+        if self.start_seq.lower == 'none':
+            self.start_seq = ''
+        
+        if self.end_seq.lower == 'none':
+            self.end_seq = ''
+        
         self.output_file = 'stdout'
         self.output_dict = {}
         if not self.split:
