@@ -377,7 +377,7 @@ cpdef bint oligo_match(array.array a, array.array b, float mm_rate):
     if len_A != len_B:
         return False
     
-    minmatch = min(len_A, max(int(len_A*.5), 10))
+    minmatch = min(len_A, 10)
     max_ham = int(len_A*mm_rate)
     ham = 0
     for i in range(len_A):
