@@ -22,7 +22,6 @@ class BAMtoELRconverter:
         self.bed_out = args['BED_OUT']
         self.secondary = args['SECONDARY']
         self.output = args['OUTPUT']
-        self.header = args['HEADER']
         self.start_seq = args['START_SEQ']
         self.end_seq = args['END_SEQ']
         self.record_artifacts = args['RECORD_ARTIFACTS']
@@ -233,13 +232,13 @@ if __name__ == '__main__':
     from argument_parsers import bam_to_elr_parser as parser
     args = vars(parser.parse_args())
     obj = BAMtoELRconverter(args)
-    # sys.exit(obj.run())
+    sys.exit(obj.run())
 
     # TESTING #
-    import cProfile
-    import pstats
-    profile = cProfile.Profile()
-    profile.runcall(obj.run)
-    ps = pstats.Stats(profile)
-    ps.print_stats()
+    # import cProfile
+    # import pstats
+    # profile = cProfile.Profile()
+    # profile.runcall(obj.run)
+    # ps = pstats.Stats(profile)
+    # ps.print_stats()
 

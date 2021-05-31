@@ -453,7 +453,7 @@ config_defaults = {
     'capped':False,
     'stranded':False,
     'start_seq':'ACGGG',
-    'end_seq':'RRRRRRRRRRRRRRR',
+    'end_seq':'RRRRRRRRRRRRRRRRRRRR',
     'minlen_strict':20,
     'minlen_loose':25,
     'mismatch_rate':0.2,
@@ -1952,7 +1952,7 @@ cdef class BAMobject:
         """Reads below the 'minlen_loose' length should be treated
         more stringently: no allowed softclipping, multimapping, or mismatches.
         Absolutely require the length to be longer than minlen_strict."""
-        if head > 0 or tail > 0 or errors > 0 or Nmap > 1 or match_length < self.dataset.minlen_strict:
+        if (head > 0 or tail > 0 or errors > 0 or Nmap > 1) and match_length < self.dataset.minlen_strict:
             return True
         
         return False
