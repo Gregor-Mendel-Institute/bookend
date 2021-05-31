@@ -1896,7 +1896,7 @@ cdef class BAMobject:
                     if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get(['errors'],0) <= mapping.attributes.get(['errors'], 0):
                         continue
                     
-                    output_mappings.append(mapping)
+                output_mappings.append(mapping)
         
         return output_mappings
     
