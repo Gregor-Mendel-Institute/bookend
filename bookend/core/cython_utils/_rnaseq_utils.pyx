@@ -1893,7 +1893,7 @@ cdef class BAMobject:
             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
             for mapping in ordered_mappings:
                 for previous_mapping in output_mappings:
-                    if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get(['errors'],0) <= mapping.attributes.get(['errors'], 0):
+                    if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get('errors',0) <= mapping.attributes.get('errors', 0):
                         continue
                     
                 output_mappings.append(mapping)
