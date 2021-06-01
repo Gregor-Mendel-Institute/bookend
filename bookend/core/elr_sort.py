@@ -35,12 +35,14 @@ class ELRsorter:
                 print('Combining sorted reads from {} files.'.format(self.tmpcount))
             
             combine_args = {
-                'INPUT':['{}.tmp{}'.format(self.input,i) for i in range(self.tmpcount)],
+                'INPUT':['{}.tmp{}.elr'.format(self.input,i) for i in range(self.tmpcount)],
                 'OUTPUT':'stdout',
                 'TEMPDIR':'{}_combinetmp'.format(self.input)
             }
             combiner = ELRcombiner(combine_args)
             combiner.combine_files(combiner.input, self.output_file)
+            for i in range(self.tmpcount):
+                os.remove('{}.tmp{}.elr'.format(self.input,i))
         else:
             self.dump_sorted_reads()
         
@@ -61,7 +63,7 @@ class ELRsorter:
             self.linecount += 1
             if self.linecount >= 1000000:
                 self.linecount = 0
-                tmpfile = open('{}.tmp{}'.format(self.input,self.tmpcount),'w')
+                tmpfile = open('{}.tmp{}.elr'.format(self.input,self.tmpcount),'w')
                 tmpfile.write(self.header)
                 self.dump_sorted_reads(tmpfile)
                 tmpfile.close()
