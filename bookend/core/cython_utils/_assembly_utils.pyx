@@ -137,8 +137,8 @@ cdef class Locus:
                     self.build_overlap_matrix()
                     self.build_graph(reduce)
                 
-                if locus.bases > 0:
-                    locus.assemble_transcripts()
+                if self.bases > 0:
+                    self.assemble_transcripts()
     
     def __len__(self):
         return self.rightmost - self.leftmost
