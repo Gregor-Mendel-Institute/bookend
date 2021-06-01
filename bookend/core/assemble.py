@@ -107,7 +107,7 @@ class Assembler:
                 allow_incomplete=self.incomplete,
                 require_cap=self.require_cap
             )
-            self.chunk_counter = locus.chunk_counter
+            self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
             if total_bases > 0:
                 if self.verbose:
