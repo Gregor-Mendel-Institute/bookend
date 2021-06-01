@@ -15,6 +15,7 @@ class ELRsorter:
         self.linecount = 0
         self.outlinecount = 0
         self.tmpcount = 0
+        self.header = ''
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
@@ -52,6 +53,7 @@ class ELRsorter:
         elr_in = open(self.input, 'r')
         for elr_line in elr_in:
             if elr_line[0] == '#':
+                self.header += elr_line
                 self.output_line(elr_line.rstrip())
                 continue
             
@@ -59,8 +61,10 @@ class ELRsorter:
             self.linecount += 1
             if self.linecount >= 1000000:
                 self.linecount = 0
-                tmpfile = '{}.tmp{}'.format(self.input,self.tmpcount)
+                tmpfile = open('{}.tmp{}'.format(self.input,self.tmpcount),'w')
+                tmpfile.write(self.header)
                 self.dump_sorted_reads(tmpfile)
+                tmpfile.close()
                 self.tmpcount += 1
     
     def dump_sorted_reads(self, tmpfile=None):
