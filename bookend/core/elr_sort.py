@@ -3,6 +3,7 @@
 
 import sys
 import os
+from bookend.core.elr_combine import ELRcombiner
 
 class ELRsorter:
     def __init__(self, args):
@@ -13,6 +14,7 @@ class ELRsorter:
         self.read_tuples = []
         self.linecount = 0
         self.outlinecount = 0
+        self.tmpcount = 0
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
@@ -27,7 +29,20 @@ class ELRsorter:
             print(self.display_options())
         
         self.process_input()
-        self.dump_sorted_reads()
+        if self.tmpcount > 0:
+            if self.output != 'stdout':
+                print('Combining sorted reads from {} files.'.(self.tmpcount))
+            
+            combine_args = {
+                'INPUT':['{}.tmp{}'.format(self.input,i) for i in range(self.tmpcount)]
+                'OUTPUT':'stdout'
+                'TEMPDIR':'{}_combinetmp'.format(self.input)
+            }
+            combiner = ELRcombiner(combine_args)
+            combiner.combine_files(combiner.input, self.output_file)
+        else:
+            self.dump_sorted_reads()
+        
         if self.output != 'stdout':
             print(self.display_summary())
             self.output_file.close()
@@ -42,8 +57,13 @@ class ELRsorter:
             
             self.add_read_tuple(elr_line)
             self.linecount += 1
+            if self.linecount >= 1000000:
+                self.linecount = 0
+                tmpfile = '{}.tmp{}'.format(self.input,self.tmpcount)
+                self.dump_sorted_reads(tmpfile)
+                self.tmpcount += 1
     
-    def dump_sorted_reads(self):
+    def dump_sorted_reads(self, tmpfile=None):
         """Writes sorted reads to output, collapsing
         any identical reads into a single line with increased weight"""
         self.read_tuples.sort(reverse=True)
@@ -57,13 +77,13 @@ class ELRsorter:
                     continue
                 else:
                     line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
-                    self.output_line(line)
+                    self.output_line(line, tmpfile)
                     self.outlinecount += 1
                     read_tuple = next_tuple
                     weight = -read_tuple[6]
             
             line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
-            self.output_line(line)
+            self.output_line(line, tmpfile)
             self.outlinecount += 1
 
     def add_read_tuple(self, elr_line):
@@ -72,14 +92,17 @@ class ELRsorter:
         read_tuple = (int(l[0]), int(l[1]), int(l[2]), l[3], l[4], int(l[5]), -float(l[6]))
         self.read_tuples.append(read_tuple)
     
-    def output_line(self, line):
+    def output_line(self, line, tmpfile=None):
         """Takes a list of bed lines and writes
         them to the output stream.
         """
-        if self.output_file == 'stdout':
-            print(line)
+        if tmpfile is not None:
+            tmpfile.write('{}\n'.format(line.rstrip()))
         else:
-            self.output_file.write('{}\n'.format(line.rstrip()))
+            if self.output_file == 'stdout':
+                print(line)
+            else:
+                self.output_file.write('{}\n'.format(line.rstrip()))
     
     def display_options(self):
         """Returns a string describing all input args"""
@@ -90,7 +113,7 @@ class ELRsorter:
     
     def display_summary(self):
         summary_string = ''
-        summary_string += 'Processed {} lines.\n'.format(self.linecount)
+        summary_string += 'Processed {} lines.\n'.format((self.tmpcount*1000000)+self.linecount)
         summary_string += 'Wrote {} sorted unique reads.\n'.format(self.outlinecount)
         return summary_string
 
