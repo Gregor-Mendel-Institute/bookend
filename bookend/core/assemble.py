@@ -61,7 +61,7 @@ class Assembler:
         if self.output_type is None:
             self.output_type = 'gtf'
         
-        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, self.min_proportion)
+        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
         self.chunk_counter = 0
         self.output_file = open(self.output,'w')
     
@@ -107,9 +107,9 @@ class Assembler:
                 allow_incomplete=self.incomplete,
                 require_cap=self.require_cap
             )
+            self.chunk_counter = locus.chunk_counter
             total_bases = locus.bases
             if total_bases > 0:
-                locus.assemble_transcripts()
                 if self.verbose:
                     bases_used = 0
                     transcripts_written = 0

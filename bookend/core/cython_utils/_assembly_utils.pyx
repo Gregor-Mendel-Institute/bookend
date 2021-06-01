@@ -57,9 +57,10 @@ cdef class Locus:
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
     cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
-    cdef public list transcripts, traceback, sources, subproblem_indices
+    cdef public list transcripts, traceback, sources, subproblem_indices, splits
     cdef public object graph
     cdef EndRange nullRange
+    cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
     def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
@@ -123,10 +124,21 @@ cdef class Locus:
             
             self.prune_junctions(self.min_intron_length)
             self.generate_branchpoints()
-            self.build_membership_matrix()
-            if self.membership.shape[0] > 0:
-                self.build_overlap_matrix()
-                self.build_graph(reduce)
+            # Split locus into coherent subchunks
+            self.splits = self.split_chunk()
+            if len(self.splits) > 0:
+                for subchunk in ru.generate_subchunks(list_of_reads, self.splits):
+                    self.chunk_number += 1
+                    sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap)
+                    self.transcripts += sublocus.transcripts
+            else:
+                self.build_membership_matrix()
+                if self.membership.shape[0] > 0:
+                    self.build_overlap_matrix()
+                    self.build_graph(reduce)
+                
+                if locus.bases > 0:
+                    locus.assemble_transcripts()
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -144,6 +156,27 @@ cdef class Locus:
             summary_string += '{} |{}|\t|{}|\n'.format(indices, members, overlap)
         
         return summary_string
+    
+    cpdef list split_chunk(self):
+        """Check whether, given the filtered splice junctions, the list_of_reads can be separated
+        into a list of smaller coherent read sets with no overlap.
+        Returns the list of read indices that begin new coherent subchunks."""
+        cdef np.ndarray split_bool, difs, run_starts, run_ends
+        cdef str k, kl, kr
+        cdef int rs, rl
+        split_bool = self.depth == 0
+        for k in self.J_plus.keys():
+            kl,kr = k.split(':')
+            split_bool[int(kl)-1:int(kr)+1] = False
+        
+        for k in self.J_minus.keys():
+            kl,kr = k.split(':')
+            split_bool[int(kl)-1:int(kr)+1] = False
+        
+        difs = np.diff(np.hstack(([0], split_bool, [0])))
+        run_starts = np.where(difs > 0)[0]
+        run_ends = np.where(difs < 0)[0]
+        return [rs+self.leftmost for rs,rl in zip(run_starts, run_ends-run_starts) if rl > self.extend]
     
     cpdef void prune_junctions(self, int min_intron_length=50):
         """If a splice junction represents < minimum_proportion of junction-spanning reads
@@ -166,7 +199,7 @@ cdef class Locus:
                 rightsides = {}
                 for i in range(len(keys)):
                     l,r = spans[i]
-                    spanning_cov = max([self.depth[l], self.depth[r]])
+                    spanning_cov = np.max(self.depth[l:r+1])
                     jcov = jdict[keys[i]]
                     if jcov < spanning_cov * self.minimum_proportion or r-l < min_intron_length:
                         prune.add(keys[i])
