@@ -34,8 +34,8 @@ class ELRsorter:
                 print('Combining sorted reads from {} files.'.format(self.tmpcount))
             
             combine_args = {
-                'INPUT':['{}.tmp{}'.format(self.input,i) for i in range(self.tmpcount)]
-                'OUTPUT':'stdout'
+                'INPUT':['{}.tmp{}'.format(self.input,i) for i in range(self.tmpcount)],
+                'OUTPUT':'stdout',
                 'TEMPDIR':'{}_combinetmp'.format(self.input)
             }
             combiner = ELRcombiner(combine_args)
