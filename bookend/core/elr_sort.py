@@ -31,7 +31,7 @@ class ELRsorter:
         self.process_input()
         if self.tmpcount > 0:
             if self.output != 'stdout':
-                print('Combining sorted reads from {} files.'.(self.tmpcount))
+                print('Combining sorted reads from {} files.'.format(self.tmpcount))
             
             combine_args = {
                 'INPUT':['{}.tmp{}'.format(self.input,i) for i in range(self.tmpcount)]
