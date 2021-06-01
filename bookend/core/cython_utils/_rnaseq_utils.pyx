@@ -2168,9 +2168,10 @@ def generate_subchunks(list list_of_reads, list split_positions):
                     while sp < read.span[0]:
                         sp = next(position)
                 except StopIteration:
-                    return list_of_reads[i:]
+                    lasti = i
+                    break
         
-        return list_of_reads[lasti:]
+        yield list_of_reads[lasti:]
 
 
 cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
