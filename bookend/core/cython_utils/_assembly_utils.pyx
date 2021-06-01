@@ -52,7 +52,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
-    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
@@ -62,7 +62,7 @@ cdef class Locus:
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -82,6 +82,7 @@ cdef class Locus:
         self.allow_incomplete = allow_incomplete
         self.ignore_ends = ignore_ends
         self.require_cap = require_cap
+        self.splittable = splittable
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
@@ -125,12 +126,16 @@ cdef class Locus:
             self.prune_junctions(self.min_intron_length)
             self.generate_branchpoints()
             # Split locus into coherent subchunks
-            self.splits = self.split_chunk()
+            self.splits = []
+            if self.splittable:
+                self.splits = self.split_chunk()
+            
             if len(self.splits) > 0:
                 for subchunk in ru.generate_subchunks(list_of_reads, self.splits):
                     self.chunk_number += 1
-                    sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap)
+                    sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False)
                     self.transcripts += sublocus.transcripts
+                    
             else:
                 self.build_membership_matrix()
                 if self.membership.shape[0] > 0:
