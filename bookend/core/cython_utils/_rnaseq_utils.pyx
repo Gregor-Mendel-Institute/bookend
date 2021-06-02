@@ -2205,6 +2205,24 @@ cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
     
     return top_positions
 
+cpdef bint has_ends(list list_of_reads, bint require_cap):
+    cdef RNAseqMapping read
+    cdef bint sp, cp, ep, sm, cm, em
+    for read in list_of reads:
+        if read.strand == 1:
+            sp = sp or read.s_tag
+            cp = cp or read.capped
+            ep = ep or read.e_tag
+            if (not require_cap or cp) and sp and ep:
+                return True
+        elif read.strand == -1:
+            sm = sm or read.s_tag
+            cm = cm or read.capped
+            em = em or read.e_tag
+            if (not require_cap or cm) and sm and em:
+                return True
+        
+    return False
 
 cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):
     """Returns True if no gap longer than maxgap in the array falls below the threshold"""

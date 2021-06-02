@@ -98,6 +98,9 @@ cdef class Locus:
                 for read in list_of_reads:
                     read.s_tag, read.e_tag = False, False
                     if len(read.splice)==0:read.strand = 0
+            else: # Don't bother processing a list of reads without at least one same-stranded end pair
+                if not ru.has_ends(list_of_reads, self.require_cap):
+                    return
             
             self.reads = tuple(list_of_reads) # Cannot be mutated            
             self.read_lengths = np.array([r.get_length()+self.oligo_len*r.s_tag+self.oligo_len*r.e_tag for r in self.reads], dtype=np.int32)
