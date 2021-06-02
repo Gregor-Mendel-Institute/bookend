@@ -2160,10 +2160,10 @@ def generate_subchunks(list list_of_reads, list split_positions):
     ignore = set()
     for i,read in enumerate(list_of_reads):
         if read.span[0] > sp: # The current read passes the split
-            if i > last_i:
-                yield [list_of_reads[r] for r in range(last, i) if r not in ignore]
+            if i > lasti:
+                yield [list_of_reads[r] for r in range(lasti, i) if r not in ignore]
             
-            last_i = i
+            lasti = i
             try:
                 while sp < read.span[0]:
                     sp = next(position)
