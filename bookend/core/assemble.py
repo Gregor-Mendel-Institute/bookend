@@ -83,9 +83,6 @@ class Assembler:
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
-            if self.verbose:
-                print('\n[{}:{}-{}] '.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()), end=" ")
-            
             locus = au.Locus(
                 chrom=chrom, 
                 chunk_number=self.chunk_counter, 
@@ -111,6 +108,7 @@ class Assembler:
             total_bases = locus.bases
             if total_bases > 0:
                 if self.verbose:
+                    print('\n[{}:{}-{}] '.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()), end=" ")
                     bases_used = 0
                     transcripts_written = 0
                 
