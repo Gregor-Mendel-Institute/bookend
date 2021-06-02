@@ -128,7 +128,6 @@ cdef class Locus:
                 self.depth = self.depth_matrix[covn,:]
             
             self.prune_junctions(self.min_intron_length)
-            self.generate_branchpoints()
             # Split locus into coherent subchunks
             self.splits = []
             if self.splittable:
@@ -143,6 +142,7 @@ cdef class Locus:
                         self.transcripts += sublocus.transcripts
                         self.bases += sublocus.bases
             else:
+                self.generate_branchpoints()
                 self.build_membership_matrix()
                 if self.membership.shape[0] > 0:
                     self.build_overlap_matrix()

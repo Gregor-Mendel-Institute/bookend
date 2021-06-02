@@ -141,7 +141,7 @@ class Assembler:
         options_string += "  Split read sources (--ignore_sources):            {}\n".format(self.ignore_sources)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
-        options_string += "  Min bp transcript length (--minlen):              {}\n".format(self.minlen)
+        options_string += "  Min bp transcript length (--min_len):              {}\n".format(self.minlen)
         options_string += "  Min isoform coverage (--min_cov):                 {}\n".format(self.min_cov)
         options_string += "  Min unstranded coverage (--min_unstranded_cov):   {}\n".format(self.min_unstranded_cov)
         options_string += "  Min isoform contribution (--min_proportion):      {}\n".format(self.min_proportion)
