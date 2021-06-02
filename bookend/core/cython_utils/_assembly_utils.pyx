@@ -52,7 +52,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
-    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
@@ -83,6 +83,7 @@ cdef class Locus:
         self.ignore_ends = ignore_ends
         self.require_cap = require_cap
         self.splittable = splittable
+        self.verbose = verbose
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
