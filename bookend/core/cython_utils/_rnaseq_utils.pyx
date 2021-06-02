@@ -2170,7 +2170,8 @@ def generate_subchunks(list list_of_reads, list split_positions):
             except StopIteration:
                 lasti = i
                 break
-        elif read.span[1] > sp:
+        
+        if read.span[1] > sp:
             ignore.add(i)
     
     yield list_of_reads[lasti:]
