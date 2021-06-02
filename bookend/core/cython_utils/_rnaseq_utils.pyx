@@ -2209,7 +2209,7 @@ cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
 cpdef bint has_ends(list list_of_reads, bint require_cap):
     cdef RNAseqMapping read
     cdef bint sp, cp, ep, sm, cm, em
-    for read in list_of reads:
+    for read in list_of_reads:
         if read.strand == 1:
             sp = sp or read.s_tag
             cp = cp or read.capped
