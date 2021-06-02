@@ -131,11 +131,11 @@ cdef class Locus:
                 self.splits = self.split_chunk()
             
             if len(self.splits) > 0:
+                if self.verbose:print('Processing {} subchunks'.format(len(self.splits)+1))
                 for subchunk in ru.generate_subchunks(list_of_reads, self.splits):
                     self.chunk_number += 1
                     sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False)
                     self.transcripts += sublocus.transcripts
-                    
             else:
                 self.build_membership_matrix()
                 if self.membership.shape[0] > 0:

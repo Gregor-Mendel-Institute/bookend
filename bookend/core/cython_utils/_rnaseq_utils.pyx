@@ -2151,27 +2151,29 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
 def generate_subchunks(list list_of_reads, list split_positions):
     cdef:
         RNAseqMapping read
-        int lasti, sp
+        int lasti, i, sp, r
+        set ignore
     
     lasti = 0
-    if len(split_positions) == 0:
-        yield list_of_reads
-    else:
-        position = iter(split_positions)
-        sp = next(position)
-        for i in range(len(list_of_reads)):
-            read = list_of_reads[i]
-            if read.span[0] > sp:
-                yield list_of_reads[lasti:i]
+    position = iter(split_positions)
+    sp = next(position)
+    ignore = set()
+    for i,read in enumerate(list_of_reads):
+        if read.span[0] > sp: # The current read passes the split
+            if i > last_i:
+                yield [list_of_reads[r] for r in range(last, i) if r not in ignore]
+            
+            last_i = i
+            try:
+                while sp < read.span[0]:
+                    sp = next(position)
+            except StopIteration:
                 lasti = i
-                try:
-                    while sp < read.span[0]:
-                        sp = next(position)
-                except StopIteration:
-                    lasti = i
-                    break
-        
-        yield list_of_reads[lasti:]
+                break
+        elif read.span[1] > sp:
+            ignore.add(i)
+    
+    yield list_of_reads[lasti:]
 
 
 cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):
