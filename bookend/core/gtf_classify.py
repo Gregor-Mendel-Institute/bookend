@@ -59,7 +59,8 @@ class AssemblyClassifier:
         self.generator = self.dataset.generator
         self.locus_counter = 0
         self.new_gene_counter = 0
-        self.input_transcripts = 0
+        self.ref_transcript_count = 0
+        self.input_transcript_count = 0
         self.transcript_counter = 0
         self.updated_transcript_counter = 0
         self.match_types = [
@@ -223,7 +224,9 @@ class AssemblyClassifier:
     def process_entry(self, chunk):
         self.locus_counter += 1
         ref_transcripts = [t for t in chunk if t.is_reference]
+        self.ref_transcript_count += len(ref_transcripts)
         input_transcripts = [t for t in chunk if not t.is_reference]
+        self.input_transcript_count += len(input_transcripts)
         if len(input_transcripts) > 0: # Work needs to be done on non-reference transcripts
             self.compare_transcripts(input_transcripts, ref_transcripts)
         
@@ -241,8 +244,7 @@ class AssemblyClassifier:
     
     def display_summary(self):
         summary = '\n'
-        summary += "{} loci processed ({} total input transcripts).\n".format(self.locus_counter, self.input_transcripts)
-        summary += "{} transcripts written.\n".format(self.transcript_counter)
+        summary += "{} loci processed ({} reference transcripts, {} input transcripts).\n".format(self.locus_counter, self.ref_transcript_count, self.input_transcript_count)
         return summary
     
     def file_extension(self, filename):

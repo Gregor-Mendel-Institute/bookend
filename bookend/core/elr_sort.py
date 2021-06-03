@@ -40,7 +40,8 @@ class ELRsorter:
                 'TEMPDIR':'{}_combinetmp'.format(self.input)
             }
             combiner = ELRcombiner(combine_args)
-            combiner.combine_files(combiner.input, self.output_file)
+            for c in combiner.combine_files(combiner.input, self.output_file):pass
+            
             for i in range(self.tmpcount):
                 os.remove('{}.tmp{}.elr'.format(self.input,i))
         else:

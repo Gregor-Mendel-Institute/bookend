@@ -580,17 +580,15 @@ cdef class RNAseqDataset():
         new_read_list = BAM.generate_read()
         if len(new_read_list) > 0:
             read = new_read_list[0]
-            if read.s_len > 0:
-                if read.s_tag:
-                    self.label_tally['S'][read.s_len] += 1
-                else:
-                    self.label_tally['s'][read.s_len] += 1
+            if read.s_tag:
+                self.label_tally['S'][read.s_len] += 1
+            elif read.s_len > 0:
+                self.label_tally['s'][read.s_len] += 1
             
-            if read.e_len > 0:
-                if read.e_tag:
-                    self.label_tally['E'][read.e_len] += 1
-                else:
-                    self.label_tally['e'][read.e_len] += 1
+            if read.e_tag:
+                self.label_tally['E'][read.e_len] += 1
+            elif read.e_len > 0:
+                self.label_tally['e'][read.e_len] += 1
         
         self.read_list += new_read_list
 
