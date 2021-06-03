@@ -91,7 +91,8 @@ class ELRcombiner:
         if self.output != 'stdout':
             print(self.display_options())
         
-        self.combine_files(self.input, self.output_file)
+        for c in  self.combine_files(self.input, self.output_file):pass
+        
         if self.output != 'stdout':
             print(self.display_summary())
     
