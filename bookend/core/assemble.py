@@ -64,13 +64,14 @@ class Assembler:
                 print("\nERROR: Multi-input assembly can only be performed on position-sorted ELR files.")
                 sys.exit(1)
             
+            self.dataset = ru.RNAseqDataset()
             combine_args = {
                 'INPUT':self.input,
                 'OUTPUT':'stdout',
                 'TEMPDIR':'{}_combinetmp'.format(self.input[0])
             }
             combiner = ELRcombiner(combine_args)
-            self.input_file = combiner.combine_files(self.input, None, iterator=True)
+            self.input_file = combiner.combine_files(combiner.input, combiner.output_file, iterator=True)
         else:
             print("\nERROR: No input file(s) provided.")
             sys.exit(1)
