@@ -66,7 +66,7 @@ class Assembler:
             
             combine_args = {
                 'INPUT':self.input,
-                'OUTPUT':None,
+                'OUTPUT':'',
                 'TEMPDIR':'{}_combinetmp'.format(self.input[0])
             }
             combiner = ELRcombiner(combine_args)
