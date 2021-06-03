@@ -65,6 +65,7 @@ class Assembler:
                 sys.exit(1)
             
             self.dataset = ru.RNAseqDataset()
+            self.file_type = 'elr'
             combine_args = {
                 'INPUT':self.input,
                 'OUTPUT':'stdout',
