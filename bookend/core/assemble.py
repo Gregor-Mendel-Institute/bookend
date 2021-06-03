@@ -214,7 +214,9 @@ class Assembler:
         for locus in self.generator:
             self.process_entry(locus)
         
-        self.output_file.close()
+        if len(self.input) == 1:
+            self.output_file.close()
+        
         self.end_time = time.time()
         print(self.display_summary())
 

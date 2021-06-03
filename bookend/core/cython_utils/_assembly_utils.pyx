@@ -200,7 +200,18 @@ cdef class Locus:
         cdef np.ndarray counts
         cdef float total, jcov, spanning_cov
         cdef bint passes
+        cdef np.ndarray jspans
         Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+        jspans = np.zeros(self.depth.shape[0], dtype=np.float32)
+        for k in self.J_plus.keys():
+            l,r = self.string_to_span(k)
+            jspans[l:r+1] += self.J_plus[k]
+        
+        for k in self.J_minus.keys():
+            l,r = self.string_to_span(k)
+            jspans[l:r+1] += self.J_minus[k]
+        
+
         for jdict in [self.J_plus, self.J_minus]:
             if jdict:
                 prune = set()
@@ -210,7 +221,7 @@ cdef class Locus:
                 rightsides = {}
                 for i in range(len(keys)):
                     l,r = spans[i]
-                    spanning_cov = np.max(self.depth[l:r+1])
+                    spanning_cov = np.max(jspans[l:r+1])
                     jcov = jdict[keys[i]]
                     if jcov < spanning_cov * self.minimum_proportion or r-l < min_intron_length:
                         prune.add(keys[i])
