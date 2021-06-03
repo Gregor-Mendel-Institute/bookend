@@ -95,7 +95,7 @@ class ELRcombiner:
         if self.output != 'stdout':
             print(self.display_summary())
     
-    def combine_files(self, file_list, output):
+    def combine_files(self, file_list, output, iterator=False):
         file_number = len(file_list)
         if file_list is self.input:
             if not all([i[-3:].lower()=='elr' for i in self.input]):
@@ -154,11 +154,18 @@ class ELRcombiner:
                 finished_files += 1
         
         for h in self.dataset.dump_header():
-            self.output_line(h, output)
+            if iterator:
+                yield h
+            else:
+                self.output_line(h, output)
         
         while finished_files < file_number: # Keep going until every line of every file is processed
             index, item = self.PQ.pop(True)
-            self.output_line(self.sortable_tuple_to_read(item), output)
+            if iterator:
+                yield self.sortable_tuple_to_read(item)
+            else:
+                self.output_line(self.sortable_tuple_to_read(item), output)
+            
             next_line = files[index].readline().rstrip()
             if next_line:
                 next_item = self.read_to_sortable_tuple(next_line, index)

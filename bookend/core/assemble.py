@@ -7,6 +7,8 @@ import pysam
 import bookend.core.cython_utils._fasta_utils as fu
 import bookend.core.cython_utils._rnaseq_utils as ru
 import bookend.core.cython_utils._assembly_utils as au
+from bookend.core.elr_combine import ELRcombiner
+
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
@@ -44,16 +46,33 @@ class Assembler:
             self.min_start = 0
             self.min_end = 0
         
-        if self.input_is_valid(self.input):
-            self.file_type = self.file_extension(self.input)
-            if self.file_type in ['bam','sam']:
-                self.input_file = pysam.AlignmentFile(self.input)
-                self.dataset = ru.RNAseqDataset(genome_fasta=self.genome, chrom_array=self.input_file.header.references)
+        if len(self.input) == 1:
+            self.input = self.input[0]
+            if self.input_is_valid(self.input):
+                self.file_type = self.file_extension(self.input)
+                if self.file_type in ['bam','sam']:
+                    self.input_file = pysam.AlignmentFile(self.input)
+                    self.dataset = ru.RNAseqDataset(genome_fasta=self.genome, chrom_array=self.input_file.header.references)
+                else:
+                    self.dataset = ru.RNAseqDataset()
+                    self.input_file = open(self.input)
             else:
-                self.dataset = ru.RNAseqDataset()
-                self.input_file = open(self.input)
+                print("\nERROR: input file must be a valid format (BED, ELR, BAM, SAM).")
+                sys.exit(1)
+        elif len(self.input) > 1: # Interleave multiple input files for assembly
+            if not all([self.input_is_valid(filename, valid_formats=['elr']) for filename in self.input]):
+                print("\nERROR: Multi-input assembly can only be performed on position-sorted ELR files.")
+                sys.exit(1)
+            
+            combine_args = {
+                'INPUT':self.input,
+                'OUTPUT':None,
+                'TEMPDIR':'{}_combinetmp'.format(self.input[0])
+            }
+            combiner = ELRcombiner(combine_args)
+            self.input_file = combiner.combine_files(self.input, None, iterator=True)
         else:
-            print("\nERROR: input file must be a valid format (BED, ELR, BAM, SAM).")
+            print("\nERROR: No input file(s) provided.")
             sys.exit(1)
         
         self.complete = not self.incomplete
@@ -165,9 +184,9 @@ class Assembler:
         else:
             return split_name[-1].lower()
     
-    def input_is_valid(self, filename):
+    def input_is_valid(self, filename, valid_formats=['bed','elr','bam','sam','gtf','gff3','gff']):
         """Boolean if the file is a format that Assembler can parse."""
-        if self.file_extension(filename) in ['bed','elr','bam','sam','gtf','gff3','gff']:
+        if self.file_extension(filename) in valid_formats:
             return True
         else:
             return False

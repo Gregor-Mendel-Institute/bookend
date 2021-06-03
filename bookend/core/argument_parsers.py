@@ -100,7 +100,7 @@ assemble_parser.add_argument("--ignore_labels", dest='IGNORE_LABELS', default=Fa
 assemble_parser.add_argument("--ignore_sources", dest='IGNORE_SOURCES', default=False, action='store_true', help="Do not utilize read source information.")
 assemble_parser.add_argument("--require_cap", dest='REQUIRE_CAP', default=False, action='store_true', help="No start site is allowed to have less than cap_filter of uuG reads.")
 assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")
-assemble_parser.add_argument(dest='INPUT', type=str, help="Input BED/ELR filepath. MUST be a single coordinate-sorted file.")
+assemble_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR filepath(s). MUST be coordinate-sorted.")
 assemble_parser.set_defaults(object='Assembler')
 
 ### bam_to_elr.py ###
