@@ -162,7 +162,7 @@ class EndLabeler:
         if total == 0:
             summary_string = "No reads processed.\n"
         else:
-            no_tag = self.labeldict['']
+            no_tag = self.labeldict['']+self.labeldict['XD']
             s_tag = sum([self.labeldict[k] for k in self.labeldict.keys() if 'S' in k])
             e_tag = sum([self.labeldict[k] for k in self.labeldict.keys() if 'E' in k])
             xl_tag = self.labeldict.get('XL', 0)
@@ -276,6 +276,8 @@ class EndLabeler:
                                 self.labeldict[label.split('_UMI=')[0]] += 1
                         else:
                             self.labeldict['XL'] += 1
+                else:
+                    self.labeldict['XD'] += 1
             else:
                 if label == '':
                     self.labeldict['XQ'] += 1
@@ -300,6 +302,8 @@ class EndLabeler:
                         self.labeldict[label.split('_UMI=')[0]] += 1
                     else:
                         self.labeldict['XL'] += 1
+                else:
+                    self.labeldict['XD'] += 1
             else:
                 if label == '':
                     self.labeldict['XQ'] += 1
