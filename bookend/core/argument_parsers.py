@@ -164,7 +164,7 @@ end_label_parser.add_argument('--out2', dest='OUT2', type=str, default='end_labe
 end_label_parser.add_argument('--single_out', dest='SINGLE_OUT', type=str, default='end_label.single.fastq', help="Destination file for reads that are only informative single-end.")
 end_label_parser.add_argument('--min_start', dest='MIN_START', type=int, default=7, help="Minimum number of nucleotides that must match to the start adapter sequence.")
 end_label_parser.add_argument('--min_end', dest='MIN_END', type=int, default=9, help="Minimum number of nucleotides that must match to the end adapter sequence.")
-end_label_parser.add_argument('--suppress_untrimmed', dest='SUPPRESS_UNTRIMMED', default=False, action='store_true', help="If no trimming occurred, do not write the read to output.")
+end_label_parser.add_argument('--discard_untrimmed', dest='DISCARD_UNTRIMMED', default=False, action='store_true', help="If no trimming occurred, do not write the read to output.")
 end_label_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display each trimming result on stdout.")
 end_label_parser.add_argument('--pseudomates', dest='PSEUDOMATES', default=False, action='store_true', help="Write single reads to --out1 with an artificial reverse complement mate pair in --out2 (overrides --single_out)")
 end_label_parser.add_argument('--minlen', dest='MINLEN', type=int, default=18, help="Minimum sequence length to keep.")

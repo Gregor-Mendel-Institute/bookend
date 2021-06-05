@@ -28,7 +28,7 @@ class EndLabeler:
         self.minqual = args['MINQUAL']
         self.qualmask = args['QUALMASK']
         self.strand = args['STRAND']
-        self.suppress_untrimmed = args['SUPPRESS_UNTRIMMED']
+        self.discard_untrimmed = args['DISCARD_UNTRIMMED']
         self.out1 = args['OUT1']
         self.out2 = args['OUT2']
         self.pseudomates = args['PSEUDOMATES']
@@ -137,7 +137,7 @@ class EndLabeler:
         options_string += "  End tag (-E/--end):                {}\n".format(self.e_label)
         options_string += "  cDNA strand (--strand):            {}\n".format(self.strand)
         options_string += "  *** Filters ***\n"
-        options_string += "  --suppress_untrimmed:              {}\n".format(self.suppress_untrimmed)
+        options_string += "  --discard_untrimmed:              {}\n".format(self.discard_untrimmed)
         options_string += "  --mismatch_rate:                   {}\n".format(self.mm_rate)
         options_string += "  S tag length min (--min_start):    {}\n".format(self.minstart)
         options_string += "  E tag length min (--min_end):      {}\n".format(self.minend)
@@ -251,7 +251,7 @@ class EndLabeler:
                 print(self.display_trim(file1_read[1], file2_read[1], trim1, trim2, label))
             
             if len(trim1) > 0:
-                if not self.suppress_untrimmed or label != '':
+                if not self.discard_untrimmed or label != '':
                     if trim2 is None:
                         if len(trim1) >= self.minlen: # A single read was written from the pair
                             if fu.is_homopolymer(trim1):
@@ -263,7 +263,7 @@ class EndLabeler:
                                 else:
                                     self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
                                 
-                                self.labeldict[label] += 1
+                                self.labeldict[label.split('_UMI=')[0]] += 1
                         else:
                             self.labeldict['XL'] += 1
                     else:
@@ -273,7 +273,7 @@ class EndLabeler:
                             else:
                                 self.outfile1.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
                                 self.outfile2.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file2_read[0], label, trim2, file2_read[2], qtrm2))
-                                self.labeldict[label] += 1
+                                self.labeldict[label.split('_UMI=')[0]] += 1
                         else:
                             self.labeldict['XL'] += 1
             else:
@@ -294,10 +294,10 @@ class EndLabeler:
             if len(trim1) > 0:
                 if fu.is_homopolymer(trim1):
                     self.labeldict['XQ'] += 1
-                elif not self.suppress_untrimmed or label != '':
+                elif not self.discard_untrimmed or label != '':
                     if len(trim1) >= self.minlen: # A single read was output
                         self.outfile_single.write('{}_TAG={}\n{}\n{}\n{}\n'.format(file1_read[0], label, trim1, file1_read[2], qtrm1))
-                        self.labeldict[label] += 1
+                        self.labeldict[label.split('_UMI=')[0]] += 1
                     else:
                         self.labeldict['XL'] += 1
             else:
