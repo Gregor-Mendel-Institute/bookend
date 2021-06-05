@@ -32,6 +32,8 @@ class EndLabeler:
         self.out1 = args['OUT1']
         self.out2 = args['OUT2']
         self.pseudomates = args['PSEUDOMATES']
+        self.umi = args['UMI']
+        self.umi_range = (0,0)
         if self.pseudomates:
             self.single_out = None
         else:
@@ -44,6 +46,12 @@ class EndLabeler:
         self.s_label = '' if args['START'].lower() == 'none' else args['START']
         self.S5string = self.s_label
         if len(self.S5string) > 1:
+            if self.umi == 'S':
+                self.umi_range = (self.S5string.find('N')-len(self.S5string), self.S5string.rfind('N')+1-len(self.S5string))
+                if self.umi_range[1]-self.umi_range[0] == 0:
+                    print("ERROR: No string of N's found for UMI in S label.")
+                    sys.exit(1)
+            
             if self.S5string[-1] == '+': # 3'-terminal monomer is specified
                 self.S5monomer = fu.IUPACnum[self.S5string[-2]]
                 self.S3monomer = fu.IUPACnum[fu.complement(self.S5string[-2])]
@@ -57,6 +65,12 @@ class EndLabeler:
         self.e_label = '' if args['END'].lower() == 'none' else args['END']
         self.E5string = self.e_label
         if len(self.E5string) > 1:
+            if self.umi == 'E':
+                self.umi_range = (self.E5string.find('N')-len(self.E5string), self.E5string.rfind('N')+1-len(self.S5string))
+                if self.umi_range[1]-self.umi_range[0] == 0:
+                    print("ERROR: No string of N's found for UMI in E label.")
+                    sys.exit(1)
+            
             if self.E5string[-1] == '+': # Monomer is specified
                 self.E5monomer = fu.IUPACnum[self.E5string[-2]]
                 self.E3monomer = fu.IUPACnum[fu.complement(self.E5string[-2])]
@@ -231,7 +245,7 @@ class EndLabeler:
                 file1_read[1], file1_read[3], file2_read[1], file2_read[3],
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], file2_read[1], trim1, trim2, label))
@@ -272,7 +286,7 @@ class EndLabeler:
                 file1_read[1], file1_read[3], '', '',
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], '', trim1, '', label))

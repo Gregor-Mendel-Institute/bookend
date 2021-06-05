@@ -171,6 +171,7 @@ end_label_parser.add_argument('--minlen', dest='MINLEN', type=int, default=18, h
 end_label_parser.add_argument('--mismatch_rate', dest='MM_RATE', type=float, default=.06, help="Highest allow proportion of mismatches.")
 end_label_parser.add_argument('--qualmask', dest='QUALMASK', type=float, default=16, help="Ignores any basecalls with phred score < this, treats base as N.")
 end_label_parser.add_argument('--minqual', dest='MINQUAL', type=float, default=25, help="Suppresses any trimmed sequences with lower than this mean phred quality score.")
+end_label_parser.add_argument('--umi', dest='UMI', type=str, default="", choices=['S', 'E'], help="One of the end labels (S, E) contains a Unique Molecular Identifier (UMI).")
 end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FASTQ file(s). 1 for single-end, 2 for paired-end")
 end_label_parser.set_defaults(object='EndLabeler')
 
