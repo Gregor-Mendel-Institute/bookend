@@ -550,6 +550,7 @@ cdef str trim_readstring(str readstring, int pos, int trimtype, bint qual=False)
 cdef str get_umilabel(str readstring, int pos, int trimtype, str umi, (int, int) umi_range):
     """Extracts the UMI sequence from a specified position on the trimmed string"""
     cdef str umi_string
+    umi_string = ""
     if trimtype == -1:
         return ""
     elif trimtype in [0,2] and umi != 'S':
@@ -817,13 +818,13 @@ def terminal_trim(
                 label1 = 'S'+str(pos2)+label1
         
         if len(trim1) < minlen: # trim1 length fail
-            return('', '', None, None, label1) # Return empty read with label
+            return('', '', None, None, label1+umilabel) # Return empty read with label
         else:
             qualscore1 = quality_score(qtrm1)
             if qualscore1 < minqual: # trim1 quality fail
-                return('', '', None, None, label1) # Return empty read with NO label
+                return('', '', None, None, label1+umilabel) # Return empty read with NO label
         
-        return (trim1, qtrm1, None, None, label1) # Checks passed, return trimmed read
+        return (trim1, qtrm1, None, None, label1+umilabel) # Checks passed, return trimmed read
     else: # PAIRED-END: mate2 exists, find the best mate2 trim
         # (3) Calculate 2 possible forward trims on mate2
         pos2 = 0
@@ -861,7 +862,7 @@ def terminal_trim(
         
         # Determine which of the two trims above is better
         if trimtype1 == -1 and trimtype2 == -1: # No trimming was performed at all
-            return (mate1, qual1, mate2, qual2, '')
+            return (mate1, qual1, mate2, qual2, ''+umilabel)
         
         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)
             # Check for complement of mate1's trim
@@ -878,9 +879,9 @@ def terminal_trim(
                 collapsed = collapse_reads(trim1, trimC, qtrm1, qtrmC, mm_rate, qualmask)
                 if collapsed != '': # Complementary trimming is compatible, output solo read
                     if len(qtrm1) == len(collapsed): # mate1 was the longer sequence
-                        return (collapsed, qtrm1, None, None, labelC)
+                        return (collapsed, qtrm1, None, None, labelC+umilabel)
                     else: # mate2 was the longer sequence
-                        return (collapsed, qtrmC, None, None, label1)
+                        return (collapsed, qtrmC, None, None, label1+umilabel)
                 else: # Pick a solo output with the higher quality score
                     qualscore1 = quality_score(qtrm1)
                     qualscoreC = quality_score(qtrmC)
@@ -888,17 +889,17 @@ def terminal_trim(
                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
                             return('', '', None, None, '') # Return empty read
                         else: # trimC pass
-                            return(trimC, qtrmC, None, None, labelC)
+                            return(trimC, qtrmC, None, None, labelC+umilabel)
                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
                         return(trim1, qtrm1, None, None, label1)
                     else: # both pass
                         if qualscore1 >= qualscoreC:
-                            return(trim1, qtrm1, None, None, label1)
+                            return(trim1, qtrm1, None, None, label1+umilabel)
                         else:
-                            return(trimC, qtrmC, None, None, labelC)
+                            return(trimC, qtrmC, None, None, labelC+umilabel)
             else: # Could not find complementary trim
                 if len(trim1) < minlen or quality_score(qtrm1) < minqual: # Trimmed length is too short to be usable
-                    return(mate2, qual2, None, None, '') # Return empty read
+                    return(mate2, qual2, None, None, ''+umilabel) # Return empty read
             
             # Check if the original trim was compatible)
             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim
@@ -918,9 +919,9 @@ def terminal_trim(
                 collapsed = collapse_reads(trim2, trimC, qtrm2, qtrmC, mm_rate, qualmask)
                 if collapsed != '': # Complementary trimming is compatible, output solo read
                     if len(qtrm2) == len(collapsed): # mate1 was the longer sequence
-                        return (collapsed, qtrm2, None, None, labelC)
+                        return (collapsed, qtrm2, None, None, labelC+umilabel)
                     else: # mate1 was the longer sequence
-                        return (collapsed, qtrmC, None, None, label2)
+                        return (collapsed, qtrmC, None, None, label2+umilabel)
                 else: # Pick the higher quality solo-mapper
                     qualscore2 = quality_score(qtrm2)
                     qualscoreC = quality_score(qtrmC)
@@ -928,17 +929,17 @@ def terminal_trim(
                         if len(trimC) < minlen or qualscoreC < minqual: # trimC fail
                             return('', '', None, None, '') # Return empty read
                         else: # trimC pass
-                            return(trimC, qtrmC, None, None, labelC)
+                            return(trimC, qtrmC, None, None, labelC+umilabel)
                     elif len(trimC) < minlen or qualscoreC < minqual: # trim2 pass, trimC fail
-                        return(trim2, qtrm2, None, None, label2)
+                        return(trim2, qtrm2, None, None, label2+umilabel)
                     else: # both pass
                         if qualscore2 >= qualscoreC:
-                            return(trim2, qtrm2, None, None, label2)
+                            return(trim2, qtrm2, None, None, label2+umilabel)
                         else:
-                            return(trimC, qtrmC, None, None, labelC)
+                            return(trimC, qtrmC, None, None, labelC+umilabel)
             else: # Could not find complementary trim
                 if len(trim2) < minlen or quality_score(qtrm2) < minqual: # Trimmed length is too short to be usable
-                    return(mate1, qual1, None, None, '') # Return empty read
+                    return(mate1, qual1, None, None, ''+umilabel) # Return empty read
             
             # Check if the original trim was compatible)
             if trimtype1 == trimtype2: # Incompatible two-headed or two-tailed trim
@@ -948,9 +949,6 @@ def terminal_trim(
         label = label2+label1
     else:
         label = label1+label2
-    
-    if len(umilabel)>0:
-        label = label+umilabel
     
     reverse = reads_are_reversed(trimtype1,trimtype2)
     if reverse:
@@ -968,7 +966,7 @@ def terminal_trim(
                 # One fully trimmed and one fully untrimmed read exist. This is uninformative as an end
                 label = ''
 
-    return (trim1, qtrm1, trim2, qtrm2, label)
+    return (trim1, qtrm1, trim2, qtrm2, label+umilabel)
 
 # Importing a FASTA file as a genome object
 cpdef import_genome(str genome_FASTA, str split_on=' ', bint keep_case=True, bint indexed=False):
