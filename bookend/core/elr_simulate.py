@@ -47,7 +47,7 @@ class ELRsimulator:
         )
     
     def generate_reads():
-        anno_dict = self.dataset.reference.
+        anno_dict = self.dataset.reference
         prob_dict = self.parse_abundance_file(args.TPM)
         chroms_dict = {}
         reverse_chroms_dict = {}

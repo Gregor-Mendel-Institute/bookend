@@ -1673,7 +1673,7 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
     s_tag = False
     e_tag = False
     if tagsplit in string: # If _TAG= exists in the read name, add these TAGS to the readtype
-        ID_string = string.split(tagsplit)[-1].upper()
+        ID_string = string.split('_UMI=')[0].split(tagsplit)[-1].upper()
         if ID_string != '':
             ID_length = [int(i) for i in ID_string[1:].split('E') if i.isdigit()]
     else:
