@@ -959,7 +959,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         for chrom in object_dict.keys():
             object_dict[chrom].sort()
             for item in object_dict[chrom]:
-                item.attributes['TPM'] = round(item.weight/total_coverage*1000000,2)
+                item.attributes['TPM'] = round(item.weight/total_coverage*1000000,2) if total_coverage>0 else 0
                 if format in ['ELR','BED']:
                     item.attributes['S.reads'] = item.attributes['TPM'] if item.s_tag else 0
                     item.attributes['S.capped'] = item.attributes['TPM'] if item.capped else 0
