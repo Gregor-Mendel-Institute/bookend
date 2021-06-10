@@ -1175,8 +1175,8 @@ cdef list get_block_ranges(str chromStart, str blockStarts, str blockSizes):
     cdef list sizes, starts, block_ranges
     cdef int c, i, number_of_blocks, l, r, start, size
     cdef str s
-    sizes = [int(s) for s in blockSizes.split(',')]
-    starts = [int(s) for s in blockStarts.split(',')]
+    sizes = [int(s) for s in blockSizes.rstrip(',').split(',')]
+    starts = [int(s) for s in blockStarts.rstrip(',').split(',')]
     c = int(chromStart)
     number_of_blocks = len(sizes)
     block_ranges =  [()] * number_of_blocks
