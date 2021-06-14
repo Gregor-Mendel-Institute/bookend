@@ -195,13 +195,11 @@ class AssemblyClassifier:
             
             reflen = ref.get_length()
             shared_bases = transcript.shared_bases(ref)
-            diff5p = None
-            diff3p = None
+            left_diff = transcript.ranges[0][0]-ref.ranges[0][0]
+            right_diff = transcript.ranges[-1][1]-ref.ranges[-1][1]
+            diff5p = left_diff if transcript.strand == 1 else right_diff
+            diff3p = right_diff if transcript.strand == 1 else left_diff
             if transcript.splice_match(ref, ignore_ends=True):
-                left_diff = transcript.ranges[0][0]-ref.ranges[0][0]
-                right_diff = transcript.ranges[-1][1]-ref.ranges[-1][1]
-                diff5p = left_diff if transcript.strand == 1 else right_diff
-                diff3p = right_diff if transcript.strand == 1 else left_diff
                 if abs(left_diff) <= self.end_buffer and abs(right_diff) <= self.end_buffer:
                     match_type = 8 # full_match
                 else:
