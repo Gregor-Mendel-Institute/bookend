@@ -16,7 +16,7 @@ if __name__ == '__main__':
 class AssemblyClassifier:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref')
+        self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p')
         self.args = args
         self.output = self.args['OUT']
         self.end_buffer = self.args['END_BUFFER']
@@ -54,7 +54,7 @@ class AssemblyClassifier:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
-        self.output_file.write('assembly_id\tclassification\tref_match\tref_gene\tassembly_len\tref_len\toverlap_len\tcov\tS.reads\tS.capped\tE.reads\n')
+        self.output_file.write('assembly_id\tclassification\tref_match\tref_gene\tassembly_len\tref_len\toverlap_len\tdiff5p\tdiff3p\tcov\tS.reads\tS.capped\tE.reads\n')
         self.dataset.source_array = ['reference', 'assembly']
         self.generator = self.dataset.generator
         self.locus_counter = 0
@@ -115,7 +115,7 @@ class AssemblyClassifier:
         """
         for transcript in input_transcripts:
             match_data = self.calculate_match_type(transcript, reference_transcripts)
-            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+            classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
                 transcript.attributes['transcript_id'],
                 self.match_types[match_data.matchtype],
                 match_data.transcript,
@@ -123,6 +123,8 @@ class AssemblyClassifier:
                 match_data.tlen,
                 match_data.reflen,
                 match_data.exonoverlap,
+                match_data.diff5p,
+                match_data.diff3p,
                 round(float(transcript.attributes.get('cov', 0)),1),
                 round(float(transcript.attributes.get('S.reads', 0)),1),
                 round(float(transcript.attributes.get('S.capped', 0)),1),
@@ -191,10 +193,14 @@ class AssemblyClassifier:
             
             reflen = ref.get_length()
             shared_bases = transcript.shared_bases(ref)
+            diff5p = None
+            diff3p = None
             if transcript.splice_match(ref, ignore_ends=True):
-                left_diff = abs(transcript.ranges[0][0]-ref.ranges[0][0])
-                right_diff = abs(transcript.ranges[-1][1]-ref.ranges[-1][1])
-                if left_diff <= self.end_buffer and right_diff <= self.end_buffer:
+                left_diff = transcript.ranges[0][0]-ref.ranges[0][0]
+                right_diff = transcript.ranges[-1][1]-ref.ranges[-1][1]
+                diff5p = left_diff if transcript.strand == 1 else right_diff
+                diff3p = right_diff if transcript.strand == 1 else left_diff
+                if abs(left_diff) <= self.end_buffer and abs(right_diff) <= self.end_buffer:
                     match_type = 8 # full_match
                 else:
                     match_type = 7 # exon_match
@@ -216,7 +222,7 @@ class AssemblyClassifier:
             if transcript.strand == 0 and match_type in [8, 7, 4]:
                 match_type = 1
             
-            new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen, ref)
+            new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen, ref, diff5p, diff3p)
             best_match = self.update_match(best_match, new_match)
         
         return best_match
