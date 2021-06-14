@@ -160,7 +160,9 @@ class AssemblyClassifier:
                             max(old_match.exonoverlap, new_match.exonoverlap),
                             max(old_match.reflen, new_match.reflen),
                             old_match.tlen,
-                            old_match.ref if old_match.exonoverlap > new_match.exonoverlap else new_match.ref
+                            old_match.ref if old_match.exonoverlap > new_match.exonoverlap else new_match.ref,
+                            old_match.diff5p if abs(old_match.diff5p) <= abs(new_match.diff5p) else new_match.diff5p,
+                            old_match.diff3p if abs(old_match.diff3p) <= abs(new_match.diff3p) else new_match.diff3p
                         )
                         return fused_match
         
@@ -185,7 +187,7 @@ class AssemblyClassifier:
             'full_match'  # 8 shares entire exon chan and ends
         """
         tlen = transcript.get_length()
-        best_match = self.match_data(0, 'NA', 'NA', 0, 0, tlen, None)
+        best_match = self.match_data(0, 'NA', 'NA', 0, 0, tlen, None, 'NA', 'NA')
         for ref in reference_transcripts:
             match_type = 0
             if not transcript.overlaps(ref):
