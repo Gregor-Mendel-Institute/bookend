@@ -87,7 +87,7 @@ cdef class Locus:
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
-            self.dead_end_penalty = 0.1
+            self.dead_end_penalty = 1
         else:
             self.dead_end_penalty = 0
         
