@@ -86,7 +86,7 @@ class Condenser:
             if total_bases > 0:
                 for transcript in locus.transcripts:
                     if self.passes_all_checks(transcript):
-                        self.output_transcripts(transcript, self.output_type)
+                        self.output_transcripts(transcript)
                         self.transcripts_written += 1
                         self.bases_used += transcript.attributes['bases']
             
