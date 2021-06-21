@@ -313,10 +313,9 @@ cdef class Locus:
     
     cpdef void enforce_cap_filter(self, int endtype):
         cdef int caps
-        cdef np.ndarray allstarts
-        if not self.require_cap:
-            return
-        
+        cdef float startcounts, capcounts
+        cdef np.ndarray allstarts allcaps
+        cdef EndRange rng
         if endtype == 0:
             caps = 4
         elif endtype == 2:
@@ -325,9 +324,18 @@ cdef class Locus:
             return
         
         allstarts = self.depth_matrix[endtype,:]+self.depth_matrix[caps,:]
+        for rng in self.end_ranges[endtype]:
+            startcounts = np.sum(allstarts[rng.left:rng.right])
+            capcounts = np.sum(self.depth_matrix[caps, rng.left:rng.right])
+            rng.capped = capcounts
+            rng.weight = startcounts
+        
+        if not self.require_cap:
+            return
+        
         self.end_ranges[endtype] = [
             rng for rng in self.end_ranges[endtype]
-            if np.sum(self.depth_matrix[caps, rng.left:rng.right]) >= np.sum(allstarts[rng.left:rng.right])*self.cap_filter
+            if  rng.capped >= rng.weight*self.cap_filter
         ]
         return
     
