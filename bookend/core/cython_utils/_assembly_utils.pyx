@@ -478,7 +478,9 @@ cdef class Locus:
         if len(pos) == 0:
             return []
         elif len(pos) == 1:
-            return [EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)]
+            e = EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)
+            e.positions = Counter({pos[0]:vals[0]})
+            return [e]
         
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
         if endtype in [0, 3]:
