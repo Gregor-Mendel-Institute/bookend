@@ -314,7 +314,7 @@ cdef class Locus:
     cpdef void enforce_cap_filter(self, int endtype):
         cdef int caps
         cdef float startcounts, capcounts
-        cdef np.ndarray allstarts allcaps
+        cdef np.ndarray allstarts, allcaps
         cdef EndRange rng
         if endtype == 0:
             caps = 4
