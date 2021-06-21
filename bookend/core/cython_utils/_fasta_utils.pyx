@@ -360,7 +360,7 @@ cpdef int IUPACham(array.array a, array.array b, int stop_at=-1):
     
     return ham
 
-cpdef bint oligo_match(array.array a, array.array b, float mm_rate):
+cpdef bint oligo_match(array.array a, array.array b, float mm_rate, int min_oligomer=8):
     """
     Returns a bool indicating if a sufficiently close match was found.
     For long oligos, allow a match <=mm_rate to any prefix of a >=half a's length
@@ -377,7 +377,7 @@ cpdef bint oligo_match(array.array a, array.array b, float mm_rate):
     if len_A != len_B:
         return False
     
-    minmatch = min(len_A, 10)
+    minmatch = min(len_A, min_oligomer)
     max_ham = int(len_A*mm_rate)
     ham = 0
     for i in range(len_A):

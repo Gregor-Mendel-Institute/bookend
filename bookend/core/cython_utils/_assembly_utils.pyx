@@ -566,7 +566,7 @@ cdef class Locus:
                     bestrng = rng
                     bestdist = dist
         
-        bestrng.add(pos, weight, capped)
+        # bestrng.add(pos, weight, capped)
         return bestrng
     
     cpdef str span_to_string(self, (int, int) span):
