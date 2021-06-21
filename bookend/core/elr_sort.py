@@ -26,7 +26,7 @@ class ELRsorter:
                 sys.exit(1)
 
     def run(self):
-        if self.output != 'stdout':
+        if self.output != 'stdout' and __name__ == '__main__':
             print(self.display_options())
         
         self.process_input()

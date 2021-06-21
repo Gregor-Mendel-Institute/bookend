@@ -88,10 +88,10 @@ class ELRcombiner:
             output.write('{}\n'.format(line.rstrip()))
     
     def run(self):
-        if self.output != 'stdout':
+        if self.output != 'stdout' and __name__ == '__main__':
             print(self.display_options())
         
-        for c in  self.combine_files(self.input, self.output_file):pass
+        for c in self.combine_files(self.input, self.output_file):pass
         
         if self.output != 'stdout':
             print(self.display_summary())

@@ -147,6 +147,23 @@ combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=N
 combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")
 combine_parser.set_defaults(object='ELRcombiner')
 
+
+### assemble.py ###
+condense_parser = subparsers.add_parser('condense',help="Partial assembly an end-labeled read (ELR) file. Outputs all loci (no filters) to a new sorted ELR.")
+condense_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend_assembly.gtf', help="Destination file for assembly. File extension (bed, elr, gtf) determines output type.")
+condense_parser.add_argument('--max_gap', dest='MAX_GAP', type=int, default=50, help="Largest gap size to tolerate (nucleotides).")
+condense_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=50, help="Largest distance between end-labeled reads to consider the same cluster (nucleotides).")
+condense_parser.add_argument('--min_overhang', dest='MIN_OVERHANG', type=int, default=3, help="Smallest overhang to count for a read overlapping two exon fragments (number of nucleotides).")
+condense_parser.add_argument('--min_cov', dest='MIN_COV', type=float, default=1, help="Minimum coverage filter to remove low-evidence transcript models.")
+condense_parser.add_argument('--min_intron_len', dest='MIN_INTRON_LEN', type=int, default=50, help="Minimum length for an intron (nucleotides)")
+condense_parser.add_argument('--min_len', dest='MINLEN', type=int, default=50, help="Minimum output transcript length (nucleotides).")
+condense_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude ends, juctions, or transcripts that contribute < this proportion. (Used as a signal threshold)")
+condense_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
+condense_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
+condense_parser.add_argument(dest='INPUT', type=str, help="Input single ELR filepath. MUST be coordinate-sorted.")
+condense_parser.set_defaults(object='Condenser')
+
+
 ### elr_to_bed.py ###
 elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)
 elr_to_bed_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")

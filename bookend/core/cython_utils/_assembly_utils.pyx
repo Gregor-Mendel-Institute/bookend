@@ -52,7 +52,7 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
-    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose, simplify
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
@@ -62,7 +62,7 @@ cdef class Locus:
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -84,6 +84,7 @@ cdef class Locus:
         self.require_cap = require_cap
         self.splittable = splittable
         self.verbose = verbose
+        self.simplify = simplify
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
@@ -1216,7 +1217,7 @@ cdef class Locus:
     
     cpdef void assemble_transcripts(self):
         if self.graph is not None:
-            self.graph.assemble(self.minimum_proportion)
+            self.graph.assemble(self.minimum_proportion, self.simplify)
             counter = 1
             for path in self.graph.paths:
                 self.transcripts += self.convert_path(path, counter)

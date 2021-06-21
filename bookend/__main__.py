@@ -30,6 +30,9 @@ def import_object(object_name):
     elif object_name == 'EndLabeler':
         from .core.fastq_end_label import EndLabeler
         objectClass = EndLabeler
+    elif object_name == 'Condenser':
+        from .core.elr_condense import Condenser
+        objectClass = Condenser
     elif object_name == 'BAMtoELRconverter':
         from .core.bam_to_elr import BAMtoELRconverter
         objectClass = BAMtoELRconverter
