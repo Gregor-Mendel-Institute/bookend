@@ -137,7 +137,7 @@ cdef class Locus:
             if len(self.splits) > 0:
                 if self.verbose:print('({} subchunks)'.format(len(self.splits)+1), end=" ")
                 for subchunk in ru.generate_subchunks(list_of_reads, self.splits):
-                    if ru.has_ends(subchunk, self.require_cap):
+                    if ru.has_ends(subchunk, self.require_cap) or self.allow_incomplete:
                         self.chunk_number += 1
                         sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False)
                         self.transcripts += sublocus.transcripts
@@ -1202,7 +1202,7 @@ cdef class Locus:
         if reduce: # Split graph into connected components and solve each on its own
             self.collapse_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter, allow_incomplete=self.allow_incomplete)
     
     cpdef void assemble_transcripts(self):
         if self.graph is not None:

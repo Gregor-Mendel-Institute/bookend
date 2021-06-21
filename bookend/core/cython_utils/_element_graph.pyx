@@ -16,8 +16,8 @@ cdef class ElementGraph:
     cdef Element emptyPath
     cdef public float bases, input_bases, dead_end_penalty, intron_filter
     cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
-    cdef public bint no_ends, ignore_ends, naive, partial_coverage
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1, max_isos=10):
+    cdef public bint no_ends, ignore_ends, naive, partial_coverage, allow_incomplete
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1, max_isos=10, allow_incomplete=False):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -36,6 +36,7 @@ cdef class ElementGraph:
         self.intron_filter = intron_filter
         self.partial_coverage = partial_coverage
         self.max_isos = max_isos
+        self.allow_incomplete = allow_incomplete
         if self.naive:
                 source_weight_array = np.sum(source_weight_array, axis=1, keepdims=True)
         
@@ -330,7 +331,7 @@ cdef class ElementGraph:
         # REMOVAL ROUND 1: INCOMPLETE ASSEMBLIES
         number_of_paths = len(self.paths)
         bad_paths = np.zeros(number_of_paths, dtype=np.bool)
-        if self.ignore_ends: # Incomplete paths are those that have gaps
+        if self.ignore_ends or self.allow_incomplete: # Incomplete paths are those that have gaps
             for i in range(number_of_paths):
                 bad_paths[i] = self.paths[i].has_gaps
         else: # To be considered complete, path must have no gaps AND a start and end site
