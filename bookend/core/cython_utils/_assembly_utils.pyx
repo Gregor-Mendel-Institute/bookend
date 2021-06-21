@@ -1293,9 +1293,6 @@ cdef class Locus:
                         S_info['S.capped'] = round(S.capped,1)
                         S_info['S.left'] = span[0] + self.leftmost
                         S_info['S.right'] = span[1] + self.leftmost + 1
-                        if S_info['S.capped'] >= S_info['S.reads']*self.cap_filter:
-                            T.capped = True
-                        
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
@@ -1318,7 +1315,7 @@ cdef class Locus:
             
             T.attributes.update(S_info)
             T.attributes.update(E_info)
-            if T.attributes['S.capped'] > 0 and T.attributes['S.capped'] >= T.attributes['S.reads']*.1:
+            if T.attributes['S.capped'] > 0 and T.attributes['S.capped'] >= T.attributes['S.reads']*self.cap_filter:
                 T.capped = True
     
     cpdef void merge_reads(self, int child_index, int parent_index):
