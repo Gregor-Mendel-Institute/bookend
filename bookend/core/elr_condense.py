@@ -5,7 +5,7 @@ import sys
 import time
 import bookend.core.cython_utils._rnaseq_utils as ru
 import bookend.core.cython_utils._assembly_utils as au
-from bookend.core.elr_sort import ELRcombiner
+from bookend.core.elr_sort import ELRsorter
 
 if __name__ == '__main__':
     sys.path.append('../../bookend')
