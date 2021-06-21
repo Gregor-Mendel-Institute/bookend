@@ -211,7 +211,12 @@ class Assembler:
     def run(self):
         """Executes end labeling on all reads."""
         print(self.display_options())
+        wrote_header = self.output_type == 'gtf'
         for locus in self.generator:
+            if not wrote_header:
+                self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
+                wrote_header = True
+            
             self.process_entry(locus)
         
         if len(self.input) == 1:
