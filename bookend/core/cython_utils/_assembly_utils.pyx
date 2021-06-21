@@ -62,7 +62,7 @@ cdef class Locus:
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.1, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -1293,6 +1293,9 @@ cdef class Locus:
                         S_info['S.capped'] = round(S.capped,1)
                         S_info['S.left'] = span[0] + self.leftmost
                         S_info['S.right'] = span[1] + self.leftmost + 1
+                        if S_info['S.capped'] >= S_info['S.reads']*self.cap_filter:
+                            T.capped = True
+                        
                         if s_pos != first: # S pos was replaced
                             if T.strand == 1:
                                 T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
