@@ -37,8 +37,8 @@ class Condenser:
         self.output_type = 'elr'
         self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
         self.chunk_counter = 0
-        self.transcripts_written
-        self.bases_used
+        self.transcripts_written = 0
+        self.bases_used = 0
         self.output_temp = open(self.output+'.tmp', 'w')
         #self.output_file = open(self.output,'w')
     
