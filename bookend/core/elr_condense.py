@@ -3,6 +3,7 @@
 
 import sys
 import time
+import os
 import bookend.core.cython_utils._rnaseq_utils as ru
 import bookend.core.cython_utils._assembly_utils as au
 from bookend.core.elr_sort import ELRsorter
@@ -46,11 +47,12 @@ class Condenser:
         self.output_temp.close()
         sorter = ELRsorter({'INPUT':self.output+'.tmp','OUT':self.output,'FORCE':True})
         sorter.run()
+        os.remove(self.output+'.tmp')
     
     def output_transcripts(self, transcript):
         """Writes the RNAseqMapping object 'transcript' to an output stream,
         formatted as output_type."""
-        output_line = transcript.write_as_elr()
+        output_line = transcript.write_as_elr(condense=True)
         self.output_temp.write(output_line+'\n')
 
     def process_entry(self, chunk):

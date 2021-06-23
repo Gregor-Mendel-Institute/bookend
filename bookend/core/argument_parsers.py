@@ -17,6 +17,7 @@ Subcommands (use -h/--help for more info):
     label    (Label 5' and 3' ends in a FASTQ file)
     elr      (Convert a BAM/SAM file to the end-labeled read format)
     assemble (Assemble transcripts from aligned end-labeled reads)
+    condense (Partial assembly that leaves keeps all fragments; use for meta-assembly)
     classify (Compare an assembly to the transcripts of a reference annotation)
     
     --end-labeled read (ELR) operations--

@@ -14,11 +14,11 @@ ctypedef np.float32_t float32
 ##############################################
 # Object for defining an RNA sequencing read #
 ##############################################
-ELdata = namedtuple('ELdata', 'chrom source strand ranges splice s_tag e_tag capped weight')
+ELdata = namedtuple('ELdata', 'chrom source strand ranges splice s_tag e_tag capped weight condensed')
 cdef class RNAseqMapping():
     cdef public int chrom, source, strand, s_len, e_len
     cdef public list ranges, splice
-    cdef public bint s_tag, e_tag, capped, complete, is_reference
+    cdef public bint s_tag, e_tag, capped, complete, is_reference, condensed
     cdef public dict attributes
     cdef public (int, int) span
     cdef public float weight, coverage
@@ -32,6 +32,7 @@ cdef class RNAseqMapping():
         self.strand = input_data.strand
         self.ranges = input_data.ranges
         self.splice = input_data.splice
+        self.condensed = input_data.condensed
         if self.strand == 0: # Terminal tag information is meaningless for nonstranded reads
             self.s_tag = self.e_tag = self.capped = False
         else:
@@ -283,61 +284,83 @@ cdef class RNAseqMapping():
         self.span = (self.left(), self.right())
         return True
     
-    def get_node_labels(self, record_artifacts=False):
-        """Returns a string with one label for each edge of each range in self.ranges."""
-        if self.strand == 1:
-            gapchar = 'DA'
-            if self.s_tag:
-                if self.capped:
-                    startchar = 'C'
-                else:
-                    startchar = 'S'
-            else:
-                if record_artifacts and self.s_len > 0:
-                    startchar = 's'
-                else:
-                    startchar = '.'
+    # cpdef get_node_labels(self, bint record_artifacts=False, bint condense=False):
+    #     """Returns a string with one label for each edge of each range in self.ranges."""
+    #     if self.strand == 1:
+    #         gapchar = 'DA'
+    #         if self.s_tag:
+    #             if self.capped:
+    #                 startchar = 'C'
+    #             else:
+    #                 startchar = 'S'
+    #         else:
+    #             if record_artifacts and self.s_len > 0:
+    #                 startchar = 's'
+    #             else:
+    #                 startchar = '.'
             
-            if self.e_tag:
-                endchar = 'E'
-            else:
-                if record_artifacts and self.e_len > 0:
-                    endchar = 'e'
-                else:
-                    endchar = '.'
-        elif self.strand == -1:
-            gapchar = 'AD'
-            if self.s_tag:
-                if self.capped:
-                    endchar = 'C'
-                else:
-                    endchar = 'S'
-            else:
-                if record_artifacts and self.s_len > 0:
-                    endchar = 's'
-                else:
-                    endchar = '.'
+    #         if self.e_tag:
+    #             endchar = 'E'
+    #         else:
+    #             if record_artifacts and self.e_len > 0:
+    #                 endchar = 'e'
+    #             else:
+    #                 endchar = '.'
+    #     elif self.strand == -1:
+    #         gapchar = 'AD'
+    #         if self.s_tag:
+    #             if self.capped:
+    #                 endchar = 'C'
+    #             else:
+    #                 endchar = 'S'
+    #         else:
+    #             if record_artifacts and self.s_len > 0:
+    #                 endchar = 's'
+    #             else:
+    #                 endchar = '.'
             
-            if self.e_tag:
-                startchar = 'E'
-            else:
-                if record_artifacts and self.e_len > 0:
-                    startchar = 'e'
-                else:
-                    startchar = '.'
-        else:
-            gapchar = '..'
-            startchar = endchar = '.'
-            if record_artifacts:
-                if self.s_len > 0:
-                    startchar = 's'
+    #         if self.e_tag:
+    #             startchar = 'E'
+    #         else:
+    #             if record_artifacts and self.e_len > 0:
+    #                 startchar = 'e'
+    #             else:
+    #                 startchar = '.'
+    #     else:
+    #         gapchar = '..'
+    #         startchar = endchar = '.'
+    #         if record_artifacts:
+    #             if self.s_len > 0:
+    #                 startchar = 's'
                 
-                if self.e_len > 0:
-                    endchar = 'e'
+    #             if self.e_len > 0:
+    #                 endchar = 'e'
         
-        return(''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar]))
+    #     return(''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar]))
+
+    cpdef str get_node_labels(self, bint record_artifacts=False, bint condense=False):
+        """Returns a string with one label for each edge of each range in self.ranges."""
+        cdef str startchar, endchar, gapchar
+        gapchar = ['AD','..','DA'][1+self.strand]
+        startchar = ['.',['S','C'][self.capped]][int(self.s_tag or (record_artifacts and self.s_len > 0))]
+        endchar = ['.','E'][int(self.e_tag or (record_artifacts and self.e_len > 0))]
+        if record_artifacts:
+            if startchar != '.':
+                startchar = '>'
+            
+            if endchar != '.':
+                endchar = '<'
+        
+        if self.strand == -1:
+            startchar, endchar = endchar, startchar
+
+        if condense:
+            startchar = startchar.lower()
+            endchar = endchar.lower()
+        
+        return ''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar])
     
-    cpdef write_as_elr(self, as_string=True, record_artifacts=False):
+    cpdef write_as_elr(self, bint as_string=True, bint record_artifacts=False, bint condense=False):
         """Returns a string that represents the ReadObject
         in the end-labeled read (ELR) format"""
         cdef str elr_strand, labels
@@ -350,7 +373,7 @@ cdef class RNAseqMapping():
         
         block_ends = flatten(self.ranges)
         lengths = [block_ends[i]-block_ends[i-1] for i in range(1,len(block_ends))]
-        labels = self.get_node_labels(record_artifacts)
+        labels = self.get_node_labels(record_artifacts, condense)
         EL_CIGAR = ''.join([str(a)+str(b) for a,b in zip(labels,lengths+[''])])
         read_len = self.right() - self.left()
         elr_line = [self.chrom, self.left(), read_len, elr_strand, EL_CIGAR, self.source, round(self.weight,2)]
@@ -359,10 +382,10 @@ cdef class RNAseqMapping():
         else:
             return elr_line
      
-    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None, condense=False):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
-        labels = self.get_node_labels(record_artifacts)
+        labels = self.get_node_labels(record_artifacts, condense)
         bed_strand = '.'
         if self.strand == 1:
             bed_strand = '+'
@@ -1051,7 +1074,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         for child in children:
             ranges += [child.span]
 
-        input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1)
+        input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1, False)
         mapping_object = RNAseqMapping(input_data, copy.copy(parent.attributes))
         mapping_object.attributes['transcript_id'] = child.transcript_id
         if 'cov' in mapping_object.attributes.keys():
@@ -1202,7 +1225,7 @@ cdef parse_ELR_line(str elr_line):
     Example:
       0 6787 1950 - E282A87D294A113D86A586D90A91D48A129D144S 0 1.0
     """
-    cdef str chrom_num, chromStart, read_len, elr_strand, EL_CIGAR, source_num, weight_string
+    cdef str chrom_num, chromStart, read_len, elr_strand, EL_CIGAR, source_num, weight_string, first, last
     cdef int chrom, source, startpos, strand, position, i, f, a, b, rightside, l_index
     cdef float weight
     cdef list label_indices, feature_lengths, ranges, splice
@@ -1243,24 +1266,15 @@ cdef parse_ELR_line(str elr_line):
     s_tag = False
     e_tag = False
     capped = False
-    if EL_CIGAR[0] == 'C':
-        s_tag = True
-        capped = True
-    elif EL_CIGAR[0] == 'S':
-        s_tag = True
-    elif EL_CIGAR[-1] == 'C':
-        s_tag = True
-        capped = True
-    elif EL_CIGAR[-1] == 'S':
-        s_tag = True
-    
-    if EL_CIGAR[0] == 'E':
-        e_tag = True
-    elif EL_CIGAR[-1] == 'E':
-        e_tag = True
+    first = EL_CIGAR[0].upper()
+    last = EL_CIGAR[-1].upper()
+    condensed = first != EL_CIGAR[0] or last != EL_CIGAR[-1]
+    s_tag = first in ['C', 'S'] or last in ['C','S']
+    capped = first == 'C' or last == 'C'
+    e_tag = first == 'E' or last == 'E'
     
     # chrom source strand ranges splice s_tag e_tag capped weight
-    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, condensed)
 
 cpdef list get_sources(list list_of_reads):
     cdef:
@@ -1307,6 +1321,8 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
             c_weight = float(read.attributes.get('C.reads', weight))
         else:
             weight = s_weight = e_weight = c_weight = read.weight
+            if read.condensed:
+                s_weight = e_weight = c_weight = 1
         
         if read.strand == 1:
             covrow = covp
@@ -1373,6 +1389,8 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
       Ath_chr1 6787 8737 AT1G01020.6 . - 6787 8737 0,0,0 6 282,294,86,90,48,144 0,369,776,1448,1629,1806
       Ath_chr1 6787 8737 . . - 0 0 109,74,116 6 282,294,86,90,48,144 0,369,776,1448,1629,1806 1.0 TAIR10.40 EADADADADADS
     """
+    cdef str first, last
+    cdef bint condensed
     bed_elements = bed_line.rstrip().split('\t')
     if len(bed_elements) == 15:
         chrom_string, chromStart, end, readname, score, bed_strand, mmnum, mmorder, rgb, blocknum, blockSizes, blockStarts, weight, source_string, label = bed_elements
@@ -1394,26 +1412,29 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
     else:
         strand = 0
     
+    condensed = False
     ranges = get_block_ranges(chromStart, blockStarts, blockSizes)
     if label is not None: # Determine what kind of end labels exist based on the label
+        first, last = label[0].upper(), label[-1].upper()
+        condensed = first != label[0] or last != label[-1]
         s_tag = e_tag = capped = False
         if strand == 1:
-            if label[0] == 'C':
+            if first == 'C':
                 s_tag = capped = True
-            elif label[0] == 'S':
+            elif first == 'S':
                 s_tag = True
             
-            if label[-1] == 'E':
+            if last == 'E':
                 e_tag = True
             
             splice = [True if i=='D' else False for i in label[1:-1:2]]
         elif strand == -1:
-            if label[-1] == 'C':
+            if last == 'C':
                 s_tag = capped = True
-            elif label[-1] == 'S':
+            elif last == 'S':
                 s_tag = True
             
-            if label[0] == 'E':
+            if first == 'E':
                 e_tag = True
             
             splice = [True if i=='A' else False for i in label[1:-1:2]]
@@ -1439,7 +1460,7 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
         source = None
     
     # chrom source strand ranges splice s_tag e_tag capped weight
-    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, condensed)
 
 cpdef RNAseqMapping elr_to_readobject(elr_line):
     """Converts an ELR line to an RNAseqMapping object
@@ -1866,7 +1887,7 @@ cdef class BAMobject:
                 strand = 0 # No strand information can be found
             
             # Generate a ReadObject with the parsed attributes above
-            read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2))
+            read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2), False)
             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
             current_mapping.e_len = e_tag_len
             current_mapping.s_len = s_tag_len
