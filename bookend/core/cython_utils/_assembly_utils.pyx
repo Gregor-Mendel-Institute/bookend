@@ -525,7 +525,7 @@ cdef class Locus:
                 prohibit_pos = -1
                 break
         
-        for p,v in filtered_pos[1:]: # Iterate over all positions that passed the threshold
+        for p,v,r in filtered_pos[1:]: # Iterate over all positions that passed the threshold
             passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
             if passed_prohibit or p - self.end_extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
