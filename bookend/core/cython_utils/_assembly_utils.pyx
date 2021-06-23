@@ -350,6 +350,7 @@ cdef class Locus:
         """
         cdef EndRange LR, RR
         cdef int ltype, rtype
+        cdef float left_counts, right_counts
         cdef list newlefts, newrights
         cdef set added_lefts, added_rights
         newlefts, newrights = [], []
@@ -368,13 +369,15 @@ cdef class Locus:
         for LR in lefts:
             for RR in rights:
                 if RR.peak not in added_rights: # 
-                    if RR.right < LR.left:
+                    if RR.right < LR.left: # R is completely left of L
                         newrights += [RR]
                         added_rights.add(RR.peak)
                         continue
-                    elif RR.left > LR.right:
-                        newlefts += [LR]
-                        added_lefts.add(LR.peak)
+                    elif RR.left > LR.right: # R is completely right of L
+                        if LR.peak not in added_lefts:
+                            newlefts += [LR]
+                            added_lefts.add(LR.peak)
+                        
                         continue
                     
                     if LR.right > RR.left and LR.left < RR.right: # overlapping
@@ -393,13 +396,15 @@ cdef class Locus:
                                 if RR.right > splitRangeRight.peak: # Also split RR
                                     left_positions = Counter({k:v for k,v in RR.positions.items() if k < splitRangeRight.peak})
                                     right_positions = Counter({k:v for k,v in RR.positions.items() if k > splitRangeRight.peak})
+                                    left_counts = sum(left_positions.values())
+                                    right_counts = sum(right_positions.values())
                                     if len(left_positions) > 0:
-                                        splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), rtype)
+                                        splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], left_counts/(left_counts+right_counts), rtype)
                                         splitRangeLeft.positions = left_positions
                                         newrights += [splitRangeLeft]
                                     
                                     if len(right_positions) > 0:
-                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), rtype)
+                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], right_coutns/(left_counts+right_counts), rtype)
                                         splitRangeRight.positions = right_positions
                                         newrights += [splitRangeRight]
                                     
@@ -410,8 +415,9 @@ cdef class Locus:
                             added_lefts.add(LR.peak)
                             added_rights.add(RR.peak)
                         else: # Peaks are in the correct order, do nothing
-                            newlefts += [LR]
-                            added_lefts.add(LR.peak)
+                            if LR.peak not in added_lefts:
+                                newlefts += [LR]
+                                added_lefts.add(LR.peak)
             
             if LR.peak not in added_lefts:
                 newlefts += [LR]
