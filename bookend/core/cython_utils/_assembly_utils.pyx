@@ -404,7 +404,7 @@ cdef class Locus:
                                         newrights += [splitRangeLeft]
                                     
                                     if len(right_positions) > 0:
-                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], right_coutns/(left_counts+right_counts), rtype)
+                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], right_counts/(left_counts+right_counts), rtype)
                                         splitRangeRight.positions = right_positions
                                         newrights += [splitRangeRight]
                                     
