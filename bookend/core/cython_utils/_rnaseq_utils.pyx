@@ -345,10 +345,10 @@ cdef class RNAseqMapping():
         startchar = ['.',['S','C'][self.capped]][int(self.s_tag or (record_artifacts and self.s_len > 0))]
         endchar = ['.','E'][int(self.e_tag or (record_artifacts and self.e_len > 0))]
         if record_artifacts:
-            if startchar != '.':
+            if startchar != '.' and not self.s_tag:
                 startchar = '>'
             
-            if endchar != '.':
+            if endchar != '.'  and not self.e_tag:
                 endchar = '<'
         
         if self.strand == -1:
