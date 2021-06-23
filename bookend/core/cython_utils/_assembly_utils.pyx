@@ -1430,7 +1430,7 @@ cdef class Locus:
         capped = False
         weight = np.sum(element.source_weights)
         elementAttributes = {}
-        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight)
+        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, False)
         readObject = ru.RNAseqMapping(elementData, elementAttributes)
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
