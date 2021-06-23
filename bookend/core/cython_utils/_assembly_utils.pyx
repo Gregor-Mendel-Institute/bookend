@@ -250,7 +250,7 @@ cdef class Locus:
         """Estimate strand-specific coverage, then use it to generate an ordered array of
         positions where branching could occur in the overlap graph."""
         cdef:
-            np.ndarray strandratio, covstranded, strandedpositions, pos, vals, value_order
+            np.ndarray strandratio, covstranded, strandedpositions, pos, vals, rawvals, value_order
             float threshold_depth, cumulative_depth, cutoff
             int l, r, p, Sp, Ep, Sm, Em, covp, covm, covn
             (int, int) span
@@ -281,25 +281,29 @@ cdef class Locus:
             if endtype == Sp:
                 bpset = self.SPbp
                 pos = np.where(np.sum(self.depth_matrix[[Sp,Cp],],axis=0)>0)[0]
-                vals = np.power(self.depth_matrix[Sp, pos] + self.cap_bonus*self.depth_matrix[Cp, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
+                rawvals = self.depth_matrix[Sp, pos] + self.cap_bonus*self.depth_matrix[Cp, pos]
+                vals = np.power(rawvals, 2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
             elif endtype == Sm:
                 bpset = self.SMbp
                 pos = np.where(np.sum(self.depth_matrix[[Sm,Cm],],axis=0)>0)[0]
-                vals = np.power(self.depth_matrix[Sm, pos] + self.cap_bonus*self.depth_matrix[Cm, pos],2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
+                rawvals = self.depth_matrix[Sm, pos] + self.cap_bonus*self.depth_matrix[Cm, pos]
+                vals = np.power(rawvals, 2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
                 prohibited_positions = prohibited_minus
             elif endtype == Ep:
                 bpset = self.EPbp
                 pos = np.where(self.depth_matrix[endtype,]>0)[0]
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
+                rawvals = self.depth_matrix[endtype, pos]
+                vals = np.power(rawvals, 2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
             elif endtype == Em:
                 bpset = self.EMbp
                 pos = np.where(self.depth_matrix[endtype,]>0)[0]
-                vals = np.power(self.depth_matrix[endtype, pos],2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
+                rawvals = self.depth_matrix[endtype, pos]
+                vals = np.power(rawvals, 2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
                 prohibited_positions = prohibited_minus
             
-            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, endtype, prohibited_positions)
+            self.end_ranges[endtype] = self.make_end_ranges(pos, vals, rawvals, endtype, prohibited_positions)
             if endtype in [Sp, Sm]:
                 self.resolve_overlapping_ends(endtype)
                 self.enforce_cap_filter(endtype)
@@ -470,7 +474,7 @@ cdef class Locus:
         else:
             return True
     
-    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, int endtype, set prohibited_positions):
+    cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, np.ndarray rawvals, int endtype, set prohibited_positions):
         """Returns a list of tuples that (1) filters low-signal positions
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
@@ -478,17 +482,17 @@ cdef class Locus:
             np.ndarray value_order, passes_threshold
             EndRange e
             int p, maxp, prohibit_pos, i
-            float cumulative, threshold, v, maxv, weight
+            float cumulative, threshold, v, r, maxv, weight
             list filtered_pos, end_ranges
             (int, int) current_range
             bint passed_prohibit
-            dict positions
+            dict rawdict
         
         if len(pos) == 0:
             return []
         elif len(pos) == 1:
             e = EndRange(pos[0], pos[0]+1, pos[0], vals[0], endtype)
-            e.positions = Counter({pos[0]:vals[0]})
+            e.positions = Counter({pos[0]:rawvals[0]})
             return [e]
         
         passes_threshold = vals > self.minimum_proportion*np.sum(vals)
@@ -500,15 +504,15 @@ cdef class Locus:
         if np.sum(passes_threshold) == 0:
             return []
         
-        filtered_pos = [(p,v) for p,v in zip(pos[passes_threshold], vals[passes_threshold]) if p not in prohibited_positions]
+        filtered_pos = [(p,v,r) for p,v,r in zip(pos[passes_threshold], vals[passes_threshold], rawvals[passes_threshold]) if p not in prohibited_positions]
         if len(filtered_pos) == 0:
             return []
         
-        p,v = filtered_pos[0]
+        p,v,r = filtered_pos[0]
         maxv = v
         maxp = p
         weight = v
-        positions = {p:v}
+        rawdict = {p:r}
         current_range = (p, p+1)
         end_ranges = []
         prohibited = iter(sorted(prohibited_positions))
@@ -525,12 +529,12 @@ cdef class Locus:
             passed_prohibit = prohibit_pos > -1 and p > prohibit_pos
             if passed_prohibit or p - self.end_extend > current_range[1]:  # Must start a new range
                 e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
-                e.positions = Counter(positions)
+                e.positions = Counter(rawdict)
                 if self.passes_cap_filter(e):
                     end_ranges.append(e)
                 
                 current_range = (p, p+1)
-                positions = {p:v}
+                rawdict = {p:r}
                 maxp = p
                 maxv = v
                 weight = v
@@ -544,13 +548,13 @@ cdef class Locus:
                             break
             else:# Can continue the last range
                 current_range = (current_range[0], p+1)
-                positions[p] = v
+                rawdict[p] = r
                 weight += v
                 if v > maxv or (v == maxv and endtype in [1,2]):
                     maxv, maxp = v, p
         
         e = EndRange(current_range[0], current_range[1], maxp, weight, endtype)
-        e.positions = Counter(positions)
+        e.positions = Counter(rawdict)
         if self.passes_cap_filter(e):
             end_ranges.append(e)
         
