@@ -122,6 +122,8 @@ class ELRcombiner:
         elif file_list is None:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
+        else:
+            files = [open(f) for f in file_list]
         
         file_number = len(files)
         self.file_headers = [{}]*file_number
