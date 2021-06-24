@@ -123,6 +123,7 @@ class ELRcombiner:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
         
+        file_number = len(files)
         self.file_headers = [{}]*file_number
         current_lines = ['']*file_number
         self.chroms = []
