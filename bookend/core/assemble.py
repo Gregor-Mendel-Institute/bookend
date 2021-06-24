@@ -142,7 +142,7 @@ class Assembler:
                             for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
                                 source_cov[k] = v
                             
-                            self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov]+'\n'))
+                            self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov])+'\n')
                         
                         if self.verbose:
                             bases_used += transcript.attributes['bases']
