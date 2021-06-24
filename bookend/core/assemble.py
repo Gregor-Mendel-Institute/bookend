@@ -220,10 +220,12 @@ class Assembler:
         """Executes end labeling on all reads."""
         print(self.display_options())
         if self.cov_out:self.covfile=open(self.cov_out, 'w')
-        wrote_header = self.output_type == 'gtf'
+        wrote_header = False
         for locus in self.generator:
             if not wrote_header:
-                self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
+                if self.output_type != 'gtf':
+                    self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
+                
                 if self.cov_out:self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
                 wrote_header = True
             
