@@ -58,26 +58,6 @@ Each line is a read or read stack with six columns:
     weight: Read count (allows partial counts for multimappers)
 """
 
-ELRepilog = """
-ELCIGAR strings are Character|Number strings and one trailing character
-([CN]xC), where C is a label and N is a numeric length on the genome.
-Each C labels an end or gap in the alignment as one of the following:
-    S: start
-    s: start (low confidence)
-    C: start (capped)
-    E: end (polyA tail)
-    e: end (low confidence)
-    D: splice junction donor
-    A: splice junction acceptor
-    .: unspecified gap or end
-
-For example, a 50bp paired-end read of a 185-nt fragment would be
-    .50.85.50.
-A full 3-exon transcript could be described as:
-    S256D800A128D800A512E
-where the 3 exons are 256, 128, and 512 nucleotides,
-and the 2 introns are both 800 nucleotides.
-"""
 
 ### assemble.py ###
 assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)")
@@ -105,7 +85,7 @@ assemble_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR 
 assemble_parser.set_defaults(object='Assembler')
 
 ### bam_to_elr.py ###
-bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc formatter_class=RawTextHelpFormatter)
 bam_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, help="Filepath to write end-labeled file.")
 bam_to_elr_parser.add_argument("--source", dest='SOURCE', default=None, type=str, help="Name the source of BAM/SAM reads.")
 bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file")
@@ -130,7 +110,7 @@ bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/
 bam_to_elr_parser.set_defaults(object='BAMtoELRconverter')
 
 ### bed_to_elr.py ###
-bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
 bed_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, required=True, help="Filepath to write ELR file.")
 bed_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 bed_to_elr_parser.add_argument("--source", dest='SOURCE', help="Source of BED lines.", default=None, type=str)
@@ -142,7 +122,7 @@ bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
 bed_to_elr_parser.set_defaults(object='BEDtoELRconverter')
 
 ### elr_combine.py ###
-combine_parser = subparsers.add_parser('elr-combine',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, epilog=ELRepilog, formatter_class=RawTextHelpFormatter)
+combine_parser = subparsers.add_parser('elr-combine',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
 combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
 combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
 combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")

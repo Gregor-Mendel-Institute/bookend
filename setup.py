@@ -38,7 +38,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="bookend_rna", # Replace with your own username
-    version="0.1.1",
+    version="0.1.2",
     author="Michael A. Schon",
     author_email="michael.schon@gmi.oeaw.ac.at",
     description="End-guided transcript assembler for short and long RNA-seq reads.",
