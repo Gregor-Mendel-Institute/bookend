@@ -231,6 +231,9 @@ class Assembler:
         if len(self.input) == 1:
             self.output_file.close()
         
+        if self.cov_out:
+            self.covfile.close()
+        
         self.end_time = time.time()
         print(self.display_summary())
 
