@@ -18,7 +18,8 @@ class Assembler:
         """Parses input arguments for assembly"""
         self.start_time = time.time()
         self.output = args['OUT']
-        self.source = args['SOURCE']
+        self.source = 'bookend'
+        self.cov_out = args['COV_OUT']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
         self.end_cluster = args['END_CLUSTER']
@@ -97,7 +98,13 @@ class Assembler:
             output_line = transcript.write_as_gtf(self.dataset.chrom_array, 'bookend')
         
         self.output_file.write(output_line+'\n')
-
+        if self.cov_out:
+            source_cov = [0.]*len(self.dataset.source_array)
+            for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
+                source_cov[k] = valid
+            
+            self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov]+'\n'))
+    
     def process_entry(self, chunk):
         STOP_AT=float('inf')
         # STOP_AT=1000000
@@ -211,10 +218,12 @@ class Assembler:
     def run(self):
         """Executes end labeling on all reads."""
         print(self.display_options())
+        if self.cov_out:self.covfile=open(self.cov_out, 'w')
         wrote_header = self.output_type == 'gtf'
         for locus in self.generator:
             if not wrote_header:
                 self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
+                if self.cov_out:self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
                 wrote_header = True
             
             self.process_entry(locus)

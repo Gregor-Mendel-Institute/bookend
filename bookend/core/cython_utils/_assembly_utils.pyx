@@ -55,7 +55,7 @@ cdef class Locus:
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose, simplify
     cdef public tuple reads, frags
     cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
-    cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc
+    cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc, assembly_source_cov
     cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
     cdef public list transcripts, traceback, sources, subproblem_indices, splits
     cdef public object graph
@@ -1229,6 +1229,7 @@ cdef class Locus:
         if self.graph is not None:
             self.graph.assemble(self.minimum_proportion, self.simplify)
             counter = 1
+            self.assembly_source_cov = {}
             for path in self.graph.paths:
                 self.transcripts += self.convert_path(path, counter)
                 counter += 1
@@ -1379,6 +1380,7 @@ cdef class Locus:
         output = []
         gene_id = 'bookend.{}'.format(self.chunk_number)
         transcript_id = 'bookend.{}.{}'.format(self.chunk_number, transcript_number)
+        self.assembly_source_cov[transcript_id] = {k:element.source_weights[v] for k,v in self.source_lookup.items()}
         members = sorted(element.members)
         nonmembers = element.nonmembers
         N = element.maxIC

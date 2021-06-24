@@ -62,7 +62,7 @@ Each line is a read or read stack with six columns:
 ### assemble.py ###
 assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)")
 assemble_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend_assembly.gtf', help="Destination file for assembly. File extension (bed, elr, gtf) determines output type.")
-assemble_parser.add_argument('--source', dest='SOURCE', type=str, default='bookend', help="String to write in the source column of output GTF/ELR")
+assemble_parser.add_argument('--cov_out', dest='COV_OUT', type=str, default='bookend_cov.tsv', help="Destination for a TSV of coverage estimates for each transcript in each source.")
 assemble_parser.add_argument('--max_gap', dest='MAX_GAP', type=int, default=50, help="Largest gap size to tolerate (nucleotides).")
 assemble_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=200, help="Largest distance between end-labeled reads to consider the same cluster (nucleotides).")
 assemble_parser.add_argument('--min_overhang', dest='MIN_OVERHANG', type=int, default=3, help="Smallest overhang to count for a read overlapping two exon fragments (number of nucleotides).")
