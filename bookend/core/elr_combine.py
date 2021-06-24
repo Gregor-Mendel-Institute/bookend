@@ -98,6 +98,7 @@ class ELRcombiner:
     
     def combine_files(self, file_list, output, iterator=False):
         file_number = len(file_list)
+        temp_list = []
         if file_list is self.input:
             if not all([i[-3:].lower()=='elr' for i in self.input]):
                 print("\nERROR: all input files must be ELR format.")
@@ -108,12 +109,11 @@ class ELRcombiner:
                     os.mkdir(self.temp)
                 
                 number_of_chunks = ceil(file_number / self.file_limit)
-                temp_list = []
                 for c in range(number_of_chunks):
                     chunk = file_list[c::number_of_chunks]
                     tempname = '{}/tmp{}.elr'.format(self.temp,c)
                     temp_list.append(tempname)
-                    tempfile = open(tempname)
+                    tempfile = open(tempname,'w')
                     self.combine_files(chunk, tempfile)
                 
                 files = [open(f) for f in temp_list]
@@ -174,6 +174,12 @@ class ELRcombiner:
             else: # No more lines in this file
                 files[index].close()
                 finished_files += 1
+        
+        if len(temp_list) > 0: # Clean up temp directory
+            for temp_file in temp_list:
+                os.remove(temp_file)
+            
+            os.rmdir(self.temp)
     
     def display_options(self):
         """Returns a string describing all input args"""
