@@ -85,6 +85,7 @@ cdef class Locus:
         self.splittable = splittable
         self.verbose = verbose
         self.simplify = simplify
+        self.assembly_source_cov = {}
         if self.ignore_ends:
             self.dead_end_penalty = 1
         elif self.allow_incomplete:
@@ -142,6 +143,7 @@ cdef class Locus:
                         self.chunk_number += 1
                         sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False)
                         self.transcripts += sublocus.transcripts
+                        self.assembly_source_cov.update(sublocus.assembly_source_cov)
                         self.bases += sublocus.bases
             else:
                 self.generate_branchpoints()
@@ -1229,7 +1231,6 @@ cdef class Locus:
         if self.graph is not None:
             self.graph.assemble(self.minimum_proportion, self.simplify)
             counter = 1
-            self.assembly_source_cov = {}
             for path in self.graph.paths:
                 self.transcripts += self.convert_path(path, counter)
                 counter += 1
