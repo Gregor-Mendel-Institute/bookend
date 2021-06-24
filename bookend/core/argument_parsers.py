@@ -85,7 +85,7 @@ assemble_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR 
 assemble_parser.set_defaults(object='Assembler')
 
 ### bam_to_elr.py ###
-bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc formatter_class=RawTextHelpFormatter)
+bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
 bam_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, help="Filepath to write end-labeled file.")
 bam_to_elr_parser.add_argument("--source", dest='SOURCE', default=None, type=str, help="Name the source of BAM/SAM reads.")
 bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file")
