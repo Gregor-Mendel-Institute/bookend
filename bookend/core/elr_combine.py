@@ -114,7 +114,7 @@ class ELRcombiner:
                     tempname = '{}/tmp{}.elr'.format(self.temp,c)
                     temp_list.append(tempname)
                     tempfile = open(tempname,'w')
-                    self.combine_files(chunk, tempfile)
+                    for c in self.combine_files(chunk, tempfile):pass
                 
                 files = [open(f) for f in temp_list]
             else:
