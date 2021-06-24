@@ -140,7 +140,7 @@ class Assembler:
                         if self.cov_out:
                             source_cov = [0.]*len(self.dataset.source_array)
                             for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
-                                source_cov[k] = valid
+                                source_cov[k] = v
                             
                             self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov]+'\n'))
                         
