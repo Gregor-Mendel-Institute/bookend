@@ -98,12 +98,6 @@ class Assembler:
             output_line = transcript.write_as_gtf(self.dataset.chrom_array, 'bookend')
         
         self.output_file.write(output_line+'\n')
-        if self.cov_out:
-            source_cov = [0.]*len(self.dataset.source_array)
-            for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
-                source_cov[k] = valid
-            
-            self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov]+'\n'))
     
     def process_entry(self, chunk):
         STOP_AT=float('inf')
@@ -143,6 +137,13 @@ class Assembler:
                 for transcript in locus.transcripts:
                     if self.passes_all_checks(transcript):
                         self.output_transcripts(transcript, self.output_type)
+                        if self.cov_out:
+                            source_cov = [0.]*len(self.dataset.source_array)
+                            for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
+                                source_cov[k] = valid
+                            
+                            self.covfile.write('\t'.join([str(round(v,1)) for v in source_cov]+'\n'))
+                        
                         if self.verbose:
                             bases_used += transcript.attributes['bases']
                             transcripts_written += 1
