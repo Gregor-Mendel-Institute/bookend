@@ -138,11 +138,14 @@ class Assembler:
                     if self.passes_all_checks(transcript):
                         self.output_transcripts(transcript, self.output_type)
                         if self.cov_out:
-                            source_cov = [0.]*len(self.dataset.source_array)
-                            for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
-                                source_cov[k] = v
-                            
-                            self.covfile.write('{}\t{}\n'.format(transcript.attributes['transcript_id'], '\t'.join([str(round(v,1)) for v in source_cov])))
+                            if self.ignore_sources:
+                                self.covfile.write('{}\n'.format(round(transcript.coverage, 1)))
+                            else:
+                                source_cov = [0.]*len(self.dataset.source_array)
+                                for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():
+                                    source_cov[k] = v
+                                
+                                self.covfile.write('{}\t{}\n'.format(transcript.attributes['transcript_id'], '\t'.join([str(round(v,1)) for v in source_cov])))
                         
                         if self.verbose:
                             bases_used += transcript.attributes['bases']
@@ -226,7 +229,10 @@ class Assembler:
                 if self.output_type != 'gtf':
                     self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
                 
-                if self.cov_out:self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
+                if self.cov_out:
+                    if not self.ignore_sources:
+                        self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
+                
                 wrote_header = True
             
             self.process_entry(locus)
