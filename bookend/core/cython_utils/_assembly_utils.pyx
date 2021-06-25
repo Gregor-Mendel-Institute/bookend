@@ -1381,7 +1381,9 @@ cdef class Locus:
         output = []
         gene_id = 'bookend.{}'.format(self.chunk_number)
         transcript_id = 'bookend.{}.{}'.format(self.chunk_number, transcript_number)
-        self.assembly_source_cov[transcript_id] = {k:element.source_weights[v] for k,v in self.source_lookup.items()}
+        if not self.naive:
+            self.assembly_source_cov[transcript_id] = {k:element.source_weights[v] for k,v in self.source_lookup.items()}
+        
         members = sorted(element.members)
         nonmembers = element.nonmembers
         N = element.maxIC
