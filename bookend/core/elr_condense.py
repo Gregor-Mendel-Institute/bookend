@@ -26,6 +26,11 @@ class Condenser:
         self.cap_bonus = args['CAP_BONUS']
         self.minlen = args['MINLEN']
         self.input = args['INPUT']
+        if self.output is None:
+            self.output = self.input.replace('.elr', '.cond.elr')
+            if '.cond.elr' not in self.output:
+                self.output = self.output+'.cond.elr'
+        
         self.antisense_filter = 0.001
         if self.input_is_valid(self.input):
             self.file_type = self.file_extension(self.input)
