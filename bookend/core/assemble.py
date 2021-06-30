@@ -53,7 +53,7 @@ class Assembler:
                 self.file_type = self.file_extension(self.input)
                 if self.file_type in ['bam','sam']:
                     self.input_file = pysam.AlignmentFile(self.input)
-                    self.dataset = ru.RNAseqDataset(genome_fasta=self.genome, chrom_array=self.input_file.header.references)
+                    self.dataset = ru.RNAseqDataset(chrom_array=self.input_file.header.references)
                 else:
                     self.dataset = ru.RNAseqDataset()
                     self.input_file = open(self.input)
