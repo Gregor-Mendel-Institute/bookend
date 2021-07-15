@@ -1717,6 +1717,7 @@ cdef (bint, bint, int, int) parse_tag(str string, str tagsplit='_TAG='):
 cdef class BAMobject:
     cdef readonly RNAseqDataset dataset
     cdef readonly list input_lines
+    cdef readonly float error_rate
     cdef readonly bint ignore_ends, secondary, remove_noncanonical
     def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False, bint remove_noncanonical=False, float error_rate=0.1):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
@@ -1732,6 +1733,7 @@ cdef class BAMobject:
         self.ignore_ends = ignore_ends
         self.secondary = secondary
         self.remove_noncanonical = remove_noncanonical
+        self.error_rate = error_rate
     
     cpdef list generate_read(self):
         cdef:
@@ -1822,7 +1824,7 @@ cdef class BAMobject:
             except KeyError:
                 mdstring = str(len(seq))
             
-            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, error_rate)
+            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate)
             number_of_blocks = len(ranges)
             if number_of_blocks == 0: # No exons of passing quality were found
                 continue
