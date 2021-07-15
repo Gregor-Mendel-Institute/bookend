@@ -139,7 +139,7 @@ class Assembler:
                         self.output_transcripts(transcript, self.output_type)
                         if self.cov_out:
                             if self.ignore_sources:
-                                self.covfile.write('{}\n'.format(round(transcript.coverage, 1)))
+                                self.covfile.write('{}\t{}\n'.format(transcript.attributes['transcript_id'], round(transcript.coverage, 1)))
                             else:
                                 source_cov = [0.]*len(self.dataset.source_array)
                                 for k,v in locus.assembly_source_cov[transcript.attributes['transcript_id']].items():

@@ -592,14 +592,14 @@ cdef class RNAseqDataset():
         new_read = elr_to_readobject(elr_line)
         self.read_list.append(new_read)
     
-    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False):
+    cpdef add_read_from_BAM(self, bam_lines, bint ignore_ends=False, bint secondary=False, float error_rate=0.1):
         cdef list new_read_list
         cdef RNAseqMapping read
         cdef BAMobject BAM
         if type(bam_lines) is not list:
             bam_lines = [bam_lines]
         
-        BAM = BAMobject(self, bam_lines, ignore_ends, secondary, self.remove_noncanonical)
+        BAM = BAMobject(self, bam_lines, ignore_ends, secondary, self.remove_noncanonical, error_rate)
         new_read_list = BAM.generate_read()
         if len(new_read_list) > 0:
             read = new_read_list[0]
@@ -1718,7 +1718,7 @@ cdef class BAMobject:
     cdef readonly RNAseqDataset dataset
     cdef readonly list input_lines
     cdef readonly bint ignore_ends, secondary, remove_noncanonical
-    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False, bint remove_noncanonical=False):
+    def __init__(self, RNAseqDataset dataset, list input_lines, bint ignore_ends=False, bint secondary=False, bint remove_noncanonical=False, float error_rate=0.1):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
         Quality control of end labels:
         1) An improperly mapped 5'/3' end of a read should be stripped of its tag
@@ -1822,7 +1822,7 @@ cdef class BAMobject:
             except KeyError:
                 mdstring = str(len(seq))
             
-            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring)
+            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, error_rate)
             number_of_blocks = len(ranges)
             if number_of_blocks == 0: # No exons of passing quality were found
                 continue

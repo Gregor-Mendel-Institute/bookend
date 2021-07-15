@@ -106,6 +106,7 @@ bam_to_elr_parser.add_argument("--remove_noncanonical", dest='REMOVE_NONCANONICA
 bam_to_elr_parser.add_argument("--sj_shift", dest='SJ_SHIFT', default=2, type=int, help="Shift up to this many bases to find a canonical splice junction")
 bam_to_elr_parser.add_argument("--minlen_strict", dest='MINLEN_STRICT', default=18, type=int, help="Keep reads down to this length only if perfectly aligned.")
 bam_to_elr_parser.add_argument("--minlen_loose", dest='MINLEN_LOOSE', default=25, type=int, help="Keep reads down to this length if they passed alignment parameters.")
+bam_to_elr_parser.add_argument("--error_rate", dest='ERROR_RATE', default=0.10, type=float, help="Maximum allowed error rate (mismatches+indels) per exon.")
 bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/SAM file")
 bam_to_elr_parser.set_defaults(object='BAMtoELRconverter')
 

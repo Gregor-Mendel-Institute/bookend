@@ -31,6 +31,7 @@ class BAMtoELRconverter:
         self.minlen_strict = args['MINLEN_STRICT']
         self.minlen_loose = args['MINLEN_LOOSE']
         self.input = args['INPUT']
+        self.error_rate = args['ERROR_RATE']
         self.remove_noncanonical = args['REMOVE_NONCANONICAL']
         if self.start or self.end or self.capped:
             self.stranded = True
@@ -134,7 +135,7 @@ class BAMtoELRconverter:
 
     def process_entry(self, bam_lines):
         self.dataset.read_list = []
-        self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary)
+        self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
         if self.split: # Separate reads by their number of mappings to the genome
             mm_num = len(self.dataset.read_list)
             if mm_num not in self.output_dict.keys():
