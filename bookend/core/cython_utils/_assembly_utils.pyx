@@ -1160,7 +1160,7 @@ cdef class Locus:
         
         indices = np.array(simplified_indices, dtype=np.int32)
         self.subset_elements(indices)
-        self.ignore_ends:
+        if self.ignore_ends:
             self.overlap = calculate_overlap_matrix(self.membership, self.information_content, self.strand_array)
         else:
             self.overlap = calculate_overlap_matrix(self.membership[:,[-4,-1]+list(range(self.membership.shape[1]-4))+[-3,-2]], self.information_content, self.strand_array)
