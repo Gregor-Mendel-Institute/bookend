@@ -47,11 +47,12 @@ subparsers = main_parser.add_subparsers(title='subcommands',description='Choose 
 ELRdesc = """
 Converts file to a 'end labeled read' (ELR) format.
 ELR contains a two-component header: #C (chromosome) and #S (source).
-Each line is a read or read stack with six columns:
-    chromosome  position  strand  ELCIGAR  sample  weight
+Each line is a read or read stack with seven columns:
+    chromosome  position  length strand  ELCIGAR  sample  weight
 
     chromosome: Chromosome number, as indexed by the #C header
     position: 0-indexed position in chromosome
+    length: Distance between the leftmost and righmost mapped position
     strand: Inferred RNA strand; +, -, or . (unknown)
     ELCIGAR: String describing the mapped read (full description below)
     sample: Sample number, as indexed by the #S header

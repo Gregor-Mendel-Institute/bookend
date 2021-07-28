@@ -1294,7 +1294,7 @@ cpdef dict get_source_dict(list list_of_sources):
     source_lookup = dict(zip(sources, range(len(sources))))
     return source_lookup
 
-cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=False):
+cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=False, bint splice=True):
     """Stores a numpy array of feature-specific coverage depth for the read list.
     Populates an 11-row matrix:
     S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
@@ -1365,10 +1365,13 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
         else: # The read has no features other than non-stranded coverage
             covrow = covn
         
-        for span in read.ranges:
-            l = span[0] - leftmost
-            r = span[1] - leftmost
-            depth_matrix[covrow, l:r] += weight
+        if splice:
+            for span in read.ranges:
+                l = span[0] - leftmost
+                r = span[1] - leftmost
+                depth_matrix[covrow, l:r] += weight
+        else:
+            depth_matrix[covrow, read.span[0], read.span[1]] += weight
         
     return depth_matrix, J_plus, J_minus
 
