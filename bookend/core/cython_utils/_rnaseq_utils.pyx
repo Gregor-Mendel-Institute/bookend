@@ -1371,7 +1371,9 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
                 r = span[1] - leftmost
                 depth_matrix[covrow, l:r] += weight
         else:
-            depth_matrix[covrow, read.span[0]:read.span[1]] += weight
+            l = read.span[0] - leftmost
+            r = read.span[1] - leftmost
+            depth_matrix[covrow, l:r] += weight
         
     return depth_matrix, J_plus, J_minus
 
