@@ -114,6 +114,7 @@ bam_to_elr_parser.set_defaults(object='BAMtoELRconverter')
 ### bed_to_elr.py ###
 bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
 bed_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, required=True, help="Filepath to write ELR file.")
+bed_to_elr_parser.add_argument("--chroms", dest='CHROMS', type=str, help="Filepath to a text file of chromosome names (1 per line).")
 bed_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 bed_to_elr_parser.add_argument("--source", dest='SOURCE', help="Source of BED lines.", default=None, type=str)
 bed_to_elr_parser.add_argument("-j", dest='JUNCTIONS', default=False, action='store_true', help="Gaps in the reads are all splice junctions.")

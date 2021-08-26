@@ -12,6 +12,7 @@ class BEDtoELRconverter:
     def __init__(self, args):
         """Converts each line of BED-formatted input to ELR"""
         self.input = args['INPUT']
+        self.chrom_file = args['CHROMS']
         self.output = args['OUTPUT']
         self.header = args['HEADER']
         self.source = args['SOURCE']
@@ -34,10 +35,14 @@ class BEDtoELRconverter:
         else:
             source_array = None
         
+        self.chrom_array = None
+        if self.chrom_file:
+            self.chrom_array = [l.strip() for l in open(self.chrom_file, 'r')]
+        
         self.linecount = 0
         self.readcount = 0
-        self.dataset = ru.RNAseqDataset(source_array=source_array)
-
+        self.dataset = ru.RNAseqDataset(source_array=source_array, chrom_array=self.chrom_array)
+    
     def process_input(self):
         """Yield ELR lines from each line of a BED input."""
         current_source_index = self.dataset.source_index
