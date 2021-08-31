@@ -1462,7 +1462,7 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
         else:
             source = source_string
     else:
-        source = None
+        source = 0
     
     # chrom source strand ranges splice s_tag e_tag capped weight
     return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, condensed)
