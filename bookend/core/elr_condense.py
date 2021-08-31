@@ -67,105 +67,39 @@ class Condenser:
     
     def dump_starts(self, locus):
         start_groups = []
+        donors = [int(j.split(':')[0]) for j in locus.J_plus]
         for end_range in locus.end_ranges[0]: # Start Plus
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            contained_reads = [r for r in locus.reads if r.s_tag and r.strand == end_range.strand and r.left()-locus.leftmost in range(end_range.left, end_range.right)]
-            readgroups = []
-            for c in contained_reads:
-                if len(readgroups) == 0:
-                    readgroups.append(copy.copy(c))
-                else:
-                    merged = False
-                    for g in readgroups:
-                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
-                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
-                            g.weight += c.weight
-                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
-                            merged = True
-                    
-                    if not merged:
-                        readgroups.append(copy.copy(c))
-            
-            for g in readgroups: # Make each group terminate at the end_range peak
-                if g.ranges[0][1] > end_range.peak+locus.leftmost:
-                    g.ranges[0] = (end_range.peak+locus.leftmost, g.ranges[0][1])
-                    g.capped = capped
-                    start_groups.append(g)
+            right = min([d for d in donors if d >= end_range.right]+[end_range.right+locus.extend])
+            start_groups.append(ru.RNAseqMapping(ru.ELdata(
+                locus.chrom, 0, end_range.strand, [(end_range.peak, right)], [], True, False, capped, end_range.weight, False
+            )))
         
+        donors = [int(j.split(':')[1]) for j in locus.J_minus]
         for end_range in locus.end_ranges[2]: # Start Minus
-            contained_reads = [r for r in locus.reads if r.s_tag and r.strand == end_range.strand and r.right()-locus.leftmost-1 in range(end_range.left, end_range.right)]
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            readgroups = []
-            for c in contained_reads:
-                if len(readgroups) == 0:
-                    readgroups.append(copy.copy(c))
-                else:
-                    merged = False
-                    for g in readgroups:
-                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
-                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
-                            g.weight += c.weight
-                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
-                            merged = True
-                    
-                    if not merged:
-                        readgroups.append(copy.copy(c))
-            
-            for g in readgroups: # Make each group terminate at the end_range peak
-                if g.ranges[-1][0] < end_range.peak+locus.leftmost:
-                    g.ranges[-1] = (g.ranges[-1][0], end_range.peak+locus.leftmost)
-                    g.capped = capped
-                    start_groups.append(g)
+            left = max([d+1 for d in donors if d < end_range.left]+[end_range.left-locus.extend])
+            start_groups.append(ru.RNAseqMapping(ru.ELdata(
+                locus.chrom, 0, end_range.strand, [(left, end_range.peak+1)], [], True, False, capped, end_range.weight, False
+            )))
         
         return sorted(start_groups)
     
     def dump_ends(self, locus):
         end_groups = []
+        acceptors = [int(j.split(':')[1]) for j in locus.J_plus]
         for end_range in locus.end_ranges[1]: # End Plus
-            contained_reads = [r for r in locus.reads if r.e_tag and r.strand == end_range.strand and r.right()-locus.leftmost-1 in range(end_range.left, end_range.right)]
-            readgroups = []
-            for c in contained_reads:
-                if len(readgroups) == 0:
-                    readgroups.append(copy.copy(c))
-                else:
-                    merged = False
-                    for g in readgroups:
-                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
-                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
-                            g.weight += c.weight
-                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
-                            merged = True
-                    
-                    if not merged:
-                        readgroups.append(copy.copy(c))
-            
-            for g in readgroups: # Make each group terminate at the end_range peak
-                if g.ranges[-1][0] < end_range.peak+locus.leftmost:
-                    g.ranges[-1] = (g.ranges[-1][0], end_range.peak+locus.leftmost)
-                    end_groups.append(g)
+            left = max([a+1 for a in acceptors if a < end_range.left]+[end_range.left-locus.extend])
+            end_groups.append(ru.RNAseqMapping(ru.ELdata(
+                locus.chrom, 0, end_range.strand, [(left, end_range.peak+1)], [], False, True, False, end_range.weight, False
+            )))
         
+        acceptors = [int(j.split(':')[0]) for j in locus.J_minus]
         for end_range in locus.end_ranges[3]: # End Minus
-            contained_reads = [r for r in locus.reads if r.e_tag and r.strand == end_range.strand and r.left()-locus.leftmost in range(end_range.left, end_range.right)]
-            readgroups = []
-            for c in contained_reads:
-                if len(readgroups) == 0:
-                    readgroups.append(copy.copy(c))
-                else:
-                    merged = False
-                    for g in readgroups:
-                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
-                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
-                            g.weight += c.weight
-                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
-                            merged = True
-                    
-                    if not merged:
-                        readgroups.append(copy.copy(c))
-            
-            for g in readgroups: # Make each group terminate at the end_range peak
-                if g.ranges[0][1] > end_range.peak+locus.leftmost:
-                    g.ranges[0] = (end_range.peak+locus.leftmost, g.ranges[0][1])
-                    end_groups.append(g)
+            right = min([a for a in acceptors if a >= end_range.right]+[end_range.right+locus.extend])
+            end_groups.append(ru.RNAseqMapping(ru.ELdata(
+                locus.chrom, 0, end_range.strand, [(end_range.peak, right)], [], False, True, False, end_range.weight, False
+            )))
         
         return sorted(end_groups)
     
