@@ -144,7 +144,9 @@ condense_parser.add_argument('--min_intron_len', dest='MIN_INTRON_LEN', type=int
 condense_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude ends, juctions, or transcripts that contribute < this proportion. (Used as a signal threshold)")
 condense_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
 condense_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
-condense_parser.add_argument("--sparse", dest='SPARSE', default=False, action='store_true', help="Sample is sparsely end-labeled (e.g. Smart-seq)")
+condense_parser.add_argument("--starts", dest='STARTS', default=False, action='store_true', help="Sample is a Start Tag (5' end) file, e.g. CAGE")
+condense_parser.add_argument("--ends", dest='ENDS', default=False, action='store_true', help="Sample is an End Tag (3' end) file, e.g. 3P-Seq")
+condense_parser.add_argument("--sparse", dest='SPARSE', default=False, action='store_true', help="Sample is sparsely end-labeled, e.g. Smart-seq")
 condense_parser.add_argument(dest='INPUT', type=str, help="Input single ELR filepath. MUST be coordinate-sorted.")
 condense_parser.set_defaults(object='Condenser')
 

@@ -26,6 +26,8 @@ class Condenser:
         self.cap_bonus = args['CAP_BONUS']
         self.minlen = args['MINLEN']
         self.input = args['INPUT']
+        self.starts = args['STARTS']
+        self.ends = args['ENDS']
         self.sparse = args['SPARSE']
         if self.output is None:
             self.output = self.input.replace('.elr', '.cond.elr')
@@ -92,11 +94,31 @@ class Condenser:
             self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
             if total_bases > 0:
-                for transcript in locus.transcripts:
-                    if self.passes_all_checks(transcript):
-                        self.output_transcripts(transcript)
-                        self.transcripts_written += 1
-                        self.bases_used += transcript.attributes['bases']
+                if self.starts:
+                    for SP in locus.end_ranges[0]:
+                        start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SP.strand, [(SP.peak+locus.leftmost, SP.right+locus.leftmost)], [], True, False, locus.cap_filter <= (SP.capped/SP.weight), SP.weight, False))
+                        if start.weight >= self.min_cov:
+                            self.output_transcripts(start)
+                    
+                    for SM in locus.end_ranges[2]:
+                        start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SM.strand, [(SM.left+locus.leftmost, SM.peak+locus.leftmost+1)], [], True, False, locus.cap_filter <= (SM.capped/SM.weight), SM.weight, False))
+                        if start.weight >= self.min_cov:
+                            self.output_transcripts(start)
+                if self.ends:
+                    for EP in locus.end_ranges[1]:
+                        end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EP.strand, [(EP.left+locus.leftmost, EP.peak+locus.leftmost+1)], [], False, True, False, EP.weight, False))
+                        if end.weight >= self.min_cov:
+                            self.output_transcripts(end)
+                    for EM in locus.end_ranges[3]:
+                        end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EM.strand, [(EM.peak+locus.leftmost, EM.right+locus.leftmost+1)], [], False, True, False, EM.weight, False))
+                        if end.weight >= self.min_cov:
+                            self.output_transcripts(end)
+                if not (self.starts or self.ends):
+                    for transcript in locus.transcripts:
+                        if self.passes_all_checks(transcript):
+                            self.output_transcripts(transcript)
+                            self.transcripts_written += 1
+                            self.bases_used += transcript.attributes['bases']
             
             del locus
     
