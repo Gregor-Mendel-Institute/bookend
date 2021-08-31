@@ -24,6 +24,7 @@ class Condenser:
         self.intron_filter = args['INTRON_FILTER']
         self.min_proportion = args['MIN_PROPORTION']
         self.cap_bonus = args['CAP_BONUS']
+        self.cap_filter = args['CAP_FILTER']
         self.minlen = args['MINLEN']
         self.input = args['INPUT']
         self.starts = args['STARTS']
@@ -77,7 +78,9 @@ class Condenser:
                 reduce=True, 
                 minimum_proportion=self.min_proportion, 
                 min_intron_length=self.min_intron_length, 
-                antisense_filter=self.antisense_filter, 
+                antisense_filter=self.antisense_filter,
+                cap_bonus=self.cap_bonus,
+                cap_filter=self.cap_filter,
                 intron_filter=self.intron_filter, 
                 ignore_ends=False,
                 allow_incomplete=True,
