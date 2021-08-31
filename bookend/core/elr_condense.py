@@ -64,14 +64,7 @@ class Condenser:
         self.output_temp.write(output_line+'\n')
 
     def process_entry(self, chunk):
-        if len(chunk) == 1:
-            self.chunk_counter += 1
-            transcript = chunk[0]
-            if self.passes_all_checks(transcript):
-                self.output_transcripts(transcript)
-                self.transcripts_written += 1
-                self.bases_used += transcript.weight*transcript.get_length()
-        elif len(chunk) > 1:
+        if len(chunk) >= 1:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
             locus = au.Locus(
@@ -94,7 +87,7 @@ class Condenser:
             self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
             if total_bases > 0:
-                if self.starts:
+                if self.starts and locus.end_ranges is not None:
                     for SP in locus.end_ranges[0]:
                         start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SP.strand, [(SP.peak+locus.leftmost, SP.right+locus.leftmost)], [], True, False, locus.cap_filter <= (SP.capped/SP.weight), SP.weight, False))
                         if start.weight >= self.min_cov:
@@ -104,7 +97,8 @@ class Condenser:
                         start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SM.strand, [(SM.left+locus.leftmost, SM.peak+locus.leftmost+1)], [], True, False, locus.cap_filter <= (SM.capped/SM.weight), SM.weight, False))
                         if start.weight >= self.min_cov:
                             self.output_transcripts(start)
-                if self.ends:
+                
+                if self.ends and locus.end_ranges is not None:
                     for EP in locus.end_ranges[1]:
                         end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EP.strand, [(EP.left+locus.leftmost, EP.peak+locus.leftmost+1)], [], False, True, False, EP.weight, False))
                         if end.weight >= self.min_cov:
@@ -113,6 +107,7 @@ class Condenser:
                         end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EM.strand, [(EM.peak+locus.leftmost, EM.right+locus.leftmost+1)], [], False, True, False, EM.weight, False))
                         if end.weight >= self.min_cov:
                             self.output_transcripts(end)
+                
                 if not (self.starts or self.ends):
                     for transcript in locus.transcripts:
                         if self.passes_all_checks(transcript):
