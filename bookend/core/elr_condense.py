@@ -70,17 +70,17 @@ class Condenser:
         donors = [int(j.split(':')[0]) for j in locus.J_plus]
         for end_range in locus.end_ranges[0]: # Start Plus
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            right = min([d for d in donors if d >= end_range.right]+[end_range.right+locus.extend])
+            right = min([d for d in donors if d >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+locus.extend])
             start_groups.append(ru.RNAseqMapping(ru.ELdata(
-                locus.chrom, 0, end_range.strand, [(end_range.peak, right)], [], True, False, capped, end_range.weight, False
+                locus.chrom, 0, end_range.strand, [(end_range.peak+locus.leftmost, right+locus.leftmost)], [], True, False, capped, end_range.weight, False
             )))
         
         donors = [int(j.split(':')[1]) for j in locus.J_minus]
         for end_range in locus.end_ranges[2]: # Start Minus
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            left = max([d+1 for d in donors if d < end_range.left]+[end_range.left-locus.extend])
+            left = max([d+1 for d in donors if d < end_range.left]+[0, end_range.left-locus.extend])
             start_groups.append(ru.RNAseqMapping(ru.ELdata(
-                locus.chrom, 0, end_range.strand, [(left, end_range.peak+1)], [], True, False, capped, end_range.weight, False
+                locus.chrom, 0, end_range.strand, [(left+locus.leftmost, end_range.peak+1+locus.leftmost)], [], True, False, capped, end_range.weight, False
             )))
         
         return sorted(start_groups)
@@ -89,16 +89,16 @@ class Condenser:
         end_groups = []
         acceptors = [int(j.split(':')[1]) for j in locus.J_plus]
         for end_range in locus.end_ranges[1]: # End Plus
-            left = max([a+1 for a in acceptors if a < end_range.left]+[end_range.left-locus.extend])
+            left = max([a+1 for a in acceptors if a < end_range.left]+[0, end_range.left-locus.extend])
             end_groups.append(ru.RNAseqMapping(ru.ELdata(
-                locus.chrom, 0, end_range.strand, [(left, end_range.peak+1)], [], False, True, False, end_range.weight, False
+                locus.chrom, 0, end_range.strand, [(left+locus.leftmost, end_range.peak+1+locus.leftmost)], [], False, True, False, end_range.weight, False
             )))
         
         acceptors = [int(j.split(':')[0]) for j in locus.J_minus]
         for end_range in locus.end_ranges[3]: # End Minus
-            right = min([a for a in acceptors if a >= end_range.right]+[end_range.right+locus.extend])
+            right = min([a for a in acceptors if a >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+locus.extend])
             end_groups.append(ru.RNAseqMapping(ru.ELdata(
-                locus.chrom, 0, end_range.strand, [(end_range.peak, right)], [], False, True, False, end_range.weight, False
+                locus.chrom, 0, end_range.strand, [(end_range.peak+locus.leftmost, right+locus.leftmost)], [], False, True, False, end_range.weight, False
             )))
         
         return sorted(end_groups)
