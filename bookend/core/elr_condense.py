@@ -26,6 +26,7 @@ class Condenser:
         self.cap_bonus = args['CAP_BONUS']
         self.minlen = args['MINLEN']
         self.input = args['INPUT']
+        self.sparse = args['SPARSE']
         if self.output is None:
             self.output = self.input.replace('.elr', '.cond.elr')
             if '.cond.elr' not in self.output:
@@ -57,7 +58,7 @@ class Condenser:
     def output_transcripts(self, transcript):
         """Writes the RNAseqMapping object 'transcript' to an output stream,
         formatted as output_type."""
-        output_line = transcript.write_as_elr(condense=True)
+        output_line = transcript.write_as_elr(condense=self.sparse)
         self.output_temp.write(output_line+'\n')
 
     def process_entry(self, chunk):
@@ -101,7 +102,7 @@ class Condenser:
     
     def display_options(self):
         """Returns a string describing all input args"""
-        options_string = "\n/| bookend assemble |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string = "\n/| bookend condense |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input file:                                       {}\n".format(self.input)
         options_string += "  Output file (-o):                                 {}\n".format(self.output)
         options_string += "  *** Experiment parameters ***\n"
