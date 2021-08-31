@@ -6,6 +6,7 @@ import time
 import os
 import bookend.core.cython_utils._rnaseq_utils as ru
 import bookend.core.cython_utils._assembly_utils as au
+import copy
 from bookend.core.elr_sort import ELRsorter
 
 if __name__ == '__main__':
@@ -63,7 +64,111 @@ class Condenser:
         formatted as output_type."""
         output_line = transcript.write_as_elr(condense=self.sparse)
         self.output_temp.write(output_line+'\n')
-
+    
+    def dump_starts(self, locus):
+        start_groups = []
+        for end_range in locus.end_ranges[0]: # Start Plus
+            capped = self.cap_filter <= end_range.capped/end_range.weight
+            contained_reads = [r for r in locus.reads if r.s_tag and r.strand == end_range.strand and r.left()-locus.leftmost in range(end_range.left, end_range.right)]
+            readgroups = []
+            for c in contained_reads:
+                if len(readgroups) == 0:
+                    readgroups.append(copy.copy(c))
+                else:
+                    merged = False
+                    for g in readgroups:
+                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
+                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
+                            g.weight += c.weight
+                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
+                            merged = True
+                    
+                    if not merged:
+                        readgroups.append(copy.copy(c))
+            
+            for g in readgroups: # Make each group terminate at the end_range peak
+                if g.ranges[0][1] > end_range.peak+locus.leftmost:
+                    g.ranges[0] = (end_range.peak+locus.leftmost, g.ranges[0][1])
+                    g.capped = capped
+                    start_groups.append(g)
+        
+        for end_range in locus.end_ranges[2]: # Start Minus
+            contained_reads = [r for r in locus.reads if r.s_tag and r.strand == end_range.strand and r.right()-locus.leftmost-1 in range(end_range.left, end_range.right)]
+            capped = self.cap_filter <= end_range.capped/end_range.weight
+            readgroups = []
+            for c in contained_reads:
+                if len(readgroups) == 0:
+                    readgroups.append(copy.copy(c))
+                else:
+                    merged = False
+                    for g in readgroups:
+                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
+                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
+                            g.weight += c.weight
+                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
+                            merged = True
+                    
+                    if not merged:
+                        readgroups.append(copy.copy(c))
+            
+            for g in readgroups: # Make each group terminate at the end_range peak
+                if g.ranges[-1][0] < end_range.peak+locus.leftmost:
+                    g.ranges[-1] = (g.ranges[-1][0], end_range.peak+locus.leftmost)
+                    g.capped = capped
+                    start_groups.append(g)
+        
+        return sorted(start_groups)
+    
+    def dump_ends(self, locus):
+        end_groups = []
+        for end_range in locus.end_ranges[1]: # End Plus
+            contained_reads = [r for r in locus.reads if r.e_tag and r.strand == end_range.strand and r.right()-locus.leftmost-1 in range(end_range.left, end_range.right)]
+            readgroups = []
+            for c in contained_reads:
+                if len(readgroups) == 0:
+                    readgroups.append(copy.copy(c))
+                else:
+                    merged = False
+                    for g in readgroups:
+                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
+                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
+                            g.weight += c.weight
+                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
+                            merged = True
+                    
+                    if not merged:
+                        readgroups.append(copy.copy(c))
+            
+            for g in readgroups: # Make each group terminate at the end_range peak
+                if g.ranges[-1][0] < end_range.peak+locus.leftmost:
+                    g.ranges[-1] = (g.ranges[-1][0], end_range.peak+locus.leftmost)
+                    end_groups.append(g)
+        
+        for end_range in locus.end_ranges[3]: # End Minus
+            contained_reads = [r for r in locus.reads if r.e_tag and r.strand == end_range.strand and r.left()-locus.leftmost in range(end_range.left, end_range.right)]
+            readgroups = []
+            for c in contained_reads:
+                if len(readgroups) == 0:
+                    readgroups.append(copy.copy(c))
+                else:
+                    merged = False
+                    for g in readgroups:
+                        if c.is_compatible(g, ignore_ends=True, ignore_source=True):
+                            g.ranges = ru.collapse_blocks(sorted(g.ranges + c.ranges))
+                            g.weight += c.weight
+                            g.span = (g.ranges[0][0], g.ranges[-1][-1])
+                            merged = True
+                    
+                    if not merged:
+                        readgroups.append(copy.copy(c))
+            
+            for g in readgroups: # Make each group terminate at the end_range peak
+                if g.ranges[0][1] > end_range.peak+locus.leftmost:
+                    g.ranges[0] = (end_range.peak+locus.leftmost, g.ranges[0][1])
+                    end_groups.append(g)
+        
+        return sorted(end_groups)
+    
     def process_entry(self, chunk):
         if len(chunk) >= 1:
             chrom = chunk[0].chrom
@@ -90,26 +195,17 @@ class Condenser:
             self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
             if total_bases > 0:
-                if self.starts and locus.end_ranges is not None:
-                    for SP in locus.end_ranges[0]:
-                        start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SP.strand, [(SP.peak+locus.leftmost, SP.right+locus.leftmost)], [], True, False, locus.cap_filter <= (SP.capped/SP.weight), SP.weight, False))
-                        if start.weight >= self.min_cov:
-                            self.output_transcripts(start)
+                if locus.end_ranges is not None:
+                    end_groups = []
+                    if self.starts:
+                        end_groups += self.dump_starts(locus)
                     
-                    for SM in locus.end_ranges[2]:
-                        start = ru.RNAseqMapping(ru.ELdata(chrom, 0, SM.strand, [(SM.left+locus.leftmost, SM.peak+locus.leftmost+1)], [], True, False, locus.cap_filter <= (SM.capped/SM.weight), SM.weight, False))
-                        if start.weight >= self.min_cov:
-                            self.output_transcripts(start)
-                
-                if self.ends and locus.end_ranges is not None:
-                    for EP in locus.end_ranges[1]:
-                        end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EP.strand, [(EP.left+locus.leftmost, EP.peak+locus.leftmost+1)], [], False, True, False, EP.weight, False))
-                        if end.weight >= self.min_cov:
-                            self.output_transcripts(end)
-                    for EM in locus.end_ranges[3]:
-                        end = ru.RNAseqMapping(ru.ELdata(chrom, 0, EM.strand, [(EM.peak+locus.leftmost, EM.right+locus.leftmost+1)], [], False, True, False, EM.weight, False))
-                        if end.weight >= self.min_cov:
-                            self.output_transcripts(end)
+                    if self.ends:
+                        end_groups += self.dump_ends(locus)
+                    
+                    for group in sorted(end_groups):
+                        if group.weight >= self.min_cov:
+                            self.output_transcripts(group)
                 
                 if not (self.starts or self.ends):
                     for transcript in locus.transcripts:
