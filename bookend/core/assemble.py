@@ -173,14 +173,15 @@ class Assembler:
         options_string += "  Split read sources (--ignore_sources):            {}\n".format(self.ignore_sources)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
-        options_string += "  Min bp transcript length (--min_len):              {}\n".format(self.minlen)
+        options_string += "  Min bp transcript length (--min_len):             {}\n".format(self.minlen)
         options_string += "  Min isoform coverage (--min_cov):                 {}\n".format(self.min_cov)
         options_string += "  Min unstranded coverage (--min_unstranded_cov):   {}\n".format(self.min_unstranded_cov)
         options_string += "  Min isoform contribution (--min_proportion):      {}\n".format(self.min_proportion)
         options_string += "  Min retained intron proportion (--intron_filter): {}\n".format(self.intron_filter)
-        options_string += "  Min number of 5' reads (--min_start):             {}\n".format(self.min_start)
-        options_string += "  Min number of 3' reads (--min_end):               {}\n".format(self.min_end)
-        options_string += "  Min percent 5' end reads w/ uuG (--cap_bonus):    {}\n".format(self.cap_bonus)
+        options_string += "  Min number of Start Tags (--min_start):           {}\n".format(self.min_start)
+        options_string += "  Min number of End Tags (--min_end):               {}\n".format(self.min_end)
+        options_string += "  Min percent 5' end reads w/ uuG (--cap_filter):   {}\n".format(self.cap_filter)
+        options_string += "  Score multiplier for Cap Tags (--cap_bonus):      {}\n".format(self.cap_bonus)
         options_string += "  Keep fragmented assemblies (--allow_incomplete):  {}\n".format(self.incomplete)
         return options_string
     
