@@ -1,5 +1,13 @@
 # /| bookend |\\  
-### End-guided transcriptome assembly.
+### End-guided transcriptome assembly.  
+Bookend is a comprehensive framework for end-guided assembly of short-read, long-read, and end-capture RNA-seq data.
+Please see the [User Guide](Bookend_User_Guide.pdf) for a full description of the subcommands and arguments.
+
+## Installation  
+Bookend can be installed through the Python Package Index (PyPI) on UNIX systems with Python 3.6+ using the command  
+    pip install bookend-rna
+
+Once installed, all utilities can be accessed on the command as bookend subcommands:  
 
 usage: bookend [subcommand] [options] [input file(s)]
 Subcommands (use -h/--help for more info):
@@ -25,35 +33,3 @@ Subcommands (use -h/--help for more info):
     index-fasta
     softbridge-fasta
   
-    
-Converts file to a 'end labeled read' (ELR) format.
-ELR contains a two-component header: #C (chromosome) and #S (source).
-Each line is a read or read stack with six columns:
-    chromosome  position  strand  ELCIGAR  sample  weight
-
-    chromosome: Chromosome number, as indexed by the #C header
-    position: 0-indexed position in chromosome
-    strand: Inferred RNA strand; +, -, or . (unknown)
-    ELCIGAR: String describing the mapped read (full description below)
-    sample: Sample number, as indexed by the #S header
-    weight: Read count (allows partial counts for multimappers)
-  
-  
-ELCIGAR strings are Character|Number strings and one trailing character
-([CN]xC), where C is a label and N is a numeric length on the genome.
-Each C labels an end or gap in the alignment as one of the following:
-    S: start
-    s: start (low confidence)
-    C: start (capped)
-    E: end (polyA tail)
-    e: end (low confidence)
-    D: splice junction donor
-    A: splice junction acceptor
-    .: unspecified gap or end
-
-For example, a 50bp paired-end read of a 185-nt fragment would be
-    .50.85.50.
-A full 3-exon transcript could be described as:
-    S256D800A128D800A512E
-where the 3 exons are 256, 128, and 512 nucleotides,
-and the 2 introns are both 800 nucleotides.
