@@ -1303,15 +1303,15 @@ cdef class Locus:
                 if T.strand == 1:
                     s_pos = first = T.span[0] - self.leftmost
                     e_pos = last = T.span[1] - self.leftmost
-                    firstbound = T.ranges[0][1] - self.leftmost
-                    lastbound = T.ranges[-1][0] - self.leftmost
+                    firstbound = max(first, T.ranges[0][1] - self.leftmost - self.min_overhang)
+                    lastbound = min(last, T.ranges[-1][0] - self.leftmost + self.min_overhang)
                     S_ranges = self.end_ranges[0]
                     E_ranges = self.end_ranges[1]
                 else:
                     s_pos = first = T.span[1] - self.leftmost
                     e_pos = last = T.span[0] - self.leftmost
-                    lastbound = T.ranges[0][1] - self.leftmost
-                    firstbound = T.ranges[-1][0] - self.leftmost
+                    lastbound = max(last, T.ranges[0][1] - self.leftmost - self.min_overhang)
+                    firstbound = min(first, T.ranges[-1][0] - self.leftmost + self.min_overhang)
                     S_ranges = self.end_ranges[2]
                     E_ranges = self.end_ranges[3]
                 
@@ -1415,11 +1415,11 @@ cdef class Locus:
                 l, r = frag
                 # Update leftmost position if it matches an S/E branchpoint
                 if element.s_tag and element.strand == 1:
-                    S = self.get_end_cluster(l, r, 0, self.end_ranges[0], self.end_extend)
+                    S = self.get_end_cluster(l, max(l, r-self.min_overhang), 0, self.end_ranges[0], self.end_extend)
                     if S is not self.nullRange:
                         l = S.peak
                 elif element.e_tag and element.strand == -1:
-                    E = self.get_end_cluster(l, r, 0, self.end_ranges[3], self.end_extend)
+                    E = self.get_end_cluster(l, max(l, r-self.min_overhang), 0, self.end_ranges[3], self.end_extend)
                     if E is not self.nullRange:
                         l = E.peak
             elif last_member == m-1:
@@ -1440,11 +1440,11 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            S = self.get_end_cluster(r-1, l, 0, self.end_ranges[2], self.end_extend)
+            S = self.get_end_cluster(r-1, min(l+self.min_overhang, r-1), 0, self.end_ranges[2], self.end_extend)
             if S is not self.nullRange:
                 r = S.peak+1
         elif element.e_tag and element.strand == 1:
-            E = self.get_end_cluster(r-1, l, 0, self.end_ranges[1], self.end_extend)
+            E = self.get_end_cluster(r-1, min(l+self.min_overhang, r-1), 0, self.end_ranges[1], self.end_extend)
             if E is not self.nullRange:
                 r = E.peak+1
         
