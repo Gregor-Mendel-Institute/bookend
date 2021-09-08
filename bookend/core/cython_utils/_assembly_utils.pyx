@@ -386,13 +386,13 @@ cdef class Locus:
                         if LR.peak > RR.peak: # out-of-order peaks
                             left_positions = Counter({k:v for k,v in LR.positions.items() if k < RR.peak})
                             if len(left_positions) > 0:
-                                splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], sum(left_positions.values()), ltype)
+                                splitRangeLeft = EndRange(min(left_positions), max(left_positions)+1, left_positions.most_common(1)[0][0], sum(left_positions.values()), ltype)
                                 splitRangeLeft.positions = left_positions
                                 newlefts += [splitRangeLeft]
                             
                             right_positions = Counter({k:v for k,v in LR.positions.items() if k > RR.peak})
                             if len(right_positions) > 0:
-                                splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], sum(right_positions.values()), ltype)
+                                splitRangeRight = EndRange(min(right_positions), max(right_positions)+1, right_positions.most_common(1)[0][0], sum(right_positions.values()), ltype)
                                 splitRangeRight.positions = right_positions
                                 newlefts += [splitRangeRight]
                                 if RR.right > splitRangeRight.peak: # Also split RR
@@ -401,12 +401,12 @@ cdef class Locus:
                                     left_counts = sum(left_positions.values())
                                     right_counts = sum(right_positions.values())
                                     if len(left_positions) > 0:
-                                        splitRangeLeft = EndRange(min(left_positions), max(left_positions), left_positions.most_common(1)[0][0], left_counts/(left_counts+right_counts), rtype)
+                                        splitRangeLeft = EndRange(min(left_positions), max(left_positions)+1, left_positions.most_common(1)[0][0], left_counts/(left_counts+right_counts), rtype)
                                         splitRangeLeft.positions = left_positions
                                         newrights += [splitRangeLeft]
                                     
                                     if len(right_positions) > 0:
-                                        splitRangeRight = EndRange(min(right_positions), max(right_positions), right_positions.most_common(1)[0][0], right_counts/(left_counts+right_counts), rtype)
+                                        splitRangeRight = EndRange(min(right_positions), max(right_positions)+1, right_positions.most_common(1)[0][0], right_counts/(left_counts+right_counts), rtype)
                                         splitRangeRight.positions = right_positions
                                         newrights += [splitRangeRight]
                                     
