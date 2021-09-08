@@ -568,26 +568,29 @@ cdef class Locus:
         
         return end_ranges
     
-    cpdef int end_of_cluster(self, int pos, float weight, list end_ranges, int extend, bint capped):
+    cpdef int end_of_cluster(self, int pos, int boundary, float weight, list end_ranges, int extend, bint capped):
         """Returns the terminal position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng
-        rng = self.get_end_cluster(pos, weight, end_ranges, extend, capped)
+        rng = self.get_end_cluster(pos, boundary, weight, end_ranges, extend, capped)
         return rng.terminal
     
-    cpdef EndRange get_end_cluster(self, int pos, float weight, list end_ranges, int extend, bint capped=False):
+    cpdef EndRange get_end_cluster(self, int pos, int boundary, float weight, list end_ranges, int extend, bint capped=False):
         """Returns the most common position of the EndRange object that
         contains pos, if one exists. Else returns -1"""
         cdef EndRange rng, bestrng
-        cdef int dist, bestdist
+        cdef int dist, bestdist, bound, relpos
         bestdist = -1
         bestrng = self.nullRange
+        bound = boundary - pos
         for rng in end_ranges:
-            if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
-                dist = abs(pos-rng.peak)
-                if bestdist == -1 or dist < bestdist:
-                    bestrng = rng
-                    bestdist = dist
+            relpos = rng.peak - pos
+            if relpos*bound<0 or abs(relpos)<abs(bound):
+                if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+                    dist = abs(pos-rng.peak)
+                    if bestdist == -1 or dist < bestdist:
+                        bestrng = rng
+                        bestdist = dist
         
         # bestrng.add(pos, weight, capped)
         return bestrng
@@ -756,14 +759,14 @@ cdef class Locus:
             if j == 0: # Starting block
                 if strand == 1 and s_tag: # Left position is a 5' end
                     # Sp, Ep, Sm, Em
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[0], self.end_extend*capped, capped)
+                    tl = self.end_of_cluster(l, r, weight, self.end_ranges[0], self.end_extend*capped, capped)
                     if tl >= 0: # 5' end is in an EndRange
                         membership[source_plus] = 1 # Add s+ to the membership table
                         l = tl
                         lfrag = self.frag_by_pos[l]
                         membership[0:lfrag] = -1 # Read cannot extend beyond source
                 elif strand == -1 and e_tag: # Left position is a 3' end
-                    tl = self.end_of_cluster(l, weight, self.end_ranges[3], self.end_extend, False)
+                    tl = self.end_of_cluster(l, r, weight, self.end_ranges[3], self.end_extend, False)
                     if tl >= 0:
                         membership[sink_minus] = 1 # Add t- to the membership table
                         l = tl
@@ -772,14 +775,14 @@ cdef class Locus:
             
             if j == len(ranges)-1: # Ending block
                 if strand == 1 and e_tag: # Right position is a 3' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[1], self.end_extend, False)
+                    tr = self.end_of_cluster(r, l, weight, self.end_ranges[1], self.end_extend, False)
                     if tr >= 0:
                         membership[sink_plus] = 1 # Add t+ to the membership table
                         r = tr
                         rfrag = self.frag_by_pos[r-1]
                         membership[(rfrag+1):(width-4)] = -1 # Read cannot extend beyond sink
                 elif strand == -1 and s_tag: # Right position is a 5' end
-                    tr = self.end_of_cluster(r, weight, self.end_ranges[2], self.end_extend*capped, capped)
+                    tr = self.end_of_cluster(r, l, weight, self.end_ranges[2], self.end_extend*capped, capped)
                     if tr >= 0:
                         membership[source_minus] = 1 # Add s- to the membership table
                         r = tr
@@ -1285,7 +1288,7 @@ cdef class Locus:
         """Populate the new read objects with diagnostic information
         to store in the GTF attributes column."""
         cdef:
-            int first, last, s_pos, e_pos
+            int first, last, s_pos, e_pos, firstbound, lastbound
             dict S_info, E_info
             list S_ranges, E_ranges
             EndRange S, E
@@ -1300,16 +1303,20 @@ cdef class Locus:
                 if T.strand == 1:
                     s_pos = first = T.span[0] - self.leftmost
                     e_pos = last = T.span[1] - self.leftmost
+                    firstbound = T.ranges[0][1] - self.leftmost
+                    lastbound = T.ranges[-1][0] - self.leftmost
                     S_ranges = self.end_ranges[0]
                     E_ranges = self.end_ranges[1]
                 else:
                     s_pos = first = T.span[1] - self.leftmost
                     e_pos = last = T.span[0] - self.leftmost
+                    lastbound = T.ranges[0][1] - self.leftmost
+                    firstbound = T.ranges[-1][0] - self.leftmost
                     S_ranges = self.end_ranges[2]
                     E_ranges = self.end_ranges[3]
                 
                 if T.s_tag:
-                    S = self.get_end_cluster(first, 0, S_ranges, self.end_extend)
+                    S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
                     if S is not self.nullRange:
                         s_pos = S.peak
                         span = S.span()
@@ -1324,7 +1331,7 @@ cdef class Locus:
                                 T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost + 1)
                 
                 if T.e_tag:
-                    E = self.get_end_cluster(last, 0, E_ranges, self.end_extend)
+                    E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
                     if E is not self.nullRange:
                         e_pos = E.peak
                         span = E.span()
@@ -1408,11 +1415,11 @@ cdef class Locus:
                 l, r = frag
                 # Update leftmost position if it matches an S/E branchpoint
                 if element.s_tag and element.strand == 1:
-                    S = self.get_end_cluster(l, 0, self.end_ranges[0], self.end_extend)
+                    S = self.get_end_cluster(l, r, 0, self.end_ranges[0], self.end_extend)
                     if S is not self.nullRange:
                         l = S.peak
                 elif element.e_tag and element.strand == -1:
-                    E = self.get_end_cluster(l, 0, self.end_ranges[3], self.end_extend)
+                    E = self.get_end_cluster(l, r, 0, self.end_ranges[3], self.end_extend)
                     if E is not self.nullRange:
                         l = E.peak
             elif last_member == m-1:
@@ -1433,11 +1440,11 @@ cdef class Locus:
         
         # Update rightmost position
         if element.s_tag and element.strand == -1:
-            S = self.get_end_cluster(r-1, 0, self.end_ranges[2], self.end_extend)
+            S = self.get_end_cluster(r-1, l, 0, self.end_ranges[2], self.end_extend)
             if S is not self.nullRange:
                 r = S.peak+1
         elif element.e_tag and element.strand == 1:
-            E = self.get_end_cluster(r-1, 0, self.end_ranges[1], self.end_extend)
+            E = self.get_end_cluster(r-1, l, 0, self.end_ranges[1], self.end_extend)
             if E is not self.nullRange:
                 r = E.peak+1
         
