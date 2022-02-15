@@ -18,7 +18,7 @@ class Assembler:
         """Parses input arguments for assembly"""
         self.start_time = time.time()
         self.output = args['OUT']
-        self.source = 'bookend'
+        self.source = args['SOURCE']
         self.cov_out = args['COV_OUT']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
