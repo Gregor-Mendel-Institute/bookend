@@ -99,7 +99,6 @@ bam_to_elr_parser.add_argument("-s", dest='START', default=False, action='store_
 bam_to_elr_parser.add_argument("-c", dest='CAPPED', default=False, action='store_true', help="5' end data is capped.")
 bam_to_elr_parser.add_argument("-e", dest='END', default=False, action='store_true', help="Read 3' ends are transcript end sites.")
 bam_to_elr_parser.add_argument("--no_ends", dest='NO_ENDS', default=False, action='store_true', help="(overrides other options) Ignore all 5' and 3' end labels.")
-bam_to_elr_parser.add_argument("--bed", dest='BED_OUT', default=False, action='store_true', help="Output a 15-column end labeled BED file.")
 bam_to_elr_parser.add_argument("--secondary", dest='SECONDARY', default=False, action='store_true', help="Keep secondary alignments.")
 bam_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 bam_to_elr_parser.add_argument("--record_artifacts", dest='RECORD_ARTIFACTS', default=False, action='store_true', help="Reports artifact-masked S/E labels as >/].")

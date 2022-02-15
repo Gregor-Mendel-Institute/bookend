@@ -1,12 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from distutils import extension
 import sys
+import os
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
 import bookend.core.cython_utils._rnaseq_utils as ru
 import pysam
+from bookend.core.elr_sort import ELRsorter
+from bookend.core.elr_to_bed import ELRtoBEDconverter
 
 class BAMtoELRconverter:
     def __init__(self, args):
@@ -19,13 +23,11 @@ class BAMtoELRconverter:
         self.capped = args['CAPPED']
         self.end = args['END']
         self.no_ends = args['NO_ENDS']
-        self.bed_out = args['BED_OUT']
         self.secondary = args['SECONDARY']
         self.output = args['OUTPUT']
         self.start_seq = args['START_SEQ']
         self.end_seq = args['END_SEQ']
         self.record_artifacts = args['RECORD_ARTIFACTS']
-        self.split = args['SPLIT']
         self.mismatch_rate = args['MM_RATE']
         self.sj_shift = args['SJ_SHIFT']
         self.minlen_strict = args['MINLEN_STRICT']
@@ -36,8 +38,13 @@ class BAMtoELRconverter:
         if self.start or self.end or self.capped:
             self.stranded = True
         
+        self.ext = 'elr'
         if self.output is None:
-            self.output = self.input+'.elr'
+            self.output = '{}.{}'.format(self.input,self.ext)
+        elif '.' in self.output:
+            self.ext = self.output.split('.')[-1]
+        else:
+            self.output = '{}.{}'.format(self.output,self.ext)
         
         if self.start_seq.lower == 'none':
             self.start_seq = ''
@@ -45,20 +52,18 @@ class BAMtoELRconverter:
         if self.end_seq.lower == 'none':
             self.end_seq = ''
         
-        self.output_file = 'stdout'
+        if self.input.split('.')[-1].lower() not in ['bam','sam']:
+            print("\nERROR: input file must be BAM/SAM format.")
+            sys.exit(1)
+        
+        if self.output.split('.')[-1].lower() not in ['elr','bed', 'bed12']:
+            print("\nERROR: output file must be ELR or BED format.")
+            sys.exit(1)
+        
         self.output_dict = {}
-        if not self.split:
-            if self.output != 'stdout':
-                self.output_file = open(self.output, 'w')
-
-        if self.header is None:
-            self.header_file = self.output_file
-        elif self.header != 'stdout':
-            self.header_file = open(self.header, 'w')
-        else:
-            self.header_file = 'stdout'
-
-        if self.bed_out:
+        self.tempout = '_unsorted.'+self.output
+        self.tempout_file = open(self.tempout, 'w')
+        if self.ext.lower() in ['bed','bed12']:
             self.output_format = 'bed'
         else:
             self.output_format = 'elr'
@@ -84,10 +89,6 @@ class BAMtoELRconverter:
             self.config_dict['start_seq'] = ''
             self.config_dict['end_seq'] = ''
         
-        if self.input.split('.')[-1].lower() not in ['bam','sam']:
-            print("\nERROR: input file must be BAM/SAM format.")
-            sys.exit(1)
-        
         self.bam_in = pysam.AlignmentFile(self.input)
         if self.source is None:
             self.source = self.bam_in.header['PG'][0]['ID']
@@ -99,6 +100,13 @@ class BAMtoELRconverter:
             config=self.config_dict,
             genome_fasta=self.genome
         )
+        self.sort_args = {
+            'OUT':self.output,
+            'FORCE':True,
+            'INPUT':self.tempout
+        }
+        if self.output_format == 'bed':
+            self.sort_args['OUT'] += '.elr'
         
         self.generator = self.generate_bam_entries()
     
@@ -129,31 +137,19 @@ class BAMtoELRconverter:
         else:
             output.write('\n'.join(lines)+'\n')
 
-    def write_reads(self, output):
+    def write_elr(self, output):
         out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list]
         self.output_lines(out_strings, output)
 
     def process_entry(self, bam_lines):
         self.dataset.read_list = []
         self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
-        if self.split: # Separate reads by their number of mappings to the genome
-            mm_num = len(self.dataset.read_list)
-            if mm_num not in self.output_dict.keys():
-                # Start a new file when a new multimapping number is found
-                self.output_dict[mm_num] = open('{}.mm{}.elr'.format(self.source, mm_num), 'w')
-                # Add the header to all output files
-                self.output_lines(self.dataset.dump_header(), self.output_dict[mm_num])
-
-            output_file = self.output_dict[mm_num]
-        else:
-            output_file = self.output_file
-        
         if len(self.dataset.read_list) > 0:
-            self.write_reads(output_file)
+            self.write_elr(self.tempout_file)
     
     def display_options(self):
         """Returns a string describing all input args"""
-        options_string = "\n/| bookend make-elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
+        options_string = "\n/| bookend elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
         options_string += "  Input file:                         {}\n".format(self.input)
         options_string += "  Reference genome file:              {}\n".format(self.genome)
         options_string += "  Output file (-o):                   {}\n".format(self.output)
@@ -220,16 +216,26 @@ class BAMtoELRconverter:
     
     def run(self):
         """Executes end labeling on all reads."""
-        print(self.display_options())
-        self.output_lines(self.dataset.dump_header(),self.output_file)
+        if self.output != 'stdout':
+            print(self.display_options())
+        
+        self.output_lines(self.dataset.dump_header(),self.tempout_file)       
         for entry in self.generator:
             self.process_entry(entry)
         
-        if self.output_file != 'stdout':
-            self.output_file.close()
-        
-        for mm_out in self.output_dict.values():
-            mm_out.close()
+        self.tempout_file.close()
+        Sorter = ELRsorter(self.sort_args)
+        Sorter.run()
+        os.remove(self.tempout)
+        if self.output_format == 'bed':
+            convert_args = {
+                'INPUT':self.sort_args['OUT'],
+                'HEADER':None,
+                'OUTPUT':self.output
+            }
+            Converter = ELRtoBEDconverter(convert_args)
+            Converter.run()
+            os.remove(self.sort_args['OUT'])
         
         print(self.display_summary())
 

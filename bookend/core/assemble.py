@@ -222,7 +222,9 @@ class Assembler:
     
     def run(self):
         """Executes end labeling on all reads."""
-        print(self.display_options())
+        if self.output != 'stdout':
+            print(self.display_options())
+        
         if self.cov_out:self.covfile=open(self.cov_out, 'w')
         wrote_header = False
         for locus in self.generator:
