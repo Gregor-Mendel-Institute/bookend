@@ -13,17 +13,11 @@ class ELRtoBEDconverter:
         """Converts each line of BED-formatted input to ELR"""
         self.input = args['INPUT']
         self.output = args['OUTPUT']
-        self.header = args['HEADER']
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
             self.output_file = open(self.output, 'w')
         
-        if self.header is None:
-            self.header_file = self.output_file
-        else:
-            self.header_file = open(self.header, 'w')
-               
         self.linecount = 0
         self.readcount = 0
         self.dataset = ru.RNAseqDataset()
@@ -38,8 +32,7 @@ class ELRtoBEDconverter:
                     self.dataset.add_source(header_line[-1])
                 if header_line[0] == '#C':
                     self.dataset.add_chrom(header_line[-1])
-
-                self.output_line(elr_line.rstrip(), self.header_file)
+                
                 continue
 
             self.dataset.add_read_from_ELR(elr_line)
@@ -54,10 +47,7 @@ class ELRtoBEDconverter:
         
         if self.output != 'stdout':
             self.output_file.close()
-        
-        if self.header_file != self.output_file and self.header_file != 'stdout':
-            self.header_file.close()
-
+    
     def output_line(self, line, output_file):
         """Takes a list of bed lines and writes
         them to the output stream.
@@ -68,7 +58,7 @@ class ELRtoBEDconverter:
             output_file.write('{}\n'.format(line.rstrip()))
     
     def run(self):
-        print(self.display_options())
+        if __name__ == '__main__':print(self.display_options())
         if not self.input.split('.')[-1].lower() in ['elr']:
             print("ERROR: input must be in the ELR format (.elr)")
             return 1
@@ -93,5 +83,5 @@ class ELRtoBEDconverter:
 
 if __name__ == '__main__':
     args = vars(parser.parse_args())
-    obj = BEDtoELRconverter(args)
+    obj = ELRtoBEDconverter(args)
     sys.exit(obj.run())
