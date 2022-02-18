@@ -7,11 +7,12 @@ from bookend.core.elr_combine import ELRcombiner
 
 class ELRsorter:
     def __init__(self, args):
-        """Converts each line of BED-formatted input to ELR"""
+        """Sorts all ELR reads in a file by ascending genomic position"""
         self.input = args['INPUT']
         self.output = args['OUT']
         self.force = args['FORCE']
         self.read_tuples = []
+        self.sortsize = 5000000
         self.linecount = 0
         self.outlinecount = 0
         self.tmpcount = 0
@@ -62,13 +63,20 @@ class ELRsorter:
             
             self.add_read_tuple(elr_line)
             self.linecount += 1
-            if self.linecount >= 1000000:
+            if self.linecount >= self.sortsize:
                 self.linecount = 0
                 tmpfile = open('{}.tmp{}.elr'.format(self.input,self.tmpcount),'w')
                 tmpfile.write(self.header)
                 self.dump_sorted_reads(tmpfile)
                 tmpfile.close()
                 self.tmpcount += 1
+            
+        if self.tmpcount > 0:
+            tmpfile = open('{}.tmp{}.elr'.format(self.input,self.tmpcount),'w')
+            tmpfile.write(self.header)
+            self.dump_sorted_reads(tmpfile)
+            tmpfile.close()
+            self.tmpcount += 1
     
     def dump_sorted_reads(self, tmpfile=None):
         """Writes sorted reads to output, collapsing
