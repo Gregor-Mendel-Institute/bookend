@@ -1805,9 +1805,7 @@ cdef class BAMobject:
             except KeyError:
                 map_number = counter
             
-            if seq == '':
-                seq = line.query_sequence
-            
+            seq = line.query_sequence
             pos = line.reference_start
             chrom_id = line.reference_id
             try:
@@ -1840,10 +1838,10 @@ cdef class BAMobject:
                 alignment_strand = self.get_alignment_strand(line, strand)
                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
             
-            if tail == 0:
-                aligned_seq = seq[head:]
+            if tail <= 0:
+                aligned_seq = seq[max(0,head):]
             else:
-                aligned_seq = seq[head:-tail]
+                aligned_seq = seq[max(0,head):-tail]
             
             if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
                 continue
@@ -1853,12 +1851,12 @@ cdef class BAMobject:
                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
                     continue
             
-            
             # EVALUATE SOFTCLIPPED NUCLEOTIDES
             fiveprime = mate == 1
             threeprime = (mate == 1 and not line.is_paired) or mate == 2
             s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
             # Check for uuG's (5') or terminal mismatches (3')
+            e_tag_added = False
             if self.dataset.genome:
                 start_pos = 0
                 end_pos = 0
@@ -1882,6 +1880,18 @@ cdef class BAMobject:
                     
                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
                         e_tag = False
+                elif threeprime:
+                    # Check for softclipped poly(A) tails
+                    e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+                    if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+                        e_tag = False
+                    
+                    if e_tag:
+                        e_tag_added = True
+                        if strand == 1:
+                            e_tag_len = max(e_tag_len, tail)
+                        elif strand == -1:
+                            e_tag_len = max(e_tag_len, head)
             
             # Reconcile strand information given by start, end, and splice
             junction_exists = sum(splice) > 0
@@ -1902,6 +1912,9 @@ cdef class BAMobject:
                 mappings[map_number] = current_mapping
             else: # merge two mate-pair ReadObjects together
                 mate_read = mappings[map_number]
+                # if e_tag_added: # Mate alignment cannot extend beyond a trimmed 3' poly(A)
+                #     self.update_trimmed_ranges(current_mapping, mate_read, strand)
+                
                 mate_read.merge(current_mapping)
         
         mapping_list = self.resolve_overlapping_mappings(mappings)
@@ -2043,9 +2056,9 @@ cdef class BAMobject:
         if not threeprime:
             e_tag = False
         else:
-            if strand == 1 and (tail == -1 or tail > 4):
+            if strand == 1 and tail == -1:
                 e_tag = False
-            elif strand == -1 and (head == -1 or head > 4):
+            elif strand == -1 and head == -1:
                 e_tag = False
         
         return s_tag, e_tag, capped
@@ -2072,6 +2085,70 @@ cdef class BAMobject:
                     return True
                 else:
                     return False
+
+    cdef (bint, int) softclipped_polya(self, int strand, int head, int tail, str seq, str chrom, list ranges):
+        """Checks (1) if softclip 3' bases are oligo-A and
+        (2) that oligomer does not match the genome."""
+        cdef str l
+        cdef int trim
+        if strand >= 0:
+            if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A
+                if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+                    # One or more downstream untemplated As were detected
+                    return True, 1
+                else:
+                    return False, strand
+        
+        if strand <= 0:
+            if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A
+                if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+                    # One or more upstream untemplated Ts were detected
+                    return True, -1
+                else:
+                    return False, strand
+        
+        return False, strand
+    
+    #TODO: Finish update_trimmed_ranges
+    # cdef void update_trimmed_ranges(self, RNAseqMapping trimmed, RNAseqMapping mate, str aligned_seq, int strand):
+    #     """Given a read with a softclipped A string,
+    #     remove additional (templated) terminal As and 
+    #     update both mates' terminal range."""
+    #     cdef int trim, pos, trimpos
+    #     cdef str l
+    #     cdef (int, int) m
+    #     trim = 0
+    #     if strand == 1:
+    #         pos = len(aligned_seq)-1
+    #         l = aligned_seq[pos]
+    #         while l == 'A':
+    #             trim += 1
+    #             pos -= 1
+    #             l = aligned_seq[pos]
+            
+    #         if trim > 0:
+    #             trimpos = ranges[-1][1]-trim
+    #             if trimmed.ranges[-1][0] >= trimpos:
+    #                 trimmed.ranges = trimmed.ranges[:-1]
+    #                 trimmed.e_tag = False
+    #                 mate.ranges = [m for m in mate.ranges if m[0]]
+    #             trimmed.ranges[-1] = (ranges[-1][0],ranges[-1][1]-trim)
+    #     else:
+    #         pos = 0
+    #         l = aligned_seq[pos]
+    #         while l == 'T':
+    #             trim += 1
+    #             pos += 1
+    #             l = aligned_seq[pos]
+            
+    #     seq_iter = iter(seq[:-tail][::-1])
+    #     while l == 'A':
+    #         trim += 1
+    #         l = next(seq_iter)
+        
+    #     if trim > 0: # Remove extra nucleotides from the end
+    #         ranges[0] = (ranges[0][0]+trim,ranges[0][1])
+        
 
     cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):
         """Updates the mapping ranges of a read with a softclipped

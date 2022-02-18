@@ -108,6 +108,7 @@ class BAMtoELRconverter:
         if self.output_format == 'bed':
             self.sort_args['OUT'] += '.elr'
         
+        self.failures = []
         self.generator = self.generate_bam_entries()
     
     def generate_bam_entries(self):
@@ -146,6 +147,8 @@ class BAMtoELRconverter:
         self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
         if len(self.dataset.read_list) > 0:
             self.write_elr(self.tempout_file)
+        else:
+            self.failures += bam_lines
     
     def display_options(self):
         """Returns a string describing all input args"""
@@ -167,6 +170,11 @@ class BAMtoELRconverter:
         options_string += "  Perfect alignment minlen (--minlen_strict): {}\n".format(self.minlen_strict)
         options_string += "  Relaxed alignment minlen (--minlen_loose):  {}\n".format(self.minlen_loose)
         options_string += "  Secondary alignments (--secondary): {}\n".format(self.secondary)
+
+        if not self.genome:
+            options_string += "\nWARNING: cap detection and artifact masking can only be done if a reference genome is provided."
+            options_string += "\nProvide a genome fasta with --genome /path/to/fasta"
+        
         return options_string
     
     def display_summary(self):
@@ -234,6 +242,7 @@ class BAMtoELRconverter:
                 'OUTPUT':self.output
             }
             Converter = ELRtoBEDconverter(convert_args)
+            print('Converting to BED...')
             Converter.run()
             os.remove(self.sort_args['OUT'])
         

@@ -1569,7 +1569,7 @@ struct __pyx_opt_args_13_rnaseq_utils_parse_tag {
   PyObject *tagsplit;
 };
 
-/* "_rnaseq_utils.pyx":2007
+/* "_rnaseq_utils.pyx":2020
  *         return alignment_strand
  * 
  *     cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=False):             # <<<<<<<<<<<<<<
@@ -1581,7 +1581,7 @@ struct __pyx_opt_args_13_rnaseq_utils_9BAMobject_get_splice_info {
   int remove_noncanonical;
 };
 
-/* "_rnaseq_utils.pyx":2029
+/* "_rnaseq_utils.pyx":2042
  *         return splice
  * 
  *     cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):             # <<<<<<<<<<<<<<
@@ -1594,7 +1594,7 @@ struct __pyx_ctuple_int__and_int__and_int {
   int f2;
 };
 
-/* "_rnaseq_utils.pyx":2255
+/* "_rnaseq_utils.pyx":2332
  *     return False
  * 
  * cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):             # <<<<<<<<<<<<<<
@@ -1812,7 +1812,7 @@ struct __pyx_obj_13_rnaseq_utils___pyx_scope_struct_2_parse_MD_string {
 };
 
 
-/* "_rnaseq_utils.pyx":2104
+/* "_rnaseq_utils.pyx":2181
  *         return False
  * 
  * def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):             # <<<<<<<<<<<<<<
@@ -1855,7 +1855,7 @@ struct __pyx_obj_13_rnaseq_utils___pyx_scope_struct_3_read_generator {
 };
 
 
-/* "_rnaseq_utils.pyx":2177
+/* "_rnaseq_utils.pyx":2254
  *     fileconn.close()
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):             # <<<<<<<<<<<<<<
@@ -2064,6 +2064,7 @@ struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject {
   PyObject *(*get_splice_info)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, PyObject *, PyObject *, PyObject *, int, struct __pyx_opt_args_13_rnaseq_utils_9BAMobject_get_splice_info *__pyx_optional_args);
   __pyx_ctuple_int__and_int__and_int (*filter_labels_by_softclip_length)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, int, int, int, int, int);
   int (*untemplated_upstream_g)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *, PyObject *, PyObject *);
+  __pyx_ctuple_int__and_int (*softclipped_polya)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *, PyObject *, PyObject *);
   void (*restore_terminal_mismatches)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *);
   int (*matches_masking_sequence)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, PyObject *, int, int, PyObject *, int);
 };
@@ -2712,9 +2713,6 @@ static CYTHON_INLINE int __Pyx_PyUnicode_ContainsTF(PyObject* substring, PyObjec
     int result = PyUnicode_Contains(text, substring);
     return unlikely(result < 0) ? result : (result == (eq == Py_EQ));
 }
-
-/* PyIntCompare.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_EqObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
 
 /* py_dict_values.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyDict_Values(PyObject* d);
@@ -3367,6 +3365,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
 static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, PyObject *__pyx_v_ranges, PyObject *__pyx_v_introns, PyObject *__pyx_v_chrom, int __pyx_v_alignment_strand, struct __pyx_opt_args_13_rnaseq_utils_9BAMobject_get_splice_info *__pyx_optional_args); /* proto*/
 static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_filter_labels_by_softclip_length(CYTHON_UNUSED struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, int __pyx_v_s_tag, int __pyx_v_e_tag, int __pyx_v_capped, int __pyx_v_fiveprime, int __pyx_v_threeprime, int __pyx_v_strand, int __pyx_v_head, int __pyx_v_tail); /* proto*/
 static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, int __pyx_v_strand, int __pyx_v_head, int __pyx_v_tail, PyObject *__pyx_v_seq, PyObject *__pyx_v_chrom, PyObject *__pyx_v_ranges); /* proto*/
+static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_softclipped_polya(struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, int __pyx_v_strand, int __pyx_v_head, int __pyx_v_tail, PyObject *__pyx_v_seq, PyObject *__pyx_v_chrom, PyObject *__pyx_v_ranges); /* proto*/
 static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHON_UNUSED struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, int __pyx_v_strand, int __pyx_v_head, int __pyx_v_tail, PyObject *__pyx_v_ranges); /* proto*/
 static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, PyObject *__pyx_v_chrom, int __pyx_v_position, int __pyx_v_strand, PyObject *__pyx_v_readtype, int __pyx_v_length); /* proto*/
 static PyObject *__pyx_array_get_memview(struct __pyx_array_obj *__pyx_v_self); /* proto*/
@@ -43874,13 +43873,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
   struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *__pyx_v_mate_read = 0;
   int __pyx_v_capped;
   int __pyx_v_s_tag;
-  int __pyx_v_e_tag;
+  PyObject *__pyx_v_e_tag = NULL;
   PyObject *__pyx_v_line = NULL;
   PyObject *__pyx_v_mdstring = NULL;
   PyObject *__pyx_v_head = NULL;
   PyObject *__pyx_v_tail = NULL;
   long __pyx_v_alignment_strand;
   Py_ssize_t __pyx_v_match_length;
+  CYTHON_UNUSED int __pyx_v_e_tag_added;
   PyObject *__pyx_v_read_data = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -43910,11 +43910,11 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
   struct __pyx_opt_args_13_rnaseq_utils_parse_SAM_CIGAR __pyx_t_24;
   PyObject *(*__pyx_t_25)(PyObject *);
   struct __pyx_opt_args_13_rnaseq_utils_9BAMobject_get_splice_info __pyx_t_26;
-  Py_ssize_t __pyx_t_27;
+  long __pyx_t_27;
   Py_ssize_t __pyx_t_28;
-  int __pyx_t_29;
-  __pyx_ctuple_int__and_int__and_int __pyx_t_30;
-  PyObject *__pyx_t_31 = NULL;
+  Py_ssize_t __pyx_t_29;
+  int __pyx_t_30;
+  __pyx_ctuple_int__and_int__and_int __pyx_t_31;
   PyObject *__pyx_t_32 = NULL;
   PyObject *__pyx_t_33 = NULL;
   PyObject *__pyx_t_34 = NULL;
@@ -44385,16 +44385,22 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  *             if s_tag or e_tag or stranded_method:
  *                 stranded = True
  */
-    __pyx_t_12 = (__pyx_v_self->dataset->e_tag != 0);
-    if (!__pyx_t_12) {
+    if (!__pyx_v_self->dataset->e_tag) {
     } else {
-      __pyx_t_6 = __pyx_t_12;
+      __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->dataset->e_tag); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1791, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_2 = __pyx_t_1;
+      __pyx_t_1 = 0;
       goto __pyx_L14_bool_binop_done;
     }
-    __pyx_t_12 = (__pyx_v_ID_tags.f1 != 0);
-    __pyx_t_6 = __pyx_t_12;
+    __pyx_t_6 = __pyx_v_ID_tags.f1;
+    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1791, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __pyx_t_1;
+    __pyx_t_1 = 0;
     __pyx_L14_bool_binop_done:;
-    __pyx_v_e_tag = __pyx_t_6;
+    __Pyx_XDECREF_SET(__pyx_v_e_tag, __pyx_t_2);
+    __pyx_t_2 = 0;
 
     /* "_rnaseq_utils.pyx":1792
  *             s_tag = self.dataset.s_tag or ID_tags[0]
@@ -44409,7 +44415,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __pyx_t_6 = __pyx_t_12;
       goto __pyx_L17_bool_binop_done;
     }
-    __pyx_t_12 = (__pyx_v_e_tag != 0);
+    __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_v_e_tag); if (unlikely(__pyx_t_12 < 0)) __PYX_ERR(0, 1792, __pyx_L1_error)
     if (!__pyx_t_12) {
     } else {
       __pyx_t_6 = __pyx_t_12;
@@ -44605,7 +44611,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  *             except KeyError:
  *                 map_number = counter             # <<<<<<<<<<<<<<
  * 
- *             if seq == '':
+ *             seq = line.query_sequence
  */
         __pyx_v_map_number = __pyx_v_counter;
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -44639,63 +44645,43 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     /* "_rnaseq_utils.pyx":1808
  *                 map_number = counter
  * 
- *             if seq == '':             # <<<<<<<<<<<<<<
- *                 seq = line.query_sequence
- * 
- */
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_v_seq, __pyx_kp_u__7, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1808, __pyx_L1_error)
-    __pyx_t_12 = (__pyx_t_6 != 0);
-    if (__pyx_t_12) {
-
-      /* "_rnaseq_utils.pyx":1809
- * 
- *             if seq == '':
- *                 seq = line.query_sequence             # <<<<<<<<<<<<<<
- * 
+ *             seq = line.query_sequence             # <<<<<<<<<<<<<<
  *             pos = line.reference_start
+ *             chrom_id = line.reference_id
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_query_sequence); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1809, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1809, __pyx_L1_error)
-      __Pyx_DECREF_SET(__pyx_v_seq, ((PyObject*)__pyx_t_3));
-      __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_query_sequence); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1808, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1808, __pyx_L1_error)
+    __Pyx_DECREF_SET(__pyx_v_seq, ((PyObject*)__pyx_t_3));
+    __pyx_t_3 = 0;
 
-      /* "_rnaseq_utils.pyx":1808
- *                 map_number = counter
+    /* "_rnaseq_utils.pyx":1809
  * 
- *             if seq == '':             # <<<<<<<<<<<<<<
- *                 seq = line.query_sequence
- * 
- */
-    }
-
-    /* "_rnaseq_utils.pyx":1811
- *                 seq = line.query_sequence
- * 
+ *             seq = line.query_sequence
  *             pos = line.reference_start             # <<<<<<<<<<<<<<
  *             chrom_id = line.reference_id
  *             try:
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_start); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1811, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_start); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1811, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_pos = __pyx_t_15;
 
-    /* "_rnaseq_utils.pyx":1812
- * 
+    /* "_rnaseq_utils.pyx":1810
+ *             seq = line.query_sequence
  *             pos = line.reference_start
  *             chrom_id = line.reference_id             # <<<<<<<<<<<<<<
  *             try:
  *                 chrom = line.header.get_reference_name(chrom_id)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_id); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1810, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1810, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_chrom_id = __pyx_t_15;
 
-    /* "_rnaseq_utils.pyx":1813
+    /* "_rnaseq_utils.pyx":1811
  *             pos = line.reference_start
  *             chrom_id = line.reference_id
  *             try:             # <<<<<<<<<<<<<<
@@ -44711,19 +44697,19 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGOTREF(__pyx_t_16);
       /*try:*/ {
 
-        /* "_rnaseq_utils.pyx":1814
+        /* "_rnaseq_utils.pyx":1812
  *             chrom_id = line.reference_id
  *             try:
  *                 chrom = line.header.get_reference_name(chrom_id)             # <<<<<<<<<<<<<<
  *             except:
  *                 chrom = line.reference_name
  */
-        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1814, __pyx_L33_error)
+        __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1812, __pyx_L32_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get_reference_name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1814, __pyx_L33_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get_reference_name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1812, __pyx_L32_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_chrom_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1814, __pyx_L33_error)
+        __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_chrom_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1812, __pyx_L32_error)
         __Pyx_GOTREF(__pyx_t_1);
         __pyx_t_4 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -44738,14 +44724,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         __pyx_t_3 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_4, __pyx_t_1) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1);
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1814, __pyx_L33_error)
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1812, __pyx_L32_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1814, __pyx_L33_error)
+        if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1812, __pyx_L32_error)
         __Pyx_XDECREF_SET(__pyx_v_chrom, ((PyObject*)__pyx_t_3));
         __pyx_t_3 = 0;
 
-        /* "_rnaseq_utils.pyx":1813
+        /* "_rnaseq_utils.pyx":1811
  *             pos = line.reference_start
  *             chrom_id = line.reference_id
  *             try:             # <<<<<<<<<<<<<<
@@ -44756,14 +44742,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
       __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
       __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-      goto __pyx_L40_try_end;
-      __pyx_L33_error:;
+      goto __pyx_L39_try_end;
+      __pyx_L32_error:;
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "_rnaseq_utils.pyx":1815
+      /* "_rnaseq_utils.pyx":1813
  *             try:
  *                 chrom = line.header.get_reference_name(chrom_id)
  *             except:             # <<<<<<<<<<<<<<
@@ -44772,31 +44758,31 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       /*except:*/ {
         __Pyx_AddTraceback("_rnaseq_utils.BAMobject.generate_read", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 1815, __pyx_L35_except_error)
+        if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 1813, __pyx_L34_except_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_GOTREF(__pyx_t_1);
 
-        /* "_rnaseq_utils.pyx":1816
+        /* "_rnaseq_utils.pyx":1814
  *                 chrom = line.header.get_reference_name(chrom_id)
  *             except:
  *                 chrom = line.reference_name             # <<<<<<<<<<<<<<
  * 
  *             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
  */
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1816, __pyx_L35_except_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_reference_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1814, __pyx_L34_except_error)
         __Pyx_GOTREF(__pyx_t_4);
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 1816, __pyx_L35_except_error)
+        if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 1814, __pyx_L34_except_error)
         __Pyx_XDECREF_SET(__pyx_v_chrom, ((PyObject*)__pyx_t_4));
         __pyx_t_4 = 0;
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        goto __pyx_L34_exception_handled;
+        goto __pyx_L33_exception_handled;
       }
-      __pyx_L35_except_error:;
+      __pyx_L34_except_error:;
 
-      /* "_rnaseq_utils.pyx":1813
+      /* "_rnaseq_utils.pyx":1811
  *             pos = line.reference_start
  *             chrom_id = line.reference_id
  *             try:             # <<<<<<<<<<<<<<
@@ -44808,15 +44794,15 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGIVEREF(__pyx_t_16);
       __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_17, __pyx_t_16);
       goto __pyx_L1_error;
-      __pyx_L34_exception_handled:;
+      __pyx_L33_exception_handled:;
       __Pyx_XGIVEREF(__pyx_t_18);
       __Pyx_XGIVEREF(__pyx_t_17);
       __Pyx_XGIVEREF(__pyx_t_16);
       __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_17, __pyx_t_16);
-      __pyx_L40_try_end:;
+      __pyx_L39_try_end:;
     }
 
-    /* "_rnaseq_utils.pyx":1819
+    /* "_rnaseq_utils.pyx":1817
  * 
  *             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
  *             try:             # <<<<<<<<<<<<<<
@@ -44832,14 +44818,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGOTREF(__pyx_t_18);
       /*try:*/ {
 
-        /* "_rnaseq_utils.pyx":1820
+        /* "_rnaseq_utils.pyx":1818
  *             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
  *             try:
  *                 errors = line.get_tag('nM')             # <<<<<<<<<<<<<<
  *             except KeyError:
  *                 try:
  */
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1820, __pyx_L43_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1818, __pyx_L42_error)
         __Pyx_GOTREF(__pyx_t_2);
         __pyx_t_3 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -44853,14 +44839,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         }
         __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_n_u_nM) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_n_u_nM);
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1820, __pyx_L43_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1818, __pyx_L42_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1820, __pyx_L43_error)
+        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1818, __pyx_L42_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __pyx_v_errors = __pyx_t_15;
 
-        /* "_rnaseq_utils.pyx":1819
+        /* "_rnaseq_utils.pyx":1817
  * 
  *             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
  *             try:             # <<<<<<<<<<<<<<
@@ -44871,14 +44857,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
       __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
       __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-      goto __pyx_L50_try_end;
-      __pyx_L43_error:;
+      goto __pyx_L49_try_end;
+      __pyx_L42_error:;
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "_rnaseq_utils.pyx":1821
+      /* "_rnaseq_utils.pyx":1819
  *             try:
  *                 errors = line.get_tag('nM')
  *             except KeyError:             # <<<<<<<<<<<<<<
@@ -44888,12 +44874,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __pyx_t_15 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
       if (__pyx_t_15) {
         __Pyx_AddTraceback("_rnaseq_utils.BAMobject.generate_read", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 1821, __pyx_L45_except_error)
+        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 1819, __pyx_L44_except_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_GOTREF(__pyx_t_3);
 
-        /* "_rnaseq_utils.pyx":1822
+        /* "_rnaseq_utils.pyx":1820
  *                 errors = line.get_tag('nM')
  *             except KeyError:
  *                 try:             # <<<<<<<<<<<<<<
@@ -44909,14 +44895,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
           __Pyx_XGOTREF(__pyx_t_21);
           /*try:*/ {
 
-            /* "_rnaseq_utils.pyx":1823
+            /* "_rnaseq_utils.pyx":1821
  *             except KeyError:
  *                 try:
  *                     errors = line.get_tag('NM')             # <<<<<<<<<<<<<<
  *                 except KeyError:
  *                     errors = 0
  */
-            __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1823, __pyx_L53_error)
+            __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1821, __pyx_L52_error)
             __Pyx_GOTREF(__pyx_t_22);
             __pyx_t_23 = NULL;
             if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_22))) {
@@ -44930,14 +44916,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
             }
             __pyx_t_4 = (__pyx_t_23) ? __Pyx_PyObject_Call2Args(__pyx_t_22, __pyx_t_23, __pyx_n_u_NM) : __Pyx_PyObject_CallOneArg(__pyx_t_22, __pyx_n_u_NM);
             __Pyx_XDECREF(__pyx_t_23); __pyx_t_23 = 0;
-            if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1823, __pyx_L53_error)
+            if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1821, __pyx_L52_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-            __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1823, __pyx_L53_error)
+            __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1821, __pyx_L52_error)
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
             __pyx_v_errors = __pyx_t_15;
 
-            /* "_rnaseq_utils.pyx":1822
+            /* "_rnaseq_utils.pyx":1820
  *                 errors = line.get_tag('nM')
  *             except KeyError:
  *                 try:             # <<<<<<<<<<<<<<
@@ -44948,13 +44934,13 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
           __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
           __Pyx_XDECREF(__pyx_t_20); __pyx_t_20 = 0;
           __Pyx_XDECREF(__pyx_t_21); __pyx_t_21 = 0;
-          goto __pyx_L60_try_end;
-          __pyx_L53_error:;
+          goto __pyx_L59_try_end;
+          __pyx_L52_error:;
           __Pyx_XDECREF(__pyx_t_22); __pyx_t_22 = 0;
           __Pyx_XDECREF(__pyx_t_23); __pyx_t_23 = 0;
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-          /* "_rnaseq_utils.pyx":1824
+          /* "_rnaseq_utils.pyx":1822
  *                 try:
  *                     errors = line.get_tag('NM')
  *                 except KeyError:             # <<<<<<<<<<<<<<
@@ -44964,12 +44950,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
           __pyx_t_15 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
           if (__pyx_t_15) {
             __Pyx_AddTraceback("_rnaseq_utils.BAMobject.generate_read", __pyx_clineno, __pyx_lineno, __pyx_filename);
-            if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_22, &__pyx_t_23) < 0) __PYX_ERR(0, 1824, __pyx_L55_except_error)
+            if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_22, &__pyx_t_23) < 0) __PYX_ERR(0, 1822, __pyx_L54_except_error)
             __Pyx_GOTREF(__pyx_t_4);
             __Pyx_GOTREF(__pyx_t_22);
             __Pyx_GOTREF(__pyx_t_23);
 
-            /* "_rnaseq_utils.pyx":1825
+            /* "_rnaseq_utils.pyx":1823
  *                     errors = line.get_tag('NM')
  *                 except KeyError:
  *                     errors = 0             # <<<<<<<<<<<<<<
@@ -44980,12 +44966,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_XDECREF(__pyx_t_22); __pyx_t_22 = 0;
             __Pyx_XDECREF(__pyx_t_23); __pyx_t_23 = 0;
-            goto __pyx_L54_exception_handled;
+            goto __pyx_L53_exception_handled;
           }
-          goto __pyx_L55_except_error;
-          __pyx_L55_except_error:;
+          goto __pyx_L54_except_error;
+          __pyx_L54_except_error:;
 
-          /* "_rnaseq_utils.pyx":1822
+          /* "_rnaseq_utils.pyx":1820
  *                 errors = line.get_tag('nM')
  *             except KeyError:
  *                 try:             # <<<<<<<<<<<<<<
@@ -44996,23 +44982,23 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
           __Pyx_XGIVEREF(__pyx_t_20);
           __Pyx_XGIVEREF(__pyx_t_21);
           __Pyx_ExceptionReset(__pyx_t_19, __pyx_t_20, __pyx_t_21);
-          goto __pyx_L45_except_error;
-          __pyx_L54_exception_handled:;
+          goto __pyx_L44_except_error;
+          __pyx_L53_exception_handled:;
           __Pyx_XGIVEREF(__pyx_t_19);
           __Pyx_XGIVEREF(__pyx_t_20);
           __Pyx_XGIVEREF(__pyx_t_21);
           __Pyx_ExceptionReset(__pyx_t_19, __pyx_t_20, __pyx_t_21);
-          __pyx_L60_try_end:;
+          __pyx_L59_try_end:;
         }
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        goto __pyx_L44_exception_handled;
+        goto __pyx_L43_exception_handled;
       }
-      goto __pyx_L45_except_error;
-      __pyx_L45_except_error:;
+      goto __pyx_L44_except_error;
+      __pyx_L44_except_error:;
 
-      /* "_rnaseq_utils.pyx":1819
+      /* "_rnaseq_utils.pyx":1817
  * 
  *             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
  *             try:             # <<<<<<<<<<<<<<
@@ -45024,15 +45010,15 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGIVEREF(__pyx_t_18);
       __Pyx_ExceptionReset(__pyx_t_16, __pyx_t_17, __pyx_t_18);
       goto __pyx_L1_error;
-      __pyx_L44_exception_handled:;
+      __pyx_L43_exception_handled:;
       __Pyx_XGIVEREF(__pyx_t_16);
       __Pyx_XGIVEREF(__pyx_t_17);
       __Pyx_XGIVEREF(__pyx_t_18);
       __Pyx_ExceptionReset(__pyx_t_16, __pyx_t_17, __pyx_t_18);
-      __pyx_L50_try_end:;
+      __pyx_L49_try_end:;
     }
 
-    /* "_rnaseq_utils.pyx":1827
+    /* "_rnaseq_utils.pyx":1825
  *                     errors = 0
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -45048,14 +45034,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGOTREF(__pyx_t_16);
       /*try:*/ {
 
-        /* "_rnaseq_utils.pyx":1828
+        /* "_rnaseq_utils.pyx":1826
  * 
  *             try:
  *                 mdstring = line.get_tag('MD')             # <<<<<<<<<<<<<<
  *             except KeyError:
  *                 mdstring = str(len(seq))
  */
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1828, __pyx_L63_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1826, __pyx_L62_error)
         __Pyx_GOTREF(__pyx_t_2);
         __pyx_t_1 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -45069,13 +45055,13 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         }
         __pyx_t_3 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_1, __pyx_n_u_MD) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_n_u_MD);
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1828, __pyx_L63_error)
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1826, __pyx_L62_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF_SET(__pyx_v_mdstring, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "_rnaseq_utils.pyx":1827
+        /* "_rnaseq_utils.pyx":1825
  *                     errors = 0
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -45086,8 +45072,8 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
       __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
       __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-      goto __pyx_L70_try_end;
-      __pyx_L63_error:;
+      goto __pyx_L69_try_end;
+      __pyx_L62_error:;
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_XDECREF(__pyx_t_22); __pyx_t_22 = 0;
@@ -45095,7 +45081,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "_rnaseq_utils.pyx":1829
+      /* "_rnaseq_utils.pyx":1827
  *             try:
  *                 mdstring = line.get_tag('MD')
  *             except KeyError:             # <<<<<<<<<<<<<<
@@ -45105,12 +45091,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __pyx_t_15 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
       if (__pyx_t_15) {
         __Pyx_AddTraceback("_rnaseq_utils.BAMobject.generate_read", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 1829, __pyx_L65_except_error)
+        if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 1827, __pyx_L64_except_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_GOTREF(__pyx_t_1);
 
-        /* "_rnaseq_utils.pyx":1830
+        /* "_rnaseq_utils.pyx":1828
  *                 mdstring = line.get_tag('MD')
  *             except KeyError:
  *                 mdstring = str(len(seq))             # <<<<<<<<<<<<<<
@@ -45119,12 +45105,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         if (unlikely(__pyx_v_seq == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-          __PYX_ERR(0, 1830, __pyx_L65_except_error)
+          __PYX_ERR(0, 1828, __pyx_L64_except_error)
         }
-        __pyx_t_7 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_seq); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1830, __pyx_L65_except_error)
-        __pyx_t_23 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1830, __pyx_L65_except_error)
+        __pyx_t_7 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_seq); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1828, __pyx_L64_except_error)
+        __pyx_t_23 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1828, __pyx_L64_except_error)
         __Pyx_GOTREF(__pyx_t_23);
-        __pyx_t_22 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_23); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1830, __pyx_L65_except_error)
+        __pyx_t_22 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyUnicode_Type)), __pyx_t_23); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1828, __pyx_L64_except_error)
         __Pyx_GOTREF(__pyx_t_22);
         __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
         __Pyx_XDECREF_SET(__pyx_v_mdstring, __pyx_t_22);
@@ -45132,12 +45118,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        goto __pyx_L64_exception_handled;
+        goto __pyx_L63_exception_handled;
       }
-      goto __pyx_L65_except_error;
-      __pyx_L65_except_error:;
+      goto __pyx_L64_except_error;
+      __pyx_L64_except_error:;
 
-      /* "_rnaseq_utils.pyx":1827
+      /* "_rnaseq_utils.pyx":1825
  *                     errors = 0
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -45149,28 +45135,28 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       __Pyx_XGIVEREF(__pyx_t_16);
       __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_17, __pyx_t_16);
       goto __pyx_L1_error;
-      __pyx_L64_exception_handled:;
+      __pyx_L63_exception_handled:;
       __Pyx_XGIVEREF(__pyx_t_18);
       __Pyx_XGIVEREF(__pyx_t_17);
       __Pyx_XGIVEREF(__pyx_t_16);
       __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_17, __pyx_t_16);
-      __pyx_L70_try_end:;
+      __pyx_L69_try_end:;
     }
 
-    /* "_rnaseq_utils.pyx":1832
+    /* "_rnaseq_utils.pyx":1830
  *                 mdstring = str(len(seq))
  * 
  *             ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate)             # <<<<<<<<<<<<<<
  *             number_of_blocks = len(ranges)
  *             if number_of_blocks == 0: # No exons of passing quality were found
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_cigartuples); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1832, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_cigartuples); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1830, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 1832, __pyx_L1_error)
-    if (!(likely(PyUnicode_CheckExact(__pyx_v_mdstring))||((__pyx_v_mdstring) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_mdstring)->tp_name), 0))) __PYX_ERR(0, 1832, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 1830, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_v_mdstring))||((__pyx_v_mdstring) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_mdstring)->tp_name), 0))) __PYX_ERR(0, 1830, __pyx_L1_error)
     __pyx_t_24.__pyx_n = 1;
     __pyx_t_24.error_rate = __pyx_v_self->error_rate;
-    __pyx_t_2 = __pyx_f_13_rnaseq_utils_parse_SAM_CIGAR(__pyx_v_pos, ((PyObject*)__pyx_t_1), ((PyObject*)__pyx_v_mdstring), 0, &__pyx_t_24); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1832, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_13_rnaseq_utils_parse_SAM_CIGAR(__pyx_v_pos, ((PyObject*)__pyx_t_1), ((PyObject*)__pyx_v_mdstring), 0, &__pyx_t_24); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1830, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if ((likely(PyTuple_CheckExact(__pyx_t_2))) || (PyList_CheckExact(__pyx_t_2))) {
@@ -45179,7 +45165,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       if (unlikely(size != 4)) {
         if (size > 4) __Pyx_RaiseTooManyValuesError(4);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 1832, __pyx_L1_error)
+        __PYX_ERR(0, 1830, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -45202,7 +45188,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         Py_ssize_t i;
         PyObject** temps[4] = {&__pyx_t_1,&__pyx_t_3,&__pyx_t_22,&__pyx_t_23};
         for (i=0; i < 4; i++) {
-          PyObject* item = PySequence_ITEM(sequence, i); if (unlikely(!item)) __PYX_ERR(0, 1832, __pyx_L1_error)
+          PyObject* item = PySequence_ITEM(sequence, i); if (unlikely(!item)) __PYX_ERR(0, 1830, __pyx_L1_error)
           __Pyx_GOTREF(item);
           *(temps[i]) = item;
         }
@@ -45212,28 +45198,28 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     } else {
       Py_ssize_t index = -1;
       PyObject** temps[4] = {&__pyx_t_1,&__pyx_t_3,&__pyx_t_22,&__pyx_t_23};
-      __pyx_t_4 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1832, __pyx_L1_error)
+      __pyx_t_4 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1830, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_25 = Py_TYPE(__pyx_t_4)->tp_iternext;
       for (index=0; index < 4; index++) {
-        PyObject* item = __pyx_t_25(__pyx_t_4); if (unlikely(!item)) goto __pyx_L73_unpacking_failed;
+        PyObject* item = __pyx_t_25(__pyx_t_4); if (unlikely(!item)) goto __pyx_L72_unpacking_failed;
         __Pyx_GOTREF(item);
         *(temps[index]) = item;
       }
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_25(__pyx_t_4), 4) < 0) __PYX_ERR(0, 1832, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_25(__pyx_t_4), 4) < 0) __PYX_ERR(0, 1830, __pyx_L1_error)
       __pyx_t_25 = NULL;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      goto __pyx_L74_unpacking_done;
-      __pyx_L73_unpacking_failed:;
+      goto __pyx_L73_unpacking_done;
+      __pyx_L72_unpacking_failed:;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_25 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 1832, __pyx_L1_error)
-      __pyx_L74_unpacking_done:;
+      __PYX_ERR(0, 1830, __pyx_L1_error)
+      __pyx_L73_unpacking_done:;
     }
-    if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 1832, __pyx_L1_error)
-    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1832, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 1830, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_3)->tp_name), 0))) __PYX_ERR(0, 1830, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_ranges, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
     __Pyx_XDECREF_SET(__pyx_v_introns, ((PyObject*)__pyx_t_3));
@@ -45243,7 +45229,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     __Pyx_XDECREF_SET(__pyx_v_tail, __pyx_t_23);
     __pyx_t_23 = 0;
 
-    /* "_rnaseq_utils.pyx":1833
+    /* "_rnaseq_utils.pyx":1831
  * 
  *             ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate)
  *             number_of_blocks = len(ranges)             # <<<<<<<<<<<<<<
@@ -45252,12 +45238,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     if (unlikely(__pyx_v_ranges == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1833, __pyx_L1_error)
+      __PYX_ERR(0, 1831, __pyx_L1_error)
     }
-    __pyx_t_7 = PyList_GET_SIZE(__pyx_v_ranges); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1833, __pyx_L1_error)
+    __pyx_t_7 = PyList_GET_SIZE(__pyx_v_ranges); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1831, __pyx_L1_error)
     __pyx_v_number_of_blocks = __pyx_t_7;
 
-    /* "_rnaseq_utils.pyx":1834
+    /* "_rnaseq_utils.pyx":1832
  *             ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate)
  *             number_of_blocks = len(ranges)
  *             if number_of_blocks == 0: # No exons of passing quality were found             # <<<<<<<<<<<<<<
@@ -45267,7 +45253,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     switch (__pyx_v_number_of_blocks) {
       case 0:
 
-      /* "_rnaseq_utils.pyx":1835
+      /* "_rnaseq_utils.pyx":1833
  *             number_of_blocks = len(ranges)
  *             if number_of_blocks == 0: # No exons of passing quality were found
  *                 continue             # <<<<<<<<<<<<<<
@@ -45276,7 +45262,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       goto __pyx_L10_continue;
 
-      /* "_rnaseq_utils.pyx":1834
+      /* "_rnaseq_utils.pyx":1832
  *             ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate)
  *             number_of_blocks = len(ranges)
  *             if number_of_blocks == 0: # No exons of passing quality were found             # <<<<<<<<<<<<<<
@@ -45286,7 +45272,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       break;
       case 1:
 
-      /* "_rnaseq_utils.pyx":1837
+      /* "_rnaseq_utils.pyx":1835
  *                 continue
  *             elif number_of_blocks == 1:
  *                 alignment_strand = 0             # <<<<<<<<<<<<<<
@@ -45295,19 +45281,19 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       __pyx_v_alignment_strand = 0;
 
-      /* "_rnaseq_utils.pyx":1838
+      /* "_rnaseq_utils.pyx":1836
  *             elif number_of_blocks == 1:
  *                 alignment_strand = 0
  *                 splice = []             # <<<<<<<<<<<<<<
  *             else:
  *                 alignment_strand = self.get_alignment_strand(line, strand)
  */
-      __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1838, __pyx_L1_error)
+      __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1836, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_XDECREF_SET(__pyx_v_splice, ((PyObject*)__pyx_t_2));
       __pyx_t_2 = 0;
 
-      /* "_rnaseq_utils.pyx":1836
+      /* "_rnaseq_utils.pyx":1834
  *             if number_of_blocks == 0: # No exons of passing quality were found
  *                 continue
  *             elif number_of_blocks == 1:             # <<<<<<<<<<<<<<
@@ -45317,7 +45303,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       break;
       default:
 
-      /* "_rnaseq_utils.pyx":1840
+      /* "_rnaseq_utils.pyx":1838
  *                 splice = []
  *             else:
  *                 alignment_strand = self.get_alignment_strand(line, strand)             # <<<<<<<<<<<<<<
@@ -45326,121 +45312,160 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       __pyx_v_alignment_strand = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->get_alignment_strand(__pyx_v_self, __pyx_v_line, __pyx_v_strand);
 
-      /* "_rnaseq_utils.pyx":1841
+      /* "_rnaseq_utils.pyx":1839
  *             else:
  *                 alignment_strand = self.get_alignment_strand(line, strand)
  *                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks             # <<<<<<<<<<<<<<
  * 
- *             if tail == 0:
+ *             if tail <= 0:
  */
       __pyx_t_26.__pyx_n = 1;
       __pyx_t_26.remove_noncanonical = __pyx_v_self->remove_noncanonical;
-      __pyx_t_2 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->get_splice_info(__pyx_v_self, __pyx_v_ranges, __pyx_v_introns, __pyx_v_chrom, __pyx_v_alignment_strand, &__pyx_t_26); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1841, __pyx_L1_error)
+      __pyx_t_2 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->get_splice_info(__pyx_v_self, __pyx_v_ranges, __pyx_v_introns, __pyx_v_chrom, __pyx_v_alignment_strand, &__pyx_t_26); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1839, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_XDECREF_SET(__pyx_v_splice, ((PyObject*)__pyx_t_2));
       __pyx_t_2 = 0;
       break;
     }
 
-    /* "_rnaseq_utils.pyx":1843
+    /* "_rnaseq_utils.pyx":1841
  *                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
  * 
- *             if tail == 0:             # <<<<<<<<<<<<<<
- *                 aligned_seq = seq[head:]
+ *             if tail <= 0:             # <<<<<<<<<<<<<<
+ *                 aligned_seq = seq[max(0,head):]
  *             else:
  */
-    __pyx_t_2 = __Pyx_PyInt_EqObjC(__pyx_v_tail, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1843, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_12 < 0)) __PYX_ERR(0, 1843, __pyx_L1_error)
+    __pyx_t_2 = PyObject_RichCompare(__pyx_v_tail, __pyx_int_0, Py_LE); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1841, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1841, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (__pyx_t_12) {
+    if (__pyx_t_6) {
 
-      /* "_rnaseq_utils.pyx":1844
+      /* "_rnaseq_utils.pyx":1842
  * 
- *             if tail == 0:
- *                 aligned_seq = seq[head:]             # <<<<<<<<<<<<<<
+ *             if tail <= 0:
+ *                 aligned_seq = seq[max(0,head):]             # <<<<<<<<<<<<<<
  *             else:
- *                 aligned_seq = seq[head:-tail]
+ *                 aligned_seq = seq[max(0,head):-tail]
  */
       if (unlikely(__pyx_v_seq == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1844, __pyx_L1_error)
+        __PYX_ERR(0, 1842, __pyx_L1_error)
       }
       __Pyx_INCREF(__pyx_v_head);
       __pyx_t_2 = __pyx_v_head;
-      __pyx_t_12 = (__pyx_t_2 == Py_None);
-      if (__pyx_t_12) {
-        __pyx_t_7 = 0;
+      __pyx_t_27 = 0;
+      __pyx_t_22 = __Pyx_PyInt_From_long(__pyx_t_27); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1842, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_22);
+      __pyx_t_3 = PyObject_RichCompare(__pyx_t_2, __pyx_t_22, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1842, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1842, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (__pyx_t_6) {
+        __Pyx_INCREF(__pyx_t_2);
+        __pyx_t_23 = __pyx_t_2;
       } else {
-        __pyx_t_27 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_27 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1844, __pyx_L1_error)
-        __pyx_t_7 = __pyx_t_27;
+        __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_t_27); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1842, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_23 = __pyx_t_3;
+        __pyx_t_3 = 0;
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyUnicode_Substring(__pyx_v_seq, __pyx_t_7, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1844, __pyx_L1_error)
+      __Pyx_INCREF(__pyx_t_23);
+      __pyx_t_2 = __pyx_t_23;
+      __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+      __pyx_t_6 = (__pyx_t_2 == Py_None);
+      if (__pyx_t_6) {
+        __pyx_t_7 = 0;
+      } else {
+        __pyx_t_28 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_28 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1842, __pyx_L1_error)
+        __pyx_t_7 = __pyx_t_28;
+      }
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_2 = __Pyx_PyUnicode_Substring(__pyx_v_seq, __pyx_t_7, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1842, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_XDECREF_SET(__pyx_v_aligned_seq, ((PyObject*)__pyx_t_2));
       __pyx_t_2 = 0;
 
-      /* "_rnaseq_utils.pyx":1843
+      /* "_rnaseq_utils.pyx":1841
  *                 splice = self.get_splice_info(ranges, introns, chrom, alignment_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
  * 
- *             if tail == 0:             # <<<<<<<<<<<<<<
- *                 aligned_seq = seq[head:]
+ *             if tail <= 0:             # <<<<<<<<<<<<<<
+ *                 aligned_seq = seq[max(0,head):]
  *             else:
  */
-      goto __pyx_L75;
+      goto __pyx_L74;
     }
 
-    /* "_rnaseq_utils.pyx":1846
- *                 aligned_seq = seq[head:]
+    /* "_rnaseq_utils.pyx":1844
+ *                 aligned_seq = seq[max(0,head):]
  *             else:
- *                 aligned_seq = seq[head:-tail]             # <<<<<<<<<<<<<<
+ *                 aligned_seq = seq[max(0,head):-tail]             # <<<<<<<<<<<<<<
  * 
  *             if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
  */
     /*else*/ {
       if (unlikely(__pyx_v_seq == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1846, __pyx_L1_error)
+        __PYX_ERR(0, 1844, __pyx_L1_error)
       }
       __Pyx_INCREF(__pyx_v_head);
       __pyx_t_2 = __pyx_v_head;
-      __pyx_t_12 = (__pyx_t_2 == Py_None);
-      if (__pyx_t_12) {
+      __pyx_t_27 = 0;
+      __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_t_27); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1844, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_22 = PyObject_RichCompare(__pyx_t_2, __pyx_t_3, Py_GT); __Pyx_XGOTREF(__pyx_t_22); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1844, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_22); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1844, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
+      if (__pyx_t_6) {
+        __Pyx_INCREF(__pyx_t_2);
+        __pyx_t_23 = __pyx_t_2;
+      } else {
+        __pyx_t_22 = __Pyx_PyInt_From_long(__pyx_t_27); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1844, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_22);
+        __pyx_t_23 = __pyx_t_22;
+        __pyx_t_22 = 0;
+      }
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_INCREF(__pyx_t_23);
+      __pyx_t_2 = __pyx_t_23;
+      __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+      __pyx_t_6 = (__pyx_t_2 == Py_None);
+      if (__pyx_t_6) {
         __pyx_t_7 = 0;
       } else {
-        __pyx_t_27 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_27 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1846, __pyx_L1_error)
-        __pyx_t_7 = __pyx_t_27;
+        __pyx_t_28 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_28 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1844, __pyx_L1_error)
+        __pyx_t_7 = __pyx_t_28;
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyNumber_Negative(__pyx_v_tail); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1846, __pyx_L1_error)
+      __pyx_t_2 = PyNumber_Negative(__pyx_v_tail); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1844, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_12 = (__pyx_t_2 == Py_None);
-      if (__pyx_t_12) {
-        __pyx_t_27 = PY_SSIZE_T_MAX;
+      __pyx_t_6 = (__pyx_t_2 == Py_None);
+      if (__pyx_t_6) {
+        __pyx_t_28 = PY_SSIZE_T_MAX;
       } else {
-        __pyx_t_28 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_28 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1846, __pyx_L1_error)
-        __pyx_t_27 = __pyx_t_28;
+        __pyx_t_29 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_29 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 1844, __pyx_L1_error)
+        __pyx_t_28 = __pyx_t_29;
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyUnicode_Substring(__pyx_v_seq, __pyx_t_7, __pyx_t_27); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1846, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyUnicode_Substring(__pyx_v_seq, __pyx_t_7, __pyx_t_28); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1844, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_XDECREF_SET(__pyx_v_aligned_seq, ((PyObject*)__pyx_t_2));
       __pyx_t_2 = 0;
     }
-    __pyx_L75:;
+    __pyx_L74:;
 
-    /* "_rnaseq_utils.pyx":1848
- *                 aligned_seq = seq[head:-tail]
+    /* "_rnaseq_utils.pyx":1846
+ *                 aligned_seq = seq[max(0,head):-tail]
  * 
  *             if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide             # <<<<<<<<<<<<<<
  *                 continue
  * 
  */
-    __pyx_t_12 = (__pyx_f_13_rnaseq_utils_is_homopolymer(__pyx_v_aligned_seq, NULL) != 0);
-    if (__pyx_t_12) {
+    __pyx_t_6 = (__pyx_f_13_rnaseq_utils_is_homopolymer(__pyx_v_aligned_seq, NULL) != 0);
+    if (__pyx_t_6) {
 
-      /* "_rnaseq_utils.pyx":1849
+      /* "_rnaseq_utils.pyx":1847
  * 
  *             if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
  *                 continue             # <<<<<<<<<<<<<<
@@ -45449,8 +45474,8 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       goto __pyx_L10_continue;
 
-      /* "_rnaseq_utils.pyx":1848
- *                 aligned_seq = seq[head:-tail]
+      /* "_rnaseq_utils.pyx":1846
+ *                 aligned_seq = seq[max(0,head):-tail]
  * 
  *             if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide             # <<<<<<<<<<<<<<
  *                 continue
@@ -45458,48 +45483,48 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     }
 
-    /* "_rnaseq_utils.pyx":1851
+    /* "_rnaseq_utils.pyx":1849
  *                 continue
  * 
  *             match_length = len(aligned_seq) - errors             # <<<<<<<<<<<<<<
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
  *                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
  */
-    __pyx_t_27 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_aligned_seq); if (unlikely(__pyx_t_27 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1851, __pyx_L1_error)
-    __pyx_v_match_length = (__pyx_t_27 - __pyx_v_errors);
+    __pyx_t_28 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_aligned_seq); if (unlikely(__pyx_t_28 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1849, __pyx_L1_error)
+    __pyx_v_match_length = (__pyx_t_28 - __pyx_v_errors);
 
-    /* "_rnaseq_utils.pyx":1852
+    /* "_rnaseq_utils.pyx":1850
  * 
  *             match_length = len(aligned_seq) - errors
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering             # <<<<<<<<<<<<<<
  *                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
  *                     continue
  */
-    __pyx_t_12 = ((__pyx_v_match_length < __pyx_v_self->dataset->minlen_loose) != 0);
-    if (__pyx_t_12) {
+    __pyx_t_6 = ((__pyx_v_match_length < __pyx_v_self->dataset->minlen_loose) != 0);
+    if (__pyx_t_6) {
 
-      /* "_rnaseq_utils.pyx":1853
+      /* "_rnaseq_utils.pyx":1851
  *             match_length = len(aligned_seq) - errors
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
  *                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):             # <<<<<<<<<<<<<<
  *                     continue
  * 
  */
-      __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1853, __pyx_L1_error)
-      __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1853, __pyx_L1_error)
-      __pyx_t_12 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->fails_stringent_filters(__pyx_v_self, __pyx_v_Nmap, __pyx_v_match_length, __pyx_t_15, __pyx_t_14, __pyx_v_errors) != 0);
-      if (__pyx_t_12) {
+      __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1851, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1851, __pyx_L1_error)
+      __pyx_t_6 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->fails_stringent_filters(__pyx_v_self, __pyx_v_Nmap, __pyx_v_match_length, __pyx_t_15, __pyx_t_14, __pyx_v_errors) != 0);
+      if (__pyx_t_6) {
 
-        /* "_rnaseq_utils.pyx":1854
+        /* "_rnaseq_utils.pyx":1852
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
  *                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
  *                     continue             # <<<<<<<<<<<<<<
  * 
- * 
+ *             # EVALUATE SOFTCLIPPED NUCLEOTIDES
  */
         goto __pyx_L10_continue;
 
-        /* "_rnaseq_utils.pyx":1853
+        /* "_rnaseq_utils.pyx":1851
  *             match_length = len(aligned_seq) - errors
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
  *                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):             # <<<<<<<<<<<<<<
@@ -45508,7 +45533,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       }
 
-      /* "_rnaseq_utils.pyx":1852
+      /* "_rnaseq_utils.pyx":1850
  * 
  *             match_length = len(aligned_seq) - errors
  *             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering             # <<<<<<<<<<<<<<
@@ -45517,7 +45542,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     }
 
-    /* "_rnaseq_utils.pyx":1858
+    /* "_rnaseq_utils.pyx":1855
  * 
  *             # EVALUATE SOFTCLIPPED NUCLEOTIDES
  *             fiveprime = mate == 1             # <<<<<<<<<<<<<<
@@ -45526,63 +45551,75 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     __pyx_v_fiveprime = (__pyx_v_mate == 1);
 
-    /* "_rnaseq_utils.pyx":1859
+    /* "_rnaseq_utils.pyx":1856
  *             # EVALUATE SOFTCLIPPED NUCLEOTIDES
  *             fiveprime = mate == 1
  *             threeprime = (mate == 1 and not line.is_paired) or mate == 2             # <<<<<<<<<<<<<<
  *             s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
  *             # Check for uuG's (5') or terminal mismatches (3')
  */
-    __pyx_t_6 = ((__pyx_v_mate == 1) != 0);
-    if (!__pyx_t_6) {
-      goto __pyx_L80_next_or;
+    __pyx_t_12 = ((__pyx_v_mate == 1) != 0);
+    if (!__pyx_t_12) {
+      goto __pyx_L79_next_or;
     } else {
     }
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1859, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1856, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1859, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_12 < 0)) __PYX_ERR(0, 1856, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_29 = ((!__pyx_t_6) != 0);
-    if (!__pyx_t_29) {
+    __pyx_t_30 = ((!__pyx_t_12) != 0);
+    if (!__pyx_t_30) {
     } else {
-      __pyx_t_12 = __pyx_t_29;
-      goto __pyx_L79_bool_binop_done;
+      __pyx_t_6 = __pyx_t_30;
+      goto __pyx_L78_bool_binop_done;
     }
-    __pyx_L80_next_or:;
-    __pyx_t_29 = ((__pyx_v_mate == 2) != 0);
-    __pyx_t_12 = __pyx_t_29;
-    __pyx_L79_bool_binop_done:;
-    __pyx_v_threeprime = __pyx_t_12;
+    __pyx_L79_next_or:;
+    __pyx_t_30 = ((__pyx_v_mate == 2) != 0);
+    __pyx_t_6 = __pyx_t_30;
+    __pyx_L78_bool_binop_done:;
+    __pyx_v_threeprime = __pyx_t_6;
 
-    /* "_rnaseq_utils.pyx":1860
+    /* "_rnaseq_utils.pyx":1857
  *             fiveprime = mate == 1
  *             threeprime = (mate == 1 and not line.is_paired) or mate == 2
  *             s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)             # <<<<<<<<<<<<<<
  *             # Check for uuG's (5') or terminal mismatches (3')
- *             if self.dataset.genome:
+ *             e_tag_added = False
  */
-    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1860, __pyx_L1_error)
-    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1860, __pyx_L1_error)
-    __pyx_t_30 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->filter_labels_by_softclip_length(__pyx_v_self, __pyx_v_s_tag, __pyx_v_e_tag, __pyx_v_capped, __pyx_v_fiveprime, __pyx_v_threeprime, __pyx_v_strand, __pyx_t_14, __pyx_t_15);
-    __pyx_t_12 = __pyx_t_30.f0;
-    __pyx_t_29 = __pyx_t_30.f1;
-    __pyx_t_6 = __pyx_t_30.f2;
-    __pyx_v_s_tag = __pyx_t_12;
-    __pyx_v_e_tag = __pyx_t_29;
-    __pyx_v_capped = __pyx_t_6;
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_e_tag); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1857, __pyx_L1_error)
+    __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1857, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1857, __pyx_L1_error)
+    __pyx_t_31 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->filter_labels_by_softclip_length(__pyx_v_self, __pyx_v_s_tag, __pyx_t_6, __pyx_v_capped, __pyx_v_fiveprime, __pyx_v_threeprime, __pyx_v_strand, __pyx_t_14, __pyx_t_15);
+    __pyx_t_6 = __pyx_t_31.f0;
+    __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_31.f1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1857, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_30 = __pyx_t_31.f2;
+    __pyx_v_s_tag = __pyx_t_6;
+    __Pyx_DECREF_SET(__pyx_v_e_tag, __pyx_t_2);
+    __pyx_t_2 = 0;
+    __pyx_v_capped = __pyx_t_30;
 
-    /* "_rnaseq_utils.pyx":1862
+    /* "_rnaseq_utils.pyx":1859
  *             s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
  *             # Check for uuG's (5') or terminal mismatches (3')
+ *             e_tag_added = False             # <<<<<<<<<<<<<<
+ *             if self.dataset.genome:
+ *                 start_pos = 0
+ */
+    __pyx_v_e_tag_added = 0;
+
+    /* "_rnaseq_utils.pyx":1860
+ *             # Check for uuG's (5') or terminal mismatches (3')
+ *             e_tag_added = False
  *             if self.dataset.genome:             # <<<<<<<<<<<<<<
  *                 start_pos = 0
  *                 end_pos = 0
  */
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_self->dataset->genome); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1862, __pyx_L1_error)
-    if (__pyx_t_6) {
+    __pyx_t_30 = __Pyx_PyObject_IsTrue(__pyx_v_self->dataset->genome); if (unlikely(__pyx_t_30 < 0)) __PYX_ERR(0, 1860, __pyx_L1_error)
+    if (__pyx_t_30) {
 
-      /* "_rnaseq_utils.pyx":1863
- *             # Check for uuG's (5') or terminal mismatches (3')
+      /* "_rnaseq_utils.pyx":1861
+ *             e_tag_added = False
  *             if self.dataset.genome:
  *                 start_pos = 0             # <<<<<<<<<<<<<<
  *                 end_pos = 0
@@ -45590,7 +45627,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       __pyx_v_start_pos = 0;
 
-      /* "_rnaseq_utils.pyx":1864
+      /* "_rnaseq_utils.pyx":1862
  *             if self.dataset.genome:
  *                 start_pos = 0
  *                 end_pos = 0             # <<<<<<<<<<<<<<
@@ -45599,7 +45636,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       __pyx_v_end_pos = 0;
 
-      /* "_rnaseq_utils.pyx":1865
+      /* "_rnaseq_utils.pyx":1863
  *                 start_pos = 0
  *                 end_pos = 0
  *                 if strand == 1:             # <<<<<<<<<<<<<<
@@ -45609,7 +45646,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
       switch (__pyx_v_strand) {
         case 1:
 
-        /* "_rnaseq_utils.pyx":1866
+        /* "_rnaseq_utils.pyx":1864
  *                 end_pos = 0
  *                 if strand == 1:
  *                     start_pos = ranges[0][0]             # <<<<<<<<<<<<<<
@@ -45618,23 +45655,56 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         if (unlikely(__pyx_v_ranges == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 1866, __pyx_L1_error)
+          __PYX_ERR(0, 1864, __pyx_L1_error)
         }
-        __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1866, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1864, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_23 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1866, __pyx_L1_error)
+        __pyx_t_23 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1864, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_23);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1866, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1864, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
         __pyx_v_start_pos = __pyx_t_15;
 
-        /* "_rnaseq_utils.pyx":1867
+        /* "_rnaseq_utils.pyx":1865
  *                 if strand == 1:
  *                     start_pos = ranges[0][0]
  *                     end_pos = ranges[-1][-1]-1             # <<<<<<<<<<<<<<
  *                 elif strand == -1:
  *                     start_pos = ranges[-1][-1]-1
+ */
+        if (unlikely(__pyx_v_ranges == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 1865, __pyx_L1_error)
+        }
+        __pyx_t_23 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1865, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_23);
+        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_23, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1865, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_2);
+        __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+        __pyx_t_23 = __Pyx_PyInt_SubtractObjC(__pyx_t_2, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1865, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_23);
+        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1865, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+        __pyx_v_end_pos = __pyx_t_15;
+
+        /* "_rnaseq_utils.pyx":1863
+ *                 start_pos = 0
+ *                 end_pos = 0
+ *                 if strand == 1:             # <<<<<<<<<<<<<<
+ *                     start_pos = ranges[0][0]
+ *                     end_pos = ranges[-1][-1]-1
+ */
+        break;
+        case -1L:
+
+        /* "_rnaseq_utils.pyx":1867
+ *                     end_pos = ranges[-1][-1]-1
+ *                 elif strand == -1:
+ *                     start_pos = ranges[-1][-1]-1             # <<<<<<<<<<<<<<
+ *                     end_pos = ranges[0][0]
+ * 
  */
         if (unlikely(__pyx_v_ranges == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
@@ -45650,42 +45720,9 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1867, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
-        __pyx_v_end_pos = __pyx_t_15;
-
-        /* "_rnaseq_utils.pyx":1865
- *                 start_pos = 0
- *                 end_pos = 0
- *                 if strand == 1:             # <<<<<<<<<<<<<<
- *                     start_pos = ranges[0][0]
- *                     end_pos = ranges[-1][-1]-1
- */
-        break;
-        case -1L:
-
-        /* "_rnaseq_utils.pyx":1869
- *                     end_pos = ranges[-1][-1]-1
- *                 elif strand == -1:
- *                     start_pos = ranges[-1][-1]-1             # <<<<<<<<<<<<<<
- *                     end_pos = ranges[0][0]
- * 
- */
-        if (unlikely(__pyx_v_ranges == Py_None)) {
-          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 1869, __pyx_L1_error)
-        }
-        __pyx_t_23 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1869, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_23);
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_23, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1869, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
-        __pyx_t_23 = __Pyx_PyInt_SubtractObjC(__pyx_t_2, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1869, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_23);
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1869, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
         __pyx_v_start_pos = __pyx_t_15;
 
-        /* "_rnaseq_utils.pyx":1870
+        /* "_rnaseq_utils.pyx":1868
  *                 elif strand == -1:
  *                     start_pos = ranges[-1][-1]-1
  *                     end_pos = ranges[0][0]             # <<<<<<<<<<<<<<
@@ -45694,18 +45731,18 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         if (unlikely(__pyx_v_ranges == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 1870, __pyx_L1_error)
+          __PYX_ERR(0, 1868, __pyx_L1_error)
         }
-        __pyx_t_23 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1870, __pyx_L1_error)
+        __pyx_t_23 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1868, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_23);
-        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_23, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1870, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_23, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1868, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
-        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1870, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1868, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_v_end_pos = __pyx_t_15;
 
-        /* "_rnaseq_utils.pyx":1868
+        /* "_rnaseq_utils.pyx":1866
  *                     start_pos = ranges[0][0]
  *                     end_pos = ranges[-1][-1]-1
  *                 elif strand == -1:             # <<<<<<<<<<<<<<
@@ -45716,58 +45753,58 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         default: break;
       }
 
-      /* "_rnaseq_utils.pyx":1872
+      /* "_rnaseq_utils.pyx":1870
  *                     end_pos = ranges[0][0]
  * 
  *                 if s_tag and fiveprime:             # <<<<<<<<<<<<<<
  *                     if head > 0 or tail > 0:
  *                         capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
  */
-      __pyx_t_29 = (__pyx_v_s_tag != 0);
-      if (__pyx_t_29) {
-      } else {
-        __pyx_t_6 = __pyx_t_29;
-        goto __pyx_L84_bool_binop_done;
-      }
-      __pyx_t_29 = (__pyx_v_fiveprime != 0);
-      __pyx_t_6 = __pyx_t_29;
-      __pyx_L84_bool_binop_done:;
+      __pyx_t_6 = (__pyx_v_s_tag != 0);
       if (__pyx_t_6) {
+      } else {
+        __pyx_t_30 = __pyx_t_6;
+        goto __pyx_L83_bool_binop_done;
+      }
+      __pyx_t_6 = (__pyx_v_fiveprime != 0);
+      __pyx_t_30 = __pyx_t_6;
+      __pyx_L83_bool_binop_done:;
+      if (__pyx_t_30) {
 
-        /* "_rnaseq_utils.pyx":1873
+        /* "_rnaseq_utils.pyx":1871
  * 
  *                 if s_tag and fiveprime:
  *                     if head > 0 or tail > 0:             # <<<<<<<<<<<<<<
  *                         capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
  * 
  */
-        __pyx_t_2 = PyObject_RichCompare(__pyx_v_head, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1873, __pyx_L1_error)
-        __pyx_t_29 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_29 < 0)) __PYX_ERR(0, 1873, __pyx_L1_error)
+        __pyx_t_2 = PyObject_RichCompare(__pyx_v_head, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1871, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1871, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (!__pyx_t_29) {
+        if (!__pyx_t_6) {
         } else {
-          __pyx_t_6 = __pyx_t_29;
-          goto __pyx_L87_bool_binop_done;
+          __pyx_t_30 = __pyx_t_6;
+          goto __pyx_L86_bool_binop_done;
         }
-        __pyx_t_2 = PyObject_RichCompare(__pyx_v_tail, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1873, __pyx_L1_error)
-        __pyx_t_29 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_29 < 0)) __PYX_ERR(0, 1873, __pyx_L1_error)
+        __pyx_t_2 = PyObject_RichCompare(__pyx_v_tail, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1871, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1871, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_6 = __pyx_t_29;
-        __pyx_L87_bool_binop_done:;
-        if (__pyx_t_6) {
+        __pyx_t_30 = __pyx_t_6;
+        __pyx_L86_bool_binop_done:;
+        if (__pyx_t_30) {
 
-          /* "_rnaseq_utils.pyx":1874
+          /* "_rnaseq_utils.pyx":1872
  *                 if s_tag and fiveprime:
  *                     if head > 0 or tail > 0:
  *                         capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)             # <<<<<<<<<<<<<<
  * 
  *                     if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence
  */
-          __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1874, __pyx_L1_error)
-          __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1874, __pyx_L1_error)
+          __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1872, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1872, __pyx_L1_error)
           __pyx_v_capped = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->untemplated_upstream_g(__pyx_v_self, __pyx_v_strand, __pyx_t_15, __pyx_t_14, __pyx_v_seq, __pyx_v_chrom, __pyx_v_ranges);
 
-          /* "_rnaseq_utils.pyx":1873
+          /* "_rnaseq_utils.pyx":1871
  * 
  *                 if s_tag and fiveprime:
  *                     if head > 0 or tail > 0:             # <<<<<<<<<<<<<<
@@ -45776,17 +45813,17 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         }
 
-        /* "_rnaseq_utils.pyx":1876
+        /* "_rnaseq_utils.pyx":1874
  *                         capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
  * 
  *                     if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence             # <<<<<<<<<<<<<<
  *                         s_tag = capped = False
  * 
  */
-        __pyx_t_6 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->matches_masking_sequence(__pyx_v_self, __pyx_v_chrom, __pyx_v_start_pos, __pyx_v_strand, __pyx_n_u_S, __pyx_v_s_len) != 0);
-        if (__pyx_t_6) {
+        __pyx_t_30 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->matches_masking_sequence(__pyx_v_self, __pyx_v_chrom, __pyx_v_start_pos, __pyx_v_strand, __pyx_n_u_S, __pyx_v_s_len) != 0);
+        if (__pyx_t_30) {
 
-          /* "_rnaseq_utils.pyx":1877
+          /* "_rnaseq_utils.pyx":1875
  * 
  *                     if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence
  *                         s_tag = capped = False             # <<<<<<<<<<<<<<
@@ -45796,7 +45833,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
           __pyx_v_s_tag = 0;
           __pyx_v_capped = 0;
 
-          /* "_rnaseq_utils.pyx":1876
+          /* "_rnaseq_utils.pyx":1874
  *                         capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
  * 
  *                     if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence             # <<<<<<<<<<<<<<
@@ -45805,7 +45842,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         }
 
-        /* "_rnaseq_utils.pyx":1872
+        /* "_rnaseq_utils.pyx":1870
  *                     end_pos = ranges[0][0]
  * 
  *                 if s_tag and fiveprime:             # <<<<<<<<<<<<<<
@@ -45814,58 +45851,58 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       }
 
-      /* "_rnaseq_utils.pyx":1879
+      /* "_rnaseq_utils.pyx":1877
  *                         s_tag = capped = False
  * 
  *                 if e_tag and threeprime:             # <<<<<<<<<<<<<<
  *                     if head > 0 or tail > 0:
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)
  */
-      __pyx_t_29 = (__pyx_v_e_tag != 0);
-      if (__pyx_t_29) {
-      } else {
-        __pyx_t_6 = __pyx_t_29;
-        goto __pyx_L91_bool_binop_done;
-      }
-      __pyx_t_29 = (__pyx_v_threeprime != 0);
-      __pyx_t_6 = __pyx_t_29;
-      __pyx_L91_bool_binop_done:;
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_e_tag); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1877, __pyx_L1_error)
       if (__pyx_t_6) {
+      } else {
+        __pyx_t_30 = __pyx_t_6;
+        goto __pyx_L90_bool_binop_done;
+      }
+      __pyx_t_6 = (__pyx_v_threeprime != 0);
+      __pyx_t_30 = __pyx_t_6;
+      __pyx_L90_bool_binop_done:;
+      if (__pyx_t_30) {
 
-        /* "_rnaseq_utils.pyx":1880
+        /* "_rnaseq_utils.pyx":1878
  * 
  *                 if e_tag and threeprime:
  *                     if head > 0 or tail > 0:             # <<<<<<<<<<<<<<
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)
  * 
  */
-        __pyx_t_2 = PyObject_RichCompare(__pyx_v_head, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1880, __pyx_L1_error)
-        __pyx_t_29 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_29 < 0)) __PYX_ERR(0, 1880, __pyx_L1_error)
+        __pyx_t_2 = PyObject_RichCompare(__pyx_v_head, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1878, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1878, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (!__pyx_t_29) {
+        if (!__pyx_t_6) {
         } else {
-          __pyx_t_6 = __pyx_t_29;
-          goto __pyx_L94_bool_binop_done;
+          __pyx_t_30 = __pyx_t_6;
+          goto __pyx_L93_bool_binop_done;
         }
-        __pyx_t_2 = PyObject_RichCompare(__pyx_v_tail, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1880, __pyx_L1_error)
-        __pyx_t_29 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_29 < 0)) __PYX_ERR(0, 1880, __pyx_L1_error)
+        __pyx_t_2 = PyObject_RichCompare(__pyx_v_tail, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1878, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1878, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_6 = __pyx_t_29;
-        __pyx_L94_bool_binop_done:;
-        if (__pyx_t_6) {
+        __pyx_t_30 = __pyx_t_6;
+        __pyx_L93_bool_binop_done:;
+        if (__pyx_t_30) {
 
-          /* "_rnaseq_utils.pyx":1881
+          /* "_rnaseq_utils.pyx":1879
  *                 if e_tag and threeprime:
  *                     if head > 0 or tail > 0:
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)             # <<<<<<<<<<<<<<
  * 
  *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
  */
-          __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1881, __pyx_L1_error)
-          __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1881, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1879, __pyx_L1_error)
+          __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1879, __pyx_L1_error)
           ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->restore_terminal_mismatches(__pyx_v_self, __pyx_v_strand, __pyx_t_14, __pyx_t_15, __pyx_v_ranges);
 
-          /* "_rnaseq_utils.pyx":1880
+          /* "_rnaseq_utils.pyx":1878
  * 
  *                 if e_tag and threeprime:
  *                     if head > 0 or tail > 0:             # <<<<<<<<<<<<<<
@@ -45874,96 +45911,283 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         }
 
-        /* "_rnaseq_utils.pyx":1883
+        /* "_rnaseq_utils.pyx":1881
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)
  * 
  *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence             # <<<<<<<<<<<<<<
  *                         e_tag = False
- * 
+ *                 elif threeprime:
  */
-        __pyx_t_6 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->matches_masking_sequence(__pyx_v_self, __pyx_v_chrom, __pyx_v_end_pos, __pyx_v_strand, __pyx_n_u_E, __pyx_v_e_len) != 0);
-        if (__pyx_t_6) {
+        __pyx_t_30 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->matches_masking_sequence(__pyx_v_self, __pyx_v_chrom, __pyx_v_end_pos, __pyx_v_strand, __pyx_n_u_E, __pyx_v_e_len) != 0);
+        if (__pyx_t_30) {
 
-          /* "_rnaseq_utils.pyx":1884
+          /* "_rnaseq_utils.pyx":1882
  * 
  *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
  *                         e_tag = False             # <<<<<<<<<<<<<<
- * 
- *             # Reconcile strand information given by start, end, and splice
+ *                 elif threeprime:
+ *                     # Check for softclipped poly(A) tails
  */
-          __pyx_v_e_tag = 0;
+          __Pyx_INCREF(Py_False);
+          __Pyx_DECREF_SET(__pyx_v_e_tag, Py_False);
 
-          /* "_rnaseq_utils.pyx":1883
+          /* "_rnaseq_utils.pyx":1881
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)
  * 
  *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence             # <<<<<<<<<<<<<<
  *                         e_tag = False
- * 
+ *                 elif threeprime:
  */
         }
 
-        /* "_rnaseq_utils.pyx":1879
+        /* "_rnaseq_utils.pyx":1877
  *                         s_tag = capped = False
  * 
  *                 if e_tag and threeprime:             # <<<<<<<<<<<<<<
  *                     if head > 0 or tail > 0:
  *                         self.restore_terminal_mismatches(strand, head, tail, ranges)
  */
+        goto __pyx_L89;
       }
 
-      /* "_rnaseq_utils.pyx":1862
- *             s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail)
+      /* "_rnaseq_utils.pyx":1883
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+ *                         e_tag = False
+ *                 elif threeprime:             # <<<<<<<<<<<<<<
+ *                     # Check for softclipped poly(A) tails
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+ */
+      __pyx_t_30 = (__pyx_v_threeprime != 0);
+      if (__pyx_t_30) {
+
+        /* "_rnaseq_utils.pyx":1885
+ *                 elif threeprime:
+ *                     # Check for softclipped poly(A) tails
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)             # <<<<<<<<<<<<<<
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+ *                         e_tag = False
+ */
+        __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_v_head); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1885, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_v_tail); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1885, __pyx_L1_error)
+        __pyx_t_13 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->softclipped_polya(__pyx_v_self, __pyx_v_strand, __pyx_t_15, __pyx_t_14, __pyx_v_seq, __pyx_v_chrom, __pyx_v_ranges);
+        __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_t_13.f0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1885, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_2);
+        __pyx_t_14 = __pyx_t_13.f1;
+        __Pyx_DECREF_SET(__pyx_v_e_tag, __pyx_t_2);
+        __pyx_t_2 = 0;
+        __pyx_v_strand = __pyx_t_14;
+
+        /* "_rnaseq_utils.pyx":1886
+ *                     # Check for softclipped poly(A) tails
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence             # <<<<<<<<<<<<<<
+ *                         e_tag = False
+ * 
+ */
+        __pyx_t_30 = (((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->matches_masking_sequence(__pyx_v_self, __pyx_v_chrom, __pyx_v_end_pos, __pyx_v_strand, __pyx_n_u_E, __pyx_v_e_len) != 0);
+        if (__pyx_t_30) {
+
+          /* "_rnaseq_utils.pyx":1887
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+ *                         e_tag = False             # <<<<<<<<<<<<<<
+ * 
+ *                     if e_tag:
+ */
+          __Pyx_INCREF(Py_False);
+          __Pyx_DECREF_SET(__pyx_v_e_tag, Py_False);
+
+          /* "_rnaseq_utils.pyx":1886
+ *                     # Check for softclipped poly(A) tails
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence             # <<<<<<<<<<<<<<
+ *                         e_tag = False
+ * 
+ */
+        }
+
+        /* "_rnaseq_utils.pyx":1889
+ *                         e_tag = False
+ * 
+ *                     if e_tag:             # <<<<<<<<<<<<<<
+ *                         e_tag_added = True
+ *                         if strand == 1:
+ */
+        __pyx_t_30 = __Pyx_PyObject_IsTrue(__pyx_v_e_tag); if (unlikely(__pyx_t_30 < 0)) __PYX_ERR(0, 1889, __pyx_L1_error)
+        if (__pyx_t_30) {
+
+          /* "_rnaseq_utils.pyx":1890
+ * 
+ *                     if e_tag:
+ *                         e_tag_added = True             # <<<<<<<<<<<<<<
+ *                         if strand == 1:
+ *                             e_tag_len = max(e_tag_len, tail)
+ */
+          __pyx_v_e_tag_added = 1;
+
+          /* "_rnaseq_utils.pyx":1891
+ *                     if e_tag:
+ *                         e_tag_added = True
+ *                         if strand == 1:             # <<<<<<<<<<<<<<
+ *                             e_tag_len = max(e_tag_len, tail)
+ *                         elif strand == -1:
+ */
+          switch (__pyx_v_strand) {
+            case 1:
+
+            /* "_rnaseq_utils.pyx":1892
+ *                         e_tag_added = True
+ *                         if strand == 1:
+ *                             e_tag_len = max(e_tag_len, tail)             # <<<<<<<<<<<<<<
+ *                         elif strand == -1:
+ *                             e_tag_len = max(e_tag_len, head)
+ */
+            __Pyx_INCREF(__pyx_v_tail);
+            __pyx_t_2 = __pyx_v_tail;
+            __pyx_t_14 = __pyx_v_e_tag_len;
+            __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_t_14); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1892, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_22);
+            __pyx_t_3 = PyObject_RichCompare(__pyx_t_2, __pyx_t_22, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1892, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
+            __pyx_t_30 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_30 < 0)) __PYX_ERR(0, 1892, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+            if (__pyx_t_30) {
+              __Pyx_INCREF(__pyx_t_2);
+              __pyx_t_23 = __pyx_t_2;
+            } else {
+              __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_t_14); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1892, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_3);
+              __pyx_t_23 = __pyx_t_3;
+              __pyx_t_3 = 0;
+            }
+            __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+            __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_23); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1892, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+            __pyx_v_e_tag_len = __pyx_t_14;
+
+            /* "_rnaseq_utils.pyx":1891
+ *                     if e_tag:
+ *                         e_tag_added = True
+ *                         if strand == 1:             # <<<<<<<<<<<<<<
+ *                             e_tag_len = max(e_tag_len, tail)
+ *                         elif strand == -1:
+ */
+            break;
+            case -1L:
+
+            /* "_rnaseq_utils.pyx":1894
+ *                             e_tag_len = max(e_tag_len, tail)
+ *                         elif strand == -1:
+ *                             e_tag_len = max(e_tag_len, head)             # <<<<<<<<<<<<<<
+ * 
+ *             # Reconcile strand information given by start, end, and splice
+ */
+            __Pyx_INCREF(__pyx_v_head);
+            __pyx_t_23 = __pyx_v_head;
+            __pyx_t_14 = __pyx_v_e_tag_len;
+            __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_t_14); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1894, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_3);
+            __pyx_t_22 = PyObject_RichCompare(__pyx_t_23, __pyx_t_3, Py_GT); __Pyx_XGOTREF(__pyx_t_22); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1894, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+            __pyx_t_30 = __Pyx_PyObject_IsTrue(__pyx_t_22); if (unlikely(__pyx_t_30 < 0)) __PYX_ERR(0, 1894, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
+            if (__pyx_t_30) {
+              __Pyx_INCREF(__pyx_t_23);
+              __pyx_t_2 = __pyx_t_23;
+            } else {
+              __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_t_14); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1894, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_22);
+              __pyx_t_2 = __pyx_t_22;
+              __pyx_t_22 = 0;
+            }
+            __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
+            __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1894, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+            __pyx_v_e_tag_len = __pyx_t_14;
+
+            /* "_rnaseq_utils.pyx":1893
+ *                         if strand == 1:
+ *                             e_tag_len = max(e_tag_len, tail)
+ *                         elif strand == -1:             # <<<<<<<<<<<<<<
+ *                             e_tag_len = max(e_tag_len, head)
+ * 
+ */
+            break;
+            default: break;
+          }
+
+          /* "_rnaseq_utils.pyx":1889
+ *                         e_tag = False
+ * 
+ *                     if e_tag:             # <<<<<<<<<<<<<<
+ *                         e_tag_added = True
+ *                         if strand == 1:
+ */
+        }
+
+        /* "_rnaseq_utils.pyx":1883
+ *                     if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
+ *                         e_tag = False
+ *                 elif threeprime:             # <<<<<<<<<<<<<<
+ *                     # Check for softclipped poly(A) tails
+ *                     e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
+ */
+      }
+      __pyx_L89:;
+
+      /* "_rnaseq_utils.pyx":1860
  *             # Check for uuG's (5') or terminal mismatches (3')
+ *             e_tag_added = False
  *             if self.dataset.genome:             # <<<<<<<<<<<<<<
  *                 start_pos = 0
  *                 end_pos = 0
  */
     }
 
-    /* "_rnaseq_utils.pyx":1887
+    /* "_rnaseq_utils.pyx":1897
  * 
  *             # Reconcile strand information given by start, end, and splice
  *             junction_exists = sum(splice) > 0             # <<<<<<<<<<<<<<
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags
  */
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_sum, __pyx_v_splice); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1887, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_sum, __pyx_v_splice); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1897, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_23 = PyObject_RichCompare(__pyx_t_2, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_23); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1887, __pyx_L1_error)
+    __pyx_t_23 = PyObject_RichCompare(__pyx_t_2, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_23); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1897, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_23); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1887, __pyx_L1_error)
+    __pyx_t_30 = __Pyx_PyObject_IsTrue(__pyx_t_23); if (unlikely((__pyx_t_30 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1897, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
-    __pyx_v_junction_exists = __pyx_t_6;
+    __pyx_v_junction_exists = __pyx_t_30;
 
-    /* "_rnaseq_utils.pyx":1888
+    /* "_rnaseq_utils.pyx":1898
  *             # Reconcile strand information given by start, end, and splice
  *             junction_exists = sum(splice) > 0
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists             # <<<<<<<<<<<<<<
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags
  *                     strand = alignment_strand
  */
-    __pyx_t_29 = ((__pyx_v_alignment_strand != 0) != 0);
-    if (__pyx_t_29) {
-    } else {
-      __pyx_t_6 = __pyx_t_29;
-      goto __pyx_L98_bool_binop_done;
-    }
-    __pyx_t_29 = (__pyx_v_junction_exists != 0);
-    __pyx_t_6 = __pyx_t_29;
-    __pyx_L98_bool_binop_done:;
+    __pyx_t_6 = ((__pyx_v_alignment_strand != 0) != 0);
     if (__pyx_t_6) {
+    } else {
+      __pyx_t_30 = __pyx_t_6;
+      goto __pyx_L99_bool_binop_done;
+    }
+    __pyx_t_6 = (__pyx_v_junction_exists != 0);
+    __pyx_t_30 = __pyx_t_6;
+    __pyx_L99_bool_binop_done:;
+    if (__pyx_t_30) {
 
-      /* "_rnaseq_utils.pyx":1889
+      /* "_rnaseq_utils.pyx":1899
  *             junction_exists = sum(splice) > 0
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags             # <<<<<<<<<<<<<<
  *                     strand = alignment_strand
  *                     s_tag = e_tag = capped = False
  */
-      __pyx_t_6 = ((__pyx_v_strand != __pyx_v_alignment_strand) != 0);
-      if (__pyx_t_6) {
+      __pyx_t_30 = ((__pyx_v_strand != __pyx_v_alignment_strand) != 0);
+      if (__pyx_t_30) {
 
-        /* "_rnaseq_utils.pyx":1890
+        /* "_rnaseq_utils.pyx":1900
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags
  *                     strand = alignment_strand             # <<<<<<<<<<<<<<
@@ -45972,7 +46196,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
         __pyx_v_strand = __pyx_v_alignment_strand;
 
-        /* "_rnaseq_utils.pyx":1891
+        /* "_rnaseq_utils.pyx":1901
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags
  *                     strand = alignment_strand
  *                     s_tag = e_tag = capped = False             # <<<<<<<<<<<<<<
@@ -45980,10 +46204,11 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  *             if not stranded_method and not s_tag and not e_tag and not junction_exists:
  */
         __pyx_v_s_tag = 0;
-        __pyx_v_e_tag = 0;
+        __Pyx_INCREF(Py_False);
+        __Pyx_DECREF_SET(__pyx_v_e_tag, Py_False);
         __pyx_v_capped = 0;
 
-        /* "_rnaseq_utils.pyx":1889
+        /* "_rnaseq_utils.pyx":1899
  *             junction_exists = sum(splice) > 0
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
  *                 if strand != alignment_strand: # Splice disagrees with end tags; remove tags             # <<<<<<<<<<<<<<
@@ -45992,7 +46217,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       }
 
-      /* "_rnaseq_utils.pyx":1888
+      /* "_rnaseq_utils.pyx":1898
  *             # Reconcile strand information given by start, end, and splice
  *             junction_exists = sum(splice) > 0
  *             if alignment_strand != 0 and junction_exists: # At least one strand-informative splice junction exists             # <<<<<<<<<<<<<<
@@ -46001,37 +46226,38 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     }
 
-    /* "_rnaseq_utils.pyx":1893
+    /* "_rnaseq_utils.pyx":1903
  *                     s_tag = e_tag = capped = False
  * 
  *             if not stranded_method and not s_tag and not e_tag and not junction_exists:             # <<<<<<<<<<<<<<
  *                 strand = 0 # No strand information can be found
  * 
  */
-    __pyx_t_29 = ((!(__pyx_v_stranded_method != 0)) != 0);
-    if (__pyx_t_29) {
-    } else {
-      __pyx_t_6 = __pyx_t_29;
-      goto __pyx_L102_bool_binop_done;
-    }
-    __pyx_t_29 = ((!(__pyx_v_s_tag != 0)) != 0);
-    if (__pyx_t_29) {
-    } else {
-      __pyx_t_6 = __pyx_t_29;
-      goto __pyx_L102_bool_binop_done;
-    }
-    __pyx_t_29 = ((!(__pyx_v_e_tag != 0)) != 0);
-    if (__pyx_t_29) {
-    } else {
-      __pyx_t_6 = __pyx_t_29;
-      goto __pyx_L102_bool_binop_done;
-    }
-    __pyx_t_29 = ((!(__pyx_v_junction_exists != 0)) != 0);
-    __pyx_t_6 = __pyx_t_29;
-    __pyx_L102_bool_binop_done:;
+    __pyx_t_6 = ((!(__pyx_v_stranded_method != 0)) != 0);
     if (__pyx_t_6) {
+    } else {
+      __pyx_t_30 = __pyx_t_6;
+      goto __pyx_L103_bool_binop_done;
+    }
+    __pyx_t_6 = ((!(__pyx_v_s_tag != 0)) != 0);
+    if (__pyx_t_6) {
+    } else {
+      __pyx_t_30 = __pyx_t_6;
+      goto __pyx_L103_bool_binop_done;
+    }
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_e_tag); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1903, __pyx_L1_error)
+    __pyx_t_12 = ((!__pyx_t_6) != 0);
+    if (__pyx_t_12) {
+    } else {
+      __pyx_t_30 = __pyx_t_12;
+      goto __pyx_L103_bool_binop_done;
+    }
+    __pyx_t_12 = ((!(__pyx_v_junction_exists != 0)) != 0);
+    __pyx_t_30 = __pyx_t_12;
+    __pyx_L103_bool_binop_done:;
+    if (__pyx_t_30) {
 
-      /* "_rnaseq_utils.pyx":1894
+      /* "_rnaseq_utils.pyx":1904
  * 
  *             if not stranded_method and not s_tag and not e_tag and not junction_exists:
  *                 strand = 0 # No strand information can be found             # <<<<<<<<<<<<<<
@@ -46040,7 +46266,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
       __pyx_v_strand = 0;
 
-      /* "_rnaseq_utils.pyx":1893
+      /* "_rnaseq_utils.pyx":1903
  *                     s_tag = e_tag = capped = False
  * 
  *             if not stranded_method and not s_tag and not e_tag and not junction_exists:             # <<<<<<<<<<<<<<
@@ -46049,28 +46275,26 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     }
 
-    /* "_rnaseq_utils.pyx":1897
+    /* "_rnaseq_utils.pyx":1907
  * 
  *             # Generate a ReadObject with the parsed attributes above
  *             read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2), False)             # <<<<<<<<<<<<<<
  *             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
  *             current_mapping.e_len = e_tag_len
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ELdata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ELdata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_chrom_id); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_chrom_id); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_22);
-    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_strand); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_strand); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_s_tag); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_s_tag); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_v_e_tag); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_v_capped); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_31 = __Pyx_PyBool_FromLong(__pyx_v_capped); if (unlikely(!__pyx_t_31)) __PYX_ERR(0, 1897, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_31);
-    __pyx_t_32 = PyFloat_FromDouble(__pyx_v_weight); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_32 = PyFloat_FromDouble(__pyx_v_weight); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_32);
-    __pyx_t_33 = PyTuple_New(2); if (unlikely(!__pyx_t_33)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_33 = PyTuple_New(2); if (unlikely(!__pyx_t_33)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_33);
     __Pyx_GIVEREF(__pyx_t_32);
     PyTuple_SET_ITEM(__pyx_t_33, 0, __pyx_t_32);
@@ -46078,11 +46302,11 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     __Pyx_GIVEREF(__pyx_int_2);
     PyTuple_SET_ITEM(__pyx_t_33, 1, __pyx_int_2);
     __pyx_t_32 = 0;
-    __pyx_t_32 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_33, NULL); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1897, __pyx_L1_error)
+    __pyx_t_32 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_33, NULL); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1907, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_32);
     __Pyx_DECREF(__pyx_t_33); __pyx_t_33 = 0;
     __pyx_t_33 = NULL;
-    __pyx_t_15 = 0;
+    __pyx_t_14 = 0;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
       __pyx_t_33 = PyMethod_GET_SELF(__pyx_t_2);
       if (likely(__pyx_t_33)) {
@@ -46090,74 +46314,72 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
         __Pyx_INCREF(__pyx_t_33);
         __Pyx_INCREF(function);
         __Pyx_DECREF_SET(__pyx_t_2, function);
-        __pyx_t_15 = 1;
+        __pyx_t_14 = 1;
       }
     }
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_2)) {
-      PyObject *__pyx_temp[11] = {__pyx_t_33, __pyx_t_22, __pyx_int_0, __pyx_t_3, __pyx_v_ranges, __pyx_v_splice, __pyx_t_1, __pyx_t_4, __pyx_t_31, __pyx_t_32, Py_False};
-      __pyx_t_23 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_15, 10+__pyx_t_15); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1897, __pyx_L1_error)
+      PyObject *__pyx_temp[11] = {__pyx_t_33, __pyx_t_22, __pyx_int_0, __pyx_t_3, __pyx_v_ranges, __pyx_v_splice, __pyx_t_1, __pyx_v_e_tag, __pyx_t_4, __pyx_t_32, Py_False};
+      __pyx_t_23 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_14, 10+__pyx_t_14); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1907, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_33); __pyx_t_33 = 0;
       __Pyx_GOTREF(__pyx_t_23);
       __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_31); __pyx_t_31 = 0;
       __Pyx_DECREF(__pyx_t_32); __pyx_t_32 = 0;
     } else
     #endif
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-      PyObject *__pyx_temp[11] = {__pyx_t_33, __pyx_t_22, __pyx_int_0, __pyx_t_3, __pyx_v_ranges, __pyx_v_splice, __pyx_t_1, __pyx_t_4, __pyx_t_31, __pyx_t_32, Py_False};
-      __pyx_t_23 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_15, 10+__pyx_t_15); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1897, __pyx_L1_error)
+      PyObject *__pyx_temp[11] = {__pyx_t_33, __pyx_t_22, __pyx_int_0, __pyx_t_3, __pyx_v_ranges, __pyx_v_splice, __pyx_t_1, __pyx_v_e_tag, __pyx_t_4, __pyx_t_32, Py_False};
+      __pyx_t_23 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_14, 10+__pyx_t_14); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1907, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_33); __pyx_t_33 = 0;
       __Pyx_GOTREF(__pyx_t_23);
       __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_31); __pyx_t_31 = 0;
       __Pyx_DECREF(__pyx_t_32); __pyx_t_32 = 0;
     } else
     #endif
     {
-      __pyx_t_34 = PyTuple_New(10+__pyx_t_15); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1897, __pyx_L1_error)
+      __pyx_t_34 = PyTuple_New(10+__pyx_t_14); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1907, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_34);
       if (__pyx_t_33) {
         __Pyx_GIVEREF(__pyx_t_33); PyTuple_SET_ITEM(__pyx_t_34, 0, __pyx_t_33); __pyx_t_33 = NULL;
       }
       __Pyx_GIVEREF(__pyx_t_22);
-      PyTuple_SET_ITEM(__pyx_t_34, 0+__pyx_t_15, __pyx_t_22);
+      PyTuple_SET_ITEM(__pyx_t_34, 0+__pyx_t_14, __pyx_t_22);
       __Pyx_INCREF(__pyx_int_0);
       __Pyx_GIVEREF(__pyx_int_0);
-      PyTuple_SET_ITEM(__pyx_t_34, 1+__pyx_t_15, __pyx_int_0);
+      PyTuple_SET_ITEM(__pyx_t_34, 1+__pyx_t_14, __pyx_int_0);
       __Pyx_GIVEREF(__pyx_t_3);
-      PyTuple_SET_ITEM(__pyx_t_34, 2+__pyx_t_15, __pyx_t_3);
+      PyTuple_SET_ITEM(__pyx_t_34, 2+__pyx_t_14, __pyx_t_3);
       __Pyx_INCREF(__pyx_v_ranges);
       __Pyx_GIVEREF(__pyx_v_ranges);
-      PyTuple_SET_ITEM(__pyx_t_34, 3+__pyx_t_15, __pyx_v_ranges);
+      PyTuple_SET_ITEM(__pyx_t_34, 3+__pyx_t_14, __pyx_v_ranges);
       __Pyx_INCREF(__pyx_v_splice);
       __Pyx_GIVEREF(__pyx_v_splice);
-      PyTuple_SET_ITEM(__pyx_t_34, 4+__pyx_t_15, __pyx_v_splice);
+      PyTuple_SET_ITEM(__pyx_t_34, 4+__pyx_t_14, __pyx_v_splice);
       __Pyx_GIVEREF(__pyx_t_1);
-      PyTuple_SET_ITEM(__pyx_t_34, 5+__pyx_t_15, __pyx_t_1);
+      PyTuple_SET_ITEM(__pyx_t_34, 5+__pyx_t_14, __pyx_t_1);
+      __Pyx_INCREF(__pyx_v_e_tag);
+      __Pyx_GIVEREF(__pyx_v_e_tag);
+      PyTuple_SET_ITEM(__pyx_t_34, 6+__pyx_t_14, __pyx_v_e_tag);
       __Pyx_GIVEREF(__pyx_t_4);
-      PyTuple_SET_ITEM(__pyx_t_34, 6+__pyx_t_15, __pyx_t_4);
-      __Pyx_GIVEREF(__pyx_t_31);
-      PyTuple_SET_ITEM(__pyx_t_34, 7+__pyx_t_15, __pyx_t_31);
+      PyTuple_SET_ITEM(__pyx_t_34, 7+__pyx_t_14, __pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_32);
-      PyTuple_SET_ITEM(__pyx_t_34, 8+__pyx_t_15, __pyx_t_32);
+      PyTuple_SET_ITEM(__pyx_t_34, 8+__pyx_t_14, __pyx_t_32);
       __Pyx_INCREF(Py_False);
       __Pyx_GIVEREF(Py_False);
-      PyTuple_SET_ITEM(__pyx_t_34, 9+__pyx_t_15, Py_False);
+      PyTuple_SET_ITEM(__pyx_t_34, 9+__pyx_t_14, Py_False);
       __pyx_t_22 = 0;
       __pyx_t_3 = 0;
       __pyx_t_1 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_31 = 0;
       __pyx_t_32 = 0;
-      __pyx_t_23 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_34, NULL); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1897, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_34, NULL); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1907, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_23);
       __Pyx_DECREF(__pyx_t_34); __pyx_t_34 = 0;
     }
@@ -46165,36 +46387,36 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
     __Pyx_XDECREF_SET(__pyx_v_read_data, __pyx_t_23);
     __pyx_t_23 = 0;
 
-    /* "_rnaseq_utils.pyx":1898
+    /* "_rnaseq_utils.pyx":1908
  *             # Generate a ReadObject with the parsed attributes above
  *             read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2), False)
  *             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})             # <<<<<<<<<<<<<<
  *             current_mapping.e_len = e_tag_len
  *             current_mapping.s_len = s_tag_len
  */
-    __pyx_t_23 = PyTuple_New(1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1898, __pyx_L1_error)
+    __pyx_t_23 = PyTuple_New(1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_23);
     __Pyx_INCREF(__pyx_v_read_data);
     __Pyx_GIVEREF(__pyx_v_read_data);
     PyTuple_SET_ITEM(__pyx_t_23, 0, __pyx_v_read_data);
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1898, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_34 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1898, __pyx_L1_error)
+    __pyx_t_34 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_34);
-    __pyx_t_32 = __Pyx_PyInt_From_int(__pyx_v_errors); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1898, __pyx_L1_error)
+    __pyx_t_32 = __Pyx_PyInt_From_int(__pyx_v_errors); if (unlikely(!__pyx_t_32)) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_32);
-    if (PyDict_SetItem(__pyx_t_34, __pyx_n_u_errors, __pyx_t_32) < 0) __PYX_ERR(0, 1898, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_34, __pyx_n_u_errors, __pyx_t_32) < 0) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_32); __pyx_t_32 = 0;
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_attributes, __pyx_t_34) < 0) __PYX_ERR(0, 1898, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_attributes, __pyx_t_34) < 0) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_34); __pyx_t_34 = 0;
-    __pyx_t_34 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_13_rnaseq_utils_RNAseqMapping), __pyx_t_23, __pyx_t_2); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1898, __pyx_L1_error)
+    __pyx_t_34 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_13_rnaseq_utils_RNAseqMapping), __pyx_t_23, __pyx_t_2); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_34);
     __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_XDECREF_SET(__pyx_v_current_mapping, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_34));
     __pyx_t_34 = 0;
 
-    /* "_rnaseq_utils.pyx":1899
+    /* "_rnaseq_utils.pyx":1909
  *             read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2), False)
  *             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
  *             current_mapping.e_len = e_tag_len             # <<<<<<<<<<<<<<
@@ -46203,7 +46425,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     __pyx_v_current_mapping->e_len = __pyx_v_e_tag_len;
 
-    /* "_rnaseq_utils.pyx":1900
+    /* "_rnaseq_utils.pyx":1910
  *             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
  *             current_mapping.e_len = e_tag_len
  *             current_mapping.s_len = s_tag_len             # <<<<<<<<<<<<<<
@@ -46212,85 +46434,85 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
  */
     __pyx_v_current_mapping->s_len = __pyx_v_s_tag_len;
 
-    /* "_rnaseq_utils.pyx":1901
+    /* "_rnaseq_utils.pyx":1911
  *             current_mapping.e_len = e_tag_len
  *             current_mapping.s_len = s_tag_len
  *             if map_number not in mappings:             # <<<<<<<<<<<<<<
  *                 mappings[map_number] = current_mapping
  *             else: # merge two mate-pair ReadObjects together
  */
-    __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1901, __pyx_L1_error)
+    __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1911, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_34);
-    __pyx_t_6 = (__Pyx_PyDict_ContainsTF(__pyx_t_34, __pyx_v_mappings, Py_NE)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1901, __pyx_L1_error)
+    __pyx_t_30 = (__Pyx_PyDict_ContainsTF(__pyx_t_34, __pyx_v_mappings, Py_NE)); if (unlikely(__pyx_t_30 < 0)) __PYX_ERR(0, 1911, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_34); __pyx_t_34 = 0;
-    __pyx_t_29 = (__pyx_t_6 != 0);
-    if (__pyx_t_29) {
+    __pyx_t_12 = (__pyx_t_30 != 0);
+    if (__pyx_t_12) {
 
-      /* "_rnaseq_utils.pyx":1902
+      /* "_rnaseq_utils.pyx":1912
  *             current_mapping.s_len = s_tag_len
  *             if map_number not in mappings:
  *                 mappings[map_number] = current_mapping             # <<<<<<<<<<<<<<
  *             else: # merge two mate-pair ReadObjects together
  *                 mate_read = mappings[map_number]
  */
-      __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1902, __pyx_L1_error)
+      __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1912, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_34);
-      if (unlikely(PyDict_SetItem(__pyx_v_mappings, __pyx_t_34, ((PyObject *)__pyx_v_current_mapping)) < 0)) __PYX_ERR(0, 1902, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_mappings, __pyx_t_34, ((PyObject *)__pyx_v_current_mapping)) < 0)) __PYX_ERR(0, 1912, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_34); __pyx_t_34 = 0;
 
-      /* "_rnaseq_utils.pyx":1901
+      /* "_rnaseq_utils.pyx":1911
  *             current_mapping.e_len = e_tag_len
  *             current_mapping.s_len = s_tag_len
  *             if map_number not in mappings:             # <<<<<<<<<<<<<<
  *                 mappings[map_number] = current_mapping
  *             else: # merge two mate-pair ReadObjects together
  */
-      goto __pyx_L106;
+      goto __pyx_L107;
     }
 
-    /* "_rnaseq_utils.pyx":1904
+    /* "_rnaseq_utils.pyx":1914
  *                 mappings[map_number] = current_mapping
  *             else: # merge two mate-pair ReadObjects together
  *                 mate_read = mappings[map_number]             # <<<<<<<<<<<<<<
- *                 mate_read.merge(current_mapping)
- * 
+ *                 # if e_tag_added: # Mate alignment cannot extend beyond a trimmed 3' poly(A)
+ *                 #     self.update_trimmed_ranges(current_mapping, mate_read, strand)
  */
     /*else*/ {
-      __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1904, __pyx_L1_error)
+      __pyx_t_34 = __Pyx_PyInt_From_int(__pyx_v_map_number); if (unlikely(!__pyx_t_34)) __PYX_ERR(0, 1914, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_34);
-      __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_mappings, __pyx_t_34); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1904, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyDict_GetItem(__pyx_v_mappings, __pyx_t_34); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1914, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_34); __pyx_t_34 = 0;
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1904, __pyx_L1_error)
+      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1914, __pyx_L1_error)
       __Pyx_XDECREF_SET(__pyx_v_mate_read, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_2));
       __pyx_t_2 = 0;
 
-      /* "_rnaseq_utils.pyx":1905
- *             else: # merge two mate-pair ReadObjects together
- *                 mate_read = mappings[map_number]
+      /* "_rnaseq_utils.pyx":1918
+ *                 #     self.update_trimmed_ranges(current_mapping, mate_read, strand)
+ * 
  *                 mate_read.merge(current_mapping)             # <<<<<<<<<<<<<<
  * 
  *         mapping_list = self.resolve_overlapping_mappings(mappings)
  */
       (void)(((struct __pyx_vtabstruct_13_rnaseq_utils_RNAseqMapping *)__pyx_v_mate_read->__pyx_vtab)->merge(__pyx_v_mate_read, __pyx_v_current_mapping, 0));
     }
-    __pyx_L106:;
+    __pyx_L107:;
     __pyx_L10_continue:;
   }
 
-  /* "_rnaseq_utils.pyx":1907
+  /* "_rnaseq_utils.pyx":1920
  *                 mate_read.merge(current_mapping)
  * 
  *         mapping_list = self.resolve_overlapping_mappings(mappings)             # <<<<<<<<<<<<<<
  *         return mapping_list
  * 
  */
-  __pyx_t_2 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->resolve_overlapping_mappings(__pyx_v_self, __pyx_v_mappings); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1907, __pyx_L1_error)
+  __pyx_t_2 = ((struct __pyx_vtabstruct_13_rnaseq_utils_BAMobject *)__pyx_v_self->__pyx_vtab)->resolve_overlapping_mappings(__pyx_v_self, __pyx_v_mappings); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1920, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_mapping_list = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "_rnaseq_utils.pyx":1908
+  /* "_rnaseq_utils.pyx":1921
  * 
  *         mapping_list = self.resolve_overlapping_mappings(mappings)
  *         return mapping_list             # <<<<<<<<<<<<<<
@@ -46318,7 +46540,6 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_22);
   __Pyx_XDECREF(__pyx_t_23);
-  __Pyx_XDECREF(__pyx_t_31);
   __Pyx_XDECREF(__pyx_t_32);
   __Pyx_XDECREF(__pyx_t_33);
   __Pyx_XDECREF(__pyx_t_34);
@@ -46336,6 +46557,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_generate_read(struct __pyx_o
   __Pyx_XDECREF(__pyx_v_mapping_list);
   __Pyx_XDECREF((PyObject *)__pyx_v_current_mapping);
   __Pyx_XDECREF((PyObject *)__pyx_v_mate_read);
+  __Pyx_XDECREF(__pyx_v_e_tag);
   __Pyx_XDECREF(__pyx_v_line);
   __Pyx_XDECREF(__pyx_v_mdstring);
   __Pyx_XDECREF(__pyx_v_head);
@@ -46385,7 +46607,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_9BAMobject_2generate_read(struct __pyx
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1910
+/* "_rnaseq_utils.pyx":1923
  *         return mapping_list
  * 
  *     cdef list resolve_overlapping_mappings(self, dict mappings):             # <<<<<<<<<<<<<<
@@ -46422,7 +46644,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("resolve_overlapping_mappings", 0);
 
-  /* "_rnaseq_utils.pyx":1915
+  /* "_rnaseq_utils.pyx":1928
  *         cdef list output_mappings, ordered_mappings
  *         cdef int length
  *         if len(mappings.values()) <= 1:             # <<<<<<<<<<<<<<
@@ -46431,16 +46653,16 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  */
   if (unlikely(__pyx_v_mappings == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "values");
-    __PYX_ERR(0, 1915, __pyx_L1_error)
+    __PYX_ERR(0, 1928, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_Values(__pyx_v_mappings); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1915, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_Values(__pyx_v_mappings); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1928, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_Length(__pyx_t_1); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1915, __pyx_L1_error)
+  __pyx_t_2 = PyObject_Length(__pyx_t_1); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1928, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = ((__pyx_t_2 <= 1) != 0);
   if (__pyx_t_3) {
 
-    /* "_rnaseq_utils.pyx":1916
+    /* "_rnaseq_utils.pyx":1929
  *         cdef int length
  *         if len(mappings.values()) <= 1:
  *             output_mappings = list(mappings.values())             # <<<<<<<<<<<<<<
@@ -46449,17 +46671,17 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  */
     if (unlikely(__pyx_v_mappings == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "values");
-      __PYX_ERR(0, 1916, __pyx_L1_error)
+      __PYX_ERR(0, 1929, __pyx_L1_error)
     }
-    __pyx_t_1 = __Pyx_PyDict_Values(__pyx_v_mappings); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1916, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyDict_Values(__pyx_v_mappings); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1929, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1916, __pyx_L1_error)
+    __pyx_t_4 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1929, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_output_mappings = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "_rnaseq_utils.pyx":1915
+    /* "_rnaseq_utils.pyx":1928
  *         cdef list output_mappings, ordered_mappings
  *         cdef int length
  *         if len(mappings.values()) <= 1:             # <<<<<<<<<<<<<<
@@ -46469,7 +46691,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
     goto __pyx_L3;
   }
 
-  /* "_rnaseq_utils.pyx":1918
+  /* "_rnaseq_utils.pyx":1931
  *             output_mappings = list(mappings.values())
  *         else:
  *             output_mappings = []             # <<<<<<<<<<<<<<
@@ -46477,12 +46699,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  *             for mapping in ordered_mappings:
  */
   /*else*/ {
-    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1918, __pyx_L1_error)
+    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1931, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_output_mappings = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "_rnaseq_utils.pyx":1919
+    /* "_rnaseq_utils.pyx":1932
  *         else:
  *             output_mappings = []
  *             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]             # <<<<<<<<<<<<<<
@@ -46490,17 +46712,17 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  *                 for previous_mapping in output_mappings:
  */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1919, __pyx_L6_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1932, __pyx_L6_error)
       __Pyx_GOTREF(__pyx_t_4);
       { /* enter inner scope */
-        __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1919, __pyx_L11_error)
+        __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1932, __pyx_L11_error)
         __Pyx_GOTREF(__pyx_t_5);
         __pyx_t_2 = 0;
         if (unlikely(__pyx_v_mappings == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "values");
-          __PYX_ERR(0, 1919, __pyx_L11_error)
+          __PYX_ERR(0, 1932, __pyx_L11_error)
         }
-        __pyx_t_9 = __Pyx_dict_iterator(__pyx_v_mappings, 1, __pyx_n_s_values, (&__pyx_t_7), (&__pyx_t_8)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1919, __pyx_L11_error)
+        __pyx_t_9 = __Pyx_dict_iterator(__pyx_v_mappings, 1, __pyx_n_s_values, (&__pyx_t_7), (&__pyx_t_8)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1932, __pyx_L11_error)
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_XDECREF(__pyx_t_6);
         __pyx_t_6 = __pyx_t_9;
@@ -46508,14 +46730,14 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
         while (1) {
           __pyx_t_10 = __Pyx_dict_iter_next(__pyx_t_6, __pyx_t_7, &__pyx_t_2, NULL, &__pyx_t_9, NULL, __pyx_t_8);
           if (unlikely(__pyx_t_10 == 0)) break;
-          if (unlikely(__pyx_t_10 == -1)) __PYX_ERR(0, 1919, __pyx_L11_error)
+          if (unlikely(__pyx_t_10 == -1)) __PYX_ERR(0, 1932, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_9);
-          if (!(likely(((__pyx_t_9) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_9, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1919, __pyx_L11_error)
+          if (!(likely(((__pyx_t_9) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_9, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1932, __pyx_L11_error)
           __Pyx_XDECREF_SET(__pyx_9genexpr41__pyx_v_v, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_9));
           __pyx_t_9 = 0;
-          __pyx_t_9 = __Pyx_PyInt_From_int((__pyx_9genexpr41__pyx_v_v->span.f1 - __pyx_9genexpr41__pyx_v_v->span.f0)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1919, __pyx_L11_error)
+          __pyx_t_9 = __Pyx_PyInt_From_int((__pyx_9genexpr41__pyx_v_v->span.f1 - __pyx_9genexpr41__pyx_v_v->span.f0)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1932, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_9);
-          __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1919, __pyx_L11_error)
+          __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1932, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_GIVEREF(__pyx_t_9);
           PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_9);
@@ -46523,7 +46745,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
           __Pyx_GIVEREF(((PyObject *)__pyx_9genexpr41__pyx_v_v));
           PyTuple_SET_ITEM(__pyx_t_11, 1, ((PyObject *)__pyx_9genexpr41__pyx_v_v));
           __pyx_t_9 = 0;
-          if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_11))) __PYX_ERR(0, 1919, __pyx_L11_error)
+          if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_t_11))) __PYX_ERR(0, 1932, __pyx_L11_error)
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -46536,19 +46758,19 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
       } /* exit inner scope */
       __pyx_t_1 = ((PyObject*)__pyx_t_5);
       __pyx_t_5 = 0;
-      __pyx_t_12 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 1919, __pyx_L6_error)
+      __pyx_t_12 = PyList_Sort(__pyx_t_1); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 1932, __pyx_L6_error)
       if (unlikely(__pyx_t_1 == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 1919, __pyx_L6_error)
+        __PYX_ERR(0, 1932, __pyx_L6_error)
       }
       __pyx_t_5 = __pyx_t_1; __Pyx_INCREF(__pyx_t_5); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       for (;;) {
         if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1919, __pyx_L6_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1932, __pyx_L6_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1919, __pyx_L6_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1932, __pyx_L6_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
         if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
@@ -46557,7 +46779,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
           if (unlikely(size != 2)) {
             if (size > 2) __Pyx_RaiseTooManyValuesError(2);
             else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-            __PYX_ERR(0, 1919, __pyx_L6_error)
+            __PYX_ERR(0, 1932, __pyx_L6_error)
           }
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
           if (likely(PyTuple_CheckExact(sequence))) {
@@ -46570,15 +46792,15 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
           __Pyx_INCREF(__pyx_t_6);
           __Pyx_INCREF(__pyx_t_11);
           #else
-          __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1919, __pyx_L6_error)
+          __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1932, __pyx_L6_error)
           __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_11 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1919, __pyx_L6_error)
+          __pyx_t_11 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1932, __pyx_L6_error)
           __Pyx_GOTREF(__pyx_t_11);
           #endif
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         } else {
           Py_ssize_t index = -1;
-          __pyx_t_9 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1919, __pyx_L6_error)
+          __pyx_t_9 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1932, __pyx_L6_error)
           __Pyx_GOTREF(__pyx_t_9);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_13 = Py_TYPE(__pyx_t_9)->tp_iternext;
@@ -46586,7 +46808,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
           __Pyx_GOTREF(__pyx_t_6);
           index = 1; __pyx_t_11 = __pyx_t_13(__pyx_t_9); if (unlikely(!__pyx_t_11)) goto __pyx_L15_unpacking_failed;
           __Pyx_GOTREF(__pyx_t_11);
-          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_9), 2) < 0) __PYX_ERR(0, 1919, __pyx_L6_error)
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_9), 2) < 0) __PYX_ERR(0, 1932, __pyx_L6_error)
           __pyx_t_13 = NULL;
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
           goto __pyx_L16_unpacking_done;
@@ -46594,16 +46816,16 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
           __pyx_t_13 = NULL;
           if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-          __PYX_ERR(0, 1919, __pyx_L6_error)
+          __PYX_ERR(0, 1932, __pyx_L6_error)
           __pyx_L16_unpacking_done:;
         }
-        __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1919, __pyx_L6_error)
+        __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1932, __pyx_L6_error)
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1919, __pyx_L6_error)
+        if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1932, __pyx_L6_error)
         __pyx_9genexpr40__pyx_v_length = __pyx_t_8;
         __Pyx_XDECREF_SET(__pyx_9genexpr40__pyx_v_mapping, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_11));
         __pyx_t_11 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_9genexpr40__pyx_v_mapping))) __PYX_ERR(0, 1919, __pyx_L6_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_9genexpr40__pyx_v_mapping))) __PYX_ERR(0, 1932, __pyx_L6_error)
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF((PyObject *)__pyx_9genexpr40__pyx_v_mapping); __pyx_9genexpr40__pyx_v_mapping = 0;
@@ -46616,7 +46838,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
     __pyx_v_ordered_mappings = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "_rnaseq_utils.pyx":1920
+    /* "_rnaseq_utils.pyx":1933
  *             output_mappings = []
  *             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
  *             for mapping in ordered_mappings:             # <<<<<<<<<<<<<<
@@ -46627,16 +46849,16 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
     for (;;) {
       if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_4)) break;
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_5 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_5); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1920, __pyx_L1_error)
+      __pyx_t_5 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_5); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 1933, __pyx_L1_error)
       #else
-      __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1920, __pyx_L1_error)
+      __pyx_t_5 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1933, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       #endif
-      if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1920, __pyx_L1_error)
+      if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1933, __pyx_L1_error)
       __Pyx_XDECREF_SET(__pyx_v_mapping, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_5));
       __pyx_t_5 = 0;
 
-      /* "_rnaseq_utils.pyx":1921
+      /* "_rnaseq_utils.pyx":1934
  *             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
  *             for mapping in ordered_mappings:
  *                 for previous_mapping in output_mappings:             # <<<<<<<<<<<<<<
@@ -46647,16 +46869,16 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
       for (;;) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 1921, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 1934, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1921, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1934, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
-        if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1921, __pyx_L1_error)
+        if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 1934, __pyx_L1_error)
         __Pyx_XDECREF_SET(__pyx_v_previous_mapping, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_1));
         __pyx_t_1 = 0;
 
-        /* "_rnaseq_utils.pyx":1922
+        /* "_rnaseq_utils.pyx":1935
  *             for mapping in ordered_mappings:
  *                 for previous_mapping in output_mappings:
  *                     if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get('errors',0) <= mapping.attributes.get('errors', 0):             # <<<<<<<<<<<<<<
@@ -46671,26 +46893,26 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
         }
         if (unlikely(__pyx_v_previous_mapping->attributes == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-          __PYX_ERR(0, 1922, __pyx_L1_error)
+          __PYX_ERR(0, 1935, __pyx_L1_error)
         }
-        __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_previous_mapping->attributes, __pyx_n_u_errors, __pyx_int_0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1922, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_previous_mapping->attributes, __pyx_n_u_errors, __pyx_int_0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1935, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         if (unlikely(__pyx_v_mapping->attributes == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-          __PYX_ERR(0, 1922, __pyx_L1_error)
+          __PYX_ERR(0, 1935, __pyx_L1_error)
         }
-        __pyx_t_11 = __Pyx_PyDict_GetItemDefault(__pyx_v_mapping->attributes, __pyx_n_u_errors, __pyx_int_0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1922, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyDict_GetItemDefault(__pyx_v_mapping->attributes, __pyx_n_u_errors, __pyx_int_0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1935, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_11);
-        __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_t_11, Py_LE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1922, __pyx_L1_error)
+        __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_t_11, Py_LE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1935, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-        __pyx_t_14 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_14 < 0)) __PYX_ERR(0, 1922, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_14 < 0)) __PYX_ERR(0, 1935, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __pyx_t_3 = __pyx_t_14;
         __pyx_L23_bool_binop_done:;
         if (__pyx_t_3) {
 
-          /* "_rnaseq_utils.pyx":1923
+          /* "_rnaseq_utils.pyx":1936
  *                 for previous_mapping in output_mappings:
  *                     if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get('errors',0) <= mapping.attributes.get('errors', 0):
  *                         continue             # <<<<<<<<<<<<<<
@@ -46699,7 +46921,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  */
           goto __pyx_L20_continue;
 
-          /* "_rnaseq_utils.pyx":1922
+          /* "_rnaseq_utils.pyx":1935
  *             for mapping in ordered_mappings:
  *                 for previous_mapping in output_mappings:
  *                     if mapping.overlaps(previous_mapping) and previous_mapping.attributes.get('errors',0) <= mapping.attributes.get('errors', 0):             # <<<<<<<<<<<<<<
@@ -46708,7 +46930,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
  */
         }
 
-        /* "_rnaseq_utils.pyx":1921
+        /* "_rnaseq_utils.pyx":1934
  *             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
  *             for mapping in ordered_mappings:
  *                 for previous_mapping in output_mappings:             # <<<<<<<<<<<<<<
@@ -46719,16 +46941,16 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "_rnaseq_utils.pyx":1925
+      /* "_rnaseq_utils.pyx":1938
  *                         continue
  * 
  *                 output_mappings.append(mapping)             # <<<<<<<<<<<<<<
  * 
  *         return output_mappings
  */
-      __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_output_mappings, ((PyObject *)__pyx_v_mapping)); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 1925, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyList_Append(__pyx_v_output_mappings, ((PyObject *)__pyx_v_mapping)); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 1938, __pyx_L1_error)
 
-      /* "_rnaseq_utils.pyx":1920
+      /* "_rnaseq_utils.pyx":1933
  *             output_mappings = []
  *             ordered_mappings = [mapping for length,mapping in sorted([(v.span[1]-v.span[0],v) for v in mappings.values()])]
  *             for mapping in ordered_mappings:             # <<<<<<<<<<<<<<
@@ -46740,7 +46962,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
   }
   __pyx_L3:;
 
-  /* "_rnaseq_utils.pyx":1927
+  /* "_rnaseq_utils.pyx":1940
  *                 output_mappings.append(mapping)
  * 
  *         return output_mappings             # <<<<<<<<<<<<<<
@@ -46752,7 +46974,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
   __pyx_r = __pyx_v_output_mappings;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1910
+  /* "_rnaseq_utils.pyx":1923
  *         return mapping_list
  * 
  *     cdef list resolve_overlapping_mappings(self, dict mappings):             # <<<<<<<<<<<<<<
@@ -46782,7 +47004,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_resolve_overlapping_mappings
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1929
+/* "_rnaseq_utils.pyx":1942
  *         return output_mappings
  * 
  *     cdef int get_mapping_number(self):             # <<<<<<<<<<<<<<
@@ -46811,7 +47033,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_mapping_number", 0);
 
-  /* "_rnaseq_utils.pyx":1932
+  /* "_rnaseq_utils.pyx":1945
  *         """Given a list of pysam objects, determine
  *         how many locations in the genome the read (pair) mapped."""
  *         cdef int Nmap = 0             # <<<<<<<<<<<<<<
@@ -46820,7 +47042,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
  */
   __pyx_v_Nmap = 0;
 
-  /* "_rnaseq_utils.pyx":1933
+  /* "_rnaseq_utils.pyx":1946
  *         how many locations in the genome the read (pair) mapped."""
  *         cdef int Nmap = 0
  *         cdef int num_lines = len(self.input_lines)             # <<<<<<<<<<<<<<
@@ -46831,13 +47053,13 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
   __Pyx_INCREF(__pyx_t_1);
   if (unlikely(__pyx_t_1 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 1933, __pyx_L1_error)
+    __PYX_ERR(0, 1946, __pyx_L1_error)
   }
-  __pyx_t_2 = PyList_GET_SIZE(__pyx_t_1); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1933, __pyx_L1_error)
+  __pyx_t_2 = PyList_GET_SIZE(__pyx_t_1); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1946, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_num_lines = __pyx_t_2;
 
-  /* "_rnaseq_utils.pyx":1934
+  /* "_rnaseq_utils.pyx":1947
  *         cdef int Nmap = 0
  *         cdef int num_lines = len(self.input_lines)
  *         if num_lines > 0: # Process the line(s)             # <<<<<<<<<<<<<<
@@ -46847,7 +47069,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
   __pyx_t_3 = ((__pyx_v_num_lines > 0) != 0);
   if (__pyx_t_3) {
 
-    /* "_rnaseq_utils.pyx":1935
+    /* "_rnaseq_utils.pyx":1948
  *         cdef int num_lines = len(self.input_lines)
  *         if num_lines > 0: # Process the line(s)
  *             if num_lines == 1:             # <<<<<<<<<<<<<<
@@ -46857,7 +47079,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
     __pyx_t_3 = ((__pyx_v_num_lines == 1) != 0);
     if (__pyx_t_3) {
 
-      /* "_rnaseq_utils.pyx":1936
+      /* "_rnaseq_utils.pyx":1949
  *         if num_lines > 0: # Process the line(s)
  *             if num_lines == 1:
  *                 Nmap = 1             # <<<<<<<<<<<<<<
@@ -46866,7 +47088,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
  */
       __pyx_v_Nmap = 1;
 
-      /* "_rnaseq_utils.pyx":1935
+      /* "_rnaseq_utils.pyx":1948
  *         cdef int num_lines = len(self.input_lines)
  *         if num_lines > 0: # Process the line(s)
  *             if num_lines == 1:             # <<<<<<<<<<<<<<
@@ -46876,7 +47098,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
       goto __pyx_L4;
     }
 
-    /* "_rnaseq_utils.pyx":1938
+    /* "_rnaseq_utils.pyx":1951
  *                 Nmap = 1
  *             else: # More than one line, could be multimapper and/or paired
  *                 line = self.input_lines[0]             # <<<<<<<<<<<<<<
@@ -46886,14 +47108,14 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
     /*else*/ {
       if (unlikely(__pyx_v_self->input_lines == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1938, __pyx_L1_error)
+        __PYX_ERR(0, 1951, __pyx_L1_error)
       }
-      __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_self->input_lines, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1938, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_self->input_lines, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1951, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_line = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "_rnaseq_utils.pyx":1939
+      /* "_rnaseq_utils.pyx":1952
  *             else: # More than one line, could be multimapper and/or paired
  *                 line = self.input_lines[0]
  *                 try:             # <<<<<<<<<<<<<<
@@ -46909,14 +47131,14 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
         __Pyx_XGOTREF(__pyx_t_6);
         /*try:*/ {
 
-          /* "_rnaseq_utils.pyx":1940
+          /* "_rnaseq_utils.pyx":1953
  *                 line = self.input_lines[0]
  *                 try:
  *                     Nmap = line.get_tag('NH')             # <<<<<<<<<<<<<<
  *                 except KeyError:
  *                     if line.is_paired:
  */
-          __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1940, __pyx_L5_error)
+          __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1953, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_t_8 = NULL;
           if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_7))) {
@@ -46930,14 +47152,14 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
           }
           __pyx_t_1 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_7, __pyx_t_8, __pyx_n_u_NH) : __Pyx_PyObject_CallOneArg(__pyx_t_7, __pyx_n_u_NH);
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1940, __pyx_L5_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1953, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1940, __pyx_L5_error)
+          __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1953, __pyx_L5_error)
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_v_Nmap = __pyx_t_9;
 
-          /* "_rnaseq_utils.pyx":1939
+          /* "_rnaseq_utils.pyx":1952
  *             else: # More than one line, could be multimapper and/or paired
  *                 line = self.input_lines[0]
  *                 try:             # <<<<<<<<<<<<<<
@@ -46954,7 +47176,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "_rnaseq_utils.pyx":1941
+        /* "_rnaseq_utils.pyx":1954
  *                 try:
  *                     Nmap = line.get_tag('NH')
  *                 except KeyError:             # <<<<<<<<<<<<<<
@@ -46964,25 +47186,25 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
         __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
         if (__pyx_t_9) {
           __Pyx_AddTraceback("_rnaseq_utils.BAMobject.get_mapping_number", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1941, __pyx_L7_except_error)
+          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1954, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GOTREF(__pyx_t_7);
           __Pyx_GOTREF(__pyx_t_8);
 
-          /* "_rnaseq_utils.pyx":1942
+          /* "_rnaseq_utils.pyx":1955
  *                     Nmap = line.get_tag('NH')
  *                 except KeyError:
  *                     if line.is_paired:             # <<<<<<<<<<<<<<
  *                         Nmap = int(num_lines*0.5)
  *                     else:
  */
-          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1942, __pyx_L7_except_error)
+          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1955, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1942, __pyx_L7_except_error)
+          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1955, __pyx_L7_except_error)
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           if (__pyx_t_3) {
 
-            /* "_rnaseq_utils.pyx":1943
+            /* "_rnaseq_utils.pyx":1956
  *                 except KeyError:
  *                     if line.is_paired:
  *                         Nmap = int(num_lines*0.5)             # <<<<<<<<<<<<<<
@@ -46991,7 +47213,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
  */
             __pyx_v_Nmap = ((int)(__pyx_v_num_lines * 0.5));
 
-            /* "_rnaseq_utils.pyx":1942
+            /* "_rnaseq_utils.pyx":1955
  *                     Nmap = line.get_tag('NH')
  *                 except KeyError:
  *                     if line.is_paired:             # <<<<<<<<<<<<<<
@@ -47001,7 +47223,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
             goto __pyx_L13;
           }
 
-          /* "_rnaseq_utils.pyx":1945
+          /* "_rnaseq_utils.pyx":1958
  *                         Nmap = int(num_lines*0.5)
  *                     else:
  *                         Nmap = num_lines             # <<<<<<<<<<<<<<
@@ -47020,7 +47242,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
         goto __pyx_L7_except_error;
         __pyx_L7_except_error:;
 
-        /* "_rnaseq_utils.pyx":1939
+        /* "_rnaseq_utils.pyx":1952
  *             else: # More than one line, could be multimapper and/or paired
  *                 line = self.input_lines[0]
  *                 try:             # <<<<<<<<<<<<<<
@@ -47042,7 +47264,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
     }
     __pyx_L4:;
 
-    /* "_rnaseq_utils.pyx":1934
+    /* "_rnaseq_utils.pyx":1947
  *         cdef int Nmap = 0
  *         cdef int num_lines = len(self.input_lines)
  *         if num_lines > 0: # Process the line(s)             # <<<<<<<<<<<<<<
@@ -47051,7 +47273,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
  */
   }
 
-  /* "_rnaseq_utils.pyx":1947
+  /* "_rnaseq_utils.pyx":1960
  *                         Nmap = num_lines
  * 
  *         return Nmap             # <<<<<<<<<<<<<<
@@ -47061,7 +47283,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
   __pyx_r = __pyx_v_Nmap;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1929
+  /* "_rnaseq_utils.pyx":1942
  *         return output_mappings
  * 
  *     cdef int get_mapping_number(self):             # <<<<<<<<<<<<<<
@@ -47083,7 +47305,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_mapping_number(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1949
+/* "_rnaseq_utils.pyx":1962
  *         return Nmap
  * 
  *     cdef (int, int) determine_strand(self, line, bint stranded):             # <<<<<<<<<<<<<<
@@ -47105,7 +47327,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("determine_strand", 0);
 
-  /* "_rnaseq_utils.pyx":1952
+  /* "_rnaseq_utils.pyx":1965
  *         """Determine the RNA strand of a pysam object"""
  *         cdef int mate, strand
  *         mate = 1             # <<<<<<<<<<<<<<
@@ -47114,7 +47336,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
  */
   __pyx_v_mate = 1;
 
-  /* "_rnaseq_utils.pyx":1953
+  /* "_rnaseq_utils.pyx":1966
  *         cdef int mate, strand
  *         mate = 1
  *         strand = 0             # <<<<<<<<<<<<<<
@@ -47123,29 +47345,29 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
  */
   __pyx_v_strand = 0;
 
-  /* "_rnaseq_utils.pyx":1954
+  /* "_rnaseq_utils.pyx":1967
  *         mate = 1
  *         strand = 0
  *         if line.is_paired:             # <<<<<<<<<<<<<<
  *             mate = 1 if line.is_read1 else 2
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1954, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1967, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1954, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1967, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "_rnaseq_utils.pyx":1955
+    /* "_rnaseq_utils.pyx":1968
  *         strand = 0
  *         if line.is_paired:
  *             mate = 1 if line.is_read1 else 2             # <<<<<<<<<<<<<<
  * 
  *         if mate == 1: # If stranded, sense w.r.t. RNA
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_read1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1955, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_read1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1968, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1955, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1968, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_2) {
       __pyx_t_3 = 1;
@@ -47154,7 +47376,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
     }
     __pyx_v_mate = __pyx_t_3;
 
-    /* "_rnaseq_utils.pyx":1954
+    /* "_rnaseq_utils.pyx":1967
  *         mate = 1
  *         strand = 0
  *         if line.is_paired:             # <<<<<<<<<<<<<<
@@ -47163,7 +47385,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
  */
   }
 
-  /* "_rnaseq_utils.pyx":1957
+  /* "_rnaseq_utils.pyx":1970
  *             mate = 1 if line.is_read1 else 2
  * 
  *         if mate == 1: # If stranded, sense w.r.t. RNA             # <<<<<<<<<<<<<<
@@ -47173,7 +47395,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
   __pyx_t_2 = ((__pyx_v_mate == 1) != 0);
   if (__pyx_t_2) {
 
-    /* "_rnaseq_utils.pyx":1958
+    /* "_rnaseq_utils.pyx":1971
  * 
  *         if mate == 1: # If stranded, sense w.r.t. RNA
  *             if stranded:             # <<<<<<<<<<<<<<
@@ -47183,16 +47405,16 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
     __pyx_t_2 = (__pyx_v_stranded != 0);
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":1959
+      /* "_rnaseq_utils.pyx":1972
  *         if mate == 1: # If stranded, sense w.r.t. RNA
  *             if stranded:
  *                 strand = -1 if line.is_reverse else 1             # <<<<<<<<<<<<<<
  *         else:
  *             if stranded:
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_reverse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1959, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_reverse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1972, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1959, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1972, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_2) {
         __pyx_t_3 = -1;
@@ -47201,7 +47423,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
       }
       __pyx_v_strand = __pyx_t_3;
 
-      /* "_rnaseq_utils.pyx":1958
+      /* "_rnaseq_utils.pyx":1971
  * 
  *         if mate == 1: # If stranded, sense w.r.t. RNA
  *             if stranded:             # <<<<<<<<<<<<<<
@@ -47210,7 +47432,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
  */
     }
 
-    /* "_rnaseq_utils.pyx":1957
+    /* "_rnaseq_utils.pyx":1970
  *             mate = 1 if line.is_read1 else 2
  * 
  *         if mate == 1: # If stranded, sense w.r.t. RNA             # <<<<<<<<<<<<<<
@@ -47220,7 +47442,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
     goto __pyx_L4;
   }
 
-  /* "_rnaseq_utils.pyx":1961
+  /* "_rnaseq_utils.pyx":1974
  *                 strand = -1 if line.is_reverse else 1
  *         else:
  *             if stranded:             # <<<<<<<<<<<<<<
@@ -47231,16 +47453,16 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
     __pyx_t_2 = (__pyx_v_stranded != 0);
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":1962
+      /* "_rnaseq_utils.pyx":1975
  *         else:
  *             if stranded:
  *                 strand = 1 if line.is_reverse else -1             # <<<<<<<<<<<<<<
  * 
  *         return mate, strand
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_reverse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1962, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_reverse); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1975, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1962, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1975, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_2) {
         __pyx_t_3 = 1;
@@ -47249,7 +47471,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
       }
       __pyx_v_strand = __pyx_t_3;
 
-      /* "_rnaseq_utils.pyx":1961
+      /* "_rnaseq_utils.pyx":1974
  *                 strand = -1 if line.is_reverse else 1
  *         else:
  *             if stranded:             # <<<<<<<<<<<<<<
@@ -47260,7 +47482,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
   }
   __pyx_L4:;
 
-  /* "_rnaseq_utils.pyx":1964
+  /* "_rnaseq_utils.pyx":1977
  *                 strand = 1 if line.is_reverse else -1
  * 
  *         return mate, strand             # <<<<<<<<<<<<<<
@@ -47272,7 +47494,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
   __pyx_r = __pyx_t_4;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1949
+  /* "_rnaseq_utils.pyx":1962
  *         return Nmap
  * 
  *     cdef (int, int) determine_strand(self, line, bint stranded):             # <<<<<<<<<<<<<<
@@ -47290,7 +47512,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_determine_st
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1966
+/* "_rnaseq_utils.pyx":1979
  *         return mate, strand
  * 
  *     cdef bint should_skip(self, line):             # <<<<<<<<<<<<<<
@@ -47310,31 +47532,31 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("should_skip", 0);
 
-  /* "_rnaseq_utils.pyx":1968
+  /* "_rnaseq_utils.pyx":1981
  *     cdef bint should_skip(self, line):
  *         """The read should not be processed."""
  *         if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads             # <<<<<<<<<<<<<<
  *             return True
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_unmapped); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1968, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_unmapped); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1981, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1968, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1981, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (!__pyx_t_3) {
   } else {
     __pyx_t_1 = __pyx_t_3;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_supplementary); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1968, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_supplementary); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1981, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1968, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1981, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = __pyx_t_3;
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":1969
+    /* "_rnaseq_utils.pyx":1982
  *         """The read should not be processed."""
  *         if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
  *             return True             # <<<<<<<<<<<<<<
@@ -47344,7 +47566,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "_rnaseq_utils.pyx":1968
+    /* "_rnaseq_utils.pyx":1981
  *     cdef bint should_skip(self, line):
  *         """The read should not be processed."""
  *         if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads             # <<<<<<<<<<<<<<
@@ -47353,16 +47575,16 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
  */
   }
 
-  /* "_rnaseq_utils.pyx":1970
+  /* "_rnaseq_utils.pyx":1983
  *         if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
  *             return True
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too             # <<<<<<<<<<<<<<
  *             return True
  *         elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_secondary); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1970, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_secondary); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1983, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1970, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1983, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
   } else {
@@ -47374,7 +47596,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
   __pyx_L6_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":1971
+    /* "_rnaseq_utils.pyx":1984
  *             return True
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
  *             return True             # <<<<<<<<<<<<<<
@@ -47384,7 +47606,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "_rnaseq_utils.pyx":1970
+    /* "_rnaseq_utils.pyx":1983
  *         if line.is_unmapped or line.is_supplementary: # Skip unmapped reads and poorly mapped reads
  *             return True
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too             # <<<<<<<<<<<<<<
@@ -47393,32 +47615,32 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
  */
   }
 
-  /* "_rnaseq_utils.pyx":1972
+  /* "_rnaseq_utils.pyx":1985
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
  *             return True
  *         elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads             # <<<<<<<<<<<<<<
  *             return True
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1972, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_paired); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1985, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1972, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1985, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
   } else {
     __pyx_t_1 = __pyx_t_3;
     goto __pyx_L8_bool_binop_done;
   }
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_proper_pair); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1972, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_is_proper_pair); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1985, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1972, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 1985, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_4 = ((!__pyx_t_3) != 0);
   __pyx_t_1 = __pyx_t_4;
   __pyx_L8_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":1973
+    /* "_rnaseq_utils.pyx":1986
  *             return True
  *         elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads
  *             return True             # <<<<<<<<<<<<<<
@@ -47428,7 +47650,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "_rnaseq_utils.pyx":1972
+    /* "_rnaseq_utils.pyx":1985
  *         elif line.is_secondary and not self.secondary: # Unless secondary alignments are allowed, skip these too
  *             return True
  *         elif line.is_paired and not line.is_proper_pair: # Ignore discordant reads             # <<<<<<<<<<<<<<
@@ -47437,7 +47659,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
  */
   }
 
-  /* "_rnaseq_utils.pyx":1975
+  /* "_rnaseq_utils.pyx":1988
  *             return True
  * 
  *         return False             # <<<<<<<<<<<<<<
@@ -47447,7 +47669,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1966
+  /* "_rnaseq_utils.pyx":1979
  *         return mate, strand
  * 
  *     cdef bint should_skip(self, line):             # <<<<<<<<<<<<<<
@@ -47465,7 +47687,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_should_skip(struct __pyx_obj_13_rn
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1977
+/* "_rnaseq_utils.pyx":1990
  *         return False
  * 
  *     cdef bint fails_stringent_filters(self, int Nmap, int match_length, int head, int tail, int errors):             # <<<<<<<<<<<<<<
@@ -47480,7 +47702,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("fails_stringent_filters", 0);
 
-  /* "_rnaseq_utils.pyx":1981
+  /* "_rnaseq_utils.pyx":1994
  *         more stringently: no allowed softclipping, multimapping, or mismatches.
  *         Absolutely require the length to be longer than minlen_strict."""
  *         if (head > 0 or tail > 0 or errors > 0 or Nmap > 1) and match_length < self.dataset.minlen_strict:             # <<<<<<<<<<<<<<
@@ -47514,7 +47736,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":1982
+    /* "_rnaseq_utils.pyx":1995
  *         Absolutely require the length to be longer than minlen_strict."""
  *         if (head > 0 or tail > 0 or errors > 0 or Nmap > 1) and match_length < self.dataset.minlen_strict:
  *             return True             # <<<<<<<<<<<<<<
@@ -47524,7 +47746,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "_rnaseq_utils.pyx":1981
+    /* "_rnaseq_utils.pyx":1994
  *         more stringently: no allowed softclipping, multimapping, or mismatches.
  *         Absolutely require the length to be longer than minlen_strict."""
  *         if (head > 0 or tail > 0 or errors > 0 or Nmap > 1) and match_length < self.dataset.minlen_strict:             # <<<<<<<<<<<<<<
@@ -47533,7 +47755,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
  */
   }
 
-  /* "_rnaseq_utils.pyx":1984
+  /* "_rnaseq_utils.pyx":1997
  *             return True
  * 
  *         return False             # <<<<<<<<<<<<<<
@@ -47543,7 +47765,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1977
+  /* "_rnaseq_utils.pyx":1990
  *         return False
  * 
  *     cdef bint fails_stringent_filters(self, int Nmap, int match_length, int head, int tail, int errors):             # <<<<<<<<<<<<<<
@@ -47557,7 +47779,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_fails_stringent_filters(struct __p
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":1986
+/* "_rnaseq_utils.pyx":1999
  *         return False
  * 
  *     cdef int get_alignment_strand(self, line, int strand):             # <<<<<<<<<<<<<<
@@ -47590,7 +47812,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_alignment_strand", 0);
 
-  /* "_rnaseq_utils.pyx":1991
+  /* "_rnaseq_utils.pyx":2004
  *         cdef str js
  *         cdef int alignment_strand
  *         alignment_strand = 0             # <<<<<<<<<<<<<<
@@ -47599,7 +47821,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
  */
   __pyx_v_alignment_strand = 0;
 
-  /* "_rnaseq_utils.pyx":1992
+  /* "_rnaseq_utils.pyx":2005
  *         cdef int alignment_strand
  *         alignment_strand = 0
  *         try:             # <<<<<<<<<<<<<<
@@ -47615,14 +47837,14 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "_rnaseq_utils.pyx":1993
+      /* "_rnaseq_utils.pyx":2006
  *         alignment_strand = 0
  *         try:
  *             js = line.get_tag('XS')             # <<<<<<<<<<<<<<
  *             if js == '+':
  *                 alignment_strand = 1
  */
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1993, __pyx_L3_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2006, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_6 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -47636,25 +47858,25 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
       }
       __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_n_u_XS) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_n_u_XS);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1993, __pyx_L3_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2006, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 1993, __pyx_L3_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 2006, __pyx_L3_error)
       __pyx_v_js = ((PyObject*)__pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "_rnaseq_utils.pyx":1994
+      /* "_rnaseq_utils.pyx":2007
  *         try:
  *             js = line.get_tag('XS')
  *             if js == '+':             # <<<<<<<<<<<<<<
  *                 alignment_strand = 1
  *             elif js == '-':
  */
-      __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_js, __pyx_kp_u__10, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 1994, __pyx_L3_error)
+      __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_js, __pyx_kp_u__10, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 2007, __pyx_L3_error)
       __pyx_t_8 = (__pyx_t_7 != 0);
       if (__pyx_t_8) {
 
-        /* "_rnaseq_utils.pyx":1995
+        /* "_rnaseq_utils.pyx":2008
  *             js = line.get_tag('XS')
  *             if js == '+':
  *                 alignment_strand = 1             # <<<<<<<<<<<<<<
@@ -47663,7 +47885,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
  */
         __pyx_v_alignment_strand = 1;
 
-        /* "_rnaseq_utils.pyx":1994
+        /* "_rnaseq_utils.pyx":2007
  *         try:
  *             js = line.get_tag('XS')
  *             if js == '+':             # <<<<<<<<<<<<<<
@@ -47673,18 +47895,18 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
         goto __pyx_L9;
       }
 
-      /* "_rnaseq_utils.pyx":1996
+      /* "_rnaseq_utils.pyx":2009
  *             if js == '+':
  *                 alignment_strand = 1
  *             elif js == '-':             # <<<<<<<<<<<<<<
  *                 alignment_strand = -1
  *         except KeyError:
  */
-      __pyx_t_8 = (__Pyx_PyUnicode_Equals(__pyx_v_js, __pyx_kp_u__11, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 1996, __pyx_L3_error)
+      __pyx_t_8 = (__Pyx_PyUnicode_Equals(__pyx_v_js, __pyx_kp_u__11, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 2009, __pyx_L3_error)
       __pyx_t_7 = (__pyx_t_8 != 0);
       if (__pyx_t_7) {
 
-        /* "_rnaseq_utils.pyx":1997
+        /* "_rnaseq_utils.pyx":2010
  *                 alignment_strand = 1
  *             elif js == '-':
  *                 alignment_strand = -1             # <<<<<<<<<<<<<<
@@ -47693,7 +47915,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
  */
         __pyx_v_alignment_strand = -1;
 
-        /* "_rnaseq_utils.pyx":1996
+        /* "_rnaseq_utils.pyx":2009
  *             if js == '+':
  *                 alignment_strand = 1
  *             elif js == '-':             # <<<<<<<<<<<<<<
@@ -47703,7 +47925,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
       }
       __pyx_L9:;
 
-      /* "_rnaseq_utils.pyx":1992
+      /* "_rnaseq_utils.pyx":2005
  *         cdef int alignment_strand
  *         alignment_strand = 0
  *         try:             # <<<<<<<<<<<<<<
@@ -47720,7 +47942,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "_rnaseq_utils.pyx":1998
+    /* "_rnaseq_utils.pyx":2011
  *             elif js == '-':
  *                 alignment_strand = -1
  *         except KeyError:             # <<<<<<<<<<<<<<
@@ -47730,12 +47952,12 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
     __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
     if (__pyx_t_9) {
       __Pyx_AddTraceback("_rnaseq_utils.BAMobject.get_alignment_strand", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_5, &__pyx_t_6) < 0) __PYX_ERR(0, 1998, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_5, &__pyx_t_6) < 0) __PYX_ERR(0, 2011, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GOTREF(__pyx_t_6);
 
-      /* "_rnaseq_utils.pyx":1999
+      /* "_rnaseq_utils.pyx":2012
  *                 alignment_strand = -1
  *         except KeyError:
  *             try:             # <<<<<<<<<<<<<<
@@ -47751,14 +47973,14 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
         __Pyx_XGOTREF(__pyx_t_12);
         /*try:*/ {
 
-          /* "_rnaseq_utils.pyx":2000
+          /* "_rnaseq_utils.pyx":2013
  *         except KeyError:
  *             try:
  *                 js = line.get_tag('ts')             # <<<<<<<<<<<<<<
  *                 alignment_strand = {'+':strand, '-':-strand}[js]
  *             except KeyError:
  */
-          __pyx_t_14 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2000, __pyx_L12_error)
+          __pyx_t_14 = __Pyx_PyObject_GetAttrStr(__pyx_v_line, __pyx_n_s_get_tag); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2013, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_14);
           __pyx_t_15 = NULL;
           if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_14))) {
@@ -47772,38 +47994,38 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
           }
           __pyx_t_13 = (__pyx_t_15) ? __Pyx_PyObject_Call2Args(__pyx_t_14, __pyx_t_15, __pyx_n_u_ts) : __Pyx_PyObject_CallOneArg(__pyx_t_14, __pyx_n_u_ts);
           __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
-          if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2000, __pyx_L12_error)
+          if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2013, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_13);
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-          if (!(likely(PyUnicode_CheckExact(__pyx_t_13))||((__pyx_t_13) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_13)->tp_name), 0))) __PYX_ERR(0, 2000, __pyx_L12_error)
+          if (!(likely(PyUnicode_CheckExact(__pyx_t_13))||((__pyx_t_13) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_13)->tp_name), 0))) __PYX_ERR(0, 2013, __pyx_L12_error)
           __Pyx_XDECREF_SET(__pyx_v_js, ((PyObject*)__pyx_t_13));
           __pyx_t_13 = 0;
 
-          /* "_rnaseq_utils.pyx":2001
+          /* "_rnaseq_utils.pyx":2014
  *             try:
  *                 js = line.get_tag('ts')
  *                 alignment_strand = {'+':strand, '-':-strand}[js]             # <<<<<<<<<<<<<<
  *             except KeyError:
  *                 alignment_strand = 0
  */
-          __pyx_t_13 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2001, __pyx_L12_error)
+          __pyx_t_13 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_13);
-          __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_v_strand); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2001, __pyx_L12_error)
+          __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_v_strand); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_14);
-          if (PyDict_SetItem(__pyx_t_13, __pyx_kp_u__10, __pyx_t_14) < 0) __PYX_ERR(0, 2001, __pyx_L12_error)
+          if (PyDict_SetItem(__pyx_t_13, __pyx_kp_u__10, __pyx_t_14) < 0) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-          __pyx_t_14 = __Pyx_PyInt_From_int((-__pyx_v_strand)); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2001, __pyx_L12_error)
+          __pyx_t_14 = __Pyx_PyInt_From_int((-__pyx_v_strand)); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_14);
-          if (PyDict_SetItem(__pyx_t_13, __pyx_kp_u__11, __pyx_t_14) < 0) __PYX_ERR(0, 2001, __pyx_L12_error)
+          if (PyDict_SetItem(__pyx_t_13, __pyx_kp_u__11, __pyx_t_14) < 0) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-          __pyx_t_14 = __Pyx_PyDict_GetItem(__pyx_t_13, __pyx_v_js); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2001, __pyx_L12_error)
+          __pyx_t_14 = __Pyx_PyDict_GetItem(__pyx_t_13, __pyx_v_js); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_14);
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_14); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2001, __pyx_L12_error)
+          __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_14); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2014, __pyx_L12_error)
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
           __pyx_v_alignment_strand = __pyx_t_9;
 
-          /* "_rnaseq_utils.pyx":1999
+          /* "_rnaseq_utils.pyx":2012
  *                 alignment_strand = -1
  *         except KeyError:
  *             try:             # <<<<<<<<<<<<<<
@@ -47820,7 +48042,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
         __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
         __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-        /* "_rnaseq_utils.pyx":2002
+        /* "_rnaseq_utils.pyx":2015
  *                 js = line.get_tag('ts')
  *                 alignment_strand = {'+':strand, '-':-strand}[js]
  *             except KeyError:             # <<<<<<<<<<<<<<
@@ -47830,12 +48052,12 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
         __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_KeyError);
         if (__pyx_t_9) {
           __Pyx_AddTraceback("_rnaseq_utils.BAMobject.get_alignment_strand", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_14, &__pyx_t_13, &__pyx_t_15) < 0) __PYX_ERR(0, 2002, __pyx_L14_except_error)
+          if (__Pyx_GetException(&__pyx_t_14, &__pyx_t_13, &__pyx_t_15) < 0) __PYX_ERR(0, 2015, __pyx_L14_except_error)
           __Pyx_GOTREF(__pyx_t_14);
           __Pyx_GOTREF(__pyx_t_13);
           __Pyx_GOTREF(__pyx_t_15);
 
-          /* "_rnaseq_utils.pyx":2003
+          /* "_rnaseq_utils.pyx":2016
  *                 alignment_strand = {'+':strand, '-':-strand}[js]
  *             except KeyError:
  *                 alignment_strand = 0             # <<<<<<<<<<<<<<
@@ -47851,7 +48073,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
         goto __pyx_L14_except_error;
         __pyx_L14_except_error:;
 
-        /* "_rnaseq_utils.pyx":1999
+        /* "_rnaseq_utils.pyx":2012
  *                 alignment_strand = -1
  *         except KeyError:
  *             try:             # <<<<<<<<<<<<<<
@@ -47878,7 +48100,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "_rnaseq_utils.pyx":1992
+    /* "_rnaseq_utils.pyx":2005
  *         cdef int alignment_strand
  *         alignment_strand = 0
  *         try:             # <<<<<<<<<<<<<<
@@ -47898,7 +48120,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
     __pyx_L8_try_end:;
   }
 
-  /* "_rnaseq_utils.pyx":2005
+  /* "_rnaseq_utils.pyx":2018
  *                 alignment_strand = 0
  * 
  *         return alignment_strand             # <<<<<<<<<<<<<<
@@ -47908,7 +48130,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
   __pyx_r = __pyx_v_alignment_strand;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":1986
+  /* "_rnaseq_utils.pyx":1999
  *         return False
  * 
  *     cdef int get_alignment_strand(self, line, int strand):             # <<<<<<<<<<<<<<
@@ -47932,7 +48154,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_get_alignment_strand(CYTHON_UNUSED
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2007
+/* "_rnaseq_utils.pyx":2020
  *         return alignment_strand
  * 
  *     cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=False):             # <<<<<<<<<<<<<<
@@ -47975,7 +48197,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
     }
   }
 
-  /* "_rnaseq_utils.pyx":2013
+  /* "_rnaseq_utils.pyx":2026
  *         cdef Py_ssize_t i, range_len, gap_len
  *         cdef junction_strand
  *         cdef str js = '.'             # <<<<<<<<<<<<<<
@@ -47985,7 +48207,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
   __Pyx_INCREF(__pyx_kp_u__9);
   __pyx_v_js = __pyx_kp_u__9;
 
-  /* "_rnaseq_utils.pyx":2014
+  /* "_rnaseq_utils.pyx":2027
  *         cdef junction_strand
  *         cdef str js = '.'
  *         range_len = len(ranges)             # <<<<<<<<<<<<<<
@@ -47994,12 +48216,12 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  */
   if (unlikely(__pyx_v_ranges == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 2014, __pyx_L1_error)
+    __PYX_ERR(0, 2027, __pyx_L1_error)
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_ranges); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 2014, __pyx_L1_error)
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_ranges); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 2027, __pyx_L1_error)
   __pyx_v_range_len = __pyx_t_1;
 
-  /* "_rnaseq_utils.pyx":2015
+  /* "_rnaseq_utils.pyx":2028
  *         cdef str js = '.'
  *         range_len = len(ranges)
  *         gap_len = range_len - 1             # <<<<<<<<<<<<<<
@@ -48008,7 +48230,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  */
   __pyx_v_gap_len = (__pyx_v_range_len - 1);
 
-  /* "_rnaseq_utils.pyx":2016
+  /* "_rnaseq_utils.pyx":2029
  *         range_len = len(ranges)
  *         gap_len = range_len - 1
  *         gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges             # <<<<<<<<<<<<<<
@@ -48016,7 +48238,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  *         for i in range(gap_len):
  */
   { /* enter inner scope */
-    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2016, __pyx_L1_error)
+    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2029, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_1 = (__pyx_v_range_len - 1);
     __pyx_t_3 = __pyx_t_1;
@@ -48024,24 +48246,24 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
       __pyx_9genexpr42__pyx_v_i = __pyx_t_4;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2016, __pyx_L1_error)
+        __PYX_ERR(0, 2029, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_ranges, __pyx_9genexpr42__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2016, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_ranges, __pyx_9genexpr42__pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2016, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2016, __pyx_L1_error)
+        __PYX_ERR(0, 2029, __pyx_L1_error)
       }
       __pyx_t_7 = (__pyx_9genexpr42__pyx_v_i + 1);
-      __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_ranges, __pyx_t_7, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2016, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_ranges, __pyx_t_7, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_5, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2016, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_5, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2016, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GIVEREF(__pyx_t_6);
       PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_6);
@@ -48049,21 +48271,21 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
       PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_8);
       __pyx_t_6 = 0;
       __pyx_t_8 = 0;
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 2016, __pyx_L1_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 2029, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
   } /* exit inner scope */
   __pyx_v_gaps = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "_rnaseq_utils.pyx":2017
+  /* "_rnaseq_utils.pyx":2030
  *         gap_len = range_len - 1
  *         gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges
  *         splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction             # <<<<<<<<<<<<<<
  *         for i in range(gap_len):
  *             g = gaps[i]
  */
-  __pyx_t_2 = PyList_New(1 * ((__pyx_v_gap_len<0) ? 0:__pyx_v_gap_len)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2017, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(1 * ((__pyx_v_gap_len<0) ? 0:__pyx_v_gap_len)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2030, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   { Py_ssize_t __pyx_temp;
     for (__pyx_temp=0; __pyx_temp < __pyx_v_gap_len; __pyx_temp++) {
@@ -48075,7 +48297,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
   __pyx_v_splice = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "_rnaseq_utils.pyx":2018
+  /* "_rnaseq_utils.pyx":2031
  *         gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges
  *         splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction
  *         for i in range(gap_len):             # <<<<<<<<<<<<<<
@@ -48087,46 +48309,46 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "_rnaseq_utils.pyx":2019
+    /* "_rnaseq_utils.pyx":2032
  *         splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction
  *         for i in range(gap_len):
  *             g = gaps[i]             # <<<<<<<<<<<<<<
  *             if g in introns:
  *                 splice[i] = True
  */
-    __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_gaps, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2019, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_gaps, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2032, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_XDECREF_SET(__pyx_v_g, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "_rnaseq_utils.pyx":2020
+    /* "_rnaseq_utils.pyx":2033
  *         for i in range(gap_len):
  *             g = gaps[i]
  *             if g in introns:             # <<<<<<<<<<<<<<
  *                 splice[i] = True
  *                 if self.dataset.genome and remove_noncanonical:
  */
-    __pyx_t_9 = (__Pyx_PySequence_ContainsTF(__pyx_v_g, __pyx_v_introns, Py_EQ)); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2020, __pyx_L1_error)
+    __pyx_t_9 = (__Pyx_PySequence_ContainsTF(__pyx_v_g, __pyx_v_introns, Py_EQ)); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2033, __pyx_L1_error)
     __pyx_t_10 = (__pyx_t_9 != 0);
     if (__pyx_t_10) {
 
-      /* "_rnaseq_utils.pyx":2021
+      /* "_rnaseq_utils.pyx":2034
  *             g = gaps[i]
  *             if g in introns:
  *                 splice[i] = True             # <<<<<<<<<<<<<<
  *                 if self.dataset.genome and remove_noncanonical:
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
  */
-      if (unlikely(__Pyx_SetItemInt(__pyx_v_splice, __pyx_v_i, Py_True, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1) < 0)) __PYX_ERR(0, 2021, __pyx_L1_error)
+      if (unlikely(__Pyx_SetItemInt(__pyx_v_splice, __pyx_v_i, Py_True, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1) < 0)) __PYX_ERR(0, 2034, __pyx_L1_error)
 
-      /* "_rnaseq_utils.pyx":2022
+      /* "_rnaseq_utils.pyx":2035
  *             if g in introns:
  *                 splice[i] = True
  *                 if self.dataset.genome and remove_noncanonical:             # <<<<<<<<<<<<<<
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
  *                     if junction_strand != alignment_strand: # Did not find a valid splice junction
  */
-      __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_self->dataset->genome); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2022, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_self->dataset->genome); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2035, __pyx_L1_error)
       if (__pyx_t_9) {
       } else {
         __pyx_t_10 = __pyx_t_9;
@@ -48137,7 +48359,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
       __pyx_L9_bool_binop_done:;
       if (__pyx_t_10) {
 
-        /* "_rnaseq_utils.pyx":2023
+        /* "_rnaseq_utils.pyx":2036
  *                 splice[i] = True
  *                 if self.dataset.genome and remove_noncanonical:
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])             # <<<<<<<<<<<<<<
@@ -48146,45 +48368,45 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  */
         __pyx_t_2 = __pyx_v_self->dataset->genome;
         __Pyx_INCREF(__pyx_t_2);
-        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_g, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2023, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_g, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2036, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_11 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2023, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2036, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_g, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2023, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_g, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2036, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2023, __pyx_L1_error)
+        __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2036, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_f_13_rnaseq_utils_get_junction_strand(((PyObject*)__pyx_t_2), __pyx_v_chrom, __pyx_t_11, __pyx_t_12)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2023, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_f_13_rnaseq_utils_get_junction_strand(((PyObject*)__pyx_t_2), __pyx_v_chrom, __pyx_t_11, __pyx_t_12)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2036, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF_SET(__pyx_v_junction_strand, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "_rnaseq_utils.pyx":2024
+        /* "_rnaseq_utils.pyx":2037
  *                 if self.dataset.genome and remove_noncanonical:
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
  *                     if junction_strand != alignment_strand: # Did not find a valid splice junction             # <<<<<<<<<<<<<<
  *                         splice[i] = False
  * 
  */
-        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_alignment_strand); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2024, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_alignment_strand); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2037, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_2 = PyObject_RichCompare(__pyx_v_junction_strand, __pyx_t_5, Py_NE); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2024, __pyx_L1_error)
+        __pyx_t_2 = PyObject_RichCompare(__pyx_v_junction_strand, __pyx_t_5, Py_NE); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2037, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 2024, __pyx_L1_error)
+        __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 2037, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         if (__pyx_t_10) {
 
-          /* "_rnaseq_utils.pyx":2025
+          /* "_rnaseq_utils.pyx":2038
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
  *                     if junction_strand != alignment_strand: # Did not find a valid splice junction
  *                         splice[i] = False             # <<<<<<<<<<<<<<
  * 
  *         return splice
  */
-          if (unlikely(__Pyx_SetItemInt(__pyx_v_splice, __pyx_v_i, Py_False, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1) < 0)) __PYX_ERR(0, 2025, __pyx_L1_error)
+          if (unlikely(__Pyx_SetItemInt(__pyx_v_splice, __pyx_v_i, Py_False, Py_ssize_t, 1, PyInt_FromSsize_t, 1, 1, 1) < 0)) __PYX_ERR(0, 2038, __pyx_L1_error)
 
-          /* "_rnaseq_utils.pyx":2024
+          /* "_rnaseq_utils.pyx":2037
  *                 if self.dataset.genome and remove_noncanonical:
  *                     junction_strand = get_junction_strand(self.dataset.genome, chrom, g[0], g[1])
  *                     if junction_strand != alignment_strand: # Did not find a valid splice junction             # <<<<<<<<<<<<<<
@@ -48193,7 +48415,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  */
         }
 
-        /* "_rnaseq_utils.pyx":2022
+        /* "_rnaseq_utils.pyx":2035
  *             if g in introns:
  *                 splice[i] = True
  *                 if self.dataset.genome and remove_noncanonical:             # <<<<<<<<<<<<<<
@@ -48202,7 +48424,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
  */
       }
 
-      /* "_rnaseq_utils.pyx":2020
+      /* "_rnaseq_utils.pyx":2033
  *         for i in range(gap_len):
  *             g = gaps[i]
  *             if g in introns:             # <<<<<<<<<<<<<<
@@ -48212,7 +48434,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
     }
   }
 
-  /* "_rnaseq_utils.pyx":2027
+  /* "_rnaseq_utils.pyx":2040
  *                         splice[i] = False
  * 
  *         return splice             # <<<<<<<<<<<<<<
@@ -48224,7 +48446,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
   __pyx_r = __pyx_v_splice;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2007
+  /* "_rnaseq_utils.pyx":2020
  *         return alignment_strand
  * 
  *     cdef list get_splice_info(self, list ranges, list introns, str chrom, int alignment_strand, bint remove_noncanonical=False):             # <<<<<<<<<<<<<<
@@ -48251,7 +48473,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info(struct __pyx
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2029
+/* "_rnaseq_utils.pyx":2042
  *         return splice
  * 
  *     cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):             # <<<<<<<<<<<<<<
@@ -48267,7 +48489,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   int __pyx_t_3;
   __Pyx_RefNannySetupContext("filter_labels_by_softclip_length", 0);
 
-  /* "_rnaseq_utils.pyx":2032
+  /* "_rnaseq_utils.pyx":2045
  *         """Determines whether the s_tag, e_tag and capped parameters
  *         should be removed an alignment that has softclipping on its edges."""
  *         if strand == 0:             # <<<<<<<<<<<<<<
@@ -48277,7 +48499,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   __pyx_t_1 = ((__pyx_v_strand == 0) != 0);
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":2033
+    /* "_rnaseq_utils.pyx":2046
  *         should be removed an alignment that has softclipping on its edges."""
  *         if strand == 0:
  *             return False, False, False             # <<<<<<<<<<<<<<
@@ -48290,7 +48512,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     __pyx_r = __pyx_t_2;
     goto __pyx_L0;
 
-    /* "_rnaseq_utils.pyx":2032
+    /* "_rnaseq_utils.pyx":2045
  *         """Determines whether the s_tag, e_tag and capped parameters
  *         should be removed an alignment that has softclipping on its edges."""
  *         if strand == 0:             # <<<<<<<<<<<<<<
@@ -48299,7 +48521,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
  */
   }
 
-  /* "_rnaseq_utils.pyx":2035
+  /* "_rnaseq_utils.pyx":2048
  *             return False, False, False
  * 
  *         if not fiveprime:             # <<<<<<<<<<<<<<
@@ -48309,7 +48531,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   __pyx_t_1 = ((!(__pyx_v_fiveprime != 0)) != 0);
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":2036
+    /* "_rnaseq_utils.pyx":2049
  * 
  *         if not fiveprime:
  *             s_tag = capped = False             # <<<<<<<<<<<<<<
@@ -48319,7 +48541,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     __pyx_v_s_tag = 0;
     __pyx_v_capped = 0;
 
-    /* "_rnaseq_utils.pyx":2035
+    /* "_rnaseq_utils.pyx":2048
  *             return False, False, False
  * 
  *         if not fiveprime:             # <<<<<<<<<<<<<<
@@ -48329,7 +48551,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     goto __pyx_L4;
   }
 
-  /* "_rnaseq_utils.pyx":2038
+  /* "_rnaseq_utils.pyx":2051
  *             s_tag = capped = False
  *         else:
  *             if strand == 1 and (head == -1 or head > 4):             # <<<<<<<<<<<<<<
@@ -48354,7 +48576,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     __pyx_L6_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2039
+      /* "_rnaseq_utils.pyx":2052
  *         else:
  *             if strand == 1 and (head == -1 or head > 4):
  *                 s_tag = capped = False             # <<<<<<<<<<<<<<
@@ -48364,7 +48586,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
       __pyx_v_s_tag = 0;
       __pyx_v_capped = 0;
 
-      /* "_rnaseq_utils.pyx":2038
+      /* "_rnaseq_utils.pyx":2051
  *             s_tag = capped = False
  *         else:
  *             if strand == 1 and (head == -1 or head > 4):             # <<<<<<<<<<<<<<
@@ -48374,7 +48596,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
       goto __pyx_L5;
     }
 
-    /* "_rnaseq_utils.pyx":2040
+    /* "_rnaseq_utils.pyx":2053
  *             if strand == 1 and (head == -1 or head > 4):
  *                 s_tag = capped = False
  *             elif strand == -1 and (tail == -1 or tail > 4):             # <<<<<<<<<<<<<<
@@ -48398,7 +48620,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     __pyx_L9_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2041
+      /* "_rnaseq_utils.pyx":2054
  *                 s_tag = capped = False
  *             elif strand == -1 and (tail == -1 or tail > 4):
  *                 s_tag = capped = False             # <<<<<<<<<<<<<<
@@ -48408,7 +48630,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
       __pyx_v_s_tag = 0;
       __pyx_v_capped = 0;
 
-      /* "_rnaseq_utils.pyx":2040
+      /* "_rnaseq_utils.pyx":2053
  *             if strand == 1 and (head == -1 or head > 4):
  *                 s_tag = capped = False
  *             elif strand == -1 and (tail == -1 or tail > 4):             # <<<<<<<<<<<<<<
@@ -48420,7 +48642,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   }
   __pyx_L4:;
 
-  /* "_rnaseq_utils.pyx":2043
+  /* "_rnaseq_utils.pyx":2056
  *                 s_tag = capped = False
  * 
  *         if not threeprime:             # <<<<<<<<<<<<<<
@@ -48430,16 +48652,16 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   __pyx_t_1 = ((!(__pyx_v_threeprime != 0)) != 0);
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":2044
+    /* "_rnaseq_utils.pyx":2057
  * 
  *         if not threeprime:
  *             e_tag = False             # <<<<<<<<<<<<<<
  *         else:
- *             if strand == 1 and (tail == -1 or tail > 4):
+ *             if strand == 1 and tail == -1:
  */
     __pyx_v_e_tag = 0;
 
-    /* "_rnaseq_utils.pyx":2043
+    /* "_rnaseq_utils.pyx":2056
  *                 s_tag = capped = False
  * 
  *         if not threeprime:             # <<<<<<<<<<<<<<
@@ -48449,12 +48671,12 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     goto __pyx_L12;
   }
 
-  /* "_rnaseq_utils.pyx":2046
+  /* "_rnaseq_utils.pyx":2059
  *             e_tag = False
  *         else:
- *             if strand == 1 and (tail == -1 or tail > 4):             # <<<<<<<<<<<<<<
+ *             if strand == 1 and tail == -1:             # <<<<<<<<<<<<<<
  *                 e_tag = False
- *             elif strand == -1 and (head == -1 or head > 4):
+ *             elif strand == -1 and head == -1:
  */
   /*else*/ {
     __pyx_t_3 = ((__pyx_v_strand == 1) != 0);
@@ -48464,39 +48686,33 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
       goto __pyx_L14_bool_binop_done;
     }
     __pyx_t_3 = ((__pyx_v_tail == -1L) != 0);
-    if (!__pyx_t_3) {
-    } else {
-      __pyx_t_1 = __pyx_t_3;
-      goto __pyx_L14_bool_binop_done;
-    }
-    __pyx_t_3 = ((__pyx_v_tail > 4) != 0);
     __pyx_t_1 = __pyx_t_3;
     __pyx_L14_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2047
+      /* "_rnaseq_utils.pyx":2060
  *         else:
- *             if strand == 1 and (tail == -1 or tail > 4):
+ *             if strand == 1 and tail == -1:
  *                 e_tag = False             # <<<<<<<<<<<<<<
- *             elif strand == -1 and (head == -1 or head > 4):
+ *             elif strand == -1 and head == -1:
  *                 e_tag = False
  */
       __pyx_v_e_tag = 0;
 
-      /* "_rnaseq_utils.pyx":2046
+      /* "_rnaseq_utils.pyx":2059
  *             e_tag = False
  *         else:
- *             if strand == 1 and (tail == -1 or tail > 4):             # <<<<<<<<<<<<<<
+ *             if strand == 1 and tail == -1:             # <<<<<<<<<<<<<<
  *                 e_tag = False
- *             elif strand == -1 and (head == -1 or head > 4):
+ *             elif strand == -1 and head == -1:
  */
       goto __pyx_L13;
     }
 
-    /* "_rnaseq_utils.pyx":2048
- *             if strand == 1 and (tail == -1 or tail > 4):
+    /* "_rnaseq_utils.pyx":2061
+ *             if strand == 1 and tail == -1:
  *                 e_tag = False
- *             elif strand == -1 and (head == -1 or head > 4):             # <<<<<<<<<<<<<<
+ *             elif strand == -1 and head == -1:             # <<<<<<<<<<<<<<
  *                 e_tag = False
  * 
  */
@@ -48504,32 +48720,26 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
     if (__pyx_t_3) {
     } else {
       __pyx_t_1 = __pyx_t_3;
-      goto __pyx_L17_bool_binop_done;
+      goto __pyx_L16_bool_binop_done;
     }
     __pyx_t_3 = ((__pyx_v_head == -1L) != 0);
-    if (!__pyx_t_3) {
-    } else {
-      __pyx_t_1 = __pyx_t_3;
-      goto __pyx_L17_bool_binop_done;
-    }
-    __pyx_t_3 = ((__pyx_v_head > 4) != 0);
     __pyx_t_1 = __pyx_t_3;
-    __pyx_L17_bool_binop_done:;
+    __pyx_L16_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2049
+      /* "_rnaseq_utils.pyx":2062
  *                 e_tag = False
- *             elif strand == -1 and (head == -1 or head > 4):
+ *             elif strand == -1 and head == -1:
  *                 e_tag = False             # <<<<<<<<<<<<<<
  * 
  *         return s_tag, e_tag, capped
  */
       __pyx_v_e_tag = 0;
 
-      /* "_rnaseq_utils.pyx":2048
- *             if strand == 1 and (tail == -1 or tail > 4):
+      /* "_rnaseq_utils.pyx":2061
+ *             if strand == 1 and tail == -1:
  *                 e_tag = False
- *             elif strand == -1 and (head == -1 or head > 4):             # <<<<<<<<<<<<<<
+ *             elif strand == -1 and head == -1:             # <<<<<<<<<<<<<<
  *                 e_tag = False
  * 
  */
@@ -48538,7 +48748,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   }
   __pyx_L12:;
 
-  /* "_rnaseq_utils.pyx":2051
+  /* "_rnaseq_utils.pyx":2064
  *                 e_tag = False
  * 
  *         return s_tag, e_tag, capped             # <<<<<<<<<<<<<<
@@ -48551,7 +48761,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   __pyx_r = __pyx_t_2;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2029
+  /* "_rnaseq_utils.pyx":2042
  *         return splice
  * 
  *     cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail):             # <<<<<<<<<<<<<<
@@ -48565,7 +48775,7 @@ static __pyx_ctuple_int__and_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_fil
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2053
+/* "_rnaseq_utils.pyx":2066
  *         return s_tag, e_tag, capped
  * 
  *     cdef bint untemplated_upstream_g(self, int strand, int head, int tail, str seq, str chrom, list ranges):             # <<<<<<<<<<<<<<
@@ -48587,7 +48797,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("untemplated_upstream_g", 0);
 
-  /* "_rnaseq_utils.pyx":2057
+  /* "_rnaseq_utils.pyx":2070
  *         is an oligomer of G and (2) if that oligomer does not match the genome.
  *         Returns True if evidence supports a cap."""
  *         if strand == 1:             # <<<<<<<<<<<<<<
@@ -48597,7 +48807,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
   switch (__pyx_v_strand) {
     case 1:
 
-    /* "_rnaseq_utils.pyx":2058
+    /* "_rnaseq_utils.pyx":2071
  *         Returns True if evidence supports a cap."""
  *         if strand == 1:
  *             if head <= 0 or head > 4:             # <<<<<<<<<<<<<<
@@ -48615,7 +48825,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
     __pyx_L4_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2059
+      /* "_rnaseq_utils.pyx":2072
  *         if strand == 1:
  *             if head <= 0 or head > 4:
  *                 return False             # <<<<<<<<<<<<<<
@@ -48625,7 +48835,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "_rnaseq_utils.pyx":2058
+      /* "_rnaseq_utils.pyx":2071
  *         Returns True if evidence supports a cap."""
  *         if strand == 1:
  *             if head <= 0 or head > 4:             # <<<<<<<<<<<<<<
@@ -48634,7 +48844,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     }
 
-    /* "_rnaseq_utils.pyx":2061
+    /* "_rnaseq_utils.pyx":2074
  *                 return False
  * 
  *             if seq[:head] == 'G'*head: # Softclipped nucleotides are G             # <<<<<<<<<<<<<<
@@ -48643,21 +48853,21 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     if (unlikely(__pyx_v_seq == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2061, __pyx_L1_error)
+      __PYX_ERR(0, 2074, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyUnicode_Substring(__pyx_v_seq, 0, __pyx_v_head); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2061, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_Substring(__pyx_v_seq, 0, __pyx_v_head); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2074, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2061, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2074, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyNumber_Multiply(__pyx_n_u_G, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2061, __pyx_L1_error)
+    __pyx_t_5 = PyNumber_Multiply(__pyx_n_u_G, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2074, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_t_5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2061, __pyx_L1_error)
+    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_t_5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2074, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2062
+      /* "_rnaseq_utils.pyx":2075
  * 
  *             if seq[:head] == 'G'*head: # Softclipped nucleotides are G
  *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G             # <<<<<<<<<<<<<<
@@ -48668,24 +48878,24 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
       __Pyx_INCREF(__pyx_t_5);
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2062, __pyx_L1_error)
+        __PYX_ERR(0, 2075, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2062, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2075, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2062, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2075, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2062, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2075, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_5), __pyx_v_chrom, __pyx_t_6, 1, __pyx_n_u_S, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2062, __pyx_L1_error)
+      __pyx_t_4 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_5), __pyx_v_chrom, __pyx_t_6, 1, __pyx_n_u_S, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2075, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_n_u_G, Py_NE)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2062, __pyx_L1_error)
+      __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_n_u_G, Py_NE)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2075, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_2 = (__pyx_t_1 != 0);
       if (__pyx_t_2) {
 
-        /* "_rnaseq_utils.pyx":2063
+        /* "_rnaseq_utils.pyx":2076
  *             if seq[:head] == 'G'*head: # Softclipped nucleotides are G
  *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
  *                     return True # One or more upstream untemplated Gs were detected             # <<<<<<<<<<<<<<
@@ -48695,7 +48905,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
         __pyx_r = 1;
         goto __pyx_L0;
 
-        /* "_rnaseq_utils.pyx":2062
+        /* "_rnaseq_utils.pyx":2075
  * 
  *             if seq[:head] == 'G'*head: # Softclipped nucleotides are G
  *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G             # <<<<<<<<<<<<<<
@@ -48704,7 +48914,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
       }
 
-      /* "_rnaseq_utils.pyx":2065
+      /* "_rnaseq_utils.pyx":2078
  *                     return True # One or more upstream untemplated Gs were detected
  *                 else:
  *                     return False             # <<<<<<<<<<<<<<
@@ -48716,7 +48926,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
         goto __pyx_L0;
       }
 
-      /* "_rnaseq_utils.pyx":2061
+      /* "_rnaseq_utils.pyx":2074
  *                 return False
  * 
  *             if seq[:head] == 'G'*head: # Softclipped nucleotides are G             # <<<<<<<<<<<<<<
@@ -48725,7 +48935,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     }
 
-    /* "_rnaseq_utils.pyx":2057
+    /* "_rnaseq_utils.pyx":2070
  *         is an oligomer of G and (2) if that oligomer does not match the genome.
  *         Returns True if evidence supports a cap."""
  *         if strand == 1:             # <<<<<<<<<<<<<<
@@ -48735,7 +48945,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
     break;
     case -1L:
 
-    /* "_rnaseq_utils.pyx":2067
+    /* "_rnaseq_utils.pyx":2080
  *                     return False
  *         elif strand == -1:
  *             if tail <= 0 or tail > 4:             # <<<<<<<<<<<<<<
@@ -48753,7 +48963,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
     __pyx_L9_bool_binop_done:;
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2068
+      /* "_rnaseq_utils.pyx":2081
  *         elif strand == -1:
  *             if tail <= 0 or tail > 4:
  *                 return False             # <<<<<<<<<<<<<<
@@ -48763,7 +48973,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "_rnaseq_utils.pyx":2067
+      /* "_rnaseq_utils.pyx":2080
  *                     return False
  *         elif strand == -1:
  *             if tail <= 0 or tail > 4:             # <<<<<<<<<<<<<<
@@ -48772,7 +48982,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     }
 
-    /* "_rnaseq_utils.pyx":2070
+    /* "_rnaseq_utils.pyx":2083
  *                 return False
  * 
  *             if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G             # <<<<<<<<<<<<<<
@@ -48781,21 +48991,21 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     if (unlikely(__pyx_v_seq == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2070, __pyx_L1_error)
+      __PYX_ERR(0, 2083, __pyx_L1_error)
     }
-    __pyx_t_4 = __Pyx_PyUnicode_Substring(__pyx_v_seq, (-__pyx_v_tail), PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2070, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyUnicode_Substring(__pyx_v_seq, (-__pyx_v_tail), PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2083, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2070, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2083, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_3 = PyNumber_Multiply(__pyx_n_u_C, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2070, __pyx_L1_error)
+    __pyx_t_3 = PyNumber_Multiply(__pyx_n_u_C, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2083, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_t_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2070, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_t_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2083, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2071
+      /* "_rnaseq_utils.pyx":2084
  * 
  *             if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
  *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G             # <<<<<<<<<<<<<<
@@ -48806,27 +49016,27 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
       __Pyx_INCREF(__pyx_t_3);
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2071, __pyx_L1_error)
+        __PYX_ERR(0, 2084, __pyx_L1_error)
       }
-      __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyInt_SubtractObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_SubtractObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_3), __pyx_v_chrom, __pyx_t_6, -1, __pyx_n_u_S, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_4 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_3), __pyx_v_chrom, __pyx_t_6, -1, __pyx_n_u_S, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_n_u_G, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2071, __pyx_L1_error)
+      __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_n_u_G, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2084, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_1 = (__pyx_t_2 != 0);
       if (__pyx_t_1) {
 
-        /* "_rnaseq_utils.pyx":2072
+        /* "_rnaseq_utils.pyx":2085
  *             if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
  *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
  *                     return True             # <<<<<<<<<<<<<<
@@ -48836,7 +49046,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
         __pyx_r = 1;
         goto __pyx_L0;
 
-        /* "_rnaseq_utils.pyx":2071
+        /* "_rnaseq_utils.pyx":2084
  * 
  *             if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G
  *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G             # <<<<<<<<<<<<<<
@@ -48845,19 +49055,19 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
       }
 
-      /* "_rnaseq_utils.pyx":2074
+      /* "_rnaseq_utils.pyx":2087
  *                     return True
  *                 else:
  *                     return False             # <<<<<<<<<<<<<<
  * 
- *     cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):
+ *     cdef (bint, int) softclipped_polya(self, int strand, int head, int tail, str seq, str chrom, list ranges):
  */
       /*else*/ {
         __pyx_r = 0;
         goto __pyx_L0;
       }
 
-      /* "_rnaseq_utils.pyx":2070
+      /* "_rnaseq_utils.pyx":2083
  *                 return False
  * 
  *             if seq[-tail:] == 'C'*tail: # Sofclipped nucleotides are (antisense) G             # <<<<<<<<<<<<<<
@@ -48866,7 +49076,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
  */
     }
 
-    /* "_rnaseq_utils.pyx":2066
+    /* "_rnaseq_utils.pyx":2079
  *                 else:
  *                     return False
  *         elif strand == -1:             # <<<<<<<<<<<<<<
@@ -48877,7 +49087,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
     default: break;
   }
 
-  /* "_rnaseq_utils.pyx":2053
+  /* "_rnaseq_utils.pyx":2066
  *         return s_tag, e_tag, capped
  * 
  *     cdef bint untemplated_upstream_g(self, int strand, int head, int tail, str seq, str chrom, list ranges):             # <<<<<<<<<<<<<<
@@ -48899,8 +49109,320 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g(struct __py
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2076
+/* "_rnaseq_utils.pyx":2089
  *                     return False
+ * 
+ *     cdef (bint, int) softclipped_polya(self, int strand, int head, int tail, str seq, str chrom, list ranges):             # <<<<<<<<<<<<<<
+ *         """Checks (1) if softclip 3' bases are oligo-A and
+ *         (2) that oligomer does not match the genome."""
+ */
+
+static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_9BAMobject_softclipped_polya(struct __pyx_obj_13_rnaseq_utils_BAMobject *__pyx_v_self, int __pyx_v_strand, int __pyx_v_head, int __pyx_v_tail, PyObject *__pyx_v_seq, PyObject *__pyx_v_chrom, PyObject *__pyx_v_ranges) {
+  __pyx_ctuple_int__and_int __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_t_6;
+  __pyx_ctuple_int__and_int __pyx_t_7;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("softclipped_polya", 0);
+
+  /* "_rnaseq_utils.pyx":2094
+ *         cdef str l
+ *         cdef int trim
+ *         if strand >= 0:             # <<<<<<<<<<<<<<
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+ */
+  __pyx_t_1 = ((__pyx_v_strand >= 0) != 0);
+  if (__pyx_t_1) {
+
+    /* "_rnaseq_utils.pyx":2095
+ *         cdef int trim
+ *         if strand >= 0:
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A             # <<<<<<<<<<<<<<
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+ *                     # One or more downstream untemplated As were detected
+ */
+    __pyx_t_2 = ((__pyx_v_tail > 1) != 0);
+    if (__pyx_t_2) {
+    } else {
+      __pyx_t_1 = __pyx_t_2;
+      goto __pyx_L5_bool_binop_done;
+    }
+    if (unlikely(__pyx_v_seq == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 2095, __pyx_L1_error)
+    }
+    __pyx_t_3 = __Pyx_PyUnicode_Substring(__pyx_v_seq, (-__pyx_v_tail), PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2095, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2095, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = PyNumber_Multiply(__pyx_n_u_A, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2095, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_t_5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2095, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_1 = __pyx_t_2;
+    __pyx_L5_bool_binop_done:;
+    if (__pyx_t_1) {
+
+      /* "_rnaseq_utils.pyx":2096
+ *         if strand >= 0:
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A             # <<<<<<<<<<<<<<
+ *                     # One or more downstream untemplated As were detected
+ *                     return True, 1
+ */
+      __pyx_t_5 = __pyx_v_self->dataset->genome;
+      __Pyx_INCREF(__pyx_t_5);
+      if (unlikely(__pyx_v_ranges == Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+        __PYX_ERR(0, 2096, __pyx_L1_error)
+      }
+      __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_3, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_3 = __Pyx_PyInt_SubtractObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_3 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_5), __pyx_v_chrom, __pyx_t_6, 1, __pyx_n_u_E, __pyx_v_tail, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_4 = PyNumber_Multiply(__pyx_n_u_A, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_t_4, Py_NE)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2096, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (__pyx_t_1) {
+
+        /* "_rnaseq_utils.pyx":2098
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+ *                     # One or more downstream untemplated As were detected
+ *                     return True, 1             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     return False, strand
+ */
+        __pyx_t_7.f0 = 1;
+        __pyx_t_7.f1 = 1;
+        __pyx_r = __pyx_t_7;
+        goto __pyx_L0;
+
+        /* "_rnaseq_utils.pyx":2096
+ *         if strand >= 0:
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A             # <<<<<<<<<<<<<<
+ *                     # One or more downstream untemplated As were detected
+ *                     return True, 1
+ */
+      }
+
+      /* "_rnaseq_utils.pyx":2100
+ *                     return True, 1
+ *                 else:
+ *                     return False, strand             # <<<<<<<<<<<<<<
+ * 
+ *         if strand <= 0:
+ */
+      /*else*/ {
+        __pyx_t_7.f0 = 0;
+        __pyx_t_7.f1 = __pyx_v_strand;
+        __pyx_r = __pyx_t_7;
+        goto __pyx_L0;
+      }
+
+      /* "_rnaseq_utils.pyx":2095
+ *         cdef int trim
+ *         if strand >= 0:
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A             # <<<<<<<<<<<<<<
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+ *                     # One or more downstream untemplated As were detected
+ */
+    }
+
+    /* "_rnaseq_utils.pyx":2094
+ *         cdef str l
+ *         cdef int trim
+ *         if strand >= 0:             # <<<<<<<<<<<<<<
+ *             if tail > 1 and seq[-tail:] == 'A'*tail: # Softclipped nucleotides are A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*tail: # The flanking nucleotides are NOT A
+ */
+  }
+
+  /* "_rnaseq_utils.pyx":2102
+ *                     return False, strand
+ * 
+ *         if strand <= 0:             # <<<<<<<<<<<<<<
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+ */
+  __pyx_t_1 = ((__pyx_v_strand <= 0) != 0);
+  if (__pyx_t_1) {
+
+    /* "_rnaseq_utils.pyx":2103
+ * 
+ *         if strand <= 0:
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A             # <<<<<<<<<<<<<<
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+ *                     # One or more upstream untemplated Ts were detected
+ */
+    __pyx_t_2 = ((__pyx_v_head > 1) != 0);
+    if (__pyx_t_2) {
+    } else {
+      __pyx_t_1 = __pyx_t_2;
+      goto __pyx_L10_bool_binop_done;
+    }
+    if (unlikely(__pyx_v_seq == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 2103, __pyx_L1_error)
+    }
+    __pyx_t_4 = __Pyx_PyUnicode_Substring(__pyx_v_seq, 0, __pyx_v_head); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_5 = PyNumber_Multiply(__pyx_n_u_T, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_4, __pyx_t_5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_1 = __pyx_t_2;
+    __pyx_L10_bool_binop_done:;
+    if (__pyx_t_1) {
+
+      /* "_rnaseq_utils.pyx":2104
+ *         if strand <= 0:
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:             # <<<<<<<<<<<<<<
+ *                     # One or more upstream untemplated Ts were detected
+ *                     return True, -1
+ */
+      __pyx_t_5 = __pyx_v_self->dataset->genome;
+      __Pyx_INCREF(__pyx_t_5);
+      if (unlikely(__pyx_v_ranges == Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+        __PYX_ERR(0, 2104, __pyx_L1_error)
+      }
+      __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_3 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_5), __pyx_v_chrom, __pyx_t_6, -1, __pyx_n_u_E, __pyx_v_head, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_4 = PyNumber_Multiply(__pyx_n_u_A, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_3, __pyx_t_4, Py_NE)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2104, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (__pyx_t_1) {
+
+        /* "_rnaseq_utils.pyx":2106
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+ *                     # One or more upstream untemplated Ts were detected
+ *                     return True, -1             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     return False, strand
+ */
+        __pyx_t_7.f0 = 1;
+        __pyx_t_7.f1 = -1;
+        __pyx_r = __pyx_t_7;
+        goto __pyx_L0;
+
+        /* "_rnaseq_utils.pyx":2104
+ *         if strand <= 0:
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:             # <<<<<<<<<<<<<<
+ *                     # One or more upstream untemplated Ts were detected
+ *                     return True, -1
+ */
+      }
+
+      /* "_rnaseq_utils.pyx":2108
+ *                     return True, -1
+ *                 else:
+ *                     return False, strand             # <<<<<<<<<<<<<<
+ * 
+ *         return False, strand
+ */
+      /*else*/ {
+        __pyx_t_7.f0 = 0;
+        __pyx_t_7.f1 = __pyx_v_strand;
+        __pyx_r = __pyx_t_7;
+        goto __pyx_L0;
+      }
+
+      /* "_rnaseq_utils.pyx":2103
+ * 
+ *         if strand <= 0:
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A             # <<<<<<<<<<<<<<
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+ *                     # One or more upstream untemplated Ts were detected
+ */
+    }
+
+    /* "_rnaseq_utils.pyx":2102
+ *                     return False, strand
+ * 
+ *         if strand <= 0:             # <<<<<<<<<<<<<<
+ *             if head > 1 and seq[:head] == 'T'*head: # Sofclipped nucleotides are (antisense) A
+ *                 if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*head:
+ */
+  }
+
+  /* "_rnaseq_utils.pyx":2110
+ *                     return False, strand
+ * 
+ *         return False, strand             # <<<<<<<<<<<<<<
+ * 
+ *     #TODO: Finish update_trimmed_ranges
+ */
+  __pyx_t_7.f0 = 0;
+  __pyx_t_7.f1 = __pyx_v_strand;
+  __pyx_r = __pyx_t_7;
+  goto __pyx_L0;
+
+  /* "_rnaseq_utils.pyx":2089
+ *                     return False
+ * 
+ *     cdef (bint, int) softclipped_polya(self, int strand, int head, int tail, str seq, str chrom, list ranges):             # <<<<<<<<<<<<<<
+ *         """Checks (1) if softclip 3' bases are oligo-A and
+ *         (2) that oligomer does not match the genome."""
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_WriteUnraisable("_rnaseq_utils.BAMobject.softclipped_polya", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_pretend_to_initialize(&__pyx_r);
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "_rnaseq_utils.pyx":2153
+ * 
  * 
  *     cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):             # <<<<<<<<<<<<<<
  *         """Updates the mapping ranges of a read with a softclipped
@@ -48919,7 +49441,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("restore_terminal_mismatches", 0);
 
-  /* "_rnaseq_utils.pyx":2079
+  /* "_rnaseq_utils.pyx":2156
  *         """Updates the mapping ranges of a read with a softclipped
  *         sequenced added back to one end."""
  *         if strand == 1:             # <<<<<<<<<<<<<<
@@ -48929,7 +49451,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
   switch (__pyx_v_strand) {
     case 1:
 
-    /* "_rnaseq_utils.pyx":2080
+    /* "_rnaseq_utils.pyx":2157
  *         sequenced added back to one end."""
  *         if strand == 1:
  *             if tail > 0: # Right clip exists             # <<<<<<<<<<<<<<
@@ -48939,7 +49461,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
     __pyx_t_1 = ((__pyx_v_tail > 0) != 0);
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2081
+      /* "_rnaseq_utils.pyx":2158
  *         if strand == 1:
  *             if tail > 0: # Right clip exists
  *                 ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)             # <<<<<<<<<<<<<<
@@ -48948,29 +49470,29 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
  */
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2081, __pyx_L1_error)
+        __PYX_ERR(0, 2158, __pyx_L1_error)
       }
-      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2081, __pyx_L1_error)
+        __PYX_ERR(0, 2158, __pyx_L1_error)
       }
-      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_tail); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = PyNumber_Add(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_5 = PyNumber_Add(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3);
@@ -48980,12 +49502,12 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
       __pyx_t_5 = 0;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2081, __pyx_L1_error)
+        __PYX_ERR(0, 2158, __pyx_L1_error)
       }
-      if (unlikely(__Pyx_SetItemInt(__pyx_v_ranges, -1L, __pyx_t_2, long, 1, __Pyx_PyInt_From_long, 1, 1, 1) < 0)) __PYX_ERR(0, 2081, __pyx_L1_error)
+      if (unlikely(__Pyx_SetItemInt(__pyx_v_ranges, -1L, __pyx_t_2, long, 1, __Pyx_PyInt_From_long, 1, 1, 1) < 0)) __PYX_ERR(0, 2158, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "_rnaseq_utils.pyx":2080
+      /* "_rnaseq_utils.pyx":2157
  *         sequenced added back to one end."""
  *         if strand == 1:
  *             if tail > 0: # Right clip exists             # <<<<<<<<<<<<<<
@@ -48994,7 +49516,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
  */
     }
 
-    /* "_rnaseq_utils.pyx":2079
+    /* "_rnaseq_utils.pyx":2156
  *         """Updates the mapping ranges of a read with a softclipped
  *         sequenced added back to one end."""
  *         if strand == 1:             # <<<<<<<<<<<<<<
@@ -49004,7 +49526,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
     break;
     case -1L:
 
-    /* "_rnaseq_utils.pyx":2083
+    /* "_rnaseq_utils.pyx":2160
  *                 ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
  *         elif strand == -1:
  *             if head > 0: # Left clip exists             # <<<<<<<<<<<<<<
@@ -49014,7 +49536,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
     __pyx_t_1 = ((__pyx_v_head > 0) != 0);
     if (__pyx_t_1) {
 
-      /* "_rnaseq_utils.pyx":2084
+      /* "_rnaseq_utils.pyx":2161
  *         elif strand == -1:
  *             if head > 0: # Left clip exists
  *                 ranges[0] = (ranges[0][0]-head,ranges[0][1])             # <<<<<<<<<<<<<<
@@ -49023,29 +49545,29 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
  */
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2084, __pyx_L1_error)
+        __PYX_ERR(0, 2161, __pyx_L1_error)
       }
-      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_head); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = PyNumber_Subtract(__pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_3 = PyNumber_Subtract(__pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2084, __pyx_L1_error)
+        __PYX_ERR(0, 2161, __pyx_L1_error)
       }
-      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_ranges, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3);
@@ -49055,12 +49577,12 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
       __pyx_t_5 = 0;
       if (unlikely(__pyx_v_ranges == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2084, __pyx_L1_error)
+        __PYX_ERR(0, 2161, __pyx_L1_error)
       }
-      if (unlikely(__Pyx_SetItemInt(__pyx_v_ranges, 0, __pyx_t_2, long, 1, __Pyx_PyInt_From_long, 1, 0, 1) < 0)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      if (unlikely(__Pyx_SetItemInt(__pyx_v_ranges, 0, __pyx_t_2, long, 1, __Pyx_PyInt_From_long, 1, 0, 1) < 0)) __PYX_ERR(0, 2161, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "_rnaseq_utils.pyx":2083
+      /* "_rnaseq_utils.pyx":2160
  *                 ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
  *         elif strand == -1:
  *             if head > 0: # Left clip exists             # <<<<<<<<<<<<<<
@@ -49069,7 +49591,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
  */
     }
 
-    /* "_rnaseq_utils.pyx":2082
+    /* "_rnaseq_utils.pyx":2159
  *             if tail > 0: # Right clip exists
  *                 ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
  *         elif strand == -1:             # <<<<<<<<<<<<<<
@@ -49080,8 +49602,8 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
     default: break;
   }
 
-  /* "_rnaseq_utils.pyx":2076
- *                     return False
+  /* "_rnaseq_utils.pyx":2153
+ * 
  * 
  *     cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):             # <<<<<<<<<<<<<<
  *         """Updates the mapping ranges of a read with a softclipped
@@ -49100,7 +49622,7 @@ static void __pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches(CYTHO
   __Pyx_RefNannyFinishContext();
 }
 
-/* "_rnaseq_utils.pyx":2086
+/* "_rnaseq_utils.pyx":2163
  *                 ranges[0] = (ranges[0][0]-head,ranges[0][1])
  * 
  *     cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):             # <<<<<<<<<<<<<<
@@ -49128,7 +49650,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("matches_masking_sequence", 0);
 
-  /* "_rnaseq_utils.pyx":2091
+  /* "_rnaseq_utils.pyx":2168
  *         false positive end signal"""
  *         ## 5'
  *         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start             # <<<<<<<<<<<<<<
@@ -49137,13 +49659,13 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
  */
   __pyx_t_1 = __pyx_v_self->dataset->genome;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_1), __pyx_v_chrom, __pyx_v_position, __pyx_v_strand, __pyx_v_readtype, __pyx_v_length, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2091, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_13_rnaseq_utils_get_flank(((PyObject*)__pyx_t_1), __pyx_v_chrom, __pyx_v_position, __pyx_v_strand, __pyx_v_readtype, __pyx_v_length, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_flank = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "_rnaseq_utils.pyx":2092
+  /* "_rnaseq_utils.pyx":2169
  *         ## 5'
  *         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
  *         if len(flank) > 0:             # <<<<<<<<<<<<<<
@@ -49152,51 +49674,51 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
  */
   if (unlikely(__pyx_v_flank == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 2092, __pyx_L1_error)
+    __PYX_ERR(0, 2169, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_flank); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 2092, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_flank); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 2169, __pyx_L1_error)
   __pyx_t_4 = ((__pyx_t_3 > 0) != 0);
   if (__pyx_t_4) {
 
-    /* "_rnaseq_utils.pyx":2093
+    /* "_rnaseq_utils.pyx":2170
  *         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
  *         if len(flank) > 0:
  *             if readtype == 'S':             # <<<<<<<<<<<<<<
  *                 flankmatch = self.dataset.start_array[-length:][::-1]
  *                 flank = flank[::-1]
  */
-    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_readtype, __pyx_n_u_S, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2093, __pyx_L1_error)
+    __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_readtype, __pyx_n_u_S, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2170, __pyx_L1_error)
     __pyx_t_5 = (__pyx_t_4 != 0);
     if (__pyx_t_5) {
 
-      /* "_rnaseq_utils.pyx":2094
+      /* "_rnaseq_utils.pyx":2171
  *         if len(flank) > 0:
  *             if readtype == 'S':
  *                 flankmatch = self.dataset.start_array[-length:][::-1]             # <<<<<<<<<<<<<<
  *                 flank = flank[::-1]
  *             elif readtype == 'E':
  */
-      __pyx_t_2 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_self->dataset->start_array), (-__pyx_v_length), 0, NULL, NULL, NULL, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2094, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_self->dataset->start_array), (-__pyx_v_length), 0, NULL, NULL, NULL, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_slice__50); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2094, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_slice__50); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_v_flankmatch = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "_rnaseq_utils.pyx":2095
+      /* "_rnaseq_utils.pyx":2172
  *             if readtype == 'S':
  *                 flankmatch = self.dataset.start_array[-length:][::-1]
  *                 flank = flank[::-1]             # <<<<<<<<<<<<<<
  *             elif readtype == 'E':
  *                 flankmatch = self.dataset.end_array[:length]
  */
-      __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_flank, __pyx_slice__50); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2095, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_flank, __pyx_slice__50); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2172, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF_SET(__pyx_v_flank, ((PyObject*)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "_rnaseq_utils.pyx":2093
+      /* "_rnaseq_utils.pyx":2170
  *         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
  *         if len(flank) > 0:
  *             if readtype == 'S':             # <<<<<<<<<<<<<<
@@ -49206,30 +49728,30 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
       goto __pyx_L4;
     }
 
-    /* "_rnaseq_utils.pyx":2096
+    /* "_rnaseq_utils.pyx":2173
  *                 flankmatch = self.dataset.start_array[-length:][::-1]
  *                 flank = flank[::-1]
  *             elif readtype == 'E':             # <<<<<<<<<<<<<<
  *                 flankmatch = self.dataset.end_array[:length]
  * 
  */
-    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_readtype, __pyx_n_u_E, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 2096, __pyx_L1_error)
+    __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_readtype, __pyx_n_u_E, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 2173, __pyx_L1_error)
     __pyx_t_4 = (__pyx_t_5 != 0);
     if (__pyx_t_4) {
 
-      /* "_rnaseq_utils.pyx":2097
+      /* "_rnaseq_utils.pyx":2174
  *                 flank = flank[::-1]
  *             elif readtype == 'E':
  *                 flankmatch = self.dataset.end_array[:length]             # <<<<<<<<<<<<<<
  * 
  *             if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):
  */
-      __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_self->dataset->end_array), 0, __pyx_v_length, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2097, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_self->dataset->end_array), 0, __pyx_v_length, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_flankmatch = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "_rnaseq_utils.pyx":2096
+      /* "_rnaseq_utils.pyx":2173
  *                 flankmatch = self.dataset.start_array[-length:][::-1]
  *                 flank = flank[::-1]
  *             elif readtype == 'E':             # <<<<<<<<<<<<<<
@@ -49239,21 +49761,21 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
     }
     __pyx_L4:;
 
-    /* "_rnaseq_utils.pyx":2099
+    /* "_rnaseq_utils.pyx":2176
  *                 flankmatch = self.dataset.end_array[:length]
  * 
  *             if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):             # <<<<<<<<<<<<<<
  *                 return True
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_fu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_fu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_oligo_match); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_oligo_match); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_fu); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_fu); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_nuc_to_int); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_nuc_to_int); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_t_7 = NULL;
@@ -49268,11 +49790,11 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
     }
     __pyx_t_2 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_7, __pyx_v_flank) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_v_flank);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_v_flankmatch)) { __Pyx_RaiseUnboundLocalError("flankmatch"); __PYX_ERR(0, 2099, __pyx_L1_error) }
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_self->dataset->mismatch_rate); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    if (unlikely(!__pyx_v_flankmatch)) { __Pyx_RaiseUnboundLocalError("flankmatch"); __PYX_ERR(0, 2176, __pyx_L1_error) }
+    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_self->dataset->mismatch_rate); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __pyx_t_7 = NULL;
     __pyx_t_9 = 0;
@@ -49289,7 +49811,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_7, __pyx_t_2, __pyx_v_flankmatch, __pyx_t_8};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_9, 3+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2099, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_9, 3+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2176, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -49299,7 +49821,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
       PyObject *__pyx_temp[4] = {__pyx_t_7, __pyx_t_2, __pyx_v_flankmatch, __pyx_t_8};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_9, 3+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2099, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-__pyx_t_9, 3+__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2176, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -49307,7 +49829,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
     } else
     #endif
     {
-      __pyx_t_10 = PyTuple_New(3+__pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 2099, __pyx_L1_error)
+      __pyx_t_10 = PyTuple_New(3+__pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 2176, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       if (__pyx_t_7) {
         __Pyx_GIVEREF(__pyx_t_7); PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_7); __pyx_t_7 = NULL;
@@ -49321,16 +49843,16 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
       PyTuple_SET_ITEM(__pyx_t_10, 2+__pyx_t_9, __pyx_t_8);
       __pyx_t_2 = 0;
       __pyx_t_8 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2099, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2176, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2099, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2176, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_4) {
 
-      /* "_rnaseq_utils.pyx":2100
+      /* "_rnaseq_utils.pyx":2177
  * 
  *             if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):
  *                 return True             # <<<<<<<<<<<<<<
@@ -49340,7 +49862,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
       __pyx_r = 1;
       goto __pyx_L0;
 
-      /* "_rnaseq_utils.pyx":2099
+      /* "_rnaseq_utils.pyx":2176
  *                 flankmatch = self.dataset.end_array[:length]
  * 
  *             if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):             # <<<<<<<<<<<<<<
@@ -49349,7 +49871,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
  */
     }
 
-    /* "_rnaseq_utils.pyx":2092
+    /* "_rnaseq_utils.pyx":2169
  *         ## 5'
  *         flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
  *         if len(flank) > 0:             # <<<<<<<<<<<<<<
@@ -49358,7 +49880,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
  */
   }
 
-  /* "_rnaseq_utils.pyx":2102
+  /* "_rnaseq_utils.pyx":2179
  *                 return True
  * 
  *         return False             # <<<<<<<<<<<<<<
@@ -49368,7 +49890,7 @@ static int __pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence(struct __
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2086
+  /* "_rnaseq_utils.pyx":2163
  *                 ranges[0] = (ranges[0][0]-head,ranges[0][1])
  * 
  *     cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):             # <<<<<<<<<<<<<<
@@ -49971,7 +50493,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_9BAMobject_6__setstate_cython__(struct
 }
 static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "_rnaseq_utils.pyx":2104
+/* "_rnaseq_utils.pyx":2181
  *         return False
  * 
  * def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):             # <<<<<<<<<<<<<<
@@ -50024,29 +50546,29 @@ static PyObject *__pyx_pw_13_rnaseq_utils_29read_generator(PyObject *__pyx_self,
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dataset)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 1); __PYX_ERR(0, 2104, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 1); __PYX_ERR(0, 2181, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_file_type)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 2); __PYX_ERR(0, 2104, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 2); __PYX_ERR(0, 2181, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_max_gap)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 3); __PYX_ERR(0, 2104, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 3); __PYX_ERR(0, 2181, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_minimum_proportion)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 4); __PYX_ERR(0, 2104, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, 4); __PYX_ERR(0, 2181, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_generator") < 0)) __PYX_ERR(0, 2104, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "read_generator") < 0)) __PYX_ERR(0, 2181, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -50060,19 +50582,19 @@ static PyObject *__pyx_pw_13_rnaseq_utils_29read_generator(PyObject *__pyx_self,
     __pyx_v_fileconn = values[0];
     __pyx_v_dataset = ((struct __pyx_obj_13_rnaseq_utils_RNAseqDataset *)values[1]);
     __pyx_v_file_type = ((PyObject*)values[2]);
-    __pyx_v_max_gap = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_max_gap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2104, __pyx_L3_error)
-    __pyx_v_minimum_proportion = __pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_minimum_proportion == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2104, __pyx_L3_error)
+    __pyx_v_max_gap = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_max_gap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2181, __pyx_L3_error)
+    __pyx_v_minimum_proportion = __pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_minimum_proportion == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2181, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2104, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("read_generator", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2181, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_rnaseq_utils.read_generator", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_dataset), __pyx_ptype_13_rnaseq_utils_RNAseqDataset, 1, "dataset", 0))) __PYX_ERR(0, 2104, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_type), (&PyUnicode_Type), 1, "file_type", 1))) __PYX_ERR(0, 2104, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_dataset), __pyx_ptype_13_rnaseq_utils_RNAseqDataset, 1, "dataset", 0))) __PYX_ERR(0, 2181, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_file_type), (&PyUnicode_Type), 1, "file_type", 1))) __PYX_ERR(0, 2181, __pyx_L1_error)
   __pyx_r = __pyx_pf_13_rnaseq_utils_28read_generator(__pyx_self, __pyx_v_fileconn, __pyx_v_dataset, __pyx_v_file_type, __pyx_v_max_gap, __pyx_v_minimum_proportion);
 
   /* function exit code */
@@ -50096,7 +50618,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_28read_generator(CYTHON_UNUSED PyObjec
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_13_rnaseq_utils___pyx_scope_struct_3_read_generator *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 2104, __pyx_L1_error)
+    __PYX_ERR(0, 2181, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -50112,7 +50634,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_28read_generator(CYTHON_UNUSED PyObjec
   __pyx_cur_scope->__pyx_v_max_gap = __pyx_v_max_gap;
   __pyx_cur_scope->__pyx_v_minimum_proportion = __pyx_v_minimum_proportion;
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_13_rnaseq_utils_30generator3, __pyx_codeobj__51, (PyObject *) __pyx_cur_scope, __pyx_n_s_read_generator, __pyx_n_s_read_generator, __pyx_n_s_rnaseq_utils); if (unlikely(!gen)) __PYX_ERR(0, 2104, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_13_rnaseq_utils_30generator3, __pyx_codeobj__51, (PyObject *) __pyx_cur_scope, __pyx_n_s_read_generator, __pyx_n_s_read_generator, __pyx_n_s_rnaseq_utils); if (unlikely(!gen)) __PYX_ERR(0, 2181, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -50165,33 +50687,33 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2104, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2181, __pyx_L1_error)
 
-  /* "_rnaseq_utils.pyx":2112
+  /* "_rnaseq_utils.pyx":2189
  *     cdef set covered_positions
  *     cdef list passed_positions
  *     if file_type == 'elr':             # <<<<<<<<<<<<<<
  *         add_read = dataset.add_read_from_ELR
  *     elif file_type == 'bed':
  */
-  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_elr, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2112, __pyx_L1_error)
+  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_elr, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2189, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "_rnaseq_utils.pyx":2113
+    /* "_rnaseq_utils.pyx":2190
  *     cdef list passed_positions
  *     if file_type == 'elr':
  *         add_read = dataset.add_read_from_ELR             # <<<<<<<<<<<<<<
  *     elif file_type == 'bed':
  *         add_read = dataset.add_read_from_BED
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_ELR); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2113, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_ELR); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2190, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __pyx_cur_scope->__pyx_v_add_read = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "_rnaseq_utils.pyx":2112
+    /* "_rnaseq_utils.pyx":2189
  *     cdef set covered_positions
  *     cdef list passed_positions
  *     if file_type == 'elr':             # <<<<<<<<<<<<<<
@@ -50201,31 +50723,31 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     goto __pyx_L4;
   }
 
-  /* "_rnaseq_utils.pyx":2114
+  /* "_rnaseq_utils.pyx":2191
  *     if file_type == 'elr':
  *         add_read = dataset.add_read_from_ELR
  *     elif file_type == 'bed':             # <<<<<<<<<<<<<<
  *         add_read = dataset.add_read_from_BED
  *     elif file_type == 'bam' or file_type == 'sam':
  */
-  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_bed, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2114, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_bed, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2191, __pyx_L1_error)
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":2115
+    /* "_rnaseq_utils.pyx":2192
  *         add_read = dataset.add_read_from_ELR
  *     elif file_type == 'bed':
  *         add_read = dataset.add_read_from_BED             # <<<<<<<<<<<<<<
  *     elif file_type == 'bam' or file_type == 'sam':
  *         add_read = dataset.add_read_from_BAM
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_BED); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2115, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_BED); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2192, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __pyx_cur_scope->__pyx_v_add_read = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "_rnaseq_utils.pyx":2114
+    /* "_rnaseq_utils.pyx":2191
  *     if file_type == 'elr':
  *         add_read = dataset.add_read_from_ELR
  *     elif file_type == 'bed':             # <<<<<<<<<<<<<<
@@ -50235,40 +50757,40 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     goto __pyx_L4;
   }
 
-  /* "_rnaseq_utils.pyx":2116
+  /* "_rnaseq_utils.pyx":2193
  *     elif file_type == 'bed':
  *         add_read = dataset.add_read_from_BED
  *     elif file_type == 'bam' or file_type == 'sam':             # <<<<<<<<<<<<<<
  *         add_read = dataset.add_read_from_BAM
  *     else:
  */
-  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_bam, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2116, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_bam, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2193, __pyx_L1_error)
   __pyx_t_4 = (__pyx_t_2 != 0);
   if (!__pyx_t_4) {
   } else {
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L5_bool_binop_done;
   }
-  __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_sam, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2116, __pyx_L1_error)
+  __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_cur_scope->__pyx_v_file_type, __pyx_n_u_sam, Py_EQ)); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 2193, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_4 != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L5_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "_rnaseq_utils.pyx":2117
+    /* "_rnaseq_utils.pyx":2194
  *         add_read = dataset.add_read_from_BED
  *     elif file_type == 'bam' or file_type == 'sam':
  *         add_read = dataset.add_read_from_BAM             # <<<<<<<<<<<<<<
  *     else:
  *         return
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_BAM); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_dataset), __pyx_n_s_add_read_from_BAM); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2194, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_3);
     __pyx_cur_scope->__pyx_v_add_read = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "_rnaseq_utils.pyx":2116
+    /* "_rnaseq_utils.pyx":2193
  *     elif file_type == 'bed':
  *         add_read = dataset.add_read_from_BED
  *     elif file_type == 'bam' or file_type == 'sam':             # <<<<<<<<<<<<<<
@@ -50278,7 +50800,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     goto __pyx_L4;
   }
 
-  /* "_rnaseq_utils.pyx":2119
+  /* "_rnaseq_utils.pyx":2196
  *         add_read = dataset.add_read_from_BAM
  *     else:
  *         return             # <<<<<<<<<<<<<<
@@ -50292,14 +50814,14 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   }
   __pyx_L4:;
 
-  /* "_rnaseq_utils.pyx":2121
+  /* "_rnaseq_utils.pyx":2198
  *         return
  * 
  *     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth             # <<<<<<<<<<<<<<
  *     old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1
  *     current_cov = 0
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_Counter); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2121, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_Counter); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_6 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -50313,14 +50835,14 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   }
   __pyx_t_3 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2121, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_GIVEREF(__pyx_t_3);
   __pyx_cur_scope->__pyx_v_end_positions = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "_rnaseq_utils.pyx":2122
+  /* "_rnaseq_utils.pyx":2199
  * 
  *     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
  *     old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1             # <<<<<<<<<<<<<<
@@ -50341,7 +50863,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   __pyx_cur_scope->__pyx_v_span_start = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "_rnaseq_utils.pyx":2123
+  /* "_rnaseq_utils.pyx":2200
  *     end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
  *     old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1
  *     current_cov = 0             # <<<<<<<<<<<<<<
@@ -50350,7 +50872,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
   __pyx_cur_scope->__pyx_v_current_cov = 0.0;
 
-  /* "_rnaseq_utils.pyx":2124
+  /* "_rnaseq_utils.pyx":2201
  *     old_chrom, old_l, old_r, rightmost, span_start = -1, -1, -1, -1, -1
  *     current_cov = 0
  *     span_weight = 0             # <<<<<<<<<<<<<<
@@ -50359,7 +50881,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
   __pyx_cur_scope->__pyx_v_span_weight = 0.0;
 
-  /* "_rnaseq_utils.pyx":2125
+  /* "_rnaseq_utils.pyx":2202
  *     current_cov = 0
  *     span_weight = 0
  *     for line in fileconn:             # <<<<<<<<<<<<<<
@@ -50370,26 +50892,26 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_t_3 = __pyx_cur_scope->__pyx_v_fileconn; __Pyx_INCREF(__pyx_t_3); __pyx_t_11 = 0;
     __pyx_t_12 = NULL;
   } else {
-    __pyx_t_11 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_fileconn); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+    __pyx_t_11 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_fileconn); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 2125, __pyx_L1_error)
+    __pyx_t_12 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 2202, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_12)) {
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_11 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_11); __Pyx_INCREF(__pyx_t_5); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 2125, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_11); __Pyx_INCREF(__pyx_t_5); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 2202, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2125, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2202, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_11 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_11); __Pyx_INCREF(__pyx_t_5); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 2125, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_11); __Pyx_INCREF(__pyx_t_5); __pyx_t_11++; if (unlikely(0 < 0)) __PYX_ERR(0, 2202, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2125, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_11); __pyx_t_11++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2202, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -50399,7 +50921,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 2125, __pyx_L1_error)
+          else __PYX_ERR(0, 2202, __pyx_L1_error)
         }
         break;
       }
@@ -50410,7 +50932,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __Pyx_GIVEREF(__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "_rnaseq_utils.pyx":2126
+    /* "_rnaseq_utils.pyx":2203
  *     span_weight = 0
  *     for line in fileconn:
  *         if type(line) is str:             # <<<<<<<<<<<<<<
@@ -50421,27 +50943,27 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2127
+      /* "_rnaseq_utils.pyx":2204
  *     for line in fileconn:
  *         if type(line) is str:
  *             if line[0] == '#':             # <<<<<<<<<<<<<<
  *                 header_line = line.rstrip().split(' ')
  *                 if header_line[0] == '#S':
  */
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2127, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2204, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_kp_u__23, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2127, __pyx_L1_error)
+      __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_kp_u__23, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2204, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (__pyx_t_2) {
 
-        /* "_rnaseq_utils.pyx":2128
+        /* "_rnaseq_utils.pyx":2205
  *         if type(line) is str:
  *             if line[0] == '#':
  *                 header_line = line.rstrip().split(' ')             # <<<<<<<<<<<<<<
  *                 if header_line[0] == '#S':
  *                     dataset.add_source(header_line[-1])
  */
-        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_line, __pyx_n_s_rstrip); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2128, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_line, __pyx_n_s_rstrip); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2205, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         __pyx_t_14 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_13))) {
@@ -50455,10 +50977,10 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         }
         __pyx_t_6 = (__pyx_t_14) ? __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_t_14) : __Pyx_PyObject_CallNoArg(__pyx_t_13);
         __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2128, __pyx_L1_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2205, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_split); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2128, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_split); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2205, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __pyx_t_6 = NULL;
@@ -50473,7 +50995,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         }
         __pyx_t_5 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_13, __pyx_t_6, __pyx_kp_u__18) : __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_kp_u__18);
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2128, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2205, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_header_line);
@@ -50481,34 +51003,34 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         __Pyx_GIVEREF(__pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "_rnaseq_utils.pyx":2129
+        /* "_rnaseq_utils.pyx":2206
  *             if line[0] == '#':
  *                 header_line = line.rstrip().split(' ')
  *                 if header_line[0] == '#S':             # <<<<<<<<<<<<<<
  *                     dataset.add_source(header_line[-1])
  *                 elif header_line[0] == '#C':
  */
-        __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2129, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2206, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_kp_u_S_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2129, __pyx_L1_error)
+        __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_kp_u_S_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2206, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         if (__pyx_t_2) {
 
-          /* "_rnaseq_utils.pyx":2130
+          /* "_rnaseq_utils.pyx":2207
  *                 header_line = line.rstrip().split(' ')
  *                 if header_line[0] == '#S':
  *                     dataset.add_source(header_line[-1])             # <<<<<<<<<<<<<<
  *                 elif header_line[0] == '#C':
  *                     dataset.add_chrom(header_line[-1])
  */
-          __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2207, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_13 = ((struct __pyx_vtabstruct_13_rnaseq_utils_RNAseqDataset *)__pyx_cur_scope->__pyx_v_dataset->__pyx_vtab)->add_source(__pyx_cur_scope->__pyx_v_dataset, __pyx_t_5, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_13 = ((struct __pyx_vtabstruct_13_rnaseq_utils_RNAseqDataset *)__pyx_cur_scope->__pyx_v_dataset->__pyx_vtab)->add_source(__pyx_cur_scope->__pyx_v_dataset, __pyx_t_5, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2207, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_13);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
 
-          /* "_rnaseq_utils.pyx":2129
+          /* "_rnaseq_utils.pyx":2206
  *             if line[0] == '#':
  *                 header_line = line.rstrip().split(' ')
  *                 if header_line[0] == '#S':             # <<<<<<<<<<<<<<
@@ -50518,34 +51040,34 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
           goto __pyx_L11;
         }
 
-        /* "_rnaseq_utils.pyx":2131
+        /* "_rnaseq_utils.pyx":2208
  *                 if header_line[0] == '#S':
  *                     dataset.add_source(header_line[-1])
  *                 elif header_line[0] == '#C':             # <<<<<<<<<<<<<<
  *                     dataset.add_chrom(header_line[-1])
  * 
  */
-        __pyx_t_13 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2131, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2208, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
-        __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_13, __pyx_kp_u_C_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2131, __pyx_L1_error)
+        __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_13, __pyx_kp_u_C_3, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2208, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
         if (__pyx_t_2) {
 
-          /* "_rnaseq_utils.pyx":2132
+          /* "_rnaseq_utils.pyx":2209
  *                     dataset.add_source(header_line[-1])
  *                 elif header_line[0] == '#C':
  *                     dataset.add_chrom(header_line[-1])             # <<<<<<<<<<<<<<
  * 
  *                 continue
  */
-          __pyx_t_13 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2132, __pyx_L1_error)
+          __pyx_t_13 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_header_line, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2209, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_13);
-          __pyx_t_5 = ((struct __pyx_vtabstruct_13_rnaseq_utils_RNAseqDataset *)__pyx_cur_scope->__pyx_v_dataset->__pyx_vtab)->add_chrom(__pyx_cur_scope->__pyx_v_dataset, __pyx_t_13, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2132, __pyx_L1_error)
+          __pyx_t_5 = ((struct __pyx_vtabstruct_13_rnaseq_utils_RNAseqDataset *)__pyx_cur_scope->__pyx_v_dataset->__pyx_vtab)->add_chrom(__pyx_cur_scope->__pyx_v_dataset, __pyx_t_13, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2209, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-          /* "_rnaseq_utils.pyx":2131
+          /* "_rnaseq_utils.pyx":2208
  *                 if header_line[0] == '#S':
  *                     dataset.add_source(header_line[-1])
  *                 elif header_line[0] == '#C':             # <<<<<<<<<<<<<<
@@ -50555,7 +51077,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         }
         __pyx_L11:;
 
-        /* "_rnaseq_utils.pyx":2134
+        /* "_rnaseq_utils.pyx":2211
  *                     dataset.add_chrom(header_line[-1])
  * 
  *                 continue             # <<<<<<<<<<<<<<
@@ -50564,7 +51086,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
         goto __pyx_L7_continue;
 
-        /* "_rnaseq_utils.pyx":2127
+        /* "_rnaseq_utils.pyx":2204
  *     for line in fileconn:
  *         if type(line) is str:
  *             if line[0] == '#':             # <<<<<<<<<<<<<<
@@ -50573,7 +51095,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
       }
 
-      /* "_rnaseq_utils.pyx":2126
+      /* "_rnaseq_utils.pyx":2203
  *     span_weight = 0
  *     for line in fileconn:
  *         if type(line) is str:             # <<<<<<<<<<<<<<
@@ -50582,7 +51104,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
     }
 
-    /* "_rnaseq_utils.pyx":2136
+    /* "_rnaseq_utils.pyx":2213
  *                 continue
  * 
  *         add_read(line)             # <<<<<<<<<<<<<<
@@ -50602,12 +51124,12 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     }
     __pyx_t_5 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_13, __pyx_t_6, __pyx_cur_scope->__pyx_v_line) : __Pyx_PyObject_CallOneArg(__pyx_t_13, __pyx_cur_scope->__pyx_v_line);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2136, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2213, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "_rnaseq_utils.pyx":2137
+    /* "_rnaseq_utils.pyx":2214
  * 
  *         add_read(line)
  *         read = dataset.read_list[-1]             # <<<<<<<<<<<<<<
@@ -50616,17 +51138,17 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
     if (unlikely(__pyx_cur_scope->__pyx_v_dataset->read_list == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2137, __pyx_L1_error)
+      __PYX_ERR(0, 2214, __pyx_L1_error)
     }
-    __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_dataset->read_list, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2137, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_dataset->read_list, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2214, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2137, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2214, __pyx_L1_error)
     __Pyx_XGOTREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_read, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_5));
     __Pyx_GIVEREF(__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "_rnaseq_utils.pyx":2138
+    /* "_rnaseq_utils.pyx":2215
  *         add_read(line)
  *         read = dataset.read_list[-1]
  *         l, r = read.span             # <<<<<<<<<<<<<<
@@ -50639,7 +51161,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_cur_scope->__pyx_v_l = __pyx_t_10;
     __pyx_cur_scope->__pyx_v_r = __pyx_t_9;
 
-    /* "_rnaseq_utils.pyx":2139
+    /* "_rnaseq_utils.pyx":2216
  *         read = dataset.read_list[-1]
  *         l, r = read.span
  *         read_weight = read.weight * (r-l)             # <<<<<<<<<<<<<<
@@ -50648,7 +51170,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
     __pyx_cur_scope->__pyx_v_read_weight = (__pyx_cur_scope->__pyx_v_read->weight * (__pyx_cur_scope->__pyx_v_r - __pyx_cur_scope->__pyx_v_l));
 
-    /* "_rnaseq_utils.pyx":2140
+    /* "_rnaseq_utils.pyx":2217
  *         l, r = read.span
  *         read_weight = read.weight * (r-l)
  *         current_cov += read.weight             # <<<<<<<<<<<<<<
@@ -50657,7 +51179,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
     __pyx_cur_scope->__pyx_v_current_cov = (__pyx_cur_scope->__pyx_v_current_cov + __pyx_cur_scope->__pyx_v_read->weight);
 
-    /* "_rnaseq_utils.pyx":2141
+    /* "_rnaseq_utils.pyx":2218
  *         read_weight = read.weight * (r-l)
  *         current_cov += read.weight
  *         if old_chrom == -1: # Uninitialized; add the read and make no other decisions             # <<<<<<<<<<<<<<
@@ -50667,30 +51189,30 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_t_2 = ((__pyx_cur_scope->__pyx_v_old_chrom == -1L) != 0);
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2142
+      /* "_rnaseq_utils.pyx":2219
  *         current_cov += read.weight
  *         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
  *             span_start = l             # <<<<<<<<<<<<<<
  *             span_length = r - span_start
  *             rightmost = r
  */
-      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2142, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2219, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GOTREF(__pyx_cur_scope->__pyx_v_span_start);
       __Pyx_DECREF_SET(__pyx_cur_scope->__pyx_v_span_start, __pyx_t_5);
       __Pyx_GIVEREF(__pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "_rnaseq_utils.pyx":2143
+      /* "_rnaseq_utils.pyx":2220
  *         if old_chrom == -1: # Uninitialized; add the read and make no other decisions
  *             span_start = l
  *             span_length = r - span_start             # <<<<<<<<<<<<<<
  *             rightmost = r
  *         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
  */
-      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_r); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2143, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_r); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2220, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_13 = PyNumber_Subtract(__pyx_t_5, __pyx_cur_scope->__pyx_v_span_start); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2143, __pyx_L1_error)
+      __pyx_t_13 = PyNumber_Subtract(__pyx_t_5, __pyx_cur_scope->__pyx_v_span_start); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2220, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_span_length);
@@ -50698,7 +51220,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __Pyx_GIVEREF(__pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2144
+      /* "_rnaseq_utils.pyx":2221
  *             span_start = l
  *             span_length = r - span_start
  *             rightmost = r             # <<<<<<<<<<<<<<
@@ -50707,7 +51229,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
       __pyx_cur_scope->__pyx_v_rightmost = __pyx_cur_scope->__pyx_v_r;
 
-      /* "_rnaseq_utils.pyx":2141
+      /* "_rnaseq_utils.pyx":2218
  *         read_weight = read.weight * (r-l)
  *         current_cov += read.weight
  *         if old_chrom == -1: # Uninitialized; add the read and make no other decisions             # <<<<<<<<<<<<<<
@@ -50717,7 +51239,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       goto __pyx_L12;
     }
 
-    /* "_rnaseq_utils.pyx":2145
+    /* "_rnaseq_utils.pyx":2222
  *             span_length = r - span_start
  *             rightmost = r
  *         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list             # <<<<<<<<<<<<<<
@@ -50735,7 +51257,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_L13_bool_binop_done:;
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2146
+      /* "_rnaseq_utils.pyx":2223
  *             rightmost = r
  *         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
  *             yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]             # <<<<<<<<<<<<<<
@@ -50743,32 +51265,32 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  *             span_start = l
  */
       { /* enter inner scope */
-        __pyx_t_13 = PyList_New(0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2146, __pyx_L1_error)
+        __pyx_t_13 = PyList_New(0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2223, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         if (unlikely(__pyx_cur_scope->__pyx_v_dataset->read_list == Py_None)) {
           PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-          __PYX_ERR(0, 2146, __pyx_L1_error)
+          __PYX_ERR(0, 2223, __pyx_L1_error)
         }
-        __pyx_t_5 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_dataset->read_list, 0, -1L); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2146, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_dataset->read_list, 0, -1L); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2223, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __pyx_t_6 = __pyx_t_5; __Pyx_INCREF(__pyx_t_6); __pyx_t_16 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         for (;;) {
           if (__pyx_t_16 >= PyList_GET_SIZE(__pyx_t_6)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_16); __Pyx_INCREF(__pyx_t_5); __pyx_t_16++; if (unlikely(0 < 0)) __PYX_ERR(0, 2146, __pyx_L1_error)
+          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_16); __Pyx_INCREF(__pyx_t_5); __pyx_t_16++; if (unlikely(0 < 0)) __PYX_ERR(0, 2223, __pyx_L1_error)
           #else
-          __pyx_t_5 = PySequence_ITEM(__pyx_t_6, __pyx_t_16); __pyx_t_16++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2146, __pyx_L1_error)
+          __pyx_t_5 = PySequence_ITEM(__pyx_t_6, __pyx_t_16); __pyx_t_16++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2223, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           #endif
-          if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2146, __pyx_L1_error)
+          if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2223, __pyx_L1_error)
           __Pyx_XGOTREF(((PyObject *)__pyx_cur_scope->__pyx_9genexpr43__pyx_v_outread));
           __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_9genexpr43__pyx_v_outread, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_5));
           __Pyx_GIVEREF(__pyx_t_5);
           __pyx_t_5 = 0;
           __pyx_t_2 = ((__pyx_cur_scope->__pyx_9genexpr43__pyx_v_outread->span.f1 < __pyx_cur_scope->__pyx_v_l) != 0);
           if (__pyx_t_2) {
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_13, (PyObject*)__pyx_cur_scope->__pyx_9genexpr43__pyx_v_outread))) __PYX_ERR(0, 2146, __pyx_L1_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_13, (PyObject*)__pyx_cur_scope->__pyx_9genexpr43__pyx_v_outread))) __PYX_ERR(0, 2223, __pyx_L1_error)
           }
         }
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -50791,16 +51313,16 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __Pyx_XGOTREF(__pyx_t_3);
       __pyx_t_11 = __pyx_cur_scope->__pyx_t_1;
       __pyx_t_12 = __pyx_cur_scope->__pyx_t_2;
-      if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2146, __pyx_L1_error)
+      if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2223, __pyx_L1_error)
 
-      /* "_rnaseq_utils.pyx":2147
+      /* "_rnaseq_utils.pyx":2224
  *         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
  *             yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
  *             dataset.read_list = [read]             # <<<<<<<<<<<<<<
  *             span_start = l
  *             span_weight = 0
  */
-      __pyx_t_13 = PyList_New(1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2147, __pyx_L1_error)
+      __pyx_t_13 = PyList_New(1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2224, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_INCREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
       __Pyx_GIVEREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
@@ -50811,21 +51333,21 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __pyx_cur_scope->__pyx_v_dataset->read_list = ((PyObject*)__pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2148
+      /* "_rnaseq_utils.pyx":2225
  *             yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
  *             dataset.read_list = [read]
  *             span_start = l             # <<<<<<<<<<<<<<
  *             span_weight = 0
  *             current_cov = read.weight
  */
-      __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2148, __pyx_L1_error)
+      __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2225, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_GOTREF(__pyx_cur_scope->__pyx_v_span_start);
       __Pyx_DECREF_SET(__pyx_cur_scope->__pyx_v_span_start, __pyx_t_13);
       __Pyx_GIVEREF(__pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2149
+      /* "_rnaseq_utils.pyx":2226
  *             dataset.read_list = [read]
  *             span_start = l
  *             span_weight = 0             # <<<<<<<<<<<<<<
@@ -50834,7 +51356,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
       __pyx_cur_scope->__pyx_v_span_weight = 0.0;
 
-      /* "_rnaseq_utils.pyx":2150
+      /* "_rnaseq_utils.pyx":2227
  *             span_start = l
  *             span_weight = 0
  *             current_cov = read.weight             # <<<<<<<<<<<<<<
@@ -50844,14 +51366,14 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __pyx_t_17 = __pyx_cur_scope->__pyx_v_read->weight;
       __pyx_cur_scope->__pyx_v_current_cov = __pyx_t_17;
 
-      /* "_rnaseq_utils.pyx":2151
+      /* "_rnaseq_utils.pyx":2228
  *             span_weight = 0
  *             current_cov = read.weight
  *             end_positions = Counter()             # <<<<<<<<<<<<<<
  *             rightmost = r
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_Counter); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2151, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_Counter); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2228, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __pyx_t_5 = NULL;
       if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_6))) {
@@ -50865,7 +51387,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       }
       __pyx_t_13 = (__pyx_t_5) ? __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_5) : __Pyx_PyObject_CallNoArg(__pyx_t_6);
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2151, __pyx_L1_error)
+      if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2228, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_GOTREF(__pyx_cur_scope->__pyx_v_end_positions);
@@ -50873,7 +51395,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __Pyx_GIVEREF(__pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2152
+      /* "_rnaseq_utils.pyx":2229
  *             current_cov = read.weight
  *             end_positions = Counter()
  *             rightmost = r             # <<<<<<<<<<<<<<
@@ -50882,7 +51404,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
       __pyx_cur_scope->__pyx_v_rightmost = __pyx_cur_scope->__pyx_v_r;
 
-      /* "_rnaseq_utils.pyx":2145
+      /* "_rnaseq_utils.pyx":2222
  *             span_length = r - span_start
  *             rightmost = r
  *         elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list             # <<<<<<<<<<<<<<
@@ -50892,7 +51414,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       goto __pyx_L12;
     }
 
-    /* "_rnaseq_utils.pyx":2153
+    /* "_rnaseq_utils.pyx":2230
  *             end_positions = Counter()
  *             rightmost = r
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut             # <<<<<<<<<<<<<<
@@ -50902,7 +51424,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_t_2 = ((__pyx_cur_scope->__pyx_v_l > __pyx_cur_scope->__pyx_v_old_l) != 0);
     if (__pyx_t_2) {
 
-      /* "_rnaseq_utils.pyx":2154
+      /* "_rnaseq_utils.pyx":2231
  *             rightmost = r
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut
  *             passed_positions = [k for k in end_positions.keys() if k <= l]             # <<<<<<<<<<<<<<
@@ -50910,14 +51432,14 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  *                 current_cov -= end_positions.pop(k)
  */
       { /* enter inner scope */
-        __pyx_t_13 = PyList_New(0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2154, __pyx_L1_error)
+        __pyx_t_13 = PyList_New(0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2231, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         __pyx_t_16 = 0;
         if (unlikely(__pyx_cur_scope->__pyx_v_end_positions == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "keys");
-          __PYX_ERR(0, 2154, __pyx_L1_error)
+          __PYX_ERR(0, 2231, __pyx_L1_error)
         }
-        __pyx_t_5 = __Pyx_dict_iterator(__pyx_cur_scope->__pyx_v_end_positions, 0, __pyx_n_s_keys, (&__pyx_t_18), (&__pyx_t_9)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2154, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_dict_iterator(__pyx_cur_scope->__pyx_v_end_positions, 0, __pyx_n_s_keys, (&__pyx_t_18), (&__pyx_t_9)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2231, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_XDECREF(__pyx_t_6);
         __pyx_t_6 = __pyx_t_5;
@@ -50925,16 +51447,16 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         while (1) {
           __pyx_t_10 = __Pyx_dict_iter_next(__pyx_t_6, __pyx_t_18, &__pyx_t_16, &__pyx_t_5, NULL, NULL, __pyx_t_9);
           if (unlikely(__pyx_t_10 == 0)) break;
-          if (unlikely(__pyx_t_10 == -1)) __PYX_ERR(0, 2154, __pyx_L1_error)
+          if (unlikely(__pyx_t_10 == -1)) __PYX_ERR(0, 2231, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2154, __pyx_L1_error)
+          __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2231, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __pyx_cur_scope->__pyx_9genexpr44__pyx_v_k = __pyx_t_10;
           __pyx_t_2 = ((__pyx_cur_scope->__pyx_9genexpr44__pyx_v_k <= __pyx_cur_scope->__pyx_v_l) != 0);
           if (__pyx_t_2) {
-            __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_9genexpr44__pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2154, __pyx_L1_error)
+            __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_9genexpr44__pyx_v_k); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2231, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_5);
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_13, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 2154, __pyx_L1_error)
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_13, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 2231, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           }
         }
@@ -50945,7 +51467,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __Pyx_GIVEREF(__pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2155
+      /* "_rnaseq_utils.pyx":2232
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut
  *             passed_positions = [k for k in end_positions.keys() if k <= l]
  *             for k in passed_positions:             # <<<<<<<<<<<<<<
@@ -50956,35 +51478,35 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       for (;;) {
         if (__pyx_t_18 >= PyList_GET_SIZE(__pyx_t_13)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_6 = PyList_GET_ITEM(__pyx_t_13, __pyx_t_18); __Pyx_INCREF(__pyx_t_6); __pyx_t_18++; if (unlikely(0 < 0)) __PYX_ERR(0, 2155, __pyx_L1_error)
+        __pyx_t_6 = PyList_GET_ITEM(__pyx_t_13, __pyx_t_18); __Pyx_INCREF(__pyx_t_6); __pyx_t_18++; if (unlikely(0 < 0)) __PYX_ERR(0, 2232, __pyx_L1_error)
         #else
-        __pyx_t_6 = PySequence_ITEM(__pyx_t_13, __pyx_t_18); __pyx_t_18++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2155, __pyx_L1_error)
+        __pyx_t_6 = PySequence_ITEM(__pyx_t_13, __pyx_t_18); __pyx_t_18++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2232, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         #endif
-        __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2155, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2232, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __pyx_cur_scope->__pyx_v_k = __pyx_t_9;
 
-        /* "_rnaseq_utils.pyx":2156
+        /* "_rnaseq_utils.pyx":2233
  *             passed_positions = [k for k in end_positions.keys() if k <= l]
  *             for k in passed_positions:
  *                 current_cov -= end_positions.pop(k)             # <<<<<<<<<<<<<<
  * 
  *             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
  */
-        __pyx_t_6 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_current_cov); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2156, __pyx_L1_error)
+        __pyx_t_6 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_current_cov); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_5 = __Pyx_PyObject_PopIndex(__pyx_cur_scope->__pyx_v_end_positions, Py_None, __pyx_cur_scope->__pyx_v_k, 1, int, __Pyx_PyInt_From_int); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2156, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_PopIndex(__pyx_cur_scope->__pyx_v_end_positions, Py_None, __pyx_cur_scope->__pyx_v_k, 1, int, __Pyx_PyInt_From_int); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_14 = PyNumber_InPlaceSubtract(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2156, __pyx_L1_error)
+        __pyx_t_14 = PyNumber_InPlaceSubtract(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_14);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_17 = __pyx_PyFloat_AsFloat(__pyx_t_14); if (unlikely((__pyx_t_17 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2156, __pyx_L1_error)
+        __pyx_t_17 = __pyx_PyFloat_AsFloat(__pyx_t_14); if (unlikely((__pyx_t_17 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2233, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
         __pyx_cur_scope->__pyx_v_current_cov = __pyx_t_17;
 
-        /* "_rnaseq_utils.pyx":2155
+        /* "_rnaseq_utils.pyx":2232
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut
  *             passed_positions = [k for k in end_positions.keys() if k <= l]
  *             for k in passed_positions:             # <<<<<<<<<<<<<<
@@ -50994,29 +51516,29 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       }
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
 
-      /* "_rnaseq_utils.pyx":2158
+      /* "_rnaseq_utils.pyx":2235
  *                 current_cov -= end_positions.pop(k)
  * 
  *             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break             # <<<<<<<<<<<<<<
  *                 yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
  *                 dataset.read_list = [read]
  */
-      __pyx_t_13 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_current_cov); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2158, __pyx_L1_error)
+      __pyx_t_13 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_current_cov); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2235, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
-      if (unlikely(!__pyx_cur_scope->__pyx_v_span_length)) { __Pyx_RaiseUnboundLocalError("span_length"); __PYX_ERR(0, 2158, __pyx_L1_error) }
-      __pyx_t_14 = PyNumber_Multiply(__pyx_t_13, __pyx_cur_scope->__pyx_v_span_length); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2158, __pyx_L1_error)
+      if (unlikely(!__pyx_cur_scope->__pyx_v_span_length)) { __Pyx_RaiseUnboundLocalError("span_length"); __PYX_ERR(0, 2235, __pyx_L1_error) }
+      __pyx_t_14 = PyNumber_Multiply(__pyx_t_13, __pyx_cur_scope->__pyx_v_span_length); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2235, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_14);
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      __pyx_t_13 = PyFloat_FromDouble((__pyx_cur_scope->__pyx_v_minimum_proportion * __pyx_cur_scope->__pyx_v_span_weight)); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2158, __pyx_L1_error)
+      __pyx_t_13 = PyFloat_FromDouble((__pyx_cur_scope->__pyx_v_minimum_proportion * __pyx_cur_scope->__pyx_v_span_weight)); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2235, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
-      __pyx_t_5 = PyObject_RichCompare(__pyx_t_14, __pyx_t_13, Py_LT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2158, __pyx_L1_error)
+      __pyx_t_5 = PyObject_RichCompare(__pyx_t_14, __pyx_t_13, Py_LT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2235, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2158, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 2235, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (__pyx_t_2) {
 
-        /* "_rnaseq_utils.pyx":2159
+        /* "_rnaseq_utils.pyx":2236
  * 
  *             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
  *                 yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]             # <<<<<<<<<<<<<<
@@ -51024,32 +51546,32 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  *                 span_start = l
  */
         { /* enter inner scope */
-          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2159, __pyx_L1_error)
+          __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2236, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           if (unlikely(__pyx_cur_scope->__pyx_v_dataset->read_list == Py_None)) {
             PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-            __PYX_ERR(0, 2159, __pyx_L1_error)
+            __PYX_ERR(0, 2236, __pyx_L1_error)
           }
-          __pyx_t_13 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_dataset->read_list, 0, -1L); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2159, __pyx_L1_error)
+          __pyx_t_13 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_dataset->read_list, 0, -1L); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2236, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_13);
           __pyx_t_14 = __pyx_t_13; __Pyx_INCREF(__pyx_t_14); __pyx_t_18 = 0;
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           for (;;) {
             if (__pyx_t_18 >= PyList_GET_SIZE(__pyx_t_14)) break;
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_13 = PyList_GET_ITEM(__pyx_t_14, __pyx_t_18); __Pyx_INCREF(__pyx_t_13); __pyx_t_18++; if (unlikely(0 < 0)) __PYX_ERR(0, 2159, __pyx_L1_error)
+            __pyx_t_13 = PyList_GET_ITEM(__pyx_t_14, __pyx_t_18); __Pyx_INCREF(__pyx_t_13); __pyx_t_18++; if (unlikely(0 < 0)) __PYX_ERR(0, 2236, __pyx_L1_error)
             #else
-            __pyx_t_13 = PySequence_ITEM(__pyx_t_14, __pyx_t_18); __pyx_t_18++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2159, __pyx_L1_error)
+            __pyx_t_13 = PySequence_ITEM(__pyx_t_14, __pyx_t_18); __pyx_t_18++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2236, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             #endif
-            if (!(likely(((__pyx_t_13) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_13, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2159, __pyx_L1_error)
+            if (!(likely(((__pyx_t_13) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_13, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2236, __pyx_L1_error)
             __Pyx_XGOTREF(((PyObject *)__pyx_cur_scope->__pyx_9genexpr45__pyx_v_outread));
             __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_9genexpr45__pyx_v_outread, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_13));
             __Pyx_GIVEREF(__pyx_t_13);
             __pyx_t_13 = 0;
             __pyx_t_2 = ((__pyx_cur_scope->__pyx_9genexpr45__pyx_v_outread->span.f1 < __pyx_cur_scope->__pyx_v_l) != 0);
             if (__pyx_t_2) {
-              if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_cur_scope->__pyx_9genexpr45__pyx_v_outread))) __PYX_ERR(0, 2159, __pyx_L1_error)
+              if (unlikely(__Pyx_ListComp_Append(__pyx_t_5, (PyObject*)__pyx_cur_scope->__pyx_9genexpr45__pyx_v_outread))) __PYX_ERR(0, 2236, __pyx_L1_error)
             }
           }
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -51072,16 +51594,16 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         __Pyx_XGOTREF(__pyx_t_3);
         __pyx_t_11 = __pyx_cur_scope->__pyx_t_1;
         __pyx_t_12 = __pyx_cur_scope->__pyx_t_2;
-        if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2159, __pyx_L1_error)
+        if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2236, __pyx_L1_error)
 
-        /* "_rnaseq_utils.pyx":2160
+        /* "_rnaseq_utils.pyx":2237
  *             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
  *                 yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
  *                 dataset.read_list = [read]             # <<<<<<<<<<<<<<
  *                 span_start = l
  *                 span_weight = 0
  */
-        __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2160, __pyx_L1_error)
+        __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2237, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_INCREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
         __Pyx_GIVEREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
@@ -51092,21 +51614,21 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         __pyx_cur_scope->__pyx_v_dataset->read_list = ((PyObject*)__pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "_rnaseq_utils.pyx":2161
+        /* "_rnaseq_utils.pyx":2238
  *                 yield [outread for outread in dataset.read_list[:-1] if outread.span[1] < l]
  *                 dataset.read_list = [read]
  *                 span_start = l             # <<<<<<<<<<<<<<
  *                 span_weight = 0
  *                 current_cov = read.weight
  */
-        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2161, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_l); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2238, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_cur_scope->__pyx_v_span_start);
         __Pyx_DECREF_SET(__pyx_cur_scope->__pyx_v_span_start, __pyx_t_5);
         __Pyx_GIVEREF(__pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "_rnaseq_utils.pyx":2162
+        /* "_rnaseq_utils.pyx":2239
  *                 dataset.read_list = [read]
  *                 span_start = l
  *                 span_weight = 0             # <<<<<<<<<<<<<<
@@ -51115,7 +51637,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
         __pyx_cur_scope->__pyx_v_span_weight = 0.0;
 
-        /* "_rnaseq_utils.pyx":2163
+        /* "_rnaseq_utils.pyx":2240
  *                 span_start = l
  *                 span_weight = 0
  *                 current_cov = read.weight             # <<<<<<<<<<<<<<
@@ -51125,14 +51647,14 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         __pyx_t_17 = __pyx_cur_scope->__pyx_v_read->weight;
         __pyx_cur_scope->__pyx_v_current_cov = __pyx_t_17;
 
-        /* "_rnaseq_utils.pyx":2164
+        /* "_rnaseq_utils.pyx":2241
  *                 span_weight = 0
  *                 current_cov = read.weight
  *                 end_positions = Counter()             # <<<<<<<<<<<<<<
  *                 rightmost = r
  * 
  */
-        __Pyx_GetModuleGlobalName(__pyx_t_14, __pyx_n_s_Counter); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2164, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_14, __pyx_n_s_Counter); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2241, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_14);
         __pyx_t_13 = NULL;
         if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_14))) {
@@ -51146,7 +51668,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         }
         __pyx_t_5 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_14, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_14);
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2164, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2241, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
         __Pyx_GOTREF(__pyx_cur_scope->__pyx_v_end_positions);
@@ -51154,7 +51676,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
         __Pyx_GIVEREF(__pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "_rnaseq_utils.pyx":2165
+        /* "_rnaseq_utils.pyx":2242
  *                 current_cov = read.weight
  *                 end_positions = Counter()
  *                 rightmost = r             # <<<<<<<<<<<<<<
@@ -51163,7 +51685,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
         __pyx_cur_scope->__pyx_v_rightmost = __pyx_cur_scope->__pyx_v_r;
 
-        /* "_rnaseq_utils.pyx":2158
+        /* "_rnaseq_utils.pyx":2235
  *                 current_cov -= end_positions.pop(k)
  * 
  *             if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break             # <<<<<<<<<<<<<<
@@ -51172,7 +51694,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
       }
 
-      /* "_rnaseq_utils.pyx":2153
+      /* "_rnaseq_utils.pyx":2230
  *             end_positions = Counter()
  *             rightmost = r
  *         elif l > old_l: # Read advanced, but not by enough to automatically cut             # <<<<<<<<<<<<<<
@@ -51182,7 +51704,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     }
     __pyx_L12:;
 
-    /* "_rnaseq_utils.pyx":2167
+    /* "_rnaseq_utils.pyx":2244
  *                 rightmost = r
  * 
  *         end_positions[r] += read.weight # Add the read's weight to the position where the read ends             # <<<<<<<<<<<<<<
@@ -51190,18 +51712,18 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  *         if r > rightmost: rightmost = r
  */
     __pyx_t_9 = __pyx_cur_scope->__pyx_v_r;
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_end_positions, __pyx_t_9, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2167, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_cur_scope->__pyx_v_end_positions, __pyx_t_9, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_14 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_read->weight); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2167, __pyx_L1_error)
+    __pyx_t_14 = PyFloat_FromDouble(__pyx_cur_scope->__pyx_v_read->weight); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_14);
-    __pyx_t_13 = PyNumber_InPlaceAdd(__pyx_t_5, __pyx_t_14); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2167, __pyx_L1_error)
+    __pyx_t_13 = PyNumber_InPlaceAdd(__pyx_t_5, __pyx_t_14); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_13);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-    if (unlikely(__Pyx_SetItemInt(__pyx_cur_scope->__pyx_v_end_positions, __pyx_t_9, __pyx_t_13, int, 1, __Pyx_PyInt_From_int, 0, 1, 1) < 0)) __PYX_ERR(0, 2167, __pyx_L1_error)
+    if (unlikely(__Pyx_SetItemInt(__pyx_cur_scope->__pyx_v_end_positions, __pyx_t_9, __pyx_t_13, int, 1, __Pyx_PyInt_From_int, 0, 1, 1) < 0)) __PYX_ERR(0, 2244, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
 
-    /* "_rnaseq_utils.pyx":2168
+    /* "_rnaseq_utils.pyx":2245
  * 
  *         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
  *         span_weight += read_weight             # <<<<<<<<<<<<<<
@@ -51210,7 +51732,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
  */
     __pyx_cur_scope->__pyx_v_span_weight = (__pyx_cur_scope->__pyx_v_span_weight + __pyx_cur_scope->__pyx_v_read_weight);
 
-    /* "_rnaseq_utils.pyx":2169
+    /* "_rnaseq_utils.pyx":2246
  *         end_positions[r] += read.weight # Add the read's weight to the position where the read ends
  *         span_weight += read_weight
  *         if r > rightmost: rightmost = r             # <<<<<<<<<<<<<<
@@ -51222,16 +51744,16 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
       __pyx_cur_scope->__pyx_v_rightmost = __pyx_cur_scope->__pyx_v_r;
     }
 
-    /* "_rnaseq_utils.pyx":2170
+    /* "_rnaseq_utils.pyx":2247
  *         span_weight += read_weight
  *         if r > rightmost: rightmost = r
  *         span_length = rightmost - span_start             # <<<<<<<<<<<<<<
  *         old_chrom, old_l, old_r = read.chrom, l, r
  * 
  */
-    __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_rightmost); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2170, __pyx_L1_error)
+    __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_rightmost); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_13);
-    __pyx_t_14 = PyNumber_Subtract(__pyx_t_13, __pyx_cur_scope->__pyx_v_span_start); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2170, __pyx_L1_error)
+    __pyx_t_14 = PyNumber_Subtract(__pyx_t_13, __pyx_cur_scope->__pyx_v_span_start); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_14);
     __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_span_length);
@@ -51239,7 +51761,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __Pyx_GIVEREF(__pyx_t_14);
     __pyx_t_14 = 0;
 
-    /* "_rnaseq_utils.pyx":2171
+    /* "_rnaseq_utils.pyx":2248
  *         if r > rightmost: rightmost = r
  *         span_length = rightmost - span_start
  *         old_chrom, old_l, old_r = read.chrom, l, r             # <<<<<<<<<<<<<<
@@ -51253,7 +51775,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
     __pyx_cur_scope->__pyx_v_old_l = __pyx_t_10;
     __pyx_cur_scope->__pyx_v_old_r = __pyx_t_8;
 
-    /* "_rnaseq_utils.pyx":2125
+    /* "_rnaseq_utils.pyx":2202
  *     current_cov = 0
  *     span_weight = 0
  *     for line in fileconn:             # <<<<<<<<<<<<<<
@@ -51264,7 +51786,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "_rnaseq_utils.pyx":2174
+  /* "_rnaseq_utils.pyx":2251
  * 
  *     # Dump the remaining reads
  *     yield dataset.read_list             # <<<<<<<<<<<<<<
@@ -51280,16 +51802,16 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   __pyx_generator->resume_label = 3;
   return __pyx_r;
   __pyx_L30_resume_from_yield:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2174, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2251, __pyx_L1_error)
 
-  /* "_rnaseq_utils.pyx":2175
+  /* "_rnaseq_utils.pyx":2252
  *     # Dump the remaining reads
  *     yield dataset.read_list
  *     fileconn.close()             # <<<<<<<<<<<<<<
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):
  */
-  __pyx_t_14 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_fileconn, __pyx_n_s_close); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2175, __pyx_L1_error)
+  __pyx_t_14 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_fileconn, __pyx_n_s_close); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
   __pyx_t_13 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_14))) {
@@ -51303,13 +51825,13 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
   }
   __pyx_t_3 = (__pyx_t_13) ? __Pyx_PyObject_CallOneArg(__pyx_t_14, __pyx_t_13) : __Pyx_PyObject_CallNoArg(__pyx_t_14);
   __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2175, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   CYTHON_MAYBE_UNUSED_VAR(__pyx_cur_scope);
 
-  /* "_rnaseq_utils.pyx":2104
+  /* "_rnaseq_utils.pyx":2181
  *         return False
  * 
  * def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):             # <<<<<<<<<<<<<<
@@ -51339,7 +51861,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_30generator3(__pyx_CoroutineObject *__
 }
 static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "_rnaseq_utils.pyx":2177
+/* "_rnaseq_utils.pyx":2254
  *     fileconn.close()
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):             # <<<<<<<<<<<<<<
@@ -51382,11 +51904,11 @@ static PyObject *__pyx_pw_13_rnaseq_utils_32generate_subchunks(PyObject *__pyx_s
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_positions)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("generate_subchunks", 1, 2, 2, 1); __PYX_ERR(0, 2177, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("generate_subchunks", 1, 2, 2, 1); __PYX_ERR(0, 2254, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_subchunks") < 0)) __PYX_ERR(0, 2177, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_subchunks") < 0)) __PYX_ERR(0, 2254, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -51399,14 +51921,14 @@ static PyObject *__pyx_pw_13_rnaseq_utils_32generate_subchunks(PyObject *__pyx_s
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("generate_subchunks", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2177, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("generate_subchunks", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2254, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_rnaseq_utils.generate_subchunks", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_list_of_reads), (&PyList_Type), 1, "list_of_reads", 1))) __PYX_ERR(0, 2177, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_split_positions), (&PyList_Type), 1, "split_positions", 1))) __PYX_ERR(0, 2177, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_list_of_reads), (&PyList_Type), 1, "list_of_reads", 1))) __PYX_ERR(0, 2254, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_split_positions), (&PyList_Type), 1, "split_positions", 1))) __PYX_ERR(0, 2254, __pyx_L1_error)
   __pyx_r = __pyx_pf_13_rnaseq_utils_31generate_subchunks(__pyx_self, __pyx_v_list_of_reads, __pyx_v_split_positions);
 
   /* function exit code */
@@ -51430,7 +51952,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_31generate_subchunks(CYTHON_UNUSED PyO
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_13_rnaseq_utils___pyx_scope_struct_4_generate_subchunks *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 2177, __pyx_L1_error)
+    __PYX_ERR(0, 2254, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -51441,7 +51963,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_31generate_subchunks(CYTHON_UNUSED PyO
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_split_positions);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_split_positions);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_13_rnaseq_utils_33generator4, __pyx_codeobj__52, (PyObject *) __pyx_cur_scope, __pyx_n_s_generate_subchunks, __pyx_n_s_generate_subchunks, __pyx_n_s_rnaseq_utils); if (unlikely(!gen)) __PYX_ERR(0, 2177, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_13_rnaseq_utils_33generator4, __pyx_codeobj__52, (PyObject *) __pyx_cur_scope, __pyx_n_s_generate_subchunks, __pyx_n_s_generate_subchunks, __pyx_n_s_rnaseq_utils); if (unlikely(!gen)) __PYX_ERR(0, 2254, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -51490,9 +52012,9 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2177, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2254, __pyx_L1_error)
 
-  /* "_rnaseq_utils.pyx":2183
+  /* "_rnaseq_utils.pyx":2260
  *         set ignore
  * 
  *     lasti = 0             # <<<<<<<<<<<<<<
@@ -51501,46 +52023,46 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
   __pyx_cur_scope->__pyx_v_lasti = 0;
 
-  /* "_rnaseq_utils.pyx":2184
+  /* "_rnaseq_utils.pyx":2261
  * 
  *     lasti = 0
  *     position = iter(split_positions)             # <<<<<<<<<<<<<<
  *     sp = next(position)
  *     ignore = set()
  */
-  __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_split_positions); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2184, __pyx_L1_error)
+  __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_v_split_positions); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_position = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2185
+  /* "_rnaseq_utils.pyx":2262
  *     lasti = 0
  *     position = iter(split_positions)
  *     sp = next(position)             # <<<<<<<<<<<<<<
  *     ignore = set()
  *     for i,read in enumerate(list_of_reads):
  */
-  __pyx_t_1 = __Pyx_PyIter_Next(__pyx_cur_scope->__pyx_v_position); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2185, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyIter_Next(__pyx_cur_scope->__pyx_v_position); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2262, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2185, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2262, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_cur_scope->__pyx_v_sp = __pyx_t_2;
 
-  /* "_rnaseq_utils.pyx":2186
+  /* "_rnaseq_utils.pyx":2263
  *     position = iter(split_positions)
  *     sp = next(position)
  *     ignore = set()             # <<<<<<<<<<<<<<
  *     for i,read in enumerate(list_of_reads):
  *         if read.span[0] > sp: # The current read passes the split
  */
-  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2186, __pyx_L1_error)
+  __pyx_t_1 = PySet_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2263, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_ignore = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2187
+  /* "_rnaseq_utils.pyx":2264
  *     sp = next(position)
  *     ignore = set()
  *     for i,read in enumerate(list_of_reads):             # <<<<<<<<<<<<<<
@@ -51552,12 +52074,12 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
   for (;;) {
     if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2187, __pyx_L1_error)
+    __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2264, __pyx_L1_error)
     #else
-    __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2187, __pyx_L1_error)
+    __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2264, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     #endif
-    if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2187, __pyx_L1_error)
+    if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2264, __pyx_L1_error)
     __Pyx_XGOTREF(((PyObject *)__pyx_cur_scope->__pyx_v_read));
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_read, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_4));
     __Pyx_GIVEREF(__pyx_t_4);
@@ -51565,7 +52087,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
     __pyx_cur_scope->__pyx_v_i = __pyx_t_2;
     __pyx_t_2 = (__pyx_t_2 + 1);
 
-    /* "_rnaseq_utils.pyx":2188
+    /* "_rnaseq_utils.pyx":2265
  *     ignore = set()
  *     for i,read in enumerate(list_of_reads):
  *         if read.span[0] > sp: # The current read passes the split             # <<<<<<<<<<<<<<
@@ -51575,7 +52097,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
     __pyx_t_5 = ((__pyx_cur_scope->__pyx_v_read->span.f0 > __pyx_cur_scope->__pyx_v_sp) != 0);
     if (__pyx_t_5) {
 
-      /* "_rnaseq_utils.pyx":2189
+      /* "_rnaseq_utils.pyx":2266
  *     for i,read in enumerate(list_of_reads):
  *         if read.span[0] > sp: # The current read passes the split
  *             if i > lasti:             # <<<<<<<<<<<<<<
@@ -51585,7 +52107,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
       __pyx_t_5 = ((__pyx_cur_scope->__pyx_v_i > __pyx_cur_scope->__pyx_v_lasti) != 0);
       if (__pyx_t_5) {
 
-        /* "_rnaseq_utils.pyx":2190
+        /* "_rnaseq_utils.pyx":2267
  *         if read.span[0] > sp: # The current read passes the split
  *             if i > lasti:
  *                 yield [list_of_reads[r] for r in range(lasti, i) if r not in ignore]             # <<<<<<<<<<<<<<
@@ -51593,25 +52115,25 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  *             lasti = i
  */
         { /* enter inner scope */
-          __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2190, __pyx_L1_error)
+          __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2267, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __pyx_t_6 = __pyx_cur_scope->__pyx_v_i;
           __pyx_t_7 = __pyx_t_6;
           for (__pyx_t_8 = __pyx_cur_scope->__pyx_v_lasti; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
             __pyx_cur_scope->__pyx_9genexpr46__pyx_v_r = __pyx_t_8;
-            __pyx_t_9 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_9genexpr46__pyx_v_r); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2190, __pyx_L1_error)
+            __pyx_t_9 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_9genexpr46__pyx_v_r); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2267, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_9);
-            __pyx_t_5 = (__Pyx_PySet_ContainsTF(__pyx_t_9, __pyx_cur_scope->__pyx_v_ignore, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 2190, __pyx_L1_error)
+            __pyx_t_5 = (__Pyx_PySet_ContainsTF(__pyx_t_9, __pyx_cur_scope->__pyx_v_ignore, Py_NE)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 2267, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
             __pyx_t_10 = (__pyx_t_5 != 0);
             if (__pyx_t_10) {
               if (unlikely(__pyx_cur_scope->__pyx_v_list_of_reads == Py_None)) {
                 PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-                __PYX_ERR(0, 2190, __pyx_L1_error)
+                __PYX_ERR(0, 2267, __pyx_L1_error)
               }
-              __pyx_t_9 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_list_of_reads, __pyx_cur_scope->__pyx_9genexpr46__pyx_v_r, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2190, __pyx_L1_error)
+              __pyx_t_9 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_list_of_reads, __pyx_cur_scope->__pyx_9genexpr46__pyx_v_r, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2267, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_9);
-              if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_9))) __PYX_ERR(0, 2190, __pyx_L1_error)
+              if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_9))) __PYX_ERR(0, 2267, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
             }
           }
@@ -51634,9 +52156,9 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         __Pyx_XGOTREF(__pyx_t_1);
         __pyx_t_2 = __pyx_cur_scope->__pyx_t_1;
         __pyx_t_3 = __pyx_cur_scope->__pyx_t_2;
-        if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2190, __pyx_L1_error)
+        if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2267, __pyx_L1_error)
 
-        /* "_rnaseq_utils.pyx":2189
+        /* "_rnaseq_utils.pyx":2266
  *     for i,read in enumerate(list_of_reads):
  *         if read.span[0] > sp: # The current read passes the split
  *             if i > lasti:             # <<<<<<<<<<<<<<
@@ -51645,7 +52167,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
       }
 
-      /* "_rnaseq_utils.pyx":2192
+      /* "_rnaseq_utils.pyx":2269
  *                 yield [list_of_reads[r] for r in range(lasti, i) if r not in ignore]
  * 
  *             lasti = i             # <<<<<<<<<<<<<<
@@ -51654,7 +52176,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
       __pyx_cur_scope->__pyx_v_lasti = __pyx_cur_scope->__pyx_v_i;
 
-      /* "_rnaseq_utils.pyx":2193
+      /* "_rnaseq_utils.pyx":2270
  * 
  *             lasti = i
  *             try:             # <<<<<<<<<<<<<<
@@ -51668,7 +52190,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         __Pyx_XGOTREF(__pyx_t_13);
         /*try:*/ {
 
-          /* "_rnaseq_utils.pyx":2194
+          /* "_rnaseq_utils.pyx":2271
  *             lasti = i
  *             try:
  *                 while sp < read.span[0]:             # <<<<<<<<<<<<<<
@@ -51679,21 +52201,21 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
             __pyx_t_10 = ((__pyx_cur_scope->__pyx_v_sp < __pyx_cur_scope->__pyx_v_read->span.f0) != 0);
             if (!__pyx_t_10) break;
 
-            /* "_rnaseq_utils.pyx":2195
+            /* "_rnaseq_utils.pyx":2272
  *             try:
  *                 while sp < read.span[0]:
  *                     sp = next(position)             # <<<<<<<<<<<<<<
  *             except StopIteration:
  *                 lasti = i
  */
-            __pyx_t_4 = __Pyx_PyIter_Next(__pyx_cur_scope->__pyx_v_position); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2195, __pyx_L12_error)
+            __pyx_t_4 = __Pyx_PyIter_Next(__pyx_cur_scope->__pyx_v_position); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2272, __pyx_L12_error)
             __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2195, __pyx_L12_error)
+            __pyx_t_6 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_6 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2272, __pyx_L12_error)
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
             __pyx_cur_scope->__pyx_v_sp = __pyx_t_6;
           }
 
-          /* "_rnaseq_utils.pyx":2193
+          /* "_rnaseq_utils.pyx":2270
  * 
  *             lasti = i
  *             try:             # <<<<<<<<<<<<<<
@@ -51709,7 +52231,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-        /* "_rnaseq_utils.pyx":2196
+        /* "_rnaseq_utils.pyx":2273
  *                 while sp < read.span[0]:
  *                     sp = next(position)
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -51719,12 +52241,12 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         __pyx_t_6 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
         if (__pyx_t_6) {
           __Pyx_AddTraceback("_rnaseq_utils.generate_subchunks", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_9, &__pyx_t_14) < 0) __PYX_ERR(0, 2196, __pyx_L14_except_error)
+          if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_9, &__pyx_t_14) < 0) __PYX_ERR(0, 2273, __pyx_L14_except_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_GOTREF(__pyx_t_9);
           __Pyx_GOTREF(__pyx_t_14);
 
-          /* "_rnaseq_utils.pyx":2197
+          /* "_rnaseq_utils.pyx":2274
  *                     sp = next(position)
  *             except StopIteration:
  *                 lasti = i             # <<<<<<<<<<<<<<
@@ -51733,7 +52255,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
           __pyx_cur_scope->__pyx_v_lasti = __pyx_cur_scope->__pyx_v_i;
 
-          /* "_rnaseq_utils.pyx":2198
+          /* "_rnaseq_utils.pyx":2275
  *             except StopIteration:
  *                 lasti = i
  *                 break             # <<<<<<<<<<<<<<
@@ -51750,7 +52272,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         goto __pyx_L14_except_error;
         __pyx_L14_except_error:;
 
-        /* "_rnaseq_utils.pyx":2193
+        /* "_rnaseq_utils.pyx":2270
  * 
  *             lasti = i
  *             try:             # <<<<<<<<<<<<<<
@@ -51771,7 +52293,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
         __pyx_L19_try_end:;
       }
 
-      /* "_rnaseq_utils.pyx":2188
+      /* "_rnaseq_utils.pyx":2265
  *     ignore = set()
  *     for i,read in enumerate(list_of_reads):
  *         if read.span[0] > sp: # The current read passes the split             # <<<<<<<<<<<<<<
@@ -51780,7 +52302,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
     }
 
-    /* "_rnaseq_utils.pyx":2200
+    /* "_rnaseq_utils.pyx":2277
  *                 break
  * 
  *         if read.span[1] > sp:             # <<<<<<<<<<<<<<
@@ -51790,19 +52312,19 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
     __pyx_t_10 = ((__pyx_cur_scope->__pyx_v_read->span.f1 > __pyx_cur_scope->__pyx_v_sp) != 0);
     if (__pyx_t_10) {
 
-      /* "_rnaseq_utils.pyx":2201
+      /* "_rnaseq_utils.pyx":2278
  * 
  *         if read.span[1] > sp:
  *             ignore.add(i)             # <<<<<<<<<<<<<<
  * 
  *     yield list_of_reads[lasti:]
  */
-      __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2201, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2278, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_14);
-      __pyx_t_15 = PySet_Add(__pyx_cur_scope->__pyx_v_ignore, __pyx_t_14); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 2201, __pyx_L1_error)
+      __pyx_t_15 = PySet_Add(__pyx_cur_scope->__pyx_v_ignore, __pyx_t_14); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 2278, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
 
-      /* "_rnaseq_utils.pyx":2200
+      /* "_rnaseq_utils.pyx":2277
  *                 break
  * 
  *         if read.span[1] > sp:             # <<<<<<<<<<<<<<
@@ -51811,7 +52333,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
     }
 
-    /* "_rnaseq_utils.pyx":2187
+    /* "_rnaseq_utils.pyx":2264
  *     sp = next(position)
  *     ignore = set()
  *     for i,read in enumerate(list_of_reads):             # <<<<<<<<<<<<<<
@@ -51822,7 +52344,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
   __pyx_L5_break:;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2203
+  /* "_rnaseq_utils.pyx":2280
  *             ignore.add(i)
  * 
  *     yield list_of_reads[lasti:]             # <<<<<<<<<<<<<<
@@ -51831,9 +52353,9 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
  */
   if (unlikely(__pyx_cur_scope->__pyx_v_list_of_reads == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 2203, __pyx_L1_error)
+    __PYX_ERR(0, 2280, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_list_of_reads, __pyx_cur_scope->__pyx_v_lasti, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2203, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyList_GetSlice(__pyx_cur_scope->__pyx_v_list_of_reads, __pyx_cur_scope->__pyx_v_lasti, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -51844,10 +52366,10 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
   __pyx_generator->resume_label = 2;
   return __pyx_r;
   __pyx_L25_resume_from_yield:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2203, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 2280, __pyx_L1_error)
   CYTHON_MAYBE_UNUSED_VAR(__pyx_cur_scope);
 
-  /* "_rnaseq_utils.pyx":2177
+  /* "_rnaseq_utils.pyx":2254
  *     fileconn.close()
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):             # <<<<<<<<<<<<<<
@@ -51875,7 +52397,7 @@ static PyObject *__pyx_gb_13_rnaseq_utils_33generator4(__pyx_CoroutineObject *__
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2206
+/* "_rnaseq_utils.pyx":2283
  * 
  * 
  * cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):             # <<<<<<<<<<<<<<
@@ -51919,11 +52441,11 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   __pyx_pybuffernd_array.rcbuffer = &__pyx_pybuffer_array;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2206, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2283, __pyx_L1_error)
   }
   __pyx_pybuffernd_array.diminfo[0].strides = __pyx_pybuffernd_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_array.diminfo[0].shape = __pyx_pybuffernd_array.rcbuffer->pybuffer.shape[0];
 
-  /* "_rnaseq_utils.pyx":2214
+  /* "_rnaseq_utils.pyx":2291
  *     cdef Py_ssize_t i, j, l
  *     cdef float vi, vj, delta, max_delta, min_delta
  *     cdef (int, int) top_positions = (0, 0)             # <<<<<<<<<<<<<<
@@ -51934,19 +52456,19 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   __pyx_t_1.f1 = 0;
   __pyx_v_top_positions = __pyx_t_1;
 
-  /* "_rnaseq_utils.pyx":2215
+  /* "_rnaseq_utils.pyx":2292
  *     cdef float vi, vj, delta, max_delta, min_delta
  *     cdef (int, int) top_positions = (0, 0)
  *     cdef float [:] ARRAY = array             # <<<<<<<<<<<<<<
  *     if offset < 1:
  *         offset = 1
  */
-  __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_float(((PyObject *)__pyx_v_array), PyBUF_WRITABLE); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 2215, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_float(((PyObject *)__pyx_v_array), PyBUF_WRITABLE); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 2292, __pyx_L1_error)
   __pyx_v_ARRAY = __pyx_t_2;
   __pyx_t_2.memview = NULL;
   __pyx_t_2.data = NULL;
 
-  /* "_rnaseq_utils.pyx":2216
+  /* "_rnaseq_utils.pyx":2293
  *     cdef (int, int) top_positions = (0, 0)
  *     cdef float [:] ARRAY = array
  *     if offset < 1:             # <<<<<<<<<<<<<<
@@ -51956,7 +52478,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   __pyx_t_3 = ((__pyx_v_offset < 1.0) != 0);
   if (__pyx_t_3) {
 
-    /* "_rnaseq_utils.pyx":2217
+    /* "_rnaseq_utils.pyx":2294
  *     cdef float [:] ARRAY = array
  *     if offset < 1:
  *         offset = 1             # <<<<<<<<<<<<<<
@@ -51965,7 +52487,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
     __pyx_v_offset = 1.0;
 
-    /* "_rnaseq_utils.pyx":2216
+    /* "_rnaseq_utils.pyx":2293
  *     cdef (int, int) top_positions = (0, 0)
  *     cdef float [:] ARRAY = array
  *     if offset < 1:             # <<<<<<<<<<<<<<
@@ -51974,7 +52496,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
   }
 
-  /* "_rnaseq_utils.pyx":2219
+  /* "_rnaseq_utils.pyx":2296
  *         offset = 1
  * 
  *     l = array.shape[0]             # <<<<<<<<<<<<<<
@@ -51983,7 +52505,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
   __pyx_v_l = (__pyx_v_array->dimensions[0]);
 
-  /* "_rnaseq_utils.pyx":2220
+  /* "_rnaseq_utils.pyx":2297
  * 
  *     l = array.shape[0]
  *     max_delta = min_delta = 0             # <<<<<<<<<<<<<<
@@ -51993,7 +52515,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   __pyx_v_max_delta = 0.0;
   __pyx_v_min_delta = 0.0;
 
-  /* "_rnaseq_utils.pyx":2221
+  /* "_rnaseq_utils.pyx":2298
  *     l = array.shape[0]
  *     max_delta = min_delta = 0
  *     for i in range(1, l):             # <<<<<<<<<<<<<<
@@ -52005,7 +52527,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   for (__pyx_t_6 = 1; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "_rnaseq_utils.pyx":2222
+    /* "_rnaseq_utils.pyx":2299
  *     max_delta = min_delta = 0
  *     for i in range(1, l):
  *         j = i - 1             # <<<<<<<<<<<<<<
@@ -52014,7 +52536,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
     __pyx_v_j = (__pyx_v_i - 1);
 
-    /* "_rnaseq_utils.pyx":2223
+    /* "_rnaseq_utils.pyx":2300
  *     for i in range(1, l):
  *         j = i - 1
  *         vi = ARRAY[i]             # <<<<<<<<<<<<<<
@@ -52029,11 +52551,11 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     } else if (unlikely(__pyx_t_7 >= __pyx_v_ARRAY.shape[0])) __pyx_t_8 = 0;
     if (unlikely(__pyx_t_8 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_8);
-      __PYX_ERR(0, 2223, __pyx_L1_error)
+      __PYX_ERR(0, 2300, __pyx_L1_error)
     }
     __pyx_v_vi = (*((float *) ( /* dim=0 */ (__pyx_v_ARRAY.data + __pyx_t_7 * __pyx_v_ARRAY.strides[0]) )));
 
-    /* "_rnaseq_utils.pyx":2224
+    /* "_rnaseq_utils.pyx":2301
  *         j = i - 1
  *         vi = ARRAY[i]
  *         vj = ARRAY[j]             # <<<<<<<<<<<<<<
@@ -52048,11 +52570,11 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     } else if (unlikely(__pyx_t_7 >= __pyx_v_ARRAY.shape[0])) __pyx_t_8 = 0;
     if (unlikely(__pyx_t_8 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_8);
-      __PYX_ERR(0, 2224, __pyx_L1_error)
+      __PYX_ERR(0, 2301, __pyx_L1_error)
     }
     __pyx_v_vj = (*((float *) ( /* dim=0 */ (__pyx_v_ARRAY.data + __pyx_t_7 * __pyx_v_ARRAY.strides[0]) )));
 
-    /* "_rnaseq_utils.pyx":2225
+    /* "_rnaseq_utils.pyx":2302
  *         vi = ARRAY[i]
  *         vj = ARRAY[j]
  *         delta = (vi - vj)/(vi + offset)             # <<<<<<<<<<<<<<
@@ -52063,11 +52585,11 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     __pyx_t_10 = (__pyx_v_vi + __pyx_v_offset);
     if (unlikely(__pyx_t_10 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 2225, __pyx_L1_error)
+      __PYX_ERR(0, 2302, __pyx_L1_error)
     }
     __pyx_v_delta = (__pyx_t_9 / __pyx_t_10);
 
-    /* "_rnaseq_utils.pyx":2226
+    /* "_rnaseq_utils.pyx":2303
  *         vj = ARRAY[j]
  *         delta = (vi - vj)/(vi + offset)
  *         if delta > max_delta: # A gap begins or extends             # <<<<<<<<<<<<<<
@@ -52077,7 +52599,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     __pyx_t_3 = ((__pyx_v_delta > __pyx_v_max_delta) != 0);
     if (__pyx_t_3) {
 
-      /* "_rnaseq_utils.pyx":2227
+      /* "_rnaseq_utils.pyx":2304
  *         delta = (vi - vj)/(vi + offset)
  *         if delta > max_delta: # A gap begins or extends
  *             max_delta = delta             # <<<<<<<<<<<<<<
@@ -52086,7 +52608,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
       __pyx_v_max_delta = __pyx_v_delta;
 
-      /* "_rnaseq_utils.pyx":2228
+      /* "_rnaseq_utils.pyx":2305
  *         if delta > max_delta: # A gap begins or extends
  *             max_delta = delta
  *             top_positions[0] = i             # <<<<<<<<<<<<<<
@@ -52095,7 +52617,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
       __pyx_v_top_positions.f0 = __pyx_v_i;
 
-      /* "_rnaseq_utils.pyx":2226
+      /* "_rnaseq_utils.pyx":2303
  *         vj = ARRAY[j]
  *         delta = (vi - vj)/(vi + offset)
  *         if delta > max_delta: # A gap begins or extends             # <<<<<<<<<<<<<<
@@ -52105,7 +52627,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
       goto __pyx_L6;
     }
 
-    /* "_rnaseq_utils.pyx":2229
+    /* "_rnaseq_utils.pyx":2306
  *             max_delta = delta
  *             top_positions[0] = i
  *         elif delta < min_delta: # Not in a gap             # <<<<<<<<<<<<<<
@@ -52115,7 +52637,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     __pyx_t_3 = ((__pyx_v_delta < __pyx_v_min_delta) != 0);
     if (__pyx_t_3) {
 
-      /* "_rnaseq_utils.pyx":2230
+      /* "_rnaseq_utils.pyx":2307
  *             top_positions[0] = i
  *         elif delta < min_delta: # Not in a gap
  *             min_delta = delta             # <<<<<<<<<<<<<<
@@ -52124,7 +52646,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
       __pyx_v_min_delta = __pyx_v_delta;
 
-      /* "_rnaseq_utils.pyx":2231
+      /* "_rnaseq_utils.pyx":2308
  *         elif delta < min_delta: # Not in a gap
  *             min_delta = delta
  *             top_positions[1] = i-1             # <<<<<<<<<<<<<<
@@ -52133,7 +52655,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
  */
       __pyx_v_top_positions.f1 = (__pyx_v_i - 1);
 
-      /* "_rnaseq_utils.pyx":2229
+      /* "_rnaseq_utils.pyx":2306
  *             max_delta = delta
  *             top_positions[0] = i
  *         elif delta < min_delta: # Not in a gap             # <<<<<<<<<<<<<<
@@ -52144,7 +52666,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
     __pyx_L6:;
   }
 
-  /* "_rnaseq_utils.pyx":2233
+  /* "_rnaseq_utils.pyx":2310
  *             top_positions[1] = i-1
  * 
  *     return top_positions             # <<<<<<<<<<<<<<
@@ -52154,7 +52676,7 @@ static __pyx_ctuple_int__and_int __pyx_f_13_rnaseq_utils_get_max_deltas(PyArrayO
   __pyx_r = __pyx_v_top_positions;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2206
+  /* "_rnaseq_utils.pyx":2283
  * 
  * 
  * cpdef (int, int) get_max_deltas(np.ndarray[float, ndim=1] array, float offset):             # <<<<<<<<<<<<<<
@@ -52217,11 +52739,11 @@ static PyObject *__pyx_pw_13_rnaseq_utils_35get_max_deltas(PyObject *__pyx_self,
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_offset)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_max_deltas", 1, 2, 2, 1); __PYX_ERR(0, 2206, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_max_deltas", 1, 2, 2, 1); __PYX_ERR(0, 2283, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_max_deltas") < 0)) __PYX_ERR(0, 2206, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_max_deltas") < 0)) __PYX_ERR(0, 2283, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -52230,17 +52752,17 @@ static PyObject *__pyx_pw_13_rnaseq_utils_35get_max_deltas(PyObject *__pyx_self,
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_array = ((PyArrayObject *)values[0]);
-    __pyx_v_offset = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_offset == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2206, __pyx_L3_error)
+    __pyx_v_offset = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_offset == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 2283, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_max_deltas", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2206, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_max_deltas", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2283, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_rnaseq_utils.get_max_deltas", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_array), __pyx_ptype_5numpy_ndarray, 1, "array", 0))) __PYX_ERR(0, 2206, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_array), __pyx_ptype_5numpy_ndarray, 1, "array", 0))) __PYX_ERR(0, 2283, __pyx_L1_error)
   __pyx_r = __pyx_pf_13_rnaseq_utils_34get_max_deltas(__pyx_self, __pyx_v_array, __pyx_v_offset);
 
   /* function exit code */
@@ -52268,11 +52790,11 @@ static PyObject *__pyx_pf_13_rnaseq_utils_34get_max_deltas(CYTHON_UNUSED PyObjec
   __pyx_pybuffernd_array.rcbuffer = &__pyx_pybuffer_array;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2206, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2283, __pyx_L1_error)
   }
   __pyx_pybuffernd_array.diminfo[0].strides = __pyx_pybuffernd_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_array.diminfo[0].shape = __pyx_pybuffernd_array.rcbuffer->pybuffer.shape[0];
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_f_13_rnaseq_utils_get_max_deltas(__pyx_v_array, __pyx_v_offset, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2206, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_f_13_rnaseq_utils_get_max_deltas(__pyx_v_array, __pyx_v_offset, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2283, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -52298,7 +52820,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_34get_max_deltas(CYTHON_UNUSED PyObjec
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2235
+/* "_rnaseq_utils.pyx":2312
  *     return top_positions
  * 
  * cpdef bint has_ends(list list_of_reads, bint require_cap):             # <<<<<<<<<<<<<<
@@ -52331,7 +52853,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("has_ends", 0);
 
-  /* "_rnaseq_utils.pyx":2238
+  /* "_rnaseq_utils.pyx":2315
  *     cdef RNAseqMapping read
  *     cdef bint sp, cp, ep, sm, cm, em
  *     sp, cp, ep, sm, cm, em = False, False, False, False, False, False             # <<<<<<<<<<<<<<
@@ -52351,7 +52873,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
   __pyx_v_cm = __pyx_t_5;
   __pyx_v_em = __pyx_t_6;
 
-  /* "_rnaseq_utils.pyx":2239
+  /* "_rnaseq_utils.pyx":2316
  *     cdef bint sp, cp, ep, sm, cm, em
  *     sp, cp, ep, sm, cm, em = False, False, False, False, False, False
  *     for read in list_of_reads:             # <<<<<<<<<<<<<<
@@ -52360,22 +52882,22 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
  */
   if (unlikely(__pyx_v_list_of_reads == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 2239, __pyx_L1_error)
+    __PYX_ERR(0, 2316, __pyx_L1_error)
   }
   __pyx_t_7 = __pyx_v_list_of_reads; __Pyx_INCREF(__pyx_t_7); __pyx_t_8 = 0;
   for (;;) {
     if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_7)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_9 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_8); __Pyx_INCREF(__pyx_t_9); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2239, __pyx_L1_error)
+    __pyx_t_9 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_8); __Pyx_INCREF(__pyx_t_9); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2316, __pyx_L1_error)
     #else
-    __pyx_t_9 = PySequence_ITEM(__pyx_t_7, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2239, __pyx_L1_error)
+    __pyx_t_9 = PySequence_ITEM(__pyx_t_7, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2316, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     #endif
-    if (!(likely(((__pyx_t_9) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_9, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2239, __pyx_L1_error)
+    if (!(likely(((__pyx_t_9) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_9, __pyx_ptype_13_rnaseq_utils_RNAseqMapping))))) __PYX_ERR(0, 2316, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_read, ((struct __pyx_obj_13_rnaseq_utils_RNAseqMapping *)__pyx_t_9));
     __pyx_t_9 = 0;
 
-    /* "_rnaseq_utils.pyx":2240
+    /* "_rnaseq_utils.pyx":2317
  *     sp, cp, ep, sm, cm, em = False, False, False, False, False, False
  *     for read in list_of_reads:
  *         if read.strand == 1:             # <<<<<<<<<<<<<<
@@ -52385,7 +52907,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
     switch (__pyx_v_read->strand) {
       case 1:
 
-      /* "_rnaseq_utils.pyx":2241
+      /* "_rnaseq_utils.pyx":2318
  *     for read in list_of_reads:
  *         if read.strand == 1:
  *             sp = sp or read.s_tag             # <<<<<<<<<<<<<<
@@ -52403,7 +52925,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L5_bool_binop_done:;
       __pyx_v_sp = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2242
+      /* "_rnaseq_utils.pyx":2319
  *         if read.strand == 1:
  *             sp = sp or read.s_tag
  *             cp = cp or read.capped             # <<<<<<<<<<<<<<
@@ -52421,7 +52943,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L7_bool_binop_done:;
       __pyx_v_cp = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2243
+      /* "_rnaseq_utils.pyx":2320
  *             sp = sp or read.s_tag
  *             cp = cp or read.capped
  *             ep = ep or read.e_tag             # <<<<<<<<<<<<<<
@@ -52439,7 +52961,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L9_bool_binop_done:;
       __pyx_v_ep = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2244
+      /* "_rnaseq_utils.pyx":2321
  *             cp = cp or read.capped
  *             ep = ep or read.e_tag
  *             if (not require_cap or cp) and sp and ep:             # <<<<<<<<<<<<<<
@@ -52469,7 +52991,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L12_bool_binop_done:;
       if (__pyx_t_6) {
 
-        /* "_rnaseq_utils.pyx":2245
+        /* "_rnaseq_utils.pyx":2322
  *             ep = ep or read.e_tag
  *             if (not require_cap or cp) and sp and ep:
  *                 return True             # <<<<<<<<<<<<<<
@@ -52480,7 +53002,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         goto __pyx_L0;
 
-        /* "_rnaseq_utils.pyx":2244
+        /* "_rnaseq_utils.pyx":2321
  *             cp = cp or read.capped
  *             ep = ep or read.e_tag
  *             if (not require_cap or cp) and sp and ep:             # <<<<<<<<<<<<<<
@@ -52489,7 +53011,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
  */
       }
 
-      /* "_rnaseq_utils.pyx":2240
+      /* "_rnaseq_utils.pyx":2317
  *     sp, cp, ep, sm, cm, em = False, False, False, False, False, False
  *     for read in list_of_reads:
  *         if read.strand == 1:             # <<<<<<<<<<<<<<
@@ -52499,7 +53021,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       break;
       case -1L:
 
-      /* "_rnaseq_utils.pyx":2247
+      /* "_rnaseq_utils.pyx":2324
  *                 return True
  *         elif read.strand == -1:
  *             sm = sm or read.s_tag             # <<<<<<<<<<<<<<
@@ -52517,7 +53039,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L16_bool_binop_done:;
       __pyx_v_sm = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2248
+      /* "_rnaseq_utils.pyx":2325
  *         elif read.strand == -1:
  *             sm = sm or read.s_tag
  *             cm = cm or read.capped             # <<<<<<<<<<<<<<
@@ -52535,7 +53057,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L18_bool_binop_done:;
       __pyx_v_cm = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2249
+      /* "_rnaseq_utils.pyx":2326
  *             sm = sm or read.s_tag
  *             cm = cm or read.capped
  *             em = em or read.e_tag             # <<<<<<<<<<<<<<
@@ -52553,7 +53075,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L20_bool_binop_done:;
       __pyx_v_em = __pyx_t_6;
 
-      /* "_rnaseq_utils.pyx":2250
+      /* "_rnaseq_utils.pyx":2327
  *             cm = cm or read.capped
  *             em = em or read.e_tag
  *             if (not require_cap or cm) and sm and em:             # <<<<<<<<<<<<<<
@@ -52583,7 +53105,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       __pyx_L23_bool_binop_done:;
       if (__pyx_t_6) {
 
-        /* "_rnaseq_utils.pyx":2251
+        /* "_rnaseq_utils.pyx":2328
  *             em = em or read.e_tag
  *             if (not require_cap or cm) and sm and em:
  *                 return True             # <<<<<<<<<<<<<<
@@ -52594,7 +53116,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         goto __pyx_L0;
 
-        /* "_rnaseq_utils.pyx":2250
+        /* "_rnaseq_utils.pyx":2327
  *             cm = cm or read.capped
  *             em = em or read.e_tag
  *             if (not require_cap or cm) and sm and em:             # <<<<<<<<<<<<<<
@@ -52603,7 +53125,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
  */
       }
 
-      /* "_rnaseq_utils.pyx":2246
+      /* "_rnaseq_utils.pyx":2323
  *             if (not require_cap or cp) and sp and ep:
  *                 return True
  *         elif read.strand == -1:             # <<<<<<<<<<<<<<
@@ -52614,7 +53136,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
       default: break;
     }
 
-    /* "_rnaseq_utils.pyx":2239
+    /* "_rnaseq_utils.pyx":2316
  *     cdef bint sp, cp, ep, sm, cm, em
  *     sp, cp, ep, sm, cm, em = False, False, False, False, False, False
  *     for read in list_of_reads:             # <<<<<<<<<<<<<<
@@ -52624,7 +53146,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "_rnaseq_utils.pyx":2253
+  /* "_rnaseq_utils.pyx":2330
  *                 return True
  * 
  *     return False             # <<<<<<<<<<<<<<
@@ -52634,7 +53156,7 @@ static int __pyx_f_13_rnaseq_utils_has_ends(PyObject *__pyx_v_list_of_reads, int
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2235
+  /* "_rnaseq_utils.pyx":2312
  *     return top_positions
  * 
  * cpdef bint has_ends(list list_of_reads, bint require_cap):             # <<<<<<<<<<<<<<
@@ -52688,11 +53210,11 @@ static PyObject *__pyx_pw_13_rnaseq_utils_37has_ends(PyObject *__pyx_self, PyObj
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_require_cap)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("has_ends", 1, 2, 2, 1); __PYX_ERR(0, 2235, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("has_ends", 1, 2, 2, 1); __PYX_ERR(0, 2312, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "has_ends") < 0)) __PYX_ERR(0, 2235, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "has_ends") < 0)) __PYX_ERR(0, 2312, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -52701,17 +53223,17 @@ static PyObject *__pyx_pw_13_rnaseq_utils_37has_ends(PyObject *__pyx_self, PyObj
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_list_of_reads = ((PyObject*)values[0]);
-    __pyx_v_require_cap = __Pyx_PyObject_IsTrue(values[1]); if (unlikely((__pyx_v_require_cap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2235, __pyx_L3_error)
+    __pyx_v_require_cap = __Pyx_PyObject_IsTrue(values[1]); if (unlikely((__pyx_v_require_cap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2312, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("has_ends", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2235, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("has_ends", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2312, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_rnaseq_utils.has_ends", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_list_of_reads), (&PyList_Type), 1, "list_of_reads", 1))) __PYX_ERR(0, 2235, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_list_of_reads), (&PyList_Type), 1, "list_of_reads", 1))) __PYX_ERR(0, 2312, __pyx_L1_error)
   __pyx_r = __pyx_pf_13_rnaseq_utils_36has_ends(__pyx_self, __pyx_v_list_of_reads, __pyx_v_require_cap);
 
   /* function exit code */
@@ -52732,7 +53254,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_36has_ends(CYTHON_UNUSED PyObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("has_ends", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_f_13_rnaseq_utils_has_ends(__pyx_v_list_of_reads, __pyx_v_require_cap, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2235, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_f_13_rnaseq_utils_has_ends(__pyx_v_list_of_reads, __pyx_v_require_cap, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2312, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -52749,7 +53271,7 @@ static PyObject *__pyx_pf_13_rnaseq_utils_36has_ends(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "_rnaseq_utils.pyx":2255
+/* "_rnaseq_utils.pyx":2332
  *     return False
  * 
  * cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):             # <<<<<<<<<<<<<<
@@ -52799,11 +53321,11 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
   __pyx_pybuffernd_array.rcbuffer = &__pyx_pybuffer_array;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2255, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2332, __pyx_L1_error)
   }
   __pyx_pybuffernd_array.diminfo[0].strides = __pyx_pybuffernd_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_array.diminfo[0].shape = __pyx_pybuffernd_array.rcbuffer->pybuffer.shape[0];
 
-  /* "_rnaseq_utils.pyx":2260
+  /* "_rnaseq_utils.pyx":2337
  *     cdef int gap_length, gap_left, gap_right
  *     cdef float value
  *     cdef bint gap_is_long_enough = False             # <<<<<<<<<<<<<<
@@ -52812,31 +53334,31 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
   __pyx_v_gap_is_long_enough = 0;
 
-  /* "_rnaseq_utils.pyx":2261
+  /* "_rnaseq_utils.pyx":2338
  *     cdef float value
  *     cdef bint gap_is_long_enough = False
  *     cdef list gaps = []             # <<<<<<<<<<<<<<
  *     cdef float [:] ARRAY = array
  *     gap_length = 0
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2261, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2338, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_gaps = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2262
+  /* "_rnaseq_utils.pyx":2339
  *     cdef bint gap_is_long_enough = False
  *     cdef list gaps = []
  *     cdef float [:] ARRAY = array             # <<<<<<<<<<<<<<
  *     gap_length = 0
  *     l = ARRAY.shape[0]
  */
-  __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_float(((PyObject *)__pyx_v_array), PyBUF_WRITABLE); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 2262, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_float(((PyObject *)__pyx_v_array), PyBUF_WRITABLE); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 2339, __pyx_L1_error)
   __pyx_v_ARRAY = __pyx_t_2;
   __pyx_t_2.memview = NULL;
   __pyx_t_2.data = NULL;
 
-  /* "_rnaseq_utils.pyx":2263
+  /* "_rnaseq_utils.pyx":2340
  *     cdef list gaps = []
  *     cdef float [:] ARRAY = array
  *     gap_length = 0             # <<<<<<<<<<<<<<
@@ -52845,7 +53367,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
   __pyx_v_gap_length = 0;
 
-  /* "_rnaseq_utils.pyx":2264
+  /* "_rnaseq_utils.pyx":2341
  *     cdef float [:] ARRAY = array
  *     gap_length = 0
  *     l = ARRAY.shape[0]             # <<<<<<<<<<<<<<
@@ -52854,7 +53376,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
   __pyx_v_l = (__pyx_v_ARRAY.shape[0]);
 
-  /* "_rnaseq_utils.pyx":2265
+  /* "_rnaseq_utils.pyx":2342
  *     gap_length = 0
  *     l = ARRAY.shape[0]
  *     for i in range(l):             # <<<<<<<<<<<<<<
@@ -52866,7 +53388,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
     __pyx_v_i = __pyx_t_5;
 
-    /* "_rnaseq_utils.pyx":2266
+    /* "_rnaseq_utils.pyx":2343
  *     l = ARRAY.shape[0]
  *     for i in range(l):
  *         value = ARRAY[i]             # <<<<<<<<<<<<<<
@@ -52881,26 +53403,26 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
     } else if (unlikely(__pyx_t_6 >= __pyx_v_ARRAY.shape[0])) __pyx_t_7 = 0;
     if (unlikely(__pyx_t_7 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_7);
-      __PYX_ERR(0, 2266, __pyx_L1_error)
+      __PYX_ERR(0, 2343, __pyx_L1_error)
     }
     __pyx_v_value = (*((float *) ( /* dim=0 */ (__pyx_v_ARRAY.data + __pyx_t_6 * __pyx_v_ARRAY.strides[0]) )));
 
-    /* "_rnaseq_utils.pyx":2267
+    /* "_rnaseq_utils.pyx":2344
  *     for i in range(l):
  *         value = ARRAY[i]
  *         if value < threshold: # A gap begins or extends             # <<<<<<<<<<<<<<
  *             if gap_length == 0: # Beginning of a gap
  *                 gap_left = i
  */
-    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2267, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2344, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_8 = PyObject_RichCompare(__pyx_t_1, __pyx_v_threshold, Py_LT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2267, __pyx_L1_error)
+    __pyx_t_8 = PyObject_RichCompare(__pyx_t_1, __pyx_v_threshold, Py_LT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2344, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2267, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 2344, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     if (__pyx_t_9) {
 
-      /* "_rnaseq_utils.pyx":2268
+      /* "_rnaseq_utils.pyx":2345
  *         value = ARRAY[i]
  *         if value < threshold: # A gap begins or extends
  *             if gap_length == 0: # Beginning of a gap             # <<<<<<<<<<<<<<
@@ -52910,7 +53432,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
       __pyx_t_9 = ((__pyx_v_gap_length == 0) != 0);
       if (__pyx_t_9) {
 
-        /* "_rnaseq_utils.pyx":2269
+        /* "_rnaseq_utils.pyx":2346
  *         if value < threshold: # A gap begins or extends
  *             if gap_length == 0: # Beginning of a gap
  *                 gap_left = i             # <<<<<<<<<<<<<<
@@ -52919,7 +53441,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
         __pyx_v_gap_left = __pyx_v_i;
 
-        /* "_rnaseq_utils.pyx":2268
+        /* "_rnaseq_utils.pyx":2345
  *         value = ARRAY[i]
  *         if value < threshold: # A gap begins or extends
  *             if gap_length == 0: # Beginning of a gap             # <<<<<<<<<<<<<<
@@ -52928,7 +53450,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
       }
 
-      /* "_rnaseq_utils.pyx":2271
+      /* "_rnaseq_utils.pyx":2348
  *                 gap_left = i
  * 
  *             gap_length += 1             # <<<<<<<<<<<<<<
@@ -52937,7 +53459,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
       __pyx_v_gap_length = (__pyx_v_gap_length + 1);
 
-      /* "_rnaseq_utils.pyx":2272
+      /* "_rnaseq_utils.pyx":2349
  * 
  *             gap_length += 1
  *             if not gap_is_long_enough:             # <<<<<<<<<<<<<<
@@ -52947,7 +53469,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
       __pyx_t_9 = ((!(__pyx_v_gap_is_long_enough != 0)) != 0);
       if (__pyx_t_9) {
 
-        /* "_rnaseq_utils.pyx":2273
+        /* "_rnaseq_utils.pyx":2350
  *             gap_length += 1
  *             if not gap_is_long_enough:
  *                 if gap_length > maxgap:             # <<<<<<<<<<<<<<
@@ -52957,7 +53479,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
         __pyx_t_9 = ((__pyx_v_gap_length > __pyx_v_maxgap) != 0);
         if (__pyx_t_9) {
 
-          /* "_rnaseq_utils.pyx":2274
+          /* "_rnaseq_utils.pyx":2351
  *             if not gap_is_long_enough:
  *                 if gap_length > maxgap:
  *                     gap_is_long_enough = True             # <<<<<<<<<<<<<<
@@ -52966,7 +53488,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
           __pyx_v_gap_is_long_enough = 1;
 
-          /* "_rnaseq_utils.pyx":2273
+          /* "_rnaseq_utils.pyx":2350
  *             gap_length += 1
  *             if not gap_is_long_enough:
  *                 if gap_length > maxgap:             # <<<<<<<<<<<<<<
@@ -52975,7 +53497,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
         }
 
-        /* "_rnaseq_utils.pyx":2272
+        /* "_rnaseq_utils.pyx":2349
  * 
  *             gap_length += 1
  *             if not gap_is_long_enough:             # <<<<<<<<<<<<<<
@@ -52984,7 +53506,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
       }
 
-      /* "_rnaseq_utils.pyx":2267
+      /* "_rnaseq_utils.pyx":2344
  *     for i in range(l):
  *         value = ARRAY[i]
  *         if value < threshold: # A gap begins or extends             # <<<<<<<<<<<<<<
@@ -52994,7 +53516,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
       goto __pyx_L5;
     }
 
-    /* "_rnaseq_utils.pyx":2276
+    /* "_rnaseq_utils.pyx":2353
  *                     gap_is_long_enough = True
  *         else: # Not in a gap
  *             if gap_is_long_enough: # The last position was the end of a gap             # <<<<<<<<<<<<<<
@@ -53005,7 +53527,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
       __pyx_t_9 = (__pyx_v_gap_is_long_enough != 0);
       if (__pyx_t_9) {
 
-        /* "_rnaseq_utils.pyx":2277
+        /* "_rnaseq_utils.pyx":2354
  *         else: # Not in a gap
  *             if gap_is_long_enough: # The last position was the end of a gap
  *                 gap_right = i             # <<<<<<<<<<<<<<
@@ -53014,18 +53536,18 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
         __pyx_v_gap_right = __pyx_v_i;
 
-        /* "_rnaseq_utils.pyx":2278
+        /* "_rnaseq_utils.pyx":2355
  *             if gap_is_long_enough: # The last position was the end of a gap
  *                 gap_right = i
  *                 gaps.append((gap_left, gap_right))             # <<<<<<<<<<<<<<
  * 
  *             gap_length = 0
  */
-        __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_gap_left); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2278, __pyx_L1_error)
+        __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_gap_left); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 2355, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_gap_right); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2278, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_gap_right); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2355, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 2278, __pyx_L1_error)
+        __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 2355, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_GIVEREF(__pyx_t_8);
         PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_8);
@@ -53033,10 +53555,10 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
         PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_1);
         __pyx_t_8 = 0;
         __pyx_t_1 = 0;
-        __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_gaps, __pyx_t_10); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 2278, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_gaps, __pyx_t_10); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 2355, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-        /* "_rnaseq_utils.pyx":2276
+        /* "_rnaseq_utils.pyx":2353
  *                     gap_is_long_enough = True
  *         else: # Not in a gap
  *             if gap_is_long_enough: # The last position was the end of a gap             # <<<<<<<<<<<<<<
@@ -53045,7 +53567,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
       }
 
-      /* "_rnaseq_utils.pyx":2280
+      /* "_rnaseq_utils.pyx":2357
  *                 gaps.append((gap_left, gap_right))
  * 
  *             gap_length = 0             # <<<<<<<<<<<<<<
@@ -53054,7 +53576,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
  */
       __pyx_v_gap_length = 0;
 
-      /* "_rnaseq_utils.pyx":2281
+      /* "_rnaseq_utils.pyx":2358
  * 
  *             gap_length = 0
  *             gap_is_long_enough = False             # <<<<<<<<<<<<<<
@@ -53066,7 +53588,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
     __pyx_L5:;
   }
 
-  /* "_rnaseq_utils.pyx":2283
+  /* "_rnaseq_utils.pyx":2360
  *             gap_is_long_enough = False
  * 
  *     return gaps             # <<<<<<<<<<<<<<
@@ -53077,7 +53599,7 @@ static PyObject *__pyx_f_13_rnaseq_utils_get_gaps(PyArrayObject *__pyx_v_array, 
   __pyx_r = __pyx_v_gaps;
   goto __pyx_L0;
 
-  /* "_rnaseq_utils.pyx":2255
+  /* "_rnaseq_utils.pyx":2332
  *     return False
  * 
  * cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):             # <<<<<<<<<<<<<<
@@ -53149,7 +53671,7 @@ static PyObject *__pyx_pw_13_rnaseq_utils_39get_gaps(PyObject *__pyx_self, PyObj
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_maxgap)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_gaps", 0, 2, 3, 1); __PYX_ERR(0, 2255, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_gaps", 0, 2, 3, 1); __PYX_ERR(0, 2332, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -53159,7 +53681,7 @@ static PyObject *__pyx_pw_13_rnaseq_utils_39get_gaps(PyObject *__pyx_self, PyObj
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_gaps") < 0)) __PYX_ERR(0, 2255, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_gaps") < 0)) __PYX_ERR(0, 2332, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -53172,18 +53694,18 @@ static PyObject *__pyx_pw_13_rnaseq_utils_39get_gaps(PyObject *__pyx_self, PyObj
       }
     }
     __pyx_v_array = ((PyArrayObject *)values[0]);
-    __pyx_v_maxgap = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_maxgap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2255, __pyx_L3_error)
+    __pyx_v_maxgap = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_maxgap == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2332, __pyx_L3_error)
     __pyx_v_threshold = values[2];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_gaps", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2255, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_gaps", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2332, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("_rnaseq_utils.get_gaps", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_array), __pyx_ptype_5numpy_ndarray, 1, "array", 0))) __PYX_ERR(0, 2255, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_array), __pyx_ptype_5numpy_ndarray, 1, "array", 0))) __PYX_ERR(0, 2332, __pyx_L1_error)
   __pyx_r = __pyx_pf_13_rnaseq_utils_38get_gaps(__pyx_self, __pyx_v_array, __pyx_v_maxgap, __pyx_v_threshold);
 
   /* function exit code */
@@ -53212,13 +53734,13 @@ static PyObject *__pyx_pf_13_rnaseq_utils_38get_gaps(CYTHON_UNUSED PyObject *__p
   __pyx_pybuffernd_array.rcbuffer = &__pyx_pybuffer_array;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2255, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_array.rcbuffer->pybuffer, (PyObject*)__pyx_v_array, &__Pyx_TypeInfo_float, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 2332, __pyx_L1_error)
   }
   __pyx_pybuffernd_array.diminfo[0].strides = __pyx_pybuffernd_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_array.diminfo[0].shape = __pyx_pybuffernd_array.rcbuffer->pybuffer.shape[0];
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.threshold = __pyx_v_threshold;
-  __pyx_t_1 = __pyx_f_13_rnaseq_utils_get_gaps(__pyx_v_array, __pyx_v_maxgap, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2255, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_13_rnaseq_utils_get_gaps(__pyx_v_array, __pyx_v_maxgap, 0, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2332, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -74698,14 +75220,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__49);
   __Pyx_GIVEREF(__pyx_tuple__49);
 
-  /* "_rnaseq_utils.pyx":2094
+  /* "_rnaseq_utils.pyx":2171
  *         if len(flank) > 0:
  *             if readtype == 'S':
  *                 flankmatch = self.dataset.start_array[-length:][::-1]             # <<<<<<<<<<<<<<
  *                 flank = flank[::-1]
  *             elif readtype == 'E':
  */
-  __pyx_slice__50 = PySlice_New(Py_None, Py_None, __pyx_int_neg_1); if (unlikely(!__pyx_slice__50)) __PYX_ERR(0, 2094, __pyx_L1_error)
+  __pyx_slice__50 = PySlice_New(Py_None, Py_None, __pyx_int_neg_1); if (unlikely(!__pyx_slice__50)) __PYX_ERR(0, 2171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_slice__50);
   __Pyx_GIVEREF(__pyx_slice__50);
 
@@ -74958,29 +75480,29 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__77);
   __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__77, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_rnaseq_utils_pyx, __pyx_n_s_parse_MD_string, 1553, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 1553, __pyx_L1_error)
 
-  /* "_rnaseq_utils.pyx":2104
+  /* "_rnaseq_utils.pyx":2181
  *         return False
  * 
  * def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):             # <<<<<<<<<<<<<<
  *     """Yields a contiguous chunk of reads from the input file
  *     separated on either side by a gaps > max_gap"""
  */
-  __pyx_tuple__78 = PyTuple_Pack(28, __pyx_n_s_fileconn, __pyx_n_s_dataset, __pyx_n_s_file_type, __pyx_n_s_max_gap, __pyx_n_s_minimum_proportion, __pyx_n_s_read, __pyx_n_s_outread, __pyx_n_s_l, __pyx_n_s_r, __pyx_n_s_old_chrom, __pyx_n_s_old_l, __pyx_n_s_old_r, __pyx_n_s_rightmost, __pyx_n_s_k, __pyx_n_s_read_weight, __pyx_n_s_span_weight, __pyx_n_s_current_cov, __pyx_n_s_covered_positions, __pyx_n_s_passed_positions, __pyx_n_s_add_read, __pyx_n_s_end_positions, __pyx_n_s_span_start, __pyx_n_s_line, __pyx_n_s_header_line, __pyx_n_s_span_length, __pyx_n_s_outread, __pyx_n_s_k, __pyx_n_s_outread); if (unlikely(!__pyx_tuple__78)) __PYX_ERR(0, 2104, __pyx_L1_error)
+  __pyx_tuple__78 = PyTuple_Pack(28, __pyx_n_s_fileconn, __pyx_n_s_dataset, __pyx_n_s_file_type, __pyx_n_s_max_gap, __pyx_n_s_minimum_proportion, __pyx_n_s_read, __pyx_n_s_outread, __pyx_n_s_l, __pyx_n_s_r, __pyx_n_s_old_chrom, __pyx_n_s_old_l, __pyx_n_s_old_r, __pyx_n_s_rightmost, __pyx_n_s_k, __pyx_n_s_read_weight, __pyx_n_s_span_weight, __pyx_n_s_current_cov, __pyx_n_s_covered_positions, __pyx_n_s_passed_positions, __pyx_n_s_add_read, __pyx_n_s_end_positions, __pyx_n_s_span_start, __pyx_n_s_line, __pyx_n_s_header_line, __pyx_n_s_span_length, __pyx_n_s_outread, __pyx_n_s_k, __pyx_n_s_outread); if (unlikely(!__pyx_tuple__78)) __PYX_ERR(0, 2181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__78);
   __Pyx_GIVEREF(__pyx_tuple__78);
-  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(5, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__78, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_rnaseq_utils_pyx, __pyx_n_s_read_generator, 2104, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 2104, __pyx_L1_error)
+  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(5, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__78, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_rnaseq_utils_pyx, __pyx_n_s_read_generator, 2181, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 2181, __pyx_L1_error)
 
-  /* "_rnaseq_utils.pyx":2177
+  /* "_rnaseq_utils.pyx":2254
  *     fileconn.close()
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):             # <<<<<<<<<<<<<<
  *     cdef:
  *         RNAseqMapping read
  */
-  __pyx_tuple__79 = PyTuple_Pack(10, __pyx_n_s_list_of_reads, __pyx_n_s_split_positions, __pyx_n_s_read, __pyx_n_s_lasti, __pyx_n_s_i, __pyx_n_s_sp, __pyx_n_s_r, __pyx_n_s_ignore, __pyx_n_s_position, __pyx_n_s_r); if (unlikely(!__pyx_tuple__79)) __PYX_ERR(0, 2177, __pyx_L1_error)
+  __pyx_tuple__79 = PyTuple_Pack(10, __pyx_n_s_list_of_reads, __pyx_n_s_split_positions, __pyx_n_s_read, __pyx_n_s_lasti, __pyx_n_s_i, __pyx_n_s_sp, __pyx_n_s_r, __pyx_n_s_ignore, __pyx_n_s_position, __pyx_n_s_r); if (unlikely(!__pyx_tuple__79)) __PYX_ERR(0, 2254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__79);
   __Pyx_GIVEREF(__pyx_tuple__79);
-  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(2, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__79, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_rnaseq_utils_pyx, __pyx_n_s_generate_subchunks, 2177, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 2177, __pyx_L1_error)
+  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(2, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__79, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_rnaseq_utils_pyx, __pyx_n_s_generate_subchunks, 2254, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 2254, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_RNAseqMapping(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
@@ -75286,6 +75808,7 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_13_rnaseq_utils_BAMobject.get_splice_info = (PyObject *(*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, PyObject *, PyObject *, PyObject *, int, struct __pyx_opt_args_13_rnaseq_utils_9BAMobject_get_splice_info *__pyx_optional_args))__pyx_f_13_rnaseq_utils_9BAMobject_get_splice_info;
   __pyx_vtable_13_rnaseq_utils_BAMobject.filter_labels_by_softclip_length = (__pyx_ctuple_int__and_int__and_int (*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, int, int, int, int, int))__pyx_f_13_rnaseq_utils_9BAMobject_filter_labels_by_softclip_length;
   __pyx_vtable_13_rnaseq_utils_BAMobject.untemplated_upstream_g = (int (*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *, PyObject *, PyObject *))__pyx_f_13_rnaseq_utils_9BAMobject_untemplated_upstream_g;
+  __pyx_vtable_13_rnaseq_utils_BAMobject.softclipped_polya = (__pyx_ctuple_int__and_int (*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *, PyObject *, PyObject *))__pyx_f_13_rnaseq_utils_9BAMobject_softclipped_polya;
   __pyx_vtable_13_rnaseq_utils_BAMobject.restore_terminal_mismatches = (void (*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, int, int, int, PyObject *))__pyx_f_13_rnaseq_utils_9BAMobject_restore_terminal_mismatches;
   __pyx_vtable_13_rnaseq_utils_BAMobject.matches_masking_sequence = (int (*)(struct __pyx_obj_13_rnaseq_utils_BAMobject *, PyObject *, int, int, PyObject *, int))__pyx_f_13_rnaseq_utils_9BAMobject_matches_masking_sequence;
   if (PyType_Ready(&__pyx_type_13_rnaseq_utils_BAMobject) < 0) __PYX_ERR(0, 1722, __pyx_L1_error)
@@ -75333,7 +75856,7 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_type_13_rnaseq_utils___pyx_scope_struct_2_parse_MD_string.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
   __pyx_ptype_13_rnaseq_utils___pyx_scope_struct_2_parse_MD_string = &__pyx_type_13_rnaseq_utils___pyx_scope_struct_2_parse_MD_string;
-  if (PyType_Ready(&__pyx_type_13_rnaseq_utils___pyx_scope_struct_3_read_generator) < 0) __PYX_ERR(0, 2104, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_13_rnaseq_utils___pyx_scope_struct_3_read_generator) < 0) __PYX_ERR(0, 2181, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_13_rnaseq_utils___pyx_scope_struct_3_read_generator.tp_print = 0;
   #endif
@@ -75341,7 +75864,7 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_type_13_rnaseq_utils___pyx_scope_struct_3_read_generator.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
   __pyx_ptype_13_rnaseq_utils___pyx_scope_struct_3_read_generator = &__pyx_type_13_rnaseq_utils___pyx_scope_struct_3_read_generator;
-  if (PyType_Ready(&__pyx_type_13_rnaseq_utils___pyx_scope_struct_4_generate_subchunks) < 0) __PYX_ERR(0, 2177, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_13_rnaseq_utils___pyx_scope_struct_4_generate_subchunks) < 0) __PYX_ERR(0, 2254, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_13_rnaseq_utils___pyx_scope_struct_4_generate_subchunks.tp_print = 0;
   #endif
@@ -76177,43 +76700,43 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_MD_string, __pyx_t_1) < 0) __PYX_ERR(0, 1553, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2104
+  /* "_rnaseq_utils.pyx":2181
  *         return False
  * 
  * def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):             # <<<<<<<<<<<<<<
  *     """Yields a contiguous chunk of reads from the input file
  *     separated on either side by a gaps > max_gap"""
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_29read_generator, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2104, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_29read_generator, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_read_generator, __pyx_t_1) < 0) __PYX_ERR(0, 2104, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_read_generator, __pyx_t_1) < 0) __PYX_ERR(0, 2181, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2177
+  /* "_rnaseq_utils.pyx":2254
  *     fileconn.close()
  * 
  * def generate_subchunks(list list_of_reads, list split_positions):             # <<<<<<<<<<<<<<
  *     cdef:
  *         RNAseqMapping read
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_32generate_subchunks, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2177, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13_rnaseq_utils_32generate_subchunks, NULL, __pyx_n_s_rnaseq_utils); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_subchunks, __pyx_t_1) < 0) __PYX_ERR(0, 2177, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_subchunks, __pyx_t_1) < 0) __PYX_ERR(0, 2254, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_rnaseq_utils.pyx":2255
+  /* "_rnaseq_utils.pyx":2332
  *     return False
  * 
  * cpdef list get_gaps(np.ndarray[float, ndim=1] array, int maxgap, threshold = float(1)):             # <<<<<<<<<<<<<<
  *     """Returns True if no gap longer than maxgap in the array falls below the threshold"""
  *     cdef Py_ssize_t i, l
  */
-  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2255, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2332, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__53 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2255, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyNumber_Float(__pyx_int_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2332, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__53 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
@@ -79018,73 +79541,6 @@ static CYTHON_INLINE int __Pyx_DelItemInt_Fast(PyObject *o, Py_ssize_t i,
     }
 #endif
     return __Pyx_DelItem_Generic(o, PyInt_FromSsize_t(i));
-}
-
-/* PyIntCompare */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_EqObjC(PyObject *op1, PyObject *op2, CYTHON_UNUSED long intval, CYTHON_UNUSED long inplace) {
-    if (op1 == op2) {
-        Py_RETURN_TRUE;
-    }
-    #if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_CheckExact(op1))) {
-        const long b = intval;
-        long a = PyInt_AS_LONG(op1);
-        if (a == b) Py_RETURN_TRUE; else Py_RETURN_FALSE;
-    }
-    #endif
-    #if CYTHON_USE_PYLONG_INTERNALS
-    if (likely(PyLong_CheckExact(op1))) {
-        int unequal;
-        unsigned long uintval;
-        Py_ssize_t size = Py_SIZE(op1);
-        const digit* digits = ((PyLongObject*)op1)->ob_digit;
-        if (intval == 0) {
-            if (size == 0) Py_RETURN_TRUE; else Py_RETURN_FALSE;
-        } else if (intval < 0) {
-            if (size >= 0)
-                Py_RETURN_FALSE;
-            intval = -intval;
-            size = -size;
-        } else {
-            if (size <= 0)
-                Py_RETURN_FALSE;
-        }
-        uintval = (unsigned long) intval;
-#if PyLong_SHIFT * 4 < SIZEOF_LONG*8
-        if (uintval >> (PyLong_SHIFT * 4)) {
-            unequal = (size != 5) || (digits[0] != (uintval & (unsigned long) PyLong_MASK))
-                 | (digits[1] != ((uintval >> (1 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[2] != ((uintval >> (2 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[3] != ((uintval >> (3 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[4] != ((uintval >> (4 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK));
-        } else
-#endif
-#if PyLong_SHIFT * 3 < SIZEOF_LONG*8
-        if (uintval >> (PyLong_SHIFT * 3)) {
-            unequal = (size != 4) || (digits[0] != (uintval & (unsigned long) PyLong_MASK))
-                 | (digits[1] != ((uintval >> (1 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[2] != ((uintval >> (2 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[3] != ((uintval >> (3 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK));
-        } else
-#endif
-#if PyLong_SHIFT * 2 < SIZEOF_LONG*8
-        if (uintval >> (PyLong_SHIFT * 2)) {
-            unequal = (size != 3) || (digits[0] != (uintval & (unsigned long) PyLong_MASK))
-                 | (digits[1] != ((uintval >> (1 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK)) | (digits[2] != ((uintval >> (2 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK));
-        } else
-#endif
-#if PyLong_SHIFT * 1 < SIZEOF_LONG*8
-        if (uintval >> (PyLong_SHIFT * 1)) {
-            unequal = (size != 2) || (digits[0] != (uintval & (unsigned long) PyLong_MASK))
-                 | (digits[1] != ((uintval >> (1 * PyLong_SHIFT)) & (unsigned long) PyLong_MASK));
-        } else
-#endif
-            unequal = (size != 1) || (((unsigned long) digits[0]) != (uintval & (unsigned long) PyLong_MASK));
-        if (unequal == 0) Py_RETURN_TRUE; else Py_RETURN_FALSE;
-    }
-    #endif
-    if (PyFloat_CheckExact(op1)) {
-        const long b = intval;
-        double a = PyFloat_AS_DOUBLE(op1);
-        if ((double)a == (double)b) Py_RETURN_TRUE; else Py_RETURN_FALSE;
-    }
-    return (
-        PyObject_RichCompare(op1, op2, Py_EQ));
 }
 
 /* py_dict_values */

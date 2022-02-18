@@ -155,7 +155,6 @@ condense_parser.set_defaults(object='Condenser')
 ### elr_to_bed.py ###
 elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)
 elr_to_bed_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
-elr_to_bed_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
 elr_to_bed_parser.add_argument("INPUT", help='Input ELR file')
 elr_to_bed_parser.set_defaults(object='ELRtoBEDconverter')
 
