@@ -938,7 +938,7 @@ cdef class Locus:
         # Check flowthrough across all starts/ends
         # Use self.frag_strand_ratios to assign non-stranded reads to strand-specific flowthroughs
         number_of_frags = len(self.frags)
-        discard_frags = np.zeros((2,number_of_frags), dtype=np.bool)
+        discard_frags = np.zeros((2,number_of_frags), dtype=bool)
         maxgap = self.extend
         nonterminal_frags = [(frag,span) for frag,span in enumerate(self.frags) if span[0] not in self.SPbp|self.EMbp and span[1] not in self.SMbp|self.EPbp]
         for frag,span in nonterminal_frags:
@@ -1175,7 +1175,7 @@ cdef class Locus:
         
         # self.exc = {i:set(np.where(self.overlap[i,:]==-1)[0]) for i in range(self.overlap.shape[0])}
         # cc = strandedComponents(self.adj, self.strand_array)
-        # component_bool = np.zeros((self.membership.shape[0], cc.c), dtype=np.bool)
+        # component_bool = np.zeros((self.membership.shape[0], cc.c), dtype=bool)
         # for c in cc.pc:
         #     indices = cc.component_plus==c
         #     prior_overlap = np.any(component_bool[indices,:c],axis=0)
@@ -1478,7 +1478,7 @@ cdef class simplifyDFS():
         self.CO = {} # Outgroups of each component
         self.CX = {} # Exclusions of each component
         self.vertices = len(self.O.keys())
-        self.visited = np.zeros(self.vertices, dtype=np.bool)
+        self.visited = np.zeros(self.vertices, dtype=bool)
         self.component = np.full(self.vertices, -1, dtype=np.int32)
         self.pre = np.zeros(self.vertices, dtype=np.int32)
         self.post = np.zeros(self.vertices, dtype=np.int32)
@@ -1600,13 +1600,15 @@ cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[cha
     
     if shared == info_a:
         horiz = 2
-    elif shared == info_b:
-        vert = 2
     else:
         horiz = int(overlapping and a_to_b > 0)
-        vert = int(overlapping and b_to_a > 0)
 
-    return (horiz, vert) 
+    if shared == info_b:
+        vert = 2
+    else:
+        vert = int(overlapping and b_to_a > 0)
+    
+    return (horiz, vert)
 
 cpdef np.ndarray calculate_overlap_matrix(np.ndarray[char, ndim=2] membership_matrix, np.ndarray information_content, np.ndarray strand_array):
     """Given a matrix of membership values (1, 0, or -1; see self.build_membership_matrix),
