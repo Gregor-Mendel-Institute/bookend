@@ -523,7 +523,7 @@ cdef bint reads_are_reversed(int trimtype1, int trimtype2):
     return False
 
 
-cdef str trim_readstring(str readstring, int pos, int trimtype, bint qual=False):
+cdef str trim_readstring(str readstring, int pos, int trimtype, bint qual=False, bint reverse=False):
     """Executes the trimming of a read given the type of trim (S5,S3,E5,E3)
     and the trimming position. Orients read in sense to the RNA strand.
     If pair, then the reverse complement is returned."""
@@ -543,7 +543,13 @@ cdef str trim_readstring(str readstring, int pos, int trimtype, bint qual=False)
             else:
                 trim = rc(trim)
     else: # No possible trimming arrangements were provided
-        return readstring
+        if reverse:
+            if qual:
+                return readstring[::-1]
+            else:
+                return rc(readstring)
+        else:
+            return readstring
     
     return trim
 
@@ -593,10 +599,7 @@ cdef str get_label(str readstring, int pos, int trimtype):
     return label
 
 cdef bint is_flipped(int trimtype):
-    if trimtype == 1 or trimtype == 2:
-        return True
-    else:
-        return False
+    return trimtype == 1 or trimtype == 2
 
 cpdef (int, int, int) complementary_trim(
         array.array nucarray, int trimtype, 
@@ -742,12 +745,13 @@ def terminal_trim(
         int E5pos1, E5ham1, E3pos1, E3ham1, S5pos1, S5ham1, S3pos1, S3ham1
         array.array mate1array, mate2array, mate1array_rev
         str trim1, qtrm1, label1, trim2, qtrm2, label2, umilabel
-        bint flipped1, flipped2
+        bint flipped1, flipped2, reverse
     
     # Convert input strings to numeric IUPAC arrays
     mate1array = nuc_to_int(mate1, qual1, qualmask)
     mate2array = nuc_to_int(mate2, qual2, qualmask)
     umilabel = ""
+    reverse = strand == 'reverse'
     # (1) Calculate 2 possible forward trims on mate1
     pos1 = 0
     ham1 = len(mate1array)
@@ -802,8 +806,8 @@ def terminal_trim(
                         ham2 = -1
                         trimtype2 = -1
         
-        trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
-        qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
+        trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False, reverse=reverse)
+        qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True, reverse=reverse)
         umilabel = get_umilabel(mate1, pos1, trimtype1, umi, umi_range)
         label1 = get_label(mate1, pos1, trimtype1)
         flipped1 = is_flipped(trimtype1)
@@ -846,14 +850,14 @@ def terminal_trim(
                     trimtype2 = 1
 
         # Generate the trimmmed sequences that represent the best match for mate1 and mate2
-        trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False)
-        qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True)
+        trim1 = trim_readstring(mate1, pos1, trimtype1, qual=False, reverse=reverse)
+        qtrm1 = trim_readstring(qual1, pos1, trimtype1, qual=True, reverse=reverse)
         label1 = get_label(mate1, pos1, trimtype1)
         umilabel = get_umilabel(mate1, pos1, trimtype1, umi, umi_range)
         flipped1 = is_flipped(trimtype1)
         
-        trim2 = trim_readstring(mate2, pos2, trimtype2, qual=False)
-        qtrm2 = trim_readstring(qual2, pos2, trimtype2, qual=True)
+        trim2 = trim_readstring(mate2, pos2, trimtype2, qual=False, reverse=reverse)
+        qtrm2 = trim_readstring(qual2, pos2, trimtype2, qual=True, reverse=reverse)
         label2 = get_label(mate2, pos2, trimtype2)
         if len(umilabel) == 0:
             umilabel = get_umilabel(mate2, pos2, trimtype2, umi, umi_range)
@@ -868,8 +872,8 @@ def terminal_trim(
             # Check for complement of mate1's trim
             posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
             if trimtypeC != -1: # The complement putatively exists
-                trimC = trim_readstring(mate2, posC, trimtypeC, qual=False)
-                qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True)
+                trimC = trim_readstring(mate2, posC, trimtypeC, qual=False, reverse=reverse)
+                qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True, reverse=reverse)
                 if len(umilabel) == 0:
                     umilabel = get_umilabel(mate2, posC, trimtypeC, umi, umi_range)
                 
@@ -908,8 +912,8 @@ def terminal_trim(
             # Check for complement of mate2's trim
             posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
             if trimtypeC != -1: # The complement putatively exists
-                trimC = trim_readstring(mate1, posC, trimtypeC, qual=False)
-                qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True)
+                trimC = trim_readstring(mate1, posC, trimtypeC, qual=False, reverse=reverse)
+                qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True, reverse=reverse)
                 if len(umilabel) == 0:
                     umilabel = get_umilabel(mate1, posC, trimtypeC, umi, umi_range)
                 
