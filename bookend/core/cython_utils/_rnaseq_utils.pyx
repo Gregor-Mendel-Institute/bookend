@@ -22,6 +22,7 @@ cdef class RNAseqMapping():
     cdef public dict attributes
     cdef public (int, int) span
     cdef public float weight, coverage
+    cdef public (float, float, float) tripleweight
     def __init__(self, input_data, attributes = None):
         """Initializes a Read Object given a tuple of input data.
         Requires a chromosome, strand, source, weight, a sorted tuple of
@@ -38,7 +39,6 @@ cdef class RNAseqMapping():
         else:
             self.s_tag, self.e_tag, self.capped = input_data.s_tag, input_data.e_tag, input_data.capped
         
-        self.weight = float(input_data.weight)
         self.span = (self.left(), self.right())
         self.complete = False
         if self.s_tag and self.e_tag and False not in self.splice:
@@ -48,6 +48,17 @@ cdef class RNAseqMapping():
             self.attributes = attributes
         else:
             self.attributes = {}
+        
+        if '|' in str(input_data.weight):
+            tripleweight = tuple(float(s) for s in str(input_data.weight).split('|'))
+            self.weight = tripleweight[0]
+            self.attributes['E.reads'] = tripleweight[2]
+            if self.capped:
+                self.attributes['S.capped'] = tripleweight[1]
+            else:
+                self.attributes['S.reads'] = tripleweight[1]
+        else:
+            self.weight = float(input_data.weight)
     
     def __eq__(self, other): return self.span == other.span
     def __gt__(self, other): return self.span > other.span
@@ -360,11 +371,12 @@ cdef class RNAseqMapping():
         
         return ''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar])
     
-    cpdef write_as_elr(self, bint as_string=True, bint record_artifacts=False, bint condense=False):
+    cpdef write_as_elr(self, bint as_string=True, bint record_artifacts=False, bint condense=False, bint endweights=False):
         """Returns a string that represents the ReadObject
         in the end-labeled read (ELR) format"""
-        cdef str elr_strand, labels
+        cdef str elr_strand, labels, weightstring
         cdef list block_ends, elr_line
+        endweights = endweights or condense
         elr_strand = '.'
         if self.strand == 1:
             elr_strand = '+'
@@ -376,7 +388,16 @@ cdef class RNAseqMapping():
         labels = self.get_node_labels(record_artifacts, condense)
         EL_CIGAR = ''.join([str(a)+str(b) for a,b in zip(labels,lengths+[''])])
         read_len = self.right() - self.left()
-        elr_line = [self.chrom, self.left(), read_len, elr_strand, EL_CIGAR, self.source, round(self.weight,2)]
+        if endweights:
+            weightstring = '{}|{}|{}'.format(
+                round(self.weight,2),
+                round(float(self.attributes.get('S.reads', 0))+float(self.attributes.get('S.capped', 0)),2),
+                round(float(self.attributes.get('E.reads', 0)),2)
+            )
+        else:
+            weightstring = str(round(self.weight,2))
+        
+        elr_line = [self.chrom, self.left(), read_len, elr_strand, EL_CIGAR, self.source, weightstring]
         if as_string:
             return '\t'.join([str(i) for i in elr_line])
         else:
@@ -1240,7 +1261,6 @@ cdef parse_ELR_line(str elr_line):
     
     chrom = int(chrom_num)
     source = int(source_num)
-    weight = round(float(weight_string),2)
     startpos = int(chromStart)
     label_indices = [i for i,character in enumerate(EL_CIGAR) if not character.isdigit()]
     feature_lengths = [int(EL_CIGAR[a+1:b]) for a,b in zip(label_indices[:-1],label_indices[1:])]
@@ -1274,7 +1294,7 @@ cdef parse_ELR_line(str elr_line):
     e_tag = first == 'E' or last == 'E'
     
     # chrom source strand ranges splice s_tag e_tag capped weight
-    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, condensed)
+    return ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight_string, condensed)
 
 cpdef list get_sources(list list_of_reads):
     cdef:
@@ -1294,7 +1314,7 @@ cpdef dict get_source_dict(list list_of_sources):
     source_lookup = dict(zip(sources, range(len(sources))))
     return source_lookup
 
-cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=False, bint splice=True):
+cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attributes=True, bint splice=True):
     """Stores a numpy array of feature-specific coverage depth for the read list.
     Populates an 11-row matrix:
     S+  E+  D+  A+  S-  E-  D-  A-  cov+  cov-  cov?
@@ -1318,11 +1338,11 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
             weight = read.weight
             s_weight = float(read.attributes.get('S.reads', weight))
             e_weight = float(read.attributes.get('E.reads', weight))
-            c_weight = float(read.attributes.get('C.reads', weight))
+            c_weight = float(read.attributes.get('S.capped', weight))
         else:
-            weight = s_weight = e_weight = c_weight = read.weight
+            weight, s_weight, e_weight, c_weight = read.weight, read.weight, read.weight, read.weight
             if read.condensed:
-                s_weight = e_weight = c_weight = 1
+                s_weight, e_weight, c_weight = 1, 1, 1
         
         if read.strand == 1:
             covrow = covp
@@ -1376,6 +1396,65 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
             depth_matrix[covrow, l:r] += weight
         
     return depth_matrix, J_plus, J_minus
+
+cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype='', int strand=0):
+    """Returns a list of bedgraph lines from an array of height values."""
+    cdef:
+        int p, lastp
+        float v, lastv
+        str output = ''
+        np.ndarray coverage, positions, values
+        bint contiguous
+    
+    if seqtype.upper() == 'COV' or seqtype == '':
+        contiguous = True
+        coverage = np.sum(depth_matrix[-3:,:], axis=0)
+    elif seqtype.upper() == '5P':
+        contiguous = False
+        if strand == 1:
+            coverage = np.sum(depth_matrix[[0,4],:], axis=0)
+        elif strand == -1:
+            coverage = np.sum(depth_matrix[[2,5],:], axis=0)
+        else:
+            return output
+    elif seqtype.upper() == 'S':
+        contiguous = False
+        if strand == 1:
+            coverage = depth_matrix[0,:]
+        elif strand == -1:
+            coverage = depth_matrix[2,:]
+        else:
+            return output
+    elif seqtype.upper() == 'C':
+        contiguous = False
+        if strand == 1:
+            coverage = depth_matrix[4,:]
+        elif strand == -1:
+            coverage = depth_matrix[5,:]
+        else:
+            return output
+    elif seqtype.upper() in ['E', '3P']:
+        contiguous = False
+        if strand == 1:
+            coverage = depth_matrix[1,:]
+        elif strand == -1:
+            coverage = depth_matrix[3,:]
+        else:
+            return output
+    
+    positions = np.where(np.append(coverage[0],np.diff(coverage)) != 0)[0]
+    values = coverage[positions]
+    lastp, lastv = -1, 0
+    for p,v in zip(positions, values):
+        if lastp >= 0 and lastv != 0:
+            output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, lastv)
+        
+        lastp, lastv = p, v
+    
+    if lastv != 0 and lastp >= 0:
+        output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, lastv)
+    
+    return output
 
 cdef str span_to_string((int, int) span):
     """Converts a tuple of two ints to a string connected by ':'"""
@@ -2186,7 +2265,7 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     cdef float read_weight, span_weight, current_cov
     cdef set covered_positions
     cdef list passed_positions
-    if file_type == 'elr':
+    if file_type in ['elr','elr.gz']:
         add_read = dataset.add_read_from_ELR
     elif file_type == 'bed':
         add_read = dataset.add_read_from_BED

@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import argparse
-from argparse import RawTextHelpFormatter
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -19,7 +18,8 @@ Subcommands (use -h/--help for more info):
     assemble (Assemble transcripts from aligned end-labeled reads)
     condense (Partial assembly that leaves keeps all fragments; use for meta-assembly)
     classify (Compare an assembly to the transcripts of a reference annotation)
-    
+    bedgraph (Write a coverage Bedgraph file of end-labeled reads)
+
     --end-labeled read (ELR) operations--
     elr-sort
     elr-subset
@@ -40,7 +40,7 @@ Subcommands (use -h/--help for more info):
 
 
 desc = 'Functions for end-guided assembly of RNA-seq data.'
-main_parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
+main_parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
 main_parser.set_defaults(object='Helper')
 subparsers = main_parser.add_subparsers(title='subcommands',description='Choose a command to run',help='Supported subcommands:')
 
@@ -85,6 +85,14 @@ assemble_parser.add_argument("--require_cap", dest='REQUIRE_CAP', default=False,
 assemble_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each assembly in stdout.")
 assemble_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR filepath(s). MUST be coordinate-sorted.")
 assemble_parser.set_defaults(object='Assembler')
+
+### bedgraph.py ###
+bedgraph_parser = subparsers.add_parser('bedgraph',help="Produces a Bedgraph file from an end-labeled read (ELR) file.")
+bedgraph_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend.bedgraph', help="Bedgraph destination file.")
+bedgraph_parser.add_argument('-t','--type', dest='TYPE', choices=['','COV','5P','3P','S', 'E', 'C'], type=str, default='COV', help="Coverage type: filters Bedgraph output by read label. Default all")
+bedgraph_parser.add_argument('-s','--strand', dest='STRAND', type=str, choices=['.','+','-'], default='.', help="Strand (-|+|.), default . (unstranded)")
+bedgraph_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR filepath(s). MUST be coordinate-sorted.")
+bedgraph_parser.set_defaults(object='Bedgrapher')
 
 ### bam_to_elr.py ###
 bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)

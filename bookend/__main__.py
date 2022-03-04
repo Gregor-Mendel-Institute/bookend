@@ -7,11 +7,6 @@
     End-guided transcript assembly
     for short and long read RNA-seq
 """
-
-import argparse
-import os
-import sys
-
 from .core.argument_parsers import main_parser as parser
 from .__init__ import __version__,__updated__,__date__
 
@@ -24,6 +19,9 @@ def import_object(object_name):
     if object_name == 'Assembler':
         from .core.assemble import Assembler
         objectClass = Assembler
+    elif object_name == 'Bedgrapher':
+        from .core.bedgraph import Bedgrapher
+        objectClass = Bedgrapher
     elif object_name == 'Helper':
         from .core.argument_parsers import Helper
         objectClass = Helper
