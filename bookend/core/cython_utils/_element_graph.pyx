@@ -791,10 +791,14 @@ cdef class ElementGraph:
         
         # Get rid of assigned elements that are no longer compatible after the change
         remove = set()
+        path.trimmed_bases = 0
         for i in path.includes|path.contains:
             element = self.elements[i]
             if not element.compatible(path):
                 remove.add(i)
+                self.assignments[i] = -1
+                path.trimmed_bases += element.bases
+                self.bases -= element.bases
         
         path.includes.difference_update(remove)
         path.contains.difference_update(remove)
@@ -810,7 +814,8 @@ cdef class ElementGraph:
         # Assign each included element to the path
         for existing_path in self.paths:
             if path.compatible(existing_path):
-                return 0
+                # The new assembly is a duplicate of an existing assembly
+                return path.trimmed_bases
         
         for i in range(self.number_of_elements):
             element = self.elements[i]
@@ -828,7 +833,7 @@ cdef class ElementGraph:
         path.index = len(self.paths)
         self.paths.append(path)
         self.assign_weights()
-        return novel_bases
+        return novel_bases + path.trimmed_bases
     
     cpdef void remove_paths(self, list indices):
         """Removes all trace of a path from paths."""
@@ -876,7 +881,7 @@ cdef class Element:
     """Represents a read or collection of reads in a Locus."""
     cdef public int index, length, IC, maxIC, left, right, number_of_elements, number_of_members, LM, RM
     cdef public char strand
-    cdef public float cov, bases, bottleneck_weight
+    cdef public float cov, bases, bottleneck_weight, trimmed_bases
     cdef public set members, nonmembers, ingroup, outgroup, contains, contained, excludes, includes, end_indices, covered_indices, bottleneck, assigned_to
     cdef public np.ndarray frag_len, source_weights, member_weights, all
     cdef public bint complete, s_tag, e_tag, empty, is_spliced, has_gaps
@@ -903,6 +908,7 @@ cdef class Element:
         self.outgroup = set()                         # Set of Compatible downstream Elements
         self.contains = set()
         self.contained = set()
+        self.trimmed_bases = 0
         self.all = np.ones(shape=self.source_weights.shape[0], dtype=np.float32)
         if index == -1:                               # Special Element emptyPath: placeholder for null values
             self.empty = True
