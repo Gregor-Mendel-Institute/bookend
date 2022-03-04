@@ -4,9 +4,9 @@
 import sys
 import time
 import os
+import gzip
 import bookend.core.cython_utils._rnaseq_utils as ru
-import bookend.core.cython_utils._assembly_utils as au
-import copy
+from bookend.core.cython_utils._assembly_utils import Locus
 from bookend.core.elr_sort import ELRsorter
 
 if __name__ == '__main__':
@@ -40,9 +40,12 @@ class Condenser:
         if self.input_is_valid(self.input):
             self.file_type = self.file_extension(self.input)
             self.dataset = ru.RNAseqDataset()
-            self.input_file = open(self.input)
+            if self.file_type == 'elr.gz':
+                self.input_file = gzip.open(self.input, 'rt')
+            else:
+                self.input_file = open(self.input, 'r')
         else:
-            print("\nERROR: input file must be a valid format (BED, ELR, BAM, SAM).")
+            print("\nERROR: input file must be a valid format (ELR, BED).")
             sys.exit(1)
         
         self.output_type = 'elr'
@@ -62,7 +65,7 @@ class Condenser:
     def output_transcripts(self, transcript):
         """Writes the RNAseqMapping object 'transcript' to an output stream,
         formatted as output_type."""
-        output_line = transcript.write_as_elr(condense=self.sparse)
+        output_line = transcript.write_as_elr(condense=self.sparse, endweights=True)
         self.output_temp.write(output_line+'\n')
     
     def dump_starts(self, locus):
@@ -107,7 +110,7 @@ class Condenser:
         if len(chunk) >= 1:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
-            locus = au.Locus(
+            locus = Locus(
                 chrom=chrom, 
                 chunk_number=self.chunk_counter, 
                 list_of_reads=chunk, 
@@ -176,10 +179,12 @@ class Condenser:
         split_name = filename.split('.')
         if len(split_name) == 1:
             return None
+        elif split_name[-1].lower() == 'gz':
+            return '.'.join([n.lower() for n in split_name[-2:]])
         else:
             return split_name[-1].lower()
     
-    def input_is_valid(self, filename, valid_formats=['elr']):
+    def input_is_valid(self, filename, valid_formats=['elr', 'bed', 'elr.gz']):
         """Boolean if the file is a format that Assembler can parse."""
         if self.file_extension(filename) in valid_formats:
             return True

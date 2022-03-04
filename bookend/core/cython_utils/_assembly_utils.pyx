@@ -6,7 +6,7 @@ import copy
 import json
 from bookend.core.cython_utils._element_graph import ElementGraph
 import bookend.core.cython_utils._rnaseq_utils as ru # RNAseqMapping, ELdata, range_of_reads, get_gaps, get_source_dict, build_depth_matrix
-from collections import deque, Counter
+from collections import Counter
 import cython
 import time
 
@@ -39,6 +39,7 @@ cdef class EndRange:
     
     def add(self, int position, float weight, bint capped=False):
         self.positions[position] += weight
+        self.weight += weight*(not capped)
         self.capped += weight*capped
     
     cpdef (int, int) span(self):
@@ -62,7 +63,7 @@ cdef class Locus:
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=False, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=True, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -1296,8 +1297,8 @@ cdef class Locus:
         
         for T in self.transcripts:
             T.attributes['length'] = T.get_length()
-            S_info = {'S.reads':0, 'S.capped':0, 'S.left':0, 'S.right':0}
-            E_info = {'E.reads':0, 'E.left':0, 'E.right':0}
+            S_info = {'S.reads':T.attributes.get('S.reads',0), 'S.capped':T.attributes.get('S.capped',0), 'S.left':0, 'S.right':0}
+            E_info = {'E.reads':T.attributes.get('E.reads',0), 'E.left':0, 'E.right':0}
             
             if T.strand != 0:
                 if T.strand == 1:
@@ -1320,8 +1321,11 @@ cdef class Locus:
                     if S is not self.nullRange:
                         s_pos = S.peak
                         span = S.span()
-                        S_info['S.reads'] = round(sum(S.positions.values()),1)
-                        S_info['S.capped'] = round(S.capped,1)
+                        if S_info['S.reads'] == 0:S_info['S.reads'] = round(sum(S.positions.values()),1)
+                        if S_info['S.capped'] == 0:
+                            S_info['S.capped'] = round(S.capped,1)
+                            S_info['S.reads'] += -(S_info['S.capped']*(self.cap_bonus-1))
+                        
                         S_info['S.left'] = span[0] + self.leftmost
                         S_info['S.right'] = span[1] + self.leftmost + 1
                         if s_pos != first: # S pos was replaced
@@ -1335,7 +1339,7 @@ cdef class Locus:
                     if E is not self.nullRange:
                         e_pos = E.peak
                         span = E.span()
-                        E_info['E.reads'] = round(sum(E.positions.values()),1)
+                        if E_info['E.reads'] == 0:E_info['E.reads'] = round(sum(E.positions.values()),1)
                         E_info['E.left'] = span[0] + self.leftmost
                         E_info['E.right'] = span[1] + self.leftmost + 1
                         if e_pos != last: # S pos was replaced
@@ -1385,7 +1389,7 @@ cdef class Locus:
         cdef list ranges, splice, members, output
         cdef (int, int) frag, exon
         cdef set nonmembers
-        cdef str gene_id, transcript_id, junction_hash
+        cdef str gene_id, transcript_id, junction_hash, weight_string
         cdef dict junctions
         cdef EndRange S, E
         output = []
@@ -1453,9 +1457,9 @@ cdef class Locus:
         s_tag = element.s_tag
         e_tag = element.e_tag
         capped = False
-        weight = np.sum(element.source_weights)
+        weight_string = str(round(np.sum(element.source_weights),2))
         elementAttributes = {}
-        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight, False)
+        elementData = ru.ELdata(chrom, source, strand, ranges, splice, s_tag, e_tag, capped, weight_string, False)
         readObject = ru.RNAseqMapping(elementData, elementAttributes)
         readObject.attributes['gene_id'] = gene_id
         readObject.attributes['transcript_id'] = transcript_id
@@ -1607,8 +1611,8 @@ cpdef (char,char) get_overlap(np.ndarray[char, ndim=1] members_a, np.ndarray[cha
         vert = 2
     else:
         vert = int(overlapping and b_to_a > 0)
-    
-    return (horiz, vert)
+
+    return (horiz, vert) 
 
 cpdef np.ndarray calculate_overlap_matrix(np.ndarray[char, ndim=2] membership_matrix, np.ndarray information_content, np.ndarray strand_array):
     """Given a matrix of membership values (1, 0, or -1; see self.build_membership_matrix),

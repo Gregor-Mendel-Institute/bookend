@@ -11,6 +11,8 @@ class ELRsorter:
         self.input = args['INPUT']
         self.output = args['OUT']
         self.force = args['FORCE']
+        self.strand_sort_values = {'+':-1, '.':0, '-':1}
+        self.strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
         self.read_tuples = []
         self.sortsize = 5000000
         self.linecount = 0
@@ -84,27 +86,54 @@ class ELRsorter:
         self.read_tuples.sort(reverse=True)
         if len(self.read_tuples) > 0:
             read_tuple = self.read_tuples.pop()
-            weight = -read_tuple[6]
+            weights = [float(w) for w in read_tuple[6].split('|')]
+            if len(weights) == 1:
+                weights += [0, 0]
+            
             while self.read_tuples:
                 next_tuple = self.read_tuples.pop()
                 if next_tuple[:6] == read_tuple[:6]:
-                    weight += -next_tuple[6]
+                    new_weights = [float(w) for w in read_tuple[6].split('|')]
+                    if len(new_weights) == 1:
+                        new_weights += [0, 0]
+                    
+                    weights = [weights[0]+new_weights[0], weights[1]+new_weights[1], weights[2]+new_weights[2]]
                     continue
                 else:
-                    line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
+                    if weights[1]==0 and weights[2]==0:
+                        outweight = str(round(weights[0],2))
+                    else:
+                        outweight = '{}|{}|{}'.format(round(weights[0],2), round(weights[1],2), round(weights[2],2))
+                    
+                    line = '{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                        read_tuple[0],read_tuple[1],read_tuple[2],
+                        self.strand_reverse_values[read_tuple[3]],
+                        read_tuple[4],read_tuple[5],outweight
+                    )
                     self.output_line(line, tmpfile)
                     self.outlinecount += 1
                     read_tuple = next_tuple
-                    weight = -read_tuple[6]
+                    weights = [float(w) for w in read_tuple[6].split('|')]
+                    if len(weights) == 1:
+                        weights += [0, 0]
             
-            line = '\t'.join(str(i) for i in read_tuple[:6])+'\t'+str(weight)
+            if weights[1]==0 and weights[2]==0:
+                outweight = str(round(weights[0],2))
+            else:
+                outweight = '{}|{}|{}'.format(round(weights[0],2), round(weights[1],2), round(weights[2],2))
+
+            line = '{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                read_tuple[0],read_tuple[1],read_tuple[2],
+                self.strand_reverse_values[read_tuple[3]],
+                read_tuple[4],read_tuple[5],outweight
+            )
             self.output_line(line, tmpfile)
             self.outlinecount += 1
 
     def add_read_tuple(self, elr_line):
         l = elr_line.rstrip().split('\t')
         # parse the line as a tuple of sortable values
-        read_tuple = (int(l[0]), int(l[1]), int(l[2]), l[3], l[4], int(l[5]), -float(l[6]))
+        read_tuple = (int(l[0]), int(l[1]), int(l[2]), self.strand_sort_values[l[3]], l[4], int(l[5]), l[6])
         self.read_tuples.append(read_tuple)
     
     def output_line(self, line, tmpfile=None):

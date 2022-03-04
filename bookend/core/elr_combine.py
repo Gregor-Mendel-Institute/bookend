@@ -3,10 +3,10 @@
 
 import os
 import sys
-import argparse
+import gzip
 import resource
 from math import ceil
-import bookend.core.cython_utils._rnaseq_utils as ru
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset
 from bookend.core.cython_utils._pq import IndexMinPQ
 if __name__ == '__main__':
     sys.path.append('../../bookend')
@@ -67,15 +67,13 @@ class ELRcombiner:
         strand = self.strand_sort_values[split_line[3]]
         elcigar = split_line[4]
         source = int(self.dataset.source_dict[self.file_headers[index]['source'][split_line[5]]])
-        weight = -float(split_line[6])
+        weight = split_line[6]
         self.linecount += 1
-        self.readcount += -weight
         return (chrom, start, length, strand, elcigar, source, weight)
     
     def sortable_tuple_to_read(self, sortable_tuple):
         l = list(sortable_tuple)
-        l[3] = self.strand_reverse_values[l[3]]    
-        l[6] = -l[6]
+        l[3] = self.strand_reverse_values[l[3]]
         return '\t'.join([str(i) for i in l])
     
     def output_line(self, line, output):
@@ -100,7 +98,7 @@ class ELRcombiner:
         file_number = len(file_list)
         temp_list = []
         if file_list is self.input:
-            if not all([i[-3:].lower()=='elr' for i in self.input]):
+            if not all([i.lower().endswith('.elr') or i.lower().endswith('.elr.gz') for i in self.input]):
                 print("\nERROR: all input files must be ELR format.")
                 sys.exit(1)
         
@@ -116,9 +114,9 @@ class ELRcombiner:
                     tempfile = open(tempname,'w')
                     for c in self.combine_files(chunk, tempfile):pass
                 
-                files = [open(f) for f in temp_list]
+                files = [open(f,'r') for f in temp_list]
             else:
-                files = [open(f) for f in file_list]
+                files = [open(f,'r') if f.lower().endswith('.elr') else gzip.open(f,'rt') for f in file_list]
         elif file_list is None:
             print("\nERROR: requires ELR file as input.")
             sys.exit(1)
@@ -145,7 +143,7 @@ class ELRcombiner:
             set_of_sources.update(h['source'].values())
         
         self.merged_sources = sorted(list(set_of_sources))
-        self.dataset = ru.RNAseqDataset(chrom_array=self.chroms, source_array=self.merged_sources)
+        self.dataset = RNAseqDataset(chrom_array=self.chroms, source_array=self.merged_sources)
         # Initialize the priority queue with one ELR read object from each file
         
         finished_files = 0
@@ -157,18 +155,28 @@ class ELRcombiner:
                 files[index].close()
                 finished_files += 1
         
-        for h in self.dataset.dump_header():
-            if iterator:
-                yield h
-            else:
-                self.output_line(h, output)
+        if __name__ == '__main__':
+            for h in self.dataset.dump_header():
+                if iterator:
+                    yield h
+                else:
+                    self.output_line(h, output)
         
+        last_item = None
         while finished_files < file_number: # Keep going until every line of every file is processed
             index, item = self.PQ.pop(True)
-            if iterator:
-                yield self.sortable_tuple_to_read(item)
+            if last_item is None:
+                last_item = item
+            elif last_item[:6] == item[:6]: # Items can be collapsed
+                last_item = tuple(list(last_item[:6])+[self.sum_weights(last_item[6],item[6])])
             else:
-                self.output_line(self.sortable_tuple_to_read(item), output)
+                # Items can't be collapsed, must output last_item
+                if iterator:
+                    yield self.sortable_tuple_to_read(last_item)
+                else:
+                    self.output_line(self.sortable_tuple_to_read(last_item), output)
+                
+                last_item = item
             
             next_line = files[index].readline().rstrip()
             if next_line:
@@ -178,11 +186,32 @@ class ELRcombiner:
                 files[index].close()
                 finished_files += 1
         
+        if last_item is not None:
+            if iterator:
+                yield self.sortable_tuple_to_read(last_item)
+            else:
+                self.output_line(self.sortable_tuple_to_read(last_item), output)
+        
         if len(temp_list) > 0: # Clean up temp directory
             for temp_file in temp_list:
                 os.remove(temp_file)
             
             os.rmdir(self.temp)
+    
+    def sum_weights(self, string1, string2):
+        """Adds two weight strings, returning a single string
+        of either 'float' or 'float|float|float'"""
+        w1 = [float(w) for w in string1.split('|')]
+        if len(w1) == 1:w1 += [0, 0]
+        w2 = [float(w) for w in string2.split('|')]
+        if len(w2) == 1:w2 += [0, 0]
+        weights = [w1[0]+w2[0], w1[1]+w2[1], w1[2]+w2[2]]
+        if weights[1]==0 and weights[2]==0:
+            outweight = str(round(weights[0],2))
+        else:
+            outweight = '{}|{}|{}'.format(round(weights[0],2), round(weights[1],2), round(weights[2],2))
+        
+        return outweight
     
     def display_options(self):
         """Returns a string describing all input args"""
