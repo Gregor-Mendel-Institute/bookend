@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import os
-import bookend.core.cython_utils._rnaseq_utils as ru
+import gzip
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset
 if __name__ == '__main__':
     sys.path.append('../../bookend')
     from argument_parsers import bed_to_elr_parser as parser
@@ -20,11 +20,15 @@ class ELRtoBEDconverter:
         
         self.linecount = 0
         self.readcount = 0
-        self.dataset = ru.RNAseqDataset()
+        self.dataset = RNAseqDataset()
 
     def process_input(self):
         """Yield a BED line from each line of a ELR input."""
-        elr_in = open(self.input, 'r')
+        if self.input.lower().endswith('.elr.gz'):
+            elr_in = gzip.open(self.input, 'rt')
+        else:
+            elr_in = open(self.input, 'r')
+        
         for elr_line in elr_in:
             if elr_line[0] == '#':
                 header_line = elr_line.rstrip().split(' ')
@@ -59,7 +63,7 @@ class ELRtoBEDconverter:
     
     def run(self):
         if __name__ == '__main__':print(self.display_options())
-        if not self.input.split('.')[-1].lower() in ['elr']:
+        if not (self.input.lower().endswith('.elr') or self.input.lower().endswith('.elr.gz')):
             print("ERROR: input must be in the ELR format (.elr)")
             return 1
         

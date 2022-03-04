@@ -3,10 +3,10 @@
 
 import sys
 import time
-import pysam
-import bookend.core.cython_utils._fasta_utils as fu
-import bookend.core.cython_utils._rnaseq_utils as ru
-import bookend.core.cython_utils._assembly_utils as au
+import gzip
+from pysam import AlignmentFile
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, read_generator
+from bookend.core.cython_utils._assembly_utils import Locus
 from bookend.core.elr_combine import ELRcombiner
 
 if __name__ == '__main__':
@@ -52,20 +52,23 @@ class Assembler:
             if self.input_is_valid(self.input):
                 self.file_type = self.file_extension(self.input)
                 if self.file_type in ['bam','sam']:
-                    self.input_file = pysam.AlignmentFile(self.input)
-                    self.dataset = ru.RNAseqDataset(chrom_array=self.input_file.header.references)
+                    self.input_file = AlignmentFile(self.input)
+                    self.dataset = RNAseqDataset(chrom_array=self.input_file.header.references)
+                elif self.file_type == 'elr.gz':
+                    self.dataset = RNAseqDataset()
+                    self.input_file = gzip.open(self.input, 'rt')
                 else:
-                    self.dataset = ru.RNAseqDataset()
-                    self.input_file = open(self.input)
+                    self.dataset = RNAseqDataset()
+                    self.input_file = open(self.input, 'r')
             else:
                 print("\nERROR: input file must be a valid format (BED, ELR, BAM, SAM).")
                 sys.exit(1)
         elif len(self.input) > 1: # Interleave multiple input files for assembly
-            if not all([self.input_is_valid(filename, valid_formats=['elr']) for filename in self.input]):
+            if not all([self.input_is_valid(filename, valid_formats=['elr','elr.gz']) for filename in self.input]):
                 print("\nERROR: Multi-input assembly can only be performed on position-sorted ELR files.")
                 sys.exit(1)
             
-            self.dataset = ru.RNAseqDataset()
+            self.dataset = RNAseqDataset()
             self.file_type = 'elr'
             combine_args = {
                 'INPUT':self.input,
@@ -83,7 +86,7 @@ class Assembler:
         if self.output_type is None:
             self.output_type = 'gtf'
         
-        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
+        self.generator = read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
         self.chunk_counter = 0
         self.output_file = open(self.output,'w')
     
@@ -91,7 +94,7 @@ class Assembler:
         """Writes the RNAseqMapping object 'transcript' to an output stream,
         formatted as output_type."""
         if output_type == 'elr':
-            output_line = transcript.write_as_elr()
+            output_line = transcript.write_as_elr(endweights=True)
         elif output_type == 'bed':
             output_line = transcript.write_as_bed(self.dataset.chrom_array, ['bookend'], score_column='coverage')
         elif output_type == 'gtf':
@@ -105,10 +108,10 @@ class Assembler:
         if len(chunk) > 0:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
-            locus = au.Locus(
+            locus = Locus(
                 chrom=chrom, 
                 chunk_number=self.chunk_counter, 
-                list_of_reads=chunk, 
+                list_of_reads=chunk,
                 max_gap=self.max_gap,
                 end_cluster=self.end_cluster,
                 min_overhang=self.min_overhang, 
@@ -195,10 +198,12 @@ class Assembler:
         split_name = filename.split('.')
         if len(split_name) == 1:
             return None
+        elif split_name[-1].lower() == 'gz':
+            return '.'.join([n.lower() for n in split_name[-2:]])
         else:
             return split_name[-1].lower()
     
-    def input_is_valid(self, filename, valid_formats=['bed','elr','bam','sam','gtf','gff3','gff']):
+    def input_is_valid(self, filename, valid_formats=['bed','elr','bam','sam','gtf','gff3','gff','elr.gz']):
         """Boolean if the file is a format that Assembler can parse."""
         if self.file_extension(filename) in valid_formats:
             return True
