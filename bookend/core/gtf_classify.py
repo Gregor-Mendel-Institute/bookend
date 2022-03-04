@@ -4,10 +4,7 @@
 import sys
 import copy
 import bookend.core.cython_utils._rnaseq_utils as ru
-import bookend.core.cython_utils._assembly_utils as au
-import bookend.core.cython_utils._fasta_utils as fu
-import numpy as np
-from collections import Counter, namedtuple
+from collections import namedtuple
 from math import ceil
 if __name__ == '__main__':
     sys.path.append('../../bookend')

@@ -4,9 +4,8 @@
 import sys
 import copy
 import bookend.core.cython_utils._rnaseq_utils as ru
-import bookend.core.cython_utils._assembly_utils as au
-import bookend.core.cython_utils._fasta_utils as fu
-import numpy as np
+from bookend.core.cython_utils._fasta_utils import longest_orf
+from numpy import argsort
 from collections import Counter
 from math import ceil
 if __name__ == '__main__':
@@ -104,7 +103,7 @@ class AnnotationMerger:
         and update the reference by (1) replacement iff ORF is unchanged,
         (2) isoform if no containment or if ORF changes, (3) antisense, (4) intergenic.
         Updates the list of ref_reads in-place."""
-        sort_order = np.argsort([-t.weight for t in locus.transcripts])
+        sort_order = argsort([-t.weight for t in locus.transcripts])
         counts_by_gene = Counter([read.attributes['gene_id'] for read in locus.ref_reads])
         for i in sort_order:
             ref_match = sense_match = antisense_match = -1
@@ -218,7 +217,7 @@ class AnnotationMerger:
                 self.output_file_fasta.write('>{}\n{}\n'.format(transcript.attributes['transcript_id'], fasta_sequence))
             
             if self.orf_out:
-                orf, pos, stopless = fu.longest_orf(fasta_sequence)
+                orf, pos, stopless = longest_orf(fasta_sequence)
 
                 if stopless:
                     transcript.attributes['orf_length'] = 0

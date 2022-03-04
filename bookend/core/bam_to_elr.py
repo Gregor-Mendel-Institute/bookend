@@ -7,8 +7,8 @@ import os
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
-import bookend.core.cython_utils._rnaseq_utils as ru
-import pysam
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset
+from pysam import AlignmentFile
 from bookend.core.elr_sort import ELRsorter
 from bookend.core.elr_to_bed import ELRtoBEDconverter
 
@@ -89,11 +89,11 @@ class BAMtoELRconverter:
             self.config_dict['start_seq'] = ''
             self.config_dict['end_seq'] = ''
         
-        self.bam_in = pysam.AlignmentFile(self.input)
+        self.bam_in = AlignmentFile(self.input)
         if self.source is None:
             self.source = self.bam_in.header['PG'][0]['ID']
         
-        self.dataset = ru.RNAseqDataset(
+        self.dataset = RNAseqDataset(
             chrom_array=self.bam_in.header.references, 
             chrom_lengths=list(self.bam_in.header.lengths),
             source_array=[self.source],

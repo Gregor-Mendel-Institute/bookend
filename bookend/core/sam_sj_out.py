@@ -1,15 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os
 import sys
-import argparse
-import pysam
+from pysam import AlignmentFile
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
-import bookend.core.cython_utils._fasta_utils as fu
-import bookend.core.cython_utils._rnaseq_utils as ru
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, get_flank
 from bookend.core.sj_merge import SJobject
 
 class SAMtoSJconverter:
@@ -21,8 +18,8 @@ class SAMtoSJconverter:
         self.filter = args['FILTER']
         self.input = args['INPUT']
         self.sj_dict = {}
-        self.sam_in = pysam.AlignmentFile(self.input)
-        self.dataset = ru.RNAseqDataset(
+        self.sam_in = AlignmentFile(self.input)
+        self.dataset = RNAseqDataset(
             chrom_array=self.sam_in.header.references, 
             chrom_lengths=list(self.sam_in.header.lengths),
             source_array=['SAM'],
@@ -67,7 +64,7 @@ class SAMtoSJconverter:
     def get_junction_type(self, chrom, left, right):
         """ Returns the sequence motif ID for a splice junction based
         on the flanking genomic sequence."""
-        flanking_sequence = ru.get_flank(self.dataset.genome, chrom, left-1, '+', 'E', 2) + ru.get_flank(self.dataset.genome, chrom, right, '+', 'S', 2)
+        flanking_sequence = get_flank(self.dataset.genome, chrom, left-1, '+', 'E', 2) + get_flank(self.dataset.genome, chrom, right, '+', 'S', 2)
         flanking_sequence = flanking_sequence.upper()
         jtype = self.junction_types.get(flanking_sequence,0)
         return jtype

@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import os
-import bookend.core.cython_utils._rnaseq_utils as ru
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset
 if __name__ == '__main__':
     sys.path.append('../../bookend')
     from argument_parsers import bed_to_elr_parser as parser
@@ -41,7 +40,7 @@ class BEDtoELRconverter:
         
         self.linecount = 0
         self.readcount = 0
-        self.dataset = ru.RNAseqDataset(source_array=source_array, chrom_array=self.chrom_array)
+        self.dataset = RNAseqDataset(source_array=source_array, chrom_array=self.chrom_array)
     
     def process_input(self):
         """Yield ELR lines from each line of a BED input."""
