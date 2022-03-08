@@ -163,7 +163,7 @@ class Condenser:
         options_string += "  Max end cluster distance (--end_cluster):         {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
         options_string += "  *** Filters ***\n"
-        options_string += "  Min bp transcript length (--min_len):              {}\n".format(self.minlen)
+        options_string += "  Min bp transcript length (--min_len):             {}\n".format(self.minlen)
         options_string += "  Min isoform coverage (--min_cov):                 {}\n".format(self.min_cov)
         options_string += "  Min isoform contribution (--min_proportion):      {}\n".format(self.min_proportion)
         options_string += "  Min retained intron proportion (--intron_filter): {}\n".format(self.intron_filter)

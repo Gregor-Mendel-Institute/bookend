@@ -294,60 +294,6 @@ cdef class RNAseqMapping():
         
         self.span = (self.left(), self.right())
         return True
-    
-    # cpdef get_node_labels(self, bint record_artifacts=False, bint condense=False):
-    #     """Returns a string with one label for each edge of each range in self.ranges."""
-    #     if self.strand == 1:
-    #         gapchar = 'DA'
-    #         if self.s_tag:
-    #             if self.capped:
-    #                 startchar = 'C'
-    #             else:
-    #                 startchar = 'S'
-    #         else:
-    #             if record_artifacts and self.s_len > 0:
-    #                 startchar = 's'
-    #             else:
-    #                 startchar = '.'
-            
-    #         if self.e_tag:
-    #             endchar = 'E'
-    #         else:
-    #             if record_artifacts and self.e_len > 0:
-    #                 endchar = 'e'
-    #             else:
-    #                 endchar = '.'
-    #     elif self.strand == -1:
-    #         gapchar = 'AD'
-    #         if self.s_tag:
-    #             if self.capped:
-    #                 endchar = 'C'
-    #             else:
-    #                 endchar = 'S'
-    #         else:
-    #             if record_artifacts and self.s_len > 0:
-    #                 endchar = 's'
-    #             else:
-    #                 endchar = '.'
-            
-    #         if self.e_tag:
-    #             startchar = 'E'
-    #         else:
-    #             if record_artifacts and self.e_len > 0:
-    #                 startchar = 'e'
-    #             else:
-    #                 startchar = '.'
-    #     else:
-    #         gapchar = '..'
-    #         startchar = endchar = '.'
-    #         if record_artifacts:
-    #             if self.s_len > 0:
-    #                 startchar = 's'
-                
-    #             if self.e_len > 0:
-    #                 endchar = 'e'
-        
-    #     return(''.join([startchar]+[gapchar if i else '..' for i in self.splice]+[endchar]))
 
     cpdef str get_node_labels(self, bint record_artifacts=False, bint condense=False):
         """Returns a string with one label for each edge of each range in self.ranges."""
@@ -1342,7 +1288,9 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
         else:
             weight, s_weight, e_weight, c_weight = read.weight, read.weight, read.weight, read.weight
             if read.condensed:
-                s_weight, e_weight, c_weight = 1, 1, 1
+                s_weight = 1 if read.s_tag else 0
+                c_weight = 1 if read.capped else 0
+                e_weight = 1 if read.e_tag else 0
         
         if read.strand == 1:
             covrow = covp
@@ -1416,7 +1364,7 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         elif strand == -1:
             coverage = np.sum(depth_matrix[[2,5],:], axis=0)
         else:
-            return output
+            coverage = np.sum(depth_matrix[[2,5],:], axis=0) - np.sum(depth_matrix[[0,4],:], axis=0)
     elif seqtype.upper() == 'S':
         contiguous = False
         if strand == 1:
@@ -1424,7 +1372,7 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         elif strand == -1:
             coverage = depth_matrix[2,:]
         else:
-            return output
+            coverage = depth_matrix[0,:] - depth_matrix[2,:]
     elif seqtype.upper() == 'C':
         contiguous = False
         if strand == 1:
@@ -1432,7 +1380,7 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         elif strand == -1:
             coverage = depth_matrix[5,:]
         else:
-            return output
+            coverage = depth_matrix[4,:] - depth_matrix[5,:]
     elif seqtype.upper() in ['E', '3P']:
         contiguous = False
         if strand == 1:
@@ -1440,7 +1388,7 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         elif strand == -1:
             coverage = depth_matrix[3,:]
         else:
-            return output
+            coverage = depth_matrix[1,:] - depth_matrix[3,:]
     
     positions = np.where(np.append(coverage[0],np.diff(coverage)) != 0)[0]
     values = coverage[positions]
@@ -1451,8 +1399,9 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         
         lastp, lastv = p, v
     
+    
     if lastv != 0 and lastp >= 0:
-        output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, lastv)
+        output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, coverage.shape[0]][contiguous]+leftmost, lastv)
     
     return output
 
