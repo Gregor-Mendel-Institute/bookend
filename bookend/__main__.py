@@ -34,9 +34,6 @@ def import_object(object_name):
     elif object_name == 'BAMtoELRconverter':
         from .core.bam_to_elr import BAMtoELRconverter
         objectClass = BAMtoELRconverter
-    elif object_name == 'Indexer':
-        from .core.fasta_index import Indexer
-        objectClass = Indexer
     elif object_name == 'BEDtoELRconverter':
         from .core.bed_to_elr import BEDtoELRconverter
         objectClass = BEDtoELRconverter
