@@ -20,6 +20,7 @@ class ELRcombiner:
         self.input = args['INPUT']
         self.output = args['OUTPUT']
         self.temp = args['TEMPDIR']
+        self.write_header = True
         if self.output == 'stdout':
             self.output_file = 'stdout'
         else:
@@ -155,7 +156,7 @@ class ELRcombiner:
                 files[index].close()
                 finished_files += 1
         
-        if __name__ == '__main__':
+        if self.write_header:
             for h in self.dataset.dump_header():
                 if iterator:
                     yield h
