@@ -62,7 +62,7 @@ cdef class ElementGraph:
         cdef float original_bases
         cdef int i, Sp, Ep, Sm, Em
         cdef set strand
-        self.end_reachability = np.zeros(shape=(4,len(self.elements)), dtype=np.bool)
+        self.end_reachability = np.zeros(shape=(4,len(self.elements)), dtype=bool)
         Sp, Ep, Sm, Em = range(4)
         queue = deque(maxlen=len(self.elements))
         strand = set([0,1])
@@ -330,7 +330,7 @@ cdef class ElementGraph:
         cdef Element path, p
         # REMOVAL ROUND 1: INCOMPLETE ASSEMBLIES
         number_of_paths = len(self.paths)
-        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        bad_paths = np.zeros(number_of_paths, dtype=bool)
         if self.ignore_ends or self.allow_incomplete: # Incomplete paths are those that have gaps
             for i in range(number_of_paths):
                 bad_paths[i] = self.paths[i].has_gaps
@@ -346,7 +346,7 @@ cdef class ElementGraph:
         # REMOVAL ROUND 2: FUSIONS
         # >=2 contained nonoverlapping paths with higher coverage
         number_of_paths = len(self.paths)
-        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        bad_paths = np.zeros(number_of_paths, dtype=bool)
         for i in range(number_of_paths):
             contained_ranges = []
             path = self.paths[i]
@@ -376,7 +376,7 @@ cdef class ElementGraph:
         self.remove_paths(list(np.where(bad_paths)[0]))
         # REMOVAL ROUND 3: TRUNCATIONS
         number_of_paths = len(self.paths)
-        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        bad_paths = np.zeros(number_of_paths, dtype=bool)
         # containment_order = [c for a,b,c in sorted([(-(p.RM-p.LM), len(p.members), i) for i,p in enumerate(self.paths)])]
         for i in range(number_of_paths):
             path = self.paths[i]
@@ -399,7 +399,7 @@ cdef class ElementGraph:
         self.remove_paths(list(np.where(bad_paths)[0]))
         # REMOVAL ROUND 4: INTRON RETENTION
         number_of_paths = len(self.paths)
-        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        bad_paths = np.zeros(number_of_paths, dtype=bool)
         for i in range(number_of_paths):
             path = self.paths[i]
             path_introns = set(path.get_introns())
@@ -424,7 +424,7 @@ cdef class ElementGraph:
         self.remove_paths(list(np.where(bad_paths)[0]))
         # REMOVAL ROUND 5: LOW ABUNDANCE
         number_of_paths = len(self.paths)
-        bad_paths = np.zeros(number_of_paths, dtype=np.bool)
+        bad_paths = np.zeros(number_of_paths, dtype=bool)
         for i in range(number_of_paths):
             path = self.paths[i]
             path_introns = set(path.get_introns())
@@ -751,7 +751,16 @@ cdef class ElementGraph:
         if left_exon_border == -1:left_exon_border=path.RM # single-exon path
         if right_exon_border == -1:right_exon_border=path.LM # single-exon path
         if path.strand == 1:
-            if not path.s_tag:
+            if not path.e_tag: # An end exists, pick the most downstream
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.EPmembers]
+                if len(candidates) > 0:
+                    m = max(candidates)
+                    path.e_tag = True
+                    path.members.add(path.number_of_members+1)
+                    path.members.difference_update(range(m+1,path.RM+1))
+                    path.covered_indices.difference_update(range(m+1,path.RM+1))
+                    path.nonmembers.update(range(m+1,path.number_of_members))
+            elif not path.s_tag:
                 candidates = [m for m in range(path.LM, left_exon_border+1) if m in self.SPmembers]
                 if len(candidates) > 0: # A start exists, pick the most upstream
                     m = min(candidates)
@@ -760,25 +769,7 @@ cdef class ElementGraph:
                     path.members.difference_update(range(path.LM,m))
                     path.covered_indices.difference_update(range(path.LM,m))
                     path.nonmembers.update(range(m))
-            if not path.e_tag: # An end exists, pick the most downstream
-                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.EPmembers]
-                if len(candidates) > 0:
-                    m = max(candidates)
-                    path.e_tag = True
-                    path.members.add(path.number_of_members+1)
-                    path.members.difference_update(range(path.RM,m))
-                    path.covered_indices.difference_update(range(path.RM,m))
-                    path.nonmembers.update(range(m+1,path.number_of_members))
         elif path.strand == -1:
-            if not path.s_tag: # A start exists, pick the most upstream
-                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.SMmembers]
-                if len(candidates) > 0:
-                    m = max(candidates)
-                    path.s_tag = True
-                    path.members.add(path.number_of_members+2)
-                    path.members.difference_update(range(path.RM,m))
-                    path.covered_indices.difference_update(range(path.RM,m))
-                    path.nonmembers.update(range(m+1,path.number_of_members))
             if not path.e_tag: # An end exists, pick the most downstream
                 candidates = [m for m in range(path.LM, left_exon_border+1) if m in self.EMmembers]
                 if len(candidates) > 0:
@@ -788,6 +779,15 @@ cdef class ElementGraph:
                     path.members.difference_update(range(path.LM,m))
                     path.covered_indices.difference_update(range(path.LM,m))
                     path.nonmembers.update(range(m))
+            elif not path.s_tag: # A start exists, pick the most upstream
+                candidates = [m for m in range(right_exon_border, path.RM+1) if m in self.SMmembers]
+                if len(candidates) > 0:
+                    m = max(candidates)
+                    path.s_tag = True
+                    path.members.add(path.number_of_members+2)
+                    path.members.difference_update(range(m+1,path.RM+1))
+                    path.covered_indices.difference_update(range(m+1,path.RM+1))
+                    path.nonmembers.update(range(m+1,path.number_of_members))
         
         # Get rid of assigned elements that are no longer compatible after the change
         remove = set()
