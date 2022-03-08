@@ -1,9 +1,7 @@
 #cython: language_level=3
 import numpy as np
 cimport numpy as np
-import re
 import copy
-import json
 from bookend.core.cython_utils._element_graph import ElementGraph
 import bookend.core.cython_utils._rnaseq_utils as ru # RNAseqMapping, ELdata, range_of_reads, get_gaps, get_source_dict, build_depth_matrix
 from collections import Counter
@@ -1287,19 +1285,23 @@ cdef class Locus:
 
     cpdef void add_transcript_attributes(self):
         """Populate the new read objects with diagnostic information
-        to store in the GTF attributes column."""
+        to store in the GTF attributes column. Proportionally assigns
+        end weights to all transcripts that share the end."""
         cdef:
-            int first, last, s_pos, e_pos, firstbound, lastbound
-            dict S_info, E_info
-            list S_ranges, E_ranges
-            EndRange S, E
+            int first, last, s_pos, e_pos, firstbound, lastbound, i, l, left, right
+            list S_ranges, E_ranges, S_list, S_assign, E_list, E_assign
+            np.ndarray weights
+            EndRange S, E, listedS, listedE
             (int, int) span
+            bint assigned, cap
+            float S_reads, S_capped, E_reads, totalweight
         
-        for T in self.transcripts:
+        S_list, S_assign, E_list, E_assign = [], [], [], []
+        weights = np.zeros(len(self.transcripts),dtype=np.float32)
+        for i in range(len(self.transcripts)):
+            T = self.transcripts[i]
+            weights[i] = T.weight
             T.attributes['length'] = T.get_length()
-            S_info = {'S.reads':T.attributes.get('S.reads',0), 'S.capped':T.attributes.get('S.capped',0), 'S.left':0, 'S.right':0}
-            E_info = {'E.reads':T.attributes.get('E.reads',0), 'E.left':0, 'E.right':0}
-            
             if T.strand != 0:
                 if T.strand == 1:
                     s_pos = first = T.span[0] - self.leftmost
@@ -1319,39 +1321,77 @@ cdef class Locus:
                 if T.s_tag:
                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
                     if S is not self.nullRange:
-                        s_pos = S.peak
-                        span = S.span()
-                        if S_info['S.reads'] == 0:S_info['S.reads'] = round(sum(S.positions.values()),1)
-                        if S_info['S.capped'] == 0:
-                            S_info['S.capped'] = round(S.capped,1)
-                            S_info['S.reads'] += -(S_info['S.capped']*(self.cap_bonus-1))
+                        assigned = False
+                        for l in range(len(S_list)):
+                            listedS = S_list[l]
+                            if S is listedS:
+                                S_assign[l].append(i)
+                                assigned = True
+                                break
                         
-                        S_info['S.left'] = span[0] + self.leftmost
-                        S_info['S.right'] = span[1] + self.leftmost + 1
-                        if s_pos != first: # S pos was replaced
-                            if T.strand == 1:
-                                T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
-                            else:
-                                T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost + 1)
+                        if not assigned:
+                            S_list.append(S)
+                            S_assign.append([i])
                 
                 if T.e_tag:
                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
                     if E is not self.nullRange:
-                        e_pos = E.peak
-                        span = E.span()
-                        if E_info['E.reads'] == 0:E_info['E.reads'] = round(sum(E.positions.values()),1)
-                        E_info['E.left'] = span[0] + self.leftmost
-                        E_info['E.right'] = span[1] + self.leftmost + 1
-                        if e_pos != last: # S pos was replaced
-                            if T.strand == 1:
-                                T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost + 1)
-                            else:
-                                T.ranges[0] = (e_pos + self.leftmost, T.ranges[0][1])
-            
-            T.attributes.update(S_info)
-            T.attributes.update(E_info)
-            if T.attributes['S.capped'] > 0 and T.attributes['S.capped'] >= T.attributes['S.reads']*self.cap_filter:
-                T.capped = True
+                        assigned = False
+                        for l in range(len(E_list)):
+                            listedE = E_list[l]
+                            if E is listedE:
+                                E_assign[l].append(i)
+                                assigned = True
+                                break
+                        
+                        if not assigned:
+                            E_list.append(E)
+                            E_assign.append([i])
+        
+        assert len(S_list) == len(S_assign)
+        for l in range(len(S_list)):
+            S = S_list[l]
+            totalweight = sum(weights[S_assign[l]])
+            if totalweight > 0:
+                s_pos = S.peak
+                span = S.span()
+                S_reads = sum(S.positions.values())
+                S_capped = S.capped
+                cap = S_capped >= S_reads*self.cap_filter
+                S_reads -= S_capped*(self.cap_bonus-1)
+                left = span[0] + self.leftmost
+                right = span[1] + self.leftmost + 1
+                for i in S_assign[l]:
+                    T = self.transcripts[i]
+                    T.capped = cap
+                    T.attributes['S.reads'] = round(S_reads*(T.weight/totalweight),2)
+                    T.attributes['S.capped'] = round(S_capped*(T.weight/totalweight),2)
+                    T.attributes['S.left'] = left
+                    T.attributes['S.right'] = right
+                    if T.strand == 1:
+                        T.ranges[0] = (s_pos + self.leftmost, T.ranges[0][1])
+                    else:
+                        T.ranges[-1] = (T.ranges[-1][0], s_pos + self.leftmost + 1)
+                
+        assert len(E_list) == len(E_assign)
+        for l in range(len(E_list)):
+            E = E_list[l]
+            totalweight = sum(weights[E_assign[l]])
+            if totalweight > 0:
+                e_pos = E.peak
+                span = E.span()
+                E_reads = sum(E.positions.values())
+                left = span[0] + self.leftmost
+                right = span[1] + self.leftmost + 1
+                for i in E_assign[l]:
+                    T = self.transcripts[i]
+                    T.attributes['E.reads'] = round(E_reads*(T.weight/totalweight),2)
+                    T.attributes['E.left'] = left
+                    T.attributes['E.right'] = right
+                    if T.strand == 1:
+                        T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost + 1)
+                    else:
+                        T.ranges[0] = (e_pos + self.leftmost, T.ranges[0][1])
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the object."""
