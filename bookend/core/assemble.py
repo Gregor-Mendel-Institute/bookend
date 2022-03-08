@@ -37,7 +37,7 @@ class Assembler:
         self.verbose = args['VERBOSE']
         self.input = args['INPUT']
         self.ignore_labels = args['IGNORE_LABELS']
-        self.ignore_sources = args['IGNORE_SOURCES']
+        self.ignore_sources = not args['USE_SOURCES']
         self.require_cap = args['REQUIRE_CAP']
         self.antisense_filter = 0.001
         if self.ignore_labels:
@@ -77,6 +77,11 @@ class Assembler:
             }
             combiner = ELRcombiner(combine_args)
             self.input_file = combiner.combine_files(combiner.input, combiner.output_file, iterator=True)
+            header = next(self.input_file)
+            self.dataset.chrom_array = combiner.dataset.chrom_array
+            self.dataset.source_array = combiner.dataset.source_array
+            self.dataset.chrom_dict = combiner.dataset.chrom_dict
+            self.dataset.source_dict = combiner.dataset.source_dict
         else:
             print("\nERROR: No input file(s) provided.")
             sys.exit(1)
@@ -173,7 +178,7 @@ class Assembler:
         options_string += "  Max allowed gap in coverage (--max_gap):          {}\n".format(self.max_gap)
         options_string += "  Max end cluster distance (--end_cluster):         {}\n".format(self.end_cluster)
         options_string += "  Min spanning bases (--min_overhang):              {}\n".format(self.min_overhang)
-        options_string += "  Split read sources (--ignore_sources):            {}\n".format(self.ignore_sources)
+        options_string += "  Split read sources (--use_sources):               {}\n".format(not self.ignore_sources)
         options_string += "  Ignore end labels (--ignore_labels):              {}\n".format(self.ignore_labels)
         options_string += "  *** Filters ***\n"
         options_string += "  Min bp transcript length (--min_len):             {}\n".format(self.minlen)
@@ -219,8 +224,8 @@ class Assembler:
         if transcript.coverage < self.min_cov: return False
         if not self.incomplete and not transcript.complete: return False
         if transcript.attributes['length'] < self.minlen: return False
-        if transcript.attributes['S.reads'] < self.min_start: return False
-        if transcript.attributes['E.reads'] < self.min_end: return False
+        if transcript.attributes.get('S.reads',0) < self.min_start: return False
+        if transcript.attributes.get('E.reads',0) < self.min_end: return False
         # if not args.INCOMPLETE and True not in transcript.splice and transcript.attributes['S.capped']/transcript.attributes['S.reads'] < args.CAP_PERCENT: return False
         if transcript.strand == 0 and transcript.coverage < self.min_unstranded_cov: return False
         return True
