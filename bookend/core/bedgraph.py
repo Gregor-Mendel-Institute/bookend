@@ -26,7 +26,12 @@ class Bedgrapher:
             if self.input_is_valid(self.input):
                 self.file_type = self.file_extension(self.input)
                 if self.file_type in ['bam','sam']:
-                    self.input_file = AlignmentFile(self.input)
+                    try:
+                        self.input_file = AlignmentFile(self.input)
+                    except:
+                        print("ERROR: BAM/SAM input must be position-sorted and indexed.")
+                        sys.exit(1)
+                    
                     self.dataset = ru.RNAseqDataset(chrom_array=self.input_file.header.references)
                 elif self.file_type == 'elr.gz':
                     self.dataset = ru.RNAseqDataset()

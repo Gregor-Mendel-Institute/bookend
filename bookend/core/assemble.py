@@ -4,7 +4,7 @@
 import sys
 import time
 import gzip
-from pysam import AlignmentFile
+import pysam
 from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, read_generator
 from bookend.core.cython_utils._assembly_utils import Locus
 from bookend.core.elr_combine import ELRcombiner
@@ -39,7 +39,7 @@ class Assembler:
         self.ignore_labels = args['IGNORE_LABELS']
         self.ignore_sources = not args['USE_SOURCES']
         self.require_cap = args['REQUIRE_CAP']
-        self.antisense_filter = 0.001
+        self.antisense_filter = 0.01
         if self.ignore_labels:
             self.incomplete = True
         
@@ -52,7 +52,9 @@ class Assembler:
             if self.input_is_valid(self.input):
                 self.file_type = self.file_extension(self.input)
                 if self.file_type in ['bam','sam']:
-                    self.input_file = AlignmentFile(self.input)
+                    save = pysam.set_verbosity(0)
+                    self.input_file = pysam.AlignmentFile(self.input)
+                    save = pysam.set_verbosity(save)
                     self.dataset = RNAseqDataset(chrom_array=self.input_file.header.references)
                 elif self.file_type == 'elr.gz':
                     self.dataset = RNAseqDataset()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from pysam import AlignmentFile
+import pysam
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
@@ -18,7 +18,9 @@ class SAMtoSJconverter:
         self.filter = args['FILTER']
         self.input = args['INPUT']
         self.sj_dict = {}
-        self.sam_in = AlignmentFile(self.input)
+        save = pysam.set_verbosity(0)
+        self.sam_in = pysam.AlignmentFile(self.input)
+        save = pysam.set_verbosity(save)
         self.dataset = RNAseqDataset(
             chrom_array=self.sam_in.header.references, 
             chrom_lengths=list(self.sam_in.header.lengths),
