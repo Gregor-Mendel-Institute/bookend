@@ -19,7 +19,7 @@ keys = [
 ]
 complements = [
     'T','G','C','A','A',
-    'K','R','W','S','Y','M',
+    'K','Y','W','S','R','M',
     'B','D','H','V','N','X'
 ]
 integers = [
@@ -65,7 +65,7 @@ def _comp_array():
     comp_array =  [0]*256
     for a,b in zip(keys, complements):
         comp_array[ord(a)] = ord(b)
-        comp_array[ord(a.lower())] = ord(b)
+        comp_array[ord(a.lower())] = ord(b.lower())
     
     return comp_array
 

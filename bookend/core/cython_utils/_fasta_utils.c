@@ -3859,7 +3859,7 @@ static PyObject *__pyx_pf_12_fasta_utils_2_comp_array(CYTHON_UNUSED PyObject *__
  *     comp_array =  [0]*256
  *     for a,b in zip(keys, complements):             # <<<<<<<<<<<<<<
  *         comp_array[ord(a)] = ord(b)
- *         comp_array[ord(a.lower())] = ord(b)
+ *         comp_array[ord(a.lower())] = ord(b.lower())
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_keys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3971,7 +3971,7 @@ static PyObject *__pyx_pf_12_fasta_utils_2_comp_array(CYTHON_UNUSED PyObject *__
  *     comp_array =  [0]*256
  *     for a,b in zip(keys, complements):
  *         comp_array[ord(a)] = ord(b)             # <<<<<<<<<<<<<<
- *         comp_array[ord(a.lower())] = ord(b)
+ *         comp_array[ord(a.lower())] = ord(b.lower())
  * 
  */
     __pyx_t_9 = __Pyx_PyObject_Ord(__pyx_v_b); if (unlikely(__pyx_t_9 == ((long)(long)(Py_UCS4)-1))) __PYX_ERR(0, 67, __pyx_L1_error)
@@ -3984,11 +3984,29 @@ static PyObject *__pyx_pf_12_fasta_utils_2_comp_array(CYTHON_UNUSED PyObject *__
     /* "_fasta_utils.pyx":68
  *     for a,b in zip(keys, complements):
  *         comp_array[ord(a)] = ord(b)
- *         comp_array[ord(a.lower())] = ord(b)             # <<<<<<<<<<<<<<
+ *         comp_array[ord(a.lower())] = ord(b.lower())             # <<<<<<<<<<<<<<
  * 
  *     return comp_array
  */
-    __pyx_t_9 = __Pyx_PyObject_Ord(__pyx_v_b); if (unlikely(__pyx_t_9 == ((long)(long)(Py_UCS4)-1))) __PYX_ERR(0, 68, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_b, __pyx_n_s_lower); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 68, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_1 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_6))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_6);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_6, function);
+      }
+    }
+    __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_6);
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_9 = __Pyx_PyObject_Ord(__pyx_t_2); if (unlikely(__pyx_t_9 == ((long)(long)(Py_UCS4)-1))) __PYX_ERR(0, 68, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = __Pyx_PyInt_From_long(__pyx_t_9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_a, __pyx_n_s_lower); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
@@ -4018,13 +4036,13 @@ static PyObject *__pyx_pf_12_fasta_utils_2_comp_array(CYTHON_UNUSED PyObject *__
  *     comp_array =  [0]*256
  *     for a,b in zip(keys, complements):             # <<<<<<<<<<<<<<
  *         comp_array[ord(a)] = ord(b)
- *         comp_array[ord(a.lower())] = ord(b)
+ *         comp_array[ord(a.lower())] = ord(b.lower())
  */
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "_fasta_utils.pyx":70
- *         comp_array[ord(a.lower())] = ord(b)
+ *         comp_array[ord(a.lower())] = ord(b.lower())
  * 
  *     return comp_array             # <<<<<<<<<<<<<<
  * 
@@ -34349,7 +34367,7 @@ if (!__Pyx_RefNanny) {
  * ]
  * complements = [             # <<<<<<<<<<<<<<
  *     'T','G','C','A','A',
- *     'K','R','W','S','Y','M',
+ *     'K','Y','W','S','R','M',
  */
   __pyx_t_1 = PyList_New(17); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -34371,18 +34389,18 @@ if (!__Pyx_RefNanny) {
   __Pyx_INCREF(__pyx_n_u_K);
   __Pyx_GIVEREF(__pyx_n_u_K);
   PyList_SET_ITEM(__pyx_t_1, 5, __pyx_n_u_K);
-  __Pyx_INCREF(__pyx_n_u_R);
-  __Pyx_GIVEREF(__pyx_n_u_R);
-  PyList_SET_ITEM(__pyx_t_1, 6, __pyx_n_u_R);
+  __Pyx_INCREF(__pyx_n_u_Y);
+  __Pyx_GIVEREF(__pyx_n_u_Y);
+  PyList_SET_ITEM(__pyx_t_1, 6, __pyx_n_u_Y);
   __Pyx_INCREF(__pyx_n_u_W);
   __Pyx_GIVEREF(__pyx_n_u_W);
   PyList_SET_ITEM(__pyx_t_1, 7, __pyx_n_u_W);
   __Pyx_INCREF(__pyx_n_u_S);
   __Pyx_GIVEREF(__pyx_n_u_S);
   PyList_SET_ITEM(__pyx_t_1, 8, __pyx_n_u_S);
-  __Pyx_INCREF(__pyx_n_u_Y);
-  __Pyx_GIVEREF(__pyx_n_u_Y);
-  PyList_SET_ITEM(__pyx_t_1, 9, __pyx_n_u_Y);
+  __Pyx_INCREF(__pyx_n_u_R);
+  __Pyx_GIVEREF(__pyx_n_u_R);
+  PyList_SET_ITEM(__pyx_t_1, 9, __pyx_n_u_R);
   __Pyx_INCREF(__pyx_n_u_M_2);
   __Pyx_GIVEREF(__pyx_n_u_M_2);
   PyList_SET_ITEM(__pyx_t_1, 10, __pyx_n_u_M_2);
