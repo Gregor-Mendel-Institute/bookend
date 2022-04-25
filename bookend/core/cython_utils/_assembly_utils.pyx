@@ -1414,7 +1414,6 @@ cdef class Locus:
         for i in range(len(self.transcripts)):
             T = self.transcripts[i]
             weights[i] = T.weight
-            T.attributes['length'] = T.get_length()
             if T.strand != 0:
                 if T.strand == 1:
                     s_pos = first = T.span[0] - self.leftmost
@@ -1433,7 +1432,14 @@ cdef class Locus:
                 
                 if T.s_tag:
                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
-                    if S is not self.nullRange:
+                    if T.strand == 1:
+                        lastbound = max(lastbound, S.peak)
+                    elif T.strand == -1:
+                        lastbound = min(lastbound, S.peak)
+                    
+                    if S is self.nullRange:
+                        T.s_tag, T.capped, T.complete = False, False, False
+                    else:
                         assigned = False
                         for l in range(len(S_list)):
                             listedS = S_list[l]
@@ -1445,10 +1451,13 @@ cdef class Locus:
                         if not assigned:
                             S_list.append(S)
                             S_assign.append([i])
+
                 
                 if T.e_tag:
                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
-                    if E is not self.nullRange:
+                    if E is self.nullRange:
+                        T.e_tag, T.complete = False, False
+                    else:
                         assigned = False
                         for l in range(len(E_list)):
                             listedE = E_list[l]
@@ -1505,6 +1514,9 @@ cdef class Locus:
                         T.ranges[-1] = (T.ranges[-1][0], e_pos + self.leftmost + 1)
                     else:
                         T.ranges[0] = (e_pos + self.leftmost, T.ranges[0][1])
+        
+        for T in self.transcripts:
+            T.attributes['length'] = T.get_length()
     
     cpdef void merge_reads(self, int child_index, int parent_index):
         """Combines the information of two read elements in the object."""
