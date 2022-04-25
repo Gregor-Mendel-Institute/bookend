@@ -13,7 +13,7 @@ if __name__ == '__main__':
     from argument_parsers import combine_parser as parser
 
 class ELRcombiner:
-    def __init__(self, args):
+    def __init__(self, args, printargs=False):
         """Leaves together ELR files in sort order"""
         self.strand_sort_values = {'+':-1, '.':0, '-':1}
         self.strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
@@ -32,6 +32,7 @@ class ELRcombiner:
         self.file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
         self.PQ = IndexMinPQ(self.number_of_files)
         self.dataset = None
+        if printargs:print(args)
     
     def get_header(self, file):
         """From an open connection to an ELR file, 
@@ -128,16 +129,17 @@ class ELRcombiner:
         self.file_headers = [{}]*file_number
         current_lines = ['']*file_number
         self.chroms = []
+        printedwarning = False
         for i in range(file_number):
             self.file_headers[i], current_lines[i] = self.get_header(files[i])
             if i == 0: # Store the first chroms list
                 chrom_num = len(self.file_headers[i]['chrom'])
                 self.chroms = [self.file_headers[i]['chrom'][str(n)] for n in range(chrom_num)]
-            else:
+            elif not printedwarning:
                 if self.file_headers[i]['chrom'] != self.file_headers[0]['chrom']:
-                    print("ERROR: chromosome index does not match across input files!")
+                    print("Warning: chromosome index does not match across input files!")
                     print("Check that the same genome was used for all alignments.")
-                    sys.exit(1)
+                    printedwarning = True
         
         set_of_sources = set()
         for h in self.file_headers:

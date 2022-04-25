@@ -20,7 +20,8 @@ class Bedgrapher:
         self.strand = args['STRAND']
         self.intstrand = {'.':0,'+':1,'-':-1}[self.strand]
         self.output = args['OUT']
-        self.input = args['INPUT']        
+        self.input = args['INPUT']    
+        # self.scale = args['SCALE']    
         if len(self.input) == 1:
             self.input = self.input[0]
             if self.input_is_valid(self.input):

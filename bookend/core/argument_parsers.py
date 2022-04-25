@@ -92,7 +92,7 @@ bedgraph_parser = subparsers.add_parser('bedgraph',help="Produces a Bedgraph fil
 bedgraph_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend.bedgraph', help="Bedgraph destination file.")
 bedgraph_parser.add_argument('-t','--type', dest='TYPE', choices=['','COV','5P','3P','S', 'E', 'C'], type=str, default='COV', help="Coverage type: filters Bedgraph output by read label. Default all")
 bedgraph_parser.add_argument('-s','--strand', dest='STRAND', type=str, choices=['.','+','-'], default='.', help="Strand (-|+|.), default . (unstranded)")
-bedgraph_parser.add_argument('--scale', dest='SCALE', default=False, action='store_true', help="Perform per-million scaling on output values.")
+# bedgraph_parser.add_argument('--scale', dest='SCALE', default=False, action='store_true', help="Perform per-million scaling on output values.")
 bedgraph_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR filepath(s). MUST be coordinate-sorted.")
 bedgraph_parser.set_defaults(object='Bedgrapher')
 

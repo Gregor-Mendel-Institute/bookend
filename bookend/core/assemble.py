@@ -16,6 +16,7 @@ if __name__ == '__main__':
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
+        # print(args)
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
@@ -134,7 +135,9 @@ class Assembler:
                 intron_filter=self.intron_filter, 
                 ignore_ends=self.ignore_labels, 
                 allow_incomplete=self.incomplete,
-                require_cap=self.require_cap
+                require_cap=self.require_cap,
+                min_start=self.min_start,
+                min_end=self.min_end
             )
             self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
