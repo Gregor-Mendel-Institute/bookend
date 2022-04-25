@@ -14,11 +14,13 @@ cdef class EndRange:
     cdef public float weight, capped
     cdef public str tag
     cdef public object positions
+    cdef public bint keep
     """Represents a reference point for a Start or End site."""
     def __init__(self, left, right, peak, weight, endtype):
         self.left, self.right, self.peak, self.weight, self.endtype = left, right, peak, weight, endtype
         self.tag, self.strand = [('S', 1), ('E', 1), ('S', -1), ('E', -1)][self.endtype]
         self.positions = Counter()
+        self.keep = True
         if self.endtype in [0, 3]:
             self.terminal = left
         else:
@@ -53,15 +55,15 @@ cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
     cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose, simplify
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty, min_start, min_end
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc, assembly_source_cov
-    cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp
-    cdef public list transcripts, traceback, sources, subproblem_indices, splits
+    cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp, DPbp, DMbp, APbp, AMbp
+    cdef public list transcripts, traceback, sources, subproblem_indices, splits, gaps_plus, gaps_minus
     cdef public object graph
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=True, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=True, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True, min_start=0, min_end=0):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -84,6 +86,8 @@ cdef class Locus:
         self.splittable = splittable
         self.verbose = verbose
         self.simplify = simplify
+        self.min_start = min_start
+        self.min_end = min_end
         self.assembly_source_cov = {}
         if self.ignore_ends:
             self.dead_end_penalty = 1
@@ -113,6 +117,8 @@ cdef class Locus:
             self.end_extend = end_cluster
             self.depth_matrix, self.J_plus, self.J_minus = ru.build_depth_matrix(self.leftmost, self.rightmost, self.reads, self.use_attributes)
             Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+            self.gaps_plus = ru.get_gaps(np.sum(self.depth_matrix[[covp,covn],:],0), self.extend)
+            self.gaps_minus = ru.get_gaps(np.sum(self.depth_matrix[[covm,covn],:],0), self.extend)
             covstranded = np.sum(self.depth_matrix[(covp,covm),:],axis=0)
             strandedpositions = np.where(covstranded > 0)[0]
             if strandedpositions.shape[0] > 0: # Some reads to inform the strand
@@ -182,7 +188,7 @@ cdef class Locus:
         for k in self.J_plus.keys():
             kl,kr = k.split(':')
             split_bool[int(kl)-1:int(kr)+1] = False
-        
+
         for k in self.J_minus.keys():
             kl,kr = k.split(':')
             split_bool[int(kl)-1:int(kr)+1] = False
@@ -261,11 +267,14 @@ cdef class Locus:
         
         Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         self.branchpoints = set()
-        self.SPbp, self.EPbp, self.SMbp, self.EMbp = set(), set(), set(), set()
+        self.SPbp, self.EPbp, self.SMbp, self.EMbp, self.DPbp, self.APbp, self.DMbp, self.AMbp = set(), set(), set(), set(), set(), set(), set(), set()
         self.end_ranges = dict()
-        prohibited_plus, prohibited_minus = set(), set()
+        prohibited_plus = set([l+1 for l,r in self.gaps_plus]+[r-1 for l,r in self.gaps_plus])
+        prohibited_minus = set([l+1 for l,r in self.gaps_minus]+[r-1 for l,r in self.gaps_minus])
         for j in self.J_plus.keys():
             span = self.string_to_span(j)
+            self.DPbp.add(span[0])
+            self.APbp.add(span[1])
             self.branchpoints.update(list(span))
             if self.min_overhang > 0:
                 prohibited_plus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
@@ -273,32 +282,30 @@ cdef class Locus:
         
         for j in self.J_minus.keys():
             span = self.string_to_span(j)
-            self.branchpoints.update(list(self.string_to_span(j)))
+            self.DMbp.add(span[1])
+            self.AMbp.add(span[0])
+            self.branchpoints.update(list(span))
             if self.min_overhang > 0:
                 prohibited_minus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
                 prohibited_minus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
         
         for endtype in [Ep, Em, Sp, Sm]:
             if endtype == Sp:
-                bpset = self.SPbp
                 pos = np.where(np.sum(self.depth_matrix[[Sp,Cp],],axis=0)>0)[0]
                 rawvals = self.depth_matrix[Sp, pos] + self.cap_bonus*self.depth_matrix[Cp, pos]
                 vals = np.power(rawvals, 2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
             elif endtype == Sm:
-                bpset = self.SMbp
                 pos = np.where(np.sum(self.depth_matrix[[Sm,Cm],],axis=0)>0)[0]
                 rawvals = self.depth_matrix[Sm, pos] + self.cap_bonus*self.depth_matrix[Cm, pos]
                 vals = np.power(rawvals, 2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
                 prohibited_positions = prohibited_minus
             elif endtype == Ep:
-                bpset = self.EPbp
                 pos = np.where(self.depth_matrix[endtype,]>0)[0]
                 rawvals = self.depth_matrix[endtype, pos]
                 vals = np.power(rawvals, 2)/self.cov_plus[pos]*(self.strandratio[pos]!=0).astype(float)
                 prohibited_positions = prohibited_plus
             elif endtype == Em:
-                bpset = self.EMbp
                 pos = np.where(self.depth_matrix[endtype,]>0)[0]
                 rawvals = self.depth_matrix[endtype, pos]
                 vals = np.power(rawvals, 2)/self.cov_minus[pos]*(self.strandratio[pos]!=1).astype(float)
@@ -310,12 +317,113 @@ cdef class Locus:
                 self.enforce_cap_filter(endtype)
         
         for endtype in [Ep, Em, Sp, Sm]:
+            bpset = [self.SPbp, self.EPbp, self.SMbp, self.EMbp][endtype]
             for rng in self.end_ranges[endtype]:
                 self.branchpoints.add(rng.terminal)
                 bpset.add(rng.terminal)
                 
         self.branchpoints.add(0)
         self.branchpoints.add(len(self))
+        self.filter_gapped_branchpoints()
+        self.branchpoints.add(0)
+        self.branchpoints.add(len(self))
+    
+    cpdef void filter_gapped_branchpoints(self):
+        """Given the hypothetical set of branchpoints, filter out
+        any ends that are isolated by a gap > self.extend;
+        """
+        cdef int Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn, bp, lastbp
+        cdef (int, int) gap
+        cdef set lefts, rights, new_branchpoints, rm_branchpoints
+        Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+        lefts = self.SPbp | self.APbp | self.DMbp | self.EMbp
+        rights = self.DPbp | self.EPbp | self.SMbp | self.AMbp
+        plus_bp = iter(sorted(set([0,len(self)]) | self.SPbp | self.APbp | self.DPbp | self.EPbp))
+        gaps_plus = iter(self.gaps_plus)
+        new_branchpoints, rm_branchpoints = set(), set()
+        finished = False
+        try:
+            bp = next(plus_bp)
+            gap = next(gaps_plus)
+            while gap[0] < bp:
+                gap = next(gaps_plus)
+        except: # Either no branchpoints or no gaps on the plus strand
+            finished = True
+        
+        while not finished:
+            try:
+                lastbp, bp = bp, next(plus_bp)
+            except:
+                finished = True
+            
+            if gap[0] < bp: # gap was passed
+                leftgap = gap[0]
+                try:
+                    while gap[0] < bp:
+                        rightgap = gap[1]
+                        gap = next(gaps_plus)
+                except:
+                    finished = True
+                
+                if self.allow_incomplete and leftgap-lastbp > self.extend: # Add coverage gaps as branchpoints
+                    new_branchpoints.add(leftgap)
+                elif lastbp in lefts: # Remove the branchpoint
+                    rm_branchpoints.add(lastbp)
+                
+                if self.allow_incomplete and bp-rightgap > self.extend: # Add coverage gaps as branchpoints
+                    new_branchpoints.add(rightgap)
+                elif bp in rights: # Remove the branchpoint
+                    rm_branchpoints.add(bp)
+        
+        self.branchpoints.update(new_branchpoints)
+        self.branchpoints.difference_update(rm_branchpoints)
+        self.SPbp.difference_update(rm_branchpoints)
+        self.EPbp.difference_update(rm_branchpoints)
+        self.DPbp.difference_update(rm_branchpoints)
+        self.APbp.difference_update(rm_branchpoints)
+        minus_bp = iter(sorted(set([0,len(self)]) |self.DMbp | self.EMbp | self.SMbp | self.AMbp))
+        gaps_minus = iter(self.gaps_minus)
+        new_branchpoints, rm_branchpoints = set(), set()
+        finished = False
+        try:
+            bp = next(minus_bp)
+            gap = next(gaps_minus)
+            while gap[0] < bp:
+                gap = next(gaps_minus)
+        except: # Either no branchpoints or no gaps on the plus strand
+            finished = True
+
+        while not finished:
+            try:
+                lastbp, bp = bp, next(minus_bp)
+            except:
+                finished = True
+            
+            if gap[0] < bp: # gap was passed
+                leftgap = gap[0]
+                try:
+                    while gap[0] < bp:
+                        rightgap = gap[1]
+                        gap = next(gaps_minus)
+                except:
+                    finished = True
+                
+                if self.allow_incomplete and leftgap-lastbp > self.extend: # Add coverage gaps as branchpoints
+                    new_branchpoints.add(leftgap)
+                elif lastbp in lefts: # Remove the branchpoint
+                    rm_branchpoints.add(lastbp)
+                
+                if self.allow_incomplete and bp-rightgap > self.extend: # Add coverage gaps as branchpoints
+                    new_branchpoints.add(rightgap)
+                elif bp in rights: # Remove the branchpoint
+                    rm_branchpoints.add(bp)
+        
+        self.branchpoints.update(new_branchpoints)
+        self.branchpoints.difference_update(rm_branchpoints)
+        self.SMbp.difference_update(rm_branchpoints)
+        self.EMbp.difference_update(rm_branchpoints)
+        self.DMbp.difference_update(rm_branchpoints)
+        self.AMbp.difference_update(rm_branchpoints)
     
     cpdef void enforce_cap_filter(self, int endtype):
         cdef int caps
@@ -441,6 +549,9 @@ cdef class Locus:
         cdef int bp, closest_bp
         Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
         if rng.endtype == Sp:
+            if sum(rng.positions.values())/self.cap_bonus < self.min_start:
+                return False
+            
             if rng.left == 0:
                 return True
             
@@ -460,6 +571,9 @@ cdef class Locus:
             
             return False
         elif rng.endtype == Sm:
+            if sum(rng.positions.values())/self.cap_bonus < self.min_start:
+                return False
+            
             if rng.right >= self.cov_minus.shape[0]:
                 return True
             
@@ -479,6 +593,9 @@ cdef class Locus:
             
             return False
         else:
+            if sum(rng.positions.values()) < self.min_end:
+                return False
+            
             return True
     
     cpdef list make_end_ranges(self, np.ndarray pos, np.ndarray vals, np.ndarray rawvals, int endtype, set prohibited_positions):
@@ -486,7 +603,7 @@ cdef class Locus:
         and (2) clusters high-signal positions within self.end_extend.
         Returns list of (l,r) tuples demarking the edges of clustered end positions."""
         cdef:
-            np.ndarray value_order, passes_threshold
+            np.ndarray value_order, passes
             EndRange e
             int p, maxp, prohibit_pos, i
             float cumulative, threshold, v, r, maxv, weight
@@ -502,16 +619,16 @@ cdef class Locus:
             e.positions = Counter({pos[0]:rawvals[0]})
             return [e]
         
-        passes_threshold = vals > self.minimum_proportion*np.sum(vals)
+        passes = vals > self.minimum_proportion*np.sum(vals)*.1
         if endtype in [0, 3]:
-            passes_threshold[0] = True
+            passes[0] = True
         elif endtype in [1, 2]:
-            passes_threshold[-1] = True
+            passes[-1] = True
         
-        if np.sum(passes_threshold) == 0:
+        if np.sum(passes) == 0:
             return []
         
-        filtered_pos = [(p,v,r) for p,v,r in zip(pos[passes_threshold], vals[passes_threshold], rawvals[passes_threshold]) if p not in prohibited_positions]
+        filtered_pos = [(p,v,r) for p,v,r in zip(pos[passes], vals[passes], rawvals[passes]) if p not in prohibited_positions]
         if len(filtered_pos) == 0:
             return []
         
@@ -939,16 +1056,12 @@ cdef class Locus:
         number_of_frags = len(self.frags)
         discard_frags = np.zeros((2,number_of_frags), dtype=bool)
         maxgap = self.extend
-        nonterminal_frags = [(frag,span) for frag,span in enumerate(self.frags) if span[0] not in self.SPbp|self.EMbp and span[1] not in self.SMbp|self.EPbp]
-        for frag,span in nonterminal_frags:
-            if not passes_threshold(self.depth[span[0]:span[1]], maxgap, threshold):
-                discard_frags[:,frag] = True
-            # else:
-            #     if not passes_threshold(self.cov_plus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
-            #         discard_frags[0,frag] = True
-                
-            #     if not passes_threshold(self.cov_minus[self.frags[frag][0]:self.frags[frag][1]], maxgap, threshold):
-            #         discard_frags[1,frag] = True
+        nonterminal_frags = [frag for frag,span in enumerate(self.frags) if span[0] not in set([0])|self.SPbp|self.EMbp and span[1] not in set([self.depth.shape[0]])|self.SMbp|self.EPbp]
+        # for frag,span in nonterminal_frags:
+        for frag,span in enumerate(self.frags):
+            if frag in nonterminal_frags:
+                if not passes_threshold(self.depth[span[0]:span[1]], maxgap, threshold):
+                    discard_frags[:,frag] = True
         
         for endtype in range(4):
             if endtype < 2:
