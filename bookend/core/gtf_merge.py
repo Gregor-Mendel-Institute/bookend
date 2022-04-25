@@ -5,6 +5,7 @@ import sys
 import copy
 import bookend.core.cython_utils._rnaseq_utils as ru
 from bookend.core.cython_utils._fasta_utils import longest_orf
+from bookend.core.cython_utils._assembly_utils import Locus
 from numpy import argsort
 from collections import Counter
 from math import ceil
@@ -88,11 +89,11 @@ class AnnotationMerger:
         if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
         if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
         if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
-        if len(self.refid_parent)>0:
+        if self.refid_parent is not None:
             gff_defaults['parent_key_transcript'] += self.refid_parent
             gtf_defaults['parent_key_transcript'] += self.refid_parent
         
-        if len(self.refid_child)>0:
+        if self.refid_child is not None:
             gff_defaults['child_key_transcript'] += self.refid_child
             gtf_defaults['child_key_transcript'] += self.refid_child
         
@@ -188,6 +189,30 @@ class AnnotationMerger:
         
         self.output_file.write(output_line+'\n')
 
+    def make_annotation_locus(self, chunk):
+        locus = Locus(
+            chrom=chunk[0].chrom, 
+            chunk_number=self.locus_counter, 
+            list_of_reads=chunk,
+            max_gap=0,
+            end_cluster=self.end_cluster,
+            min_overhang=0, 
+            reduce=False, 
+            minimum_proportion=0, 
+            min_intron_length=1, 
+            antisense_filter=0, 
+            cap_bonus=1,
+            cap_filter=0, 
+            complete=False, 
+            verbose=self.verbose, 
+            naive=True, 
+            intron_filter=0, 
+            ignore_ends=False, 
+            allow_incomplete=True,
+            require_cap=False
+        )
+        return locus
+    
     def process_entry(self, chunk):
         self.locus_counter += 1
         locus = self.make_annotation_locus(chunk)
@@ -271,7 +296,8 @@ class AnnotationMerger:
     def run(self):
         """Executes end labeling on all reads."""
         for chunk in self.generator:
-            self.process_entry(chunk)
+            if len(chunk) > 0:
+                self.process_entry(chunk)
         
         self.output_file.close()
         print(self.display_summary())

@@ -70,7 +70,7 @@ class GTFconverter:
         self.generator = self.dataset.generator
         self.locus_counter = 0
         self.transcript_counter = 0
-        print(args)
+        # print(args)
     
     def run(self):
         if self.output != 'stdout':
