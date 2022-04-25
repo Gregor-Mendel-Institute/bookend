@@ -322,7 +322,6 @@ cdef class RNAseqMapping():
         in the end-labeled read (ELR) format"""
         cdef str elr_strand, labels, weightstring
         cdef list block_ends, elr_line
-        endweights = endweights or condense
         elr_strand = '.'
         if self.strand == 1:
             elr_strand = '+'
@@ -334,7 +333,7 @@ cdef class RNAseqMapping():
         labels = self.get_node_labels(record_artifacts, condense)
         EL_CIGAR = ''.join([str(a)+str(b) for a,b in zip(labels,lengths+[''])])
         read_len = self.right() - self.left()
-        if endweights:
+        if endweights and (self.s_tag or self.e_tag):
             weightstring = '{}|{}|{}'.format(
                 round(self.weight,2),
                 round(float(self.attributes.get('S.reads', 0))+float(self.attributes.get('S.capped', 0)),2),
@@ -349,9 +348,10 @@ cdef class RNAseqMapping():
         else:
             return elr_line
      
-    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None, condense=False):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None, condense=False, longStart=None, longEnd=None):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
+        cdef int chromStart, chromEnd
         labels = self.get_node_labels(record_artifacts, condense)
         bed_strand = '.'
         if self.strand == 1:
@@ -366,6 +366,8 @@ cdef class RNAseqMapping():
             rgb = '0,0,0'
             if ends in ['SE','ES']:
                 rgb = bed_colors['SE']
+            elif ends in ['CE','EC']:
+                rgb = bed_colors['CE']
             elif 'C' in ends:
                 rgb = bed_colors['C']
             elif 'S' in ends:
@@ -388,10 +390,22 @@ cdef class RNAseqMapping():
         else:
             score = str(score_column)
         
-        chromStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
+        chromStart = self.ranges[0][0]
+        chromEnd = self.right()
+        if longStart is None:
+            longStart = chromStart
+        else:
+            self.ranges[0] = (min(self.ranges[0][0],longStart), self.ranges[0][1])
+        
+        if longEnd is None:
+            longEnd = chromEnd
+        else:
+            self.ranges[-1] = (self.ranges[-1][0], max(self.ranges[-1][1],longEnd))
+        
+        longStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
         bed_line = [
-            chrom_array[self.chrom], chromStart, self.right(),
-            name, score, bed_strand, chromStart, self.right(), rgb,
+            chrom_array[self.chrom], longStart, longEnd,
+            name, score, bed_strand, chromStart, chromEnd, rgb,
             len(self.ranges),
             ','.join([str(i-1) for i in blockSizes]),
             ','.join([str(i) for i in blockStarts]),
@@ -495,12 +509,11 @@ cdef class RNAseqDataset():
         
         if genome_fasta is not None:
             self.genome, index = fu.import_genome(genome_fasta)
-            if chrom_array is None:
-                index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
-                self.chrom_array = [l[0] for l in index_lines]
-                self.chrom_lengths = [int(l[1]) for l in index_lines]
-                self.chrom_index = len(self.chrom_array)
-                self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
+            index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
+            self.chrom_array = [l[0] for l in index_lines]
+            self.chrom_lengths = [int(l[1]) for l in index_lines]
+            self.chrom_index = len(self.chrom_array)
+            self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
         else:
             self.genome = {}
         
@@ -797,6 +810,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     cdef public str gene_delim
     def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults, confidence=1):
         RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
+        self.source_array = annotation_files
         self.min_reps = config['min_reps']
         self.cap_bonus = config['cap_bonus']
         self.verbose = config.get('verbose',False)
@@ -805,10 +819,9 @@ cdef class AnnotationDataset(RNAseqDataset):
         self.confidence = confidence
         self.gtf_config = gtf_config
         self.gff_config = gff_config
-        cdef str f, name, k
         cdef RNAseqMapping v
-        self.chrom_dict = {}
-        self.source_dict = {}
+        self.chrom_dict = {k:i for k,i in zip(self.chrom_array,range(len(self.chrom_array)))}
+        self.source_dict = {k:i for k,i in zip(self.source_array,range(len(self.source_array)))}
         # self.chrom_index = 0
         # self.chrom_array = []
         # if chrom_array is not None:
@@ -835,8 +848,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         self.annotations = {}
         for f in annotation_files:
-            name = f.lower().replace('.gff','').replace('.gff3','').replace('.gtf','').split('/')[-1]
-            self.annotations[name] = self.import_annotation(f, name)
+            self.annotations[f] = self.import_annotation(f, f)
         
         if reference is not None:
             self.annotations['reference'] = self.import_annotation(reference, 'reference')
@@ -961,11 +973,41 @@ cdef class AnnotationDataset(RNAseqDataset):
         """Given a transcript model, return it's mature cDNA sequence."""
         cdef:
             str chrom, fasta
+            int leftExtend, rightExtend
+            list ranges
         
+        ranges = copy.deepcopy(transcript.ranges)
         chrom = self.chrom_array[transcript.chrom]
-        fasta = ''.join([self.genome[chrom][l:r] for l,r in transcript.ranges])
+        leftExtend = 0
+        rightExtend = 0
+        if transcript.strand == 1:
+            if 'S.left' in transcript.attributes:
+                leftExtend = ranges[0][0] - int(transcript.attributes['S.left'])
+                ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+            
+            if 'E.right' in transcript.attributes:
+                rightExtend = int(transcript.attributes['E.right']) - ranges[-1][1]
+                ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+        elif transcript.strand == -1:
+            if 'E.left' in transcript.attributes:
+                leftExtend = ranges[0][0] - int(transcript.attributes['E.left'])
+                ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+            
+            if 'S.right' in transcript.attributes:
+                rightExtend = int(transcript.attributes['S.right']) - ranges[-1][1]
+                ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+        
+        fasta = ''.join([self.genome[chrom][l:r] for l,r in ranges])
+        if leftExtend>0:
+            fasta = fasta[:leftExtend].lower()+fasta[leftExtend:]
+
+        if rightExtend>0:
+            fasta = fasta[:-rightExtend]+fasta[-rightExtend:].lower()
+        
         if transcript.strand == -1:
             fasta = fu.rc(fasta)
+        elif transcript.strand == 0:
+            fasta = fasta.lower()
         
         return fasta
     
@@ -1083,11 +1125,12 @@ cdef class AnnotationDataset(RNAseqDataset):
 #########################################
 
 bed_colors = {
-    'U':'128,130,133',
-    'C':'0,212,145',
-    'S':'28,117,188',
-    'E':'190,30,45',
-    'SE':'109,74,116'
+    'U':'139,137,138',
+    'C':'34,82,37',
+    'S':'79,153,186',
+    'E':'215,60,41',
+    'SE':'155,105,178',
+    'CE':'25,5,23'
 }
 
 def array_to_blocks(list arr):
@@ -1280,17 +1323,18 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
     depth_matrix = np.zeros(shape=(9, array_length), dtype=np.float32)
     J_plus, J_minus = {}, {}
     for read in reads:
-        if use_attributes: # Check a read's attributes for different values of each type
+        if read.condensed:
+            s_weight = 1 if read.s_tag else 0
+            c_weight = 1 if read.capped else 0
+            e_weight = 1 if read.e_tag else 0
+            weight = read.weight
+        elif use_attributes: # Check a read's attributes for different values of each type
             weight = read.weight
             s_weight = float(read.attributes.get('S.reads', weight))
             e_weight = float(read.attributes.get('E.reads', weight))
             c_weight = float(read.attributes.get('S.capped', weight))
         else:
             weight, s_weight, e_weight, c_weight = read.weight, read.weight, read.weight, read.weight
-            if read.condensed:
-                s_weight = 1 if read.s_tag else 0
-                c_weight = 1 if read.capped else 0
-                e_weight = 1 if read.e_tag else 0
         
         if read.strand == 1:
             covrow = covp
@@ -1364,7 +1408,7 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
         elif strand == -1:
             coverage = np.sum(depth_matrix[[2,5],:], axis=0)
         else:
-            coverage = np.sum(depth_matrix[[2,5],:], axis=0) - np.sum(depth_matrix[[0,4],:], axis=0)
+            coverage = np.sum(depth_matrix[[0,4],:], axis=0) - np.sum(depth_matrix[[2,5],:], axis=0)
     elif seqtype.upper() == 'S':
         contiguous = False
         if strand == 1:
