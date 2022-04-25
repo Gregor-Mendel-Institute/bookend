@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from argparse import ArgumentParser, RawTextHelpFormatter
+from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentDefaultsHelpFormatter
 
 #TODO: Flesh out Helper class
 class Helper:
@@ -19,6 +19,7 @@ Subcommands (use -h/--help for more info):
     condense (Partial assembly that leaves keeps all fragments; use for meta-assembly)
     classify (Compare an assembly to the transcripts of a reference annotation)
     bedgraph (Write a coverage Bedgraph file of end-labeled reads)
+    fasta    (Write a transcript FASTA file from an annotation and genome)
 
     --end-labeled read (ELR) operations--
     elr-sort
@@ -40,7 +41,7 @@ Subcommands (use -h/--help for more info):
 
 
 desc = 'Functions for end-guided assembly of RNA-seq data.'
-main_parser = ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
+main_parser = ArgumentParser(description=desc, formatter_class=ArgumentDefaultsHelpFormatter)
 main_parser.set_defaults(object='Helper')
 subparsers = main_parser.add_subparsers(title='subcommands',description='Choose a command to run',help='Supported subcommands:')
 
@@ -61,7 +62,7 @@ Each line is a read or read stack with seven columns:
 
 
 ### assemble.py ###
-assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)")
+assemble_parser = subparsers.add_parser('assemble',help="Assembles an end-labeled read (ELR) file. Produces an output assembly (BED12/ELR/GTF) and a table of summary statistics (bookend_stats.tsv)", formatter_class=ArgumentDefaultsHelpFormatter)
 assemble_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend_assembly.gtf', help="Destination file for assembly. File extension (bed, elr, gtf) determines output type.")
 assemble_parser.add_argument("--source", dest='SOURCE', default='bookend', type=str, help="Name to add to the GTF source column.")
 assemble_parser.add_argument('--cov_out', dest='COV_OUT', type=str, default=None, help="Destination for a TSV of coverage estimates for each transcript in each source. (default: None)")
@@ -87,15 +88,16 @@ assemble_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR 
 assemble_parser.set_defaults(object='Assembler')
 
 ### bedgraph.py ###
-bedgraph_parser = subparsers.add_parser('bedgraph',help="Produces a Bedgraph file from an end-labeled read (ELR) file.")
+bedgraph_parser = subparsers.add_parser('bedgraph',help="Produces a Bedgraph file from an end-labeled read (ELR) file.", formatter_class=ArgumentDefaultsHelpFormatter)
 bedgraph_parser.add_argument('-o','--output', dest='OUT', type=str, default='bookend.bedgraph', help="Bedgraph destination file.")
 bedgraph_parser.add_argument('-t','--type', dest='TYPE', choices=['','COV','5P','3P','S', 'E', 'C'], type=str, default='COV', help="Coverage type: filters Bedgraph output by read label. Default all")
 bedgraph_parser.add_argument('-s','--strand', dest='STRAND', type=str, choices=['.','+','-'], default='.', help="Strand (-|+|.), default . (unstranded)")
+bedgraph_parser.add_argument('--scale', dest='SCALE', default=False, action='store_true', help="Perform per-million scaling on output values.")
 bedgraph_parser.add_argument(dest='INPUT', type=str, nargs='+', help="Input ELR filepath(s). MUST be coordinate-sorted.")
 bedgraph_parser.set_defaults(object='Bedgrapher')
 
 ### bam_to_elr.py ###
-bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
+bam_to_elr_parser = subparsers.add_parser('elr',help="Converts a BAM or SAM file to an End-Labeled Read (ELR) or BED12 file.", description=ELRdesc, formatter_class=ArgumentDefaultsHelpFormatter)
 bam_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, help="Filepath to write end-labeled file.")
 bam_to_elr_parser.add_argument("--source", dest='SOURCE', default=None, type=str, help="Name the source of BAM/SAM reads.")
 bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file")
@@ -120,7 +122,7 @@ bam_to_elr_parser.add_argument("INPUT", type=str, default=None, help="Input BAM/
 bam_to_elr_parser.set_defaults(object='BAMtoELRconverter')
 
 ### bed_to_elr.py ###
-bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
+bed_to_elr_parser = subparsers.add_parser('bed-to-elr',help="Converts a BED file to an End-Labeled Read (ELR) file.", description=ELRdesc, formatter_class=ArgumentDefaultsHelpFormatter)
 bed_to_elr_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, required=True, help="Filepath to write ELR file.")
 bed_to_elr_parser.add_argument("--chroms", dest='CHROMS', type=str, help="Filepath to a text file of chromosome names (1 per line).")
 bed_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None, help="Filepath to write ELR header.")
@@ -133,7 +135,7 @@ bed_to_elr_parser.add_argument("INPUT", type=str, help='Input BED file')
 bed_to_elr_parser.set_defaults(object='BEDtoELRconverter')
 
 ### elr_combine.py ###
-combine_parser = subparsers.add_parser('elr-combine',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, formatter_class=RawTextHelpFormatter)
+combine_parser = subparsers.add_parser('elr-combine',help="Makes one unified End-Labeled Read (ELR) file from multiple sorted files.", description=ELRdesc, formatter_class=ArgumentDefaultsHelpFormatter)
 combine_parser.add_argument(dest='INPUT', help="Input sorted ELR files.", type=str, nargs='+')
 combine_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
 combine_parser.add_argument("--temp", dest='TEMPDIR', type=str, default='_combinetmp', help="Prefix for temp files.")
@@ -141,7 +143,7 @@ combine_parser.set_defaults(object='ELRcombiner')
 
 
 ### elr_condense.py ###
-condense_parser = subparsers.add_parser('condense',help="Partial assembly an end-labeled read (ELR) file. Outputs all loci (no filters) to a new sorted ELR.")
+condense_parser = subparsers.add_parser('condense',help="Partial assembly an end-labeled read (ELR) file. Outputs all loci (no filters) to a new sorted ELR.", formatter_class=ArgumentDefaultsHelpFormatter)
 condense_parser.add_argument('-o','--output', dest='OUT', type=str, default=None, help="Destination file for assembly. File extension (bed, elr, gtf) determines output type.")
 condense_parser.add_argument('--max_gap', dest='MAX_GAP', type=int, default=0, help="Largest gap size to tolerate (nucleotides).")
 condense_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=50, help="Largest distance between end-labeled reads to consider the same cluster (nucleotides).")
@@ -152,7 +154,7 @@ condense_parser.add_argument('--min_intron_len', dest='MIN_INTRON_LEN', type=int
 condense_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude ends, juctions, or transcripts that contribute < this proportion. (Used as a signal threshold)")
 condense_parser.add_argument('--intron_filter', dest='INTRON_FILTER', type=float, default=0.15, help="[float 0-1] Retained introns must exceed this proportion the be considered.")
 condense_parser.add_argument('--cap_bonus', dest='CAP_BONUS', type=float, default=5, help="[float] Signal multiplier for 5' reads with an inferred cap structure (uuG).")
-condense_parser.add_argument('--cap_filter', dest='CAP_FILTER', type=float, default=.02, help="[float] Threshold percent uuG to count cluster as capped.")
+condense_parser.add_argument('--cap_filter', dest='CAP_FILTER', type=float, default=.1, help="[float] Threshold percent uuG to count cluster as capped.")
 condense_parser.add_argument("--starts", dest='STARTS', default=False, action='store_true', help="Sample is a Start Tag (5' end) file, e.g. CAGE")
 condense_parser.add_argument("--ends", dest='ENDS', default=False, action='store_true', help="Sample is an End Tag (3' end) file, e.g. 3P-Seq")
 condense_parser.add_argument("--sparse", dest='SPARSE', default=False, action='store_true', help="Sample is sparsely end-labeled, e.g. Smart-seq")
@@ -161,13 +163,22 @@ condense_parser.set_defaults(object='Condenser')
 
 
 ### elr_to_bed.py ###
-elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=RawTextHelpFormatter)
+elr_to_bed_parser = subparsers.add_parser('elr-to-bed',help="Converts an End-Labeled Read (ELR) file to BED12.", formatter_class=ArgumentDefaultsHelpFormatter)
 elr_to_bed_parser.add_argument("-o", "--output", dest='OUTPUT', type=str, default=None, required=True, help="Filepath to write BED file.")
 elr_to_bed_parser.add_argument("INPUT", help='Input ELR file')
 elr_to_bed_parser.set_defaults(object='ELRtoBEDconverter')
 
+### fasta.py ###
+fasta_parser = subparsers.add_parser('fasta',help="Writes a transcript FASTA file for each input feature.", formatter_class=ArgumentDefaultsHelpFormatter)
+fasta_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend.fasta', help="Filepath to write feature FASTA file.")
+fasta_parser.add_argument('--genome', dest='GENOME', required=True, help="(required) Path to genome FASTA file.", default=None)
+fasta_parser.add_argument('--allow_unstranded', dest='UNSTRANDED', default=False, action='store_true', help="Allow unstranded transcripts to be written to output (forward strand).")
+fasta_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to feature file(s)", nargs='*')
+fasta_parser.set_defaults(object='FastaWriter')
+
+
 ### fastq_end_label.py ###    
-end_label_parser = subparsers.add_parser('label',help="Trims and labels RNA 5' and 3' ends in a FASTQ file")
+end_label_parser = subparsers.add_parser('label',help="Trims and labels RNA 5' and 3' ends in a FASTQ file", formatter_class=ArgumentDefaultsHelpFormatter)
 end_label_parser.add_argument('-S', '--start', dest='START', type=str, default='AAGCAGTGGTATCAACGCAGAGTACATGGG', help="Template switching primer, marks the RNA 5' terminus.")
 end_label_parser.add_argument( '-E', '--end', dest='END', type=str, default='ACGCAGAGTACTTTTTTTTTTTTTTTTTTTT+', help="Reverse transcription primer, marks (reverse complement of) the RNA 3' terminus.")
 end_label_parser.add_argument('--umi', dest='UMI', type=str, default="", choices=['S', 'E'], help="One of the end labels (S, E) contains a Unique Molecular Identifier (UMI).")
@@ -188,33 +199,33 @@ end_label_parser.add_argument('--pseudomates', dest='PSEUDOMATES', default=False
 end_label_parser.set_defaults(object='EndLabeler')
 
 ### gtf_merge.py ###
-merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation")
-merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
-merge_parser.add_argument("--fasta_out", dest='FASTA_OUT', help="Output FASTA file of spliced transcript sequences.", default=None, type=str)
-merge_parser.add_argument("--orf_out", dest='ORF_OUT', help="Output FASTA file of amino acid sequence for the longest ORF.", default=None, type=str)
-merge_parser.add_argument('--genome', dest='GENOME', help="Path to a FASTA file of the genome.", default=None)
-merge_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
-merge_parser.add_argument('--refname', dest='REFNAME', help="Name of the reference source", type=str, default=None)
-merge_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
-merge_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
-merge_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
-merge_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
-merge_parser.add_argument('--ref_id_parent', dest='REF_ID_PARENT', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
-merge_parser.add_argument('--ref_id_child', dest='REF_ID_CHILD', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
-merge_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=100, help="Largest distance between ends to consider in one cluster (number of nucleotides).")
-merge_parser.add_argument('--minlen', dest='MINLEN', type=int, default=50, help="Minimum transcript length of merged assemblies.")
-merge_parser.add_argument('--min_reps', dest='MIN_REPS', type=int, default=1, help="Number of times a transcript must be independently assembled (for multiple input files).")
-merge_parser.add_argument('--high_conf', dest='CONFIDENCE', type=float, default=0.5, help="[float 0-1] Assemblies present in >= this percent of input files cannot be discarded.")
-merge_parser.add_argument('--cap_percent', dest='CAP_PERCENT', type=float, default=0.05, help="[float 0-1] Discard 5' end features with < this percent of cap-labeled reads (reads that contain upstream untemplated G).")
-merge_parser.add_argument('--keep_truncations', dest='KEEP_TRUNCATIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies contained in longer assemblies.")
-merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies that bridge two adjacent loci.")
-merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
-merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
-merge_parser.set_defaults(object='AnnotationMerger')
+# merge_parser = subparsers.add_parser('merge',help="Merges multiple assembly/annotation files into one consensus annotation", formatter_class=ArgumentDefaultsHelpFormatter)
+# merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='bookend_merge.gtf', help="Filepath to write merged file.")
+# merge_parser.add_argument("--fasta_out", dest='FASTA_OUT', help="Output FASTA file of spliced transcript sequences.", default=None, type=str)
+# merge_parser.add_argument("--orf_out", dest='ORF_OUT', help="Output FASTA file of amino acid sequence for the longest ORF.", default=None, type=str)
+# merge_parser.add_argument('--genome', dest='GENOME', help="Path to a FASTA file of the genome.", default=None)
+# merge_parser.add_argument('-r', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
+# merge_parser.add_argument('--refname', dest='REFNAME', help="Name of the reference source", type=str, default=None)
+# merge_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
+# merge_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
+# merge_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
+# merge_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
+# merge_parser.add_argument('--ref_id_parent', dest='REF_ID_PARENT', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
+# merge_parser.add_argument('--ref_id_child', dest='REF_ID_CHILD', type=str, nargs='+', default=None, help="Attribute name(s) in GTF/GFF3 files that stores the transcript name for Parent objects (default: transcript_id)")
+# merge_parser.add_argument('--end_cluster', dest='END_CLUSTER', type=int, default=100, help="Largest distance between ends to consider in one cluster (number of nucleotides).")
+# merge_parser.add_argument('--minlen', dest='MINLEN', type=int, default=50, help="Minimum transcript length of merged assemblies.")
+# merge_parser.add_argument('--min_reps', dest='MIN_REPS', type=int, default=1, help="Number of times a transcript must be independently assembled (for multiple input files).")
+# merge_parser.add_argument('--high_conf', dest='CONFIDENCE', type=float, default=0.5, help="[float 0-1] Assemblies present in >= this percent of input files cannot be discarded.")
+# merge_parser.add_argument('--cap_percent', dest='CAP_PERCENT', type=float, default=0.05, help="[float 0-1] Discard 5' end features with < this percent of cap-labeled reads (reads that contain upstream untemplated G).")
+# merge_parser.add_argument('--keep_truncations', dest='KEEP_TRUNCATIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies contained in longer assemblies.")
+# merge_parser.add_argument('--keep_fusions', dest='KEEP_FUSIONS', default=False, action='store_true', help="Do not discard low-confidence assemblies that bridge two adjacent loci.")
+# merge_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
+# merge_parser.add_argument('INPUT', type=str, help="[GFF3/GTF/ELR/BED] Path to assembly file(s)", nargs='*')
+# merge_parser.set_defaults(object='AnnotationMerger')
 
 
 ### gtf_classify.py ###
-classify_parser = subparsers.add_parser('classify',help="Classifies each transcript in an assembly against those in a reference annotation.")
+classify_parser = subparsers.add_parser('classify',help="Classifies each transcript in an assembly against those in a reference annotation.", formatter_class=ArgumentDefaultsHelpFormatter)
 classify_parser.add_argument("-i", "--input", dest="INPUT", type=str, nargs='+', help="Input assembly GTF/GFF3/BED12 file(s)")
 classify_parser.add_argument("-o", "--output", dest='OUT', type=str, default='classify.tsv', help="Filepath to write output class file (default: classify.tsv)")
 classify_parser.add_argument('--end_buffer', dest='END_BUFFER', type=int, default=100, help="Largest distance between ends to be considered the same (nucleotides).")
@@ -226,12 +237,13 @@ classify_parser.add_argument('--child_attr_gene', dest='CHILD_ATTR_GENE', type=s
 classify_parser.add_argument('--parent_attr_transcript', dest='PARENT_ATTR_TRANSCRIPT', type=str, nargs='+', default=None, help="Transcript attribute(s) in Parent objects (default: transcript_id)")
 classify_parser.add_argument('--child_attr_transcript', dest='CHILD_ATTR_TRANSCRIPT', type=str, nargs='+', default=None, help="Transcript attribute(s) in Child objects (default: transcript_id)")
 classify_parser.add_argument('--bed_gene_delim', dest='GENE_DELIM', type=str, default='.', help="(for BED12 references) String that splits gene name from transcript isoform (default: .)")
+classify_parser.add_argument('--allow_unstranded', dest='UNSTRANDED', default=False, action='store_true', help="Allow unstranded transcripts to match overlapping transcripts.")
 classify_parser.add_argument('--verbose', dest='VERBOSE', default=False, action='store_true', help="Display a verbose summary of each locus in stdout.")
 classify_parser.set_defaults(object='AssemblyClassifier')
 
 
 ### sam_sj_out.py ###
-sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.")
+sam_sj_parser = subparsers.add_parser('sam-to-sj',help="Generates a splice junction file (SJ.out.tab) from SAM.", formatter_class=ArgumentDefaultsHelpFormatter)
 sam_sj_parser.add_argument("-F", "--fasta", dest='FASTA', help="Genome FASTA file", default=None, type=str, required=True)
 sam_sj_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sam_sj_parser.add_argument("--filter", dest='FILTER', help="Remove noncanonical splice junctions from the output", default=False, action='store_true')
@@ -239,7 +251,7 @@ sam_sj_parser.add_argument("INPUT", type=str, help="Input SAM file")
 sam_sj_parser.set_defaults(object='SAMtoSJconverter')
 
 ### sj_merge.py ###
-sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.")
+sj_merge_parser = subparsers.add_parser('sj-merge', help="Combines multiple SJ.out.tab or SJ.bed files.", formatter_class=ArgumentDefaultsHelpFormatter)
 sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj_merge.out.tab', help="Filepath to write merged file.")
 sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
@@ -249,20 +261,20 @@ sj_merge_parser.add_argument("INPUT", nargs='+', default=[])
 sj_merge_parser.set_defaults(object='SJmerger')
 
 ### sj_to_bed.py ###
-sj_to_bed_parser = subparsers.add_parser('sj-to-bed', help="Converts SJ.out.tab file to an SJ.bed file.")
+sj_to_bed_parser = subparsers.add_parser('sj-to-bed', help="Converts SJ.out.tab file to an SJ.bed file.", formatter_class=ArgumentDefaultsHelpFormatter)
 sj_to_bed_parser.add_argument("INPUT", type=str, help="Input SJ.out.tab file")
 sj_to_bed_parser.add_argument("-o", "--output", dest='OUT', type=str, default='SJ.bed', help="Filepath to write SJ.bed file.")
 sj_to_bed_parser.set_defaults(object='SJtoBEDconverter')
 
 ### elr_sort.py ###
-elr_sort_parser = subparsers.add_parser('elr-sort',help="Sorts an End-Labeled Read (ELR) file.")
+elr_sort_parser = subparsers.add_parser('elr-sort',help="Sorts an End-Labeled Read (ELR) file.", formatter_class=ArgumentDefaultsHelpFormatter)
 elr_sort_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 elr_sort_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
 elr_sort_parser.add_argument("INPUT", type=str, help="Input ELR file")
 elr_sort_parser.set_defaults(object='ELRsorter')
 
 ### elr_subset.py ###
-elr_subset_parser = subparsers.add_parser('elr-subset',help="Writes a subsetted region of an ELR file.")
+elr_subset_parser = subparsers.add_parser('elr-subset',help="Writes a subsetted region of an ELR file.", formatter_class=ArgumentDefaultsHelpFormatter)
 elr_subset_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 elr_subset_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
 elr_subset_parser.add_argument("-r" ,"--region", dest='REGION', help="[chrom:start-end] Region to write to output", type=str, required=True)
@@ -271,10 +283,11 @@ elr_subset_parser.set_defaults(object='ELRsubsetter')
 
 
 ### gtf_to_bed.py ###
-gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3 annotation file to BED12.")
+gtf_to_bed_parser = subparsers.add_parser('gtf-to-bed',help="Converts a GTF/GFF3 annotation file to BED12.", formatter_class=ArgumentDefaultsHelpFormatter)
 gtf_to_bed_parser.add_argument("INPUT", type=str, help="Input GTF/GFF3 file")
 gtf_to_bed_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
 gtf_to_bed_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
+gtf_to_bed_parser.add_argument("--source", dest='SOURCE', help="Source of GTF/GFF3 file (default: file name)", default=None, type=str)
 gtf_to_bed_parser.add_argument("--name", dest='NAME_ATTR', help="Attribute to pass to the name column (default: transcript_id)", default='transcript_id', type=str)
 gtf_to_bed_parser.add_argument("--score", dest='SCORE', help="Attribute to pass to score column (default: None)", default=None, type=str)
 gtf_to_bed_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
@@ -287,7 +300,27 @@ gtf_to_bed_parser.add_argument('--parent_attr_transcript', dest='PARENT_ATTR_TRA
 gtf_to_bed_parser.add_argument('--child_attr_transcript', dest='CHILD_ATTR_TRANSCRIPT', type=str, nargs='+', default=None, help="Transcript attribute(s) in Child objects (default: transcript_id)")
 gtf_to_bed_parser.add_argument('--color_key', dest='COLOR_KEY', type=str, default=None, help="Attribute name to lookup transcript type")
 gtf_to_bed_parser.add_argument('--color_code', dest='COLOR_CODE', type=str, default=None, help="Tab-separated file of transcript type R,G,B colors (e.g. 'type\t255,255,255')")
+gtf_to_bed_parser.add_argument("--extend", dest='EXTEND', help="Extend annotation to ends of Start and End clusters, if they exist.", default=False, action='store_true')
 gtf_to_bed_parser.set_defaults(object='GTFconverter')
+
+### gtf_ends.py ###
+gtf_ends_parser = subparsers.add_parser('gtf-ends',help="Writes a BED file containing the set of end features in an annotation (GTF/GFF3/BED12).", formatter_class=ArgumentDefaultsHelpFormatter)
+gtf_ends_parser.add_argument("INPUT", type=str, help="Input GTF/GFF3 file")
+gtf_ends_parser.add_argument("-o", "--output", dest='OUT', help="Output file path (default: stdout)", default='stdout')
+gtf_ends_parser.add_argument("-f" ,"--force", dest='FORCE', help="Force overwrite of --output file if it exists.", default=False, action='store_true')
+gtf_ends_parser.add_argument('-t','--type', dest='TYPE', choices=['all','S', 'E'], type=str, default='all', help="End type: Starts (S), Ends (E), or all")
+gtf_ends_parser.add_argument("--extend", dest='EXTEND', type=int, help="Extend a fixed distance up and down from the peak position.", default=None)
+gtf_ends_parser.add_argument("--name", dest='NAME_ATTR', help="Attribute to pass to the name column (default: transcript_id)", default='transcript_id', type=str)
+gtf_ends_parser.add_argument("--score", dest='SCORE', help="Attribute to pass to score column (default: None)", default=None, type=str)
+gtf_ends_parser.add_argument('--gtf_parent', dest='GTF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Parent object (default: transcript)")
+gtf_ends_parser.add_argument('--gtf_child', dest='GTF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GTF files for Child object (default: exon)")
+gtf_ends_parser.add_argument('--gff_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Parent object (default: mRNA, transcript)")
+gtf_ends_parser.add_argument('--gff_child', dest='GFF_CHILD', type=str, nargs='+', default=None, help="Line type(s) in GFF3 files for Child object (default: exon)")
+gtf_ends_parser.add_argument('--parent_attr_gene', dest='PARENT_ATTR_GENE', type=str, default=None, help="Gene attribute in Parent objects (default: gene)")
+gtf_ends_parser.add_argument('--child_attr_gene', dest='CHILD_ATTR_GENE', type=str, default=None, help="Gene attribute in Child objects (default: gene)")
+gtf_ends_parser.add_argument('--parent_attr_transcript', dest='PARENT_ATTR_TRANSCRIPT', type=str, nargs='+', default=None, help="Transcript attribute(s) in Parent objects (default: transcript_id)")
+gtf_ends_parser.add_argument('--child_attr_transcript', dest='CHILD_ATTR_TRANSCRIPT', type=str, nargs='+', default=None, help="Transcript attribute(s) in Child objects (default: transcript_id)")
+gtf_ends_parser.set_defaults(object='GTFendwriter')
 
 
 ### elr_simulate.py ###

@@ -23,6 +23,11 @@ class GTFconverter:
         self.child_key_transcript = args['CHILD_ATTR_TRANSCRIPT']
         self.color_key = args['COLOR_KEY']
         self.name_attr = args['NAME_ATTR']
+        self.extend = args['EXTEND']
+        self.source = args['SOURCE']
+        if self.source is None:
+                self.source = self.input
+        
         if self.color_key is None:
             self.color_code = ru.gtf_colorcode
             self.color_key = 'anno_type'
@@ -61,13 +66,18 @@ class GTFconverter:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
+        self.dataset.source_array = [self.source]
         self.generator = self.dataset.generator
         self.locus_counter = 0
         self.transcript_counter = 0
+        print(args)
     
     def run(self):
         if self.output != 'stdout':
             print(self.display_options())
+        
+        if self.output_type == 'elr':
+            self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
         
         for locus in self.generator:
             self.locus_counter += 1
@@ -129,12 +139,24 @@ class GTFconverter:
         """Given a chunk of transcripts from an AnnotationDataset, print all as BED12"""
         for mapping_object in locus:
             self.transcript_counter += 1
+            mapping_object.source = 0
             if self.output_type == 'elr':
-                out_string = mapping_object.write_as_elr()
+                endweights = 'S.reads' in mapping_object.attributes.keys()
+                condense = not endweights
+                out_string = mapping_object.write_as_elr(condense=condense, endweights=endweights)
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
                 color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80')
-                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color)
+                longStart, longEnd = None, None
+                if self.extend:
+                    if mapping_object.strand == 1:
+                        longStart = int(mapping_object.attributes['S.left']) if 'S.left' in mapping_object.attributes else None
+                        longEnd = int(mapping_object.attributes['E.right']) if 'E.right' in mapping_object.attributes else None
+                    elif mapping_object.strand == -1:
+                        longStart = int(mapping_object.attributes['E.left']) if 'E.left' in mapping_object.attributes else None
+                        longEnd = int(mapping_object.attributes['S.right']) if 'S.right' in mapping_object.attributes else None
+                
+                out_fields = mapping_object.write_as_bed(self.dataset.chrom_array, ['.','.'], as_string=False, score_column=score_column, name_attr=self.name_attr, color=color, longStart=longStart, longEnd = longEnd)
                 out_string = '\t'.join([str(f) for f in out_fields[:12]])
             
             self.output_line(out_string)
