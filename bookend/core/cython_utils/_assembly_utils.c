@@ -23110,7 +23110,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
  *         for rng in end_ranges:
  *             relpos = rng.peak - pos             # <<<<<<<<<<<<<<
  *             if relpos*bound<0 or abs(relpos)<abs(bound):
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  */
     __pyx_v_relpos = (__pyx_v_rng->peak - __pyx_v_pos);
 
@@ -23118,7 +23118,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
  *         for rng in end_ranges:
  *             relpos = rng.peak - pos
  *             if relpos*bound<0 or abs(relpos)<abs(bound):             # <<<<<<<<<<<<<<
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  *                     dist = abs(pos-rng.peak)
  */
     __pyx_t_14 = (((__pyx_v_relpos * __pyx_v_bound) < 0) != 0);
@@ -23137,10 +23137,16 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
       /* "_assembly_utils.pyx":705
  *             relpos = rng.peak - pos
  *             if relpos*bound<0 or abs(relpos)<abs(bound):
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):             # <<<<<<<<<<<<<<
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):             # <<<<<<<<<<<<<<
  *                     dist = abs(pos-rng.peak)
  *                     if bestdist == -1 or dist < bestdist:
  */
+      __pyx_t_14 = ((__pyx_v_extend < 0) != 0);
+      if (!__pyx_t_14) {
+      } else {
+        __pyx_t_13 = __pyx_t_14;
+        goto __pyx_L9_bool_binop_done;
+      }
       __pyx_t_15 = (__pyx_v_rng->left - __pyx_v_extend);
       __pyx_t_16 = 0;
       if (((__pyx_t_15 > __pyx_t_16) != 0)) {
@@ -23168,7 +23174,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
 
         /* "_assembly_utils.pyx":706
  *             if relpos*bound<0 or abs(relpos)<abs(bound):
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  *                     dist = abs(pos-rng.peak)             # <<<<<<<<<<<<<<
  *                     if bestdist == -1 or dist < bestdist:
  *                         bestrng = rng
@@ -23177,7 +23183,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
         __pyx_v_dist = __pyx_t_15;
 
         /* "_assembly_utils.pyx":707
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  *                     dist = abs(pos-rng.peak)
  *                     if bestdist == -1 or dist < bestdist:             # <<<<<<<<<<<<<<
  *                         bestrng = rng
@@ -23187,11 +23193,11 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
         if (!__pyx_t_14) {
         } else {
           __pyx_t_13 = __pyx_t_14;
-          goto __pyx_L12_bool_binop_done;
+          goto __pyx_L13_bool_binop_done;
         }
         __pyx_t_14 = ((__pyx_v_dist < __pyx_v_bestdist) != 0);
         __pyx_t_13 = __pyx_t_14;
-        __pyx_L12_bool_binop_done:;
+        __pyx_L13_bool_binop_done:;
         if (__pyx_t_13) {
 
           /* "_assembly_utils.pyx":708
@@ -23214,7 +23220,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
           __pyx_v_bestdist = __pyx_v_dist;
 
           /* "_assembly_utils.pyx":707
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  *                     dist = abs(pos-rng.peak)
  *                     if bestdist == -1 or dist < bestdist:             # <<<<<<<<<<<<<<
  *                         bestrng = rng
@@ -23225,7 +23231,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
         /* "_assembly_utils.pyx":705
  *             relpos = rng.peak - pos
  *             if relpos*bound<0 or abs(relpos)<abs(bound):
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):             # <<<<<<<<<<<<<<
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):             # <<<<<<<<<<<<<<
  *                     dist = abs(pos-rng.peak)
  *                     if bestdist == -1 or dist < bestdist:
  */
@@ -23235,7 +23241,7 @@ static struct __pyx_obj_15_assembly_utils_EndRange *__pyx_f_15_assembly_utils_5L
  *         for rng in end_ranges:
  *             relpos = rng.peak - pos
  *             if relpos*bound<0 or abs(relpos)<abs(bound):             # <<<<<<<<<<<<<<
- *                 if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+ *                 if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
  *                     dist = abs(pos-rng.peak)
  */
     }
@@ -39060,7 +39066,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
  *                     E_ranges = self.end_ranges[3]
  * 
  *                 if T.s_tag:             # <<<<<<<<<<<<<<
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
  *                     if S is not self.nullRange:
  */
       __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_n_s_s_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1434, __pyx_L1_error)
@@ -39072,18 +39078,18 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
         /* "_assembly_utils.pyx":1435
  * 
  *                 if T.s_tag:
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)             # <<<<<<<<<<<<<<
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)             # <<<<<<<<<<<<<<
  *                     if S is not self.nullRange:
  *                         assigned = False
  */
-        __pyx_t_2 = ((PyObject *)((struct __pyx_vtabstruct_15_assembly_utils_Locus *)__pyx_v_self->__pyx_vtab)->get_end_cluster(__pyx_v_self, __pyx_v_first, __pyx_v_firstbound, 0.0, __pyx_v_S_ranges, __pyx_v_self->end_extend, 0, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1435, __pyx_L1_error)
+        __pyx_t_2 = ((PyObject *)((struct __pyx_vtabstruct_15_assembly_utils_Locus *)__pyx_v_self->__pyx_vtab)->get_end_cluster(__pyx_v_self, __pyx_v_first, __pyx_v_firstbound, 0.0, __pyx_v_S_ranges, -1, 0, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1435, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_XDECREF_SET(__pyx_v_S, ((struct __pyx_obj_15_assembly_utils_EndRange *)__pyx_t_2));
         __pyx_t_2 = 0;
 
         /* "_assembly_utils.pyx":1436
  *                 if T.s_tag:
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
  *                     if S is not self.nullRange:             # <<<<<<<<<<<<<<
  *                         assigned = False
  *                         for l in range(len(S_list)):
@@ -39093,7 +39099,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
         if (__pyx_t_11) {
 
           /* "_assembly_utils.pyx":1437
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
  *                     if S is not self.nullRange:
  *                         assigned = False             # <<<<<<<<<<<<<<
  *                         for l in range(len(S_list)):
@@ -39228,7 +39234,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
 
           /* "_assembly_utils.pyx":1436
  *                 if T.s_tag:
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
  *                     if S is not self.nullRange:             # <<<<<<<<<<<<<<
  *                         assigned = False
  *                         for l in range(len(S_list)):
@@ -39239,7 +39245,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
  *                     E_ranges = self.end_ranges[3]
  * 
  *                 if T.s_tag:             # <<<<<<<<<<<<<<
- *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+ *                     S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
  *                     if S is not self.nullRange:
  */
       }
@@ -39248,7 +39254,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
  *                             S_assign.append([i])
  * 
  *                 if T.e_tag:             # <<<<<<<<<<<<<<
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
  *                     if E is not self.nullRange:
  */
       __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_n_s_e_tag); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1449, __pyx_L1_error)
@@ -39260,18 +39266,18 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
         /* "_assembly_utils.pyx":1450
  * 
  *                 if T.e_tag:
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)             # <<<<<<<<<<<<<<
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)             # <<<<<<<<<<<<<<
  *                     if E is not self.nullRange:
  *                         assigned = False
  */
-        __pyx_t_2 = ((PyObject *)((struct __pyx_vtabstruct_15_assembly_utils_Locus *)__pyx_v_self->__pyx_vtab)->get_end_cluster(__pyx_v_self, __pyx_v_last, __pyx_v_lastbound, 0.0, __pyx_v_E_ranges, __pyx_v_self->end_extend, 0, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1450, __pyx_L1_error)
+        __pyx_t_2 = ((PyObject *)((struct __pyx_vtabstruct_15_assembly_utils_Locus *)__pyx_v_self->__pyx_vtab)->get_end_cluster(__pyx_v_self, __pyx_v_last, __pyx_v_lastbound, 0.0, __pyx_v_E_ranges, -1, 0, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1450, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_XDECREF_SET(__pyx_v_E, ((struct __pyx_obj_15_assembly_utils_EndRange *)__pyx_t_2));
         __pyx_t_2 = 0;
 
         /* "_assembly_utils.pyx":1451
  *                 if T.e_tag:
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
  *                     if E is not self.nullRange:             # <<<<<<<<<<<<<<
  *                         assigned = False
  *                         for l in range(len(E_list)):
@@ -39281,7 +39287,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
         if (__pyx_t_11) {
 
           /* "_assembly_utils.pyx":1452
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
  *                     if E is not self.nullRange:
  *                         assigned = False             # <<<<<<<<<<<<<<
  *                         for l in range(len(E_list)):
@@ -39416,7 +39422,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
 
           /* "_assembly_utils.pyx":1451
  *                 if T.e_tag:
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
  *                     if E is not self.nullRange:             # <<<<<<<<<<<<<<
  *                         assigned = False
  *                         for l in range(len(E_list)):
@@ -39427,7 +39433,7 @@ static void __pyx_f_15_assembly_utils_5Locus_add_transcript_attributes(struct __
  *                             S_assign.append([i])
  * 
  *                 if T.e_tag:             # <<<<<<<<<<<<<<
- *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+ *                     E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
  *                     if E is not self.nullRange:
  */
       }

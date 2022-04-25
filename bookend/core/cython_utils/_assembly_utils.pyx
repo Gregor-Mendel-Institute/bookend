@@ -702,7 +702,7 @@ cdef class Locus:
         for rng in end_ranges:
             relpos = rng.peak - pos
             if relpos*bound<0 or abs(relpos)<abs(bound):
-                if pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend):
+                if extend < 0 or (pos >= max(0, rng.left-extend) and pos <= min(self.frag_by_pos.shape[0], rng.right+extend)):
                     dist = abs(pos-rng.peak)
                     if bestdist == -1 or dist < bestdist:
                         bestrng = rng
@@ -1432,7 +1432,7 @@ cdef class Locus:
                     E_ranges = self.end_ranges[3]
                 
                 if T.s_tag:
-                    S = self.get_end_cluster(first, firstbound, 0, S_ranges, self.end_extend)
+                    S = self.get_end_cluster(first, firstbound, 0, S_ranges, -1)
                     if S is not self.nullRange:
                         assigned = False
                         for l in range(len(S_list)):
@@ -1447,7 +1447,7 @@ cdef class Locus:
                             S_assign.append([i])
                 
                 if T.e_tag:
-                    E = self.get_end_cluster(last, lastbound, 0, E_ranges, self.end_extend)
+                    E = self.get_end_cluster(last, lastbound, 0, E_ranges, -1)
                     if E is not self.nullRange:
                         assigned = False
                         for l in range(len(E_list)):
