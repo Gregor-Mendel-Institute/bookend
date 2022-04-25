@@ -20,6 +20,7 @@ class AssemblyClassifier:
         self.input = self.args['INPUT']
         self.verbose = self.args['VERBOSE']
         self.reference = self.args['REFERENCE']
+        self.match_unstranded = self.args['UNSTRANDED']
         if len(self.input) == 0 and self.reference is None:
             parser.print_help()
             sys.exit(0)
@@ -216,8 +217,9 @@ class AssemblyClassifier:
                 else: # At least some shared, sense, exonic sequence
                     match_type = 4 # isoform
             
-            if transcript.strand == 0 and match_type in [8, 7, 4]:
-                match_type = 1
+            if not self.match_unstranded:
+                if transcript.strand == 0 and match_type in [8, 7, 4]:
+                    match_type = 1
             
             new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen, ref, diff5p, diff3p)
             best_match = self.update_match(best_match, new_match)
