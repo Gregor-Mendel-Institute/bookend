@@ -13,7 +13,7 @@ if __name__ == '__main__':
     sys.path.append('../../bookend')
 
 class Condenser:
-    def __init__(self, args):
+    def __init__(self, args, printargs=False):
         """Parses input arguments for assembly"""
         self.start_time = time.time()
         self.output = args['OUT']
@@ -54,6 +54,7 @@ class Condenser:
         self.transcripts_written = 0
         self.bases_used = 0
         self.output_temp = open(self.output+'.tmp', 'w')
+        if printargs:print(args)
         #self.output_file = open(self.output,'w')
     
     def sort_output(self):
@@ -62,18 +63,21 @@ class Condenser:
         sorter.run()
         os.remove(self.output+'.tmp')
     
-    def output_transcripts(self, transcript):
+    def output_transcripts(self, transcript, printout=False):
         """Writes the RNAseqMapping object 'transcript' to an output stream,
         formatted as output_type."""
         output_line = transcript.write_as_elr(condense=self.sparse, endweights=True)
-        self.output_temp.write(output_line+'\n')
+        if printout:
+            print(output_line)
+        else:
+            self.output_temp.write(output_line+'\n')
     
     def dump_starts(self, locus):
         start_groups = []
         donors = [int(j.split(':')[0]) for j in locus.J_plus]
         for end_range in locus.end_ranges[0]: # Start Plus
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            right = min([d for d in donors if d >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+locus.extend])
+            right = min([d for d in donors if d >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+max(locus.extend,self.minlen)])
             start_groups.append(ru.RNAseqMapping(ru.ELdata(
                 locus.chrom, 0, end_range.strand, [(end_range.peak+locus.leftmost, right+locus.leftmost)], [], True, False, capped, end_range.weight, False
             )))
@@ -81,7 +85,7 @@ class Condenser:
         donors = [int(j.split(':')[1]) for j in locus.J_minus]
         for end_range in locus.end_ranges[2]: # Start Minus
             capped = self.cap_filter <= end_range.capped/end_range.weight
-            left = max([d+1 for d in donors if d < end_range.left]+[0, end_range.left-locus.extend])
+            left = max([d+1 for d in donors if d < end_range.left]+[0, end_range.left-max(locus.extend,self.minlen)])
             start_groups.append(ru.RNAseqMapping(ru.ELdata(
                 locus.chrom, 0, end_range.strand, [(left+locus.leftmost, end_range.peak+1+locus.leftmost)], [], True, False, capped, end_range.weight, False
             )))
@@ -92,22 +96,22 @@ class Condenser:
         end_groups = []
         acceptors = [int(j.split(':')[1]) for j in locus.J_plus]
         for end_range in locus.end_ranges[1]: # End Plus
-            left = max([a+1 for a in acceptors if a < end_range.left]+[0, end_range.left-locus.extend])
+            left = max([a+1 for a in acceptors if a < end_range.left]+[0, end_range.left-max(locus.extend,self.minlen)])
             end_groups.append(ru.RNAseqMapping(ru.ELdata(
                 locus.chrom, 0, end_range.strand, [(left+locus.leftmost, end_range.peak+1+locus.leftmost)], [], False, True, False, end_range.weight, False
             )))
         
         acceptors = [int(j.split(':')[0]) for j in locus.J_minus]
         for end_range in locus.end_ranges[3]: # End Minus
-            right = min([a for a in acceptors if a >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+locus.extend])
+            right = min([a for a in acceptors if a >= end_range.right]+[locus.rightmost-locus.leftmost, end_range.right+max(locus.extend,self.minlen)])
             end_groups.append(ru.RNAseqMapping(ru.ELdata(
                 locus.chrom, 0, end_range.strand, [(end_range.peak+locus.leftmost, right+locus.leftmost)], [], False, True, False, end_range.weight, False
             )))
         
         return sorted(end_groups)
     
-    def process_entry(self, chunk):
-        if len(chunk) >= 1:
+    def process_entry(self, chunk, printout=False):
+        if len(chunk) > 1:
             chrom = chunk[0].chrom
             self.chunk_counter += 1
             locus = Locus(
@@ -142,16 +146,23 @@ class Condenser:
                     
                     for group in sorted(end_groups):
                         if group.weight >= self.min_cov:
-                            self.output_transcripts(group)
+                            self.output_transcripts(group, printout)
                 
                 if not (self.starts or self.ends):
                     for transcript in locus.transcripts:
                         if self.passes_all_checks(transcript):
-                            self.output_transcripts(transcript)
+                            self.output_transcripts(transcript, printout)
                             self.transcripts_written += 1
                             self.bases_used += transcript.attributes['bases']
-            
+
             del locus
+        elif len(chunk) == 1: # No locus calculation needed, output read
+            transcript = chunk[0]
+            transcript.coverage = transcript.weight
+            if self.passes_all_checks(transcript):
+                self.output_transcripts(transcript, printout)
+                self.transcripts_written += 1
+                self.bases_used += transcript.attributes.get('bases',transcript.get_length()*transcript.coverage)
     
     def display_options(self):
         """Returns a string describing all input args"""
@@ -170,7 +181,7 @@ class Condenser:
         return options_string
     
     def display_summary(self):
-        summary = 'Wrote {} transcripts ({} bases).'.format(self.transcripts_written, self.bases_used)
+        summary = 'Wrote {} transfrags ({} bases).'.format(self.transcripts_written, self.bases_used)
         summary += 'Total elapsed time: {}'.format(round(self.end_time - self.start_time, 5))
         return summary
     
@@ -198,7 +209,7 @@ class Condenser:
         see _rnaseq_utils.pyx for details.
         """
         if transcript.coverage < self.min_cov: return False
-        if transcript.attributes['length'] < self.minlen: return False
+        if transcript.attributes.get('length',transcript.get_length()) < self.minlen: return False
         return True
     
     def run(self):
