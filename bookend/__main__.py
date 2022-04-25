@@ -43,6 +43,9 @@ def import_object(object_name):
     elif object_name == 'AnnotationMerger':
         from .core.gtf_merge import AnnotationMerger
         objectClass = AnnotationMerger
+    elif object_name == 'FastaWriter':
+        from .core.fasta import FastaWriter
+        objectClass = FastaWriter
     elif object_name == 'AssemblyClassifier':
         from .core.gtf_classify import AssemblyClassifier
         objectClass = AssemblyClassifier
@@ -64,6 +67,9 @@ def import_object(object_name):
     elif object_name == 'GTFconverter':
         from .core.gtf_to_bed import GTFconverter
         objectClass = GTFconverter
+    elif object_name == 'GTFendwriter':
+        from .core.gtf_ends import GTFendwriter
+        objectClass = GTFendwriter
     elif object_name == 'ELRsimulator':
         from .core.elr_simulate import ELRsimulator
         objectClass = ELRsimulator
