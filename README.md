@@ -4,6 +4,8 @@ Bookend is a comprehensive framework for end-guided assembly of short-read, long
 Please see the [User Guide](Bookend_User_Guide.pdf) for a full description of the subcommands and arguments.
 The lastest developments can be found in the [Bookend GitHub repository](https://github.com/Gregor-Mendel-Institute/bookend).
 
+Take a look at the [Bookend publication](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02700-3) for more details about its usage and applications.
+
 ## Installation  
 Bookend can be installed through the Python Package Index (PyPI) on UNIX systems with Python 3.6+ using the command:
 ```
