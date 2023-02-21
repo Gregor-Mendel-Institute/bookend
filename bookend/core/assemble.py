@@ -5,6 +5,7 @@ import sys
 import time
 import gzip
 import pysam
+from multiprocessing.dummy import Pool as ThreadPool    
 from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, read_generator
 from bookend.core.cython_utils._assembly_utils import Locus
 from bookend.core.elr_combine import ELRcombiner
@@ -96,6 +97,7 @@ class Assembler:
         
         self.generator = read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
         self.chunk_counter = 0
+        self.transcript_counter = 0
         self.output_file = open(self.output,'w')
     
     def output_transcripts(self, transcript, output_type):
@@ -113,9 +115,16 @@ class Assembler:
     def process_entry(self, chunk):
         STOP_AT=float('inf')
         # STOP_AT=1000000
-        if len(chunk) > 0:
+        if len(chunk) > 0:            
             chrom = chunk[0].chrom
             self.chunk_counter += 1
+            if self.verbose:
+                print("\nProcessing chunk {} ({}:{}-{}, {} reads)".format(
+                    self.chunk_counter,
+                    self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right(),
+                    len(chunk)
+                ), end=" ")
+            
             locus = Locus(
                 chrom=chrom, 
                 chunk_number=self.chunk_counter, 
@@ -170,6 +179,8 @@ class Assembler:
                 
                 if chunk[0].left() >= STOP_AT:
                     sys.exit()
+                
+                self.transcript_counter += transcripts_written
             
             del locus
     
@@ -200,7 +211,8 @@ class Assembler:
     
     def display_summary(self):
         summary = ''
-        summary += 'Total elapsed time: {}'.format(round(self.end_time - self.start_time, 5))
+        summary += '\nTotal elapsed time: {}'.format(round(self.end_time - self.start_time, 5))
+        summary += '\n{} assembled transcripts written to {}'.format(self.transcript_counter, self.output)
         return summary
     
     def file_extension(self, filename):
@@ -240,19 +252,17 @@ class Assembler:
         if self.output != 'stdout':
             print(self.display_options())
         
-        if self.cov_out:self.covfile=open(self.cov_out, 'w')
-        wrote_header = False
+        if self.cov_out:
+            self.covfile=open(self.cov_out, 'w')
+
+        if self.output_type != 'gtf':
+            self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
+        
+        if self.cov_out:
+            if not self.ignore_sources:
+                self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
+        
         for locus in self.generator:
-            if not wrote_header:
-                if self.output_type != 'gtf':
-                    self.output_file.write('\n'.join(self.dataset.dump_header())+'\n')
-                
-                if self.cov_out:
-                    if not self.ignore_sources:
-                        self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
-                
-                wrote_header = True
-            
             self.process_entry(locus)
         
         if len(self.input) == 1:
