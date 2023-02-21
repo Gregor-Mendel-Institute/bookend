@@ -18,6 +18,8 @@ class BAMtoELRconverter:
         self.source = args['SOURCE']
         self.genome = args['GENOME']
         self.stranded = args['STRANDED']
+        self.reverse = args['REVERSE']
+        self.stranded = self.stranded or self.reverse
         self.header = args['HEADER']
         self.start = args['START']
         self.capped = args['CAPPED']
@@ -27,6 +29,7 @@ class BAMtoELRconverter:
         self.output = args['OUTPUT']
         self.start_seq = args['START_SEQ']
         self.end_seq = args['END_SEQ']
+        self.untrimmed = args['UNTRIMMED']
         self.record_artifacts = args['RECORD_ARTIFACTS']
         self.mismatch_rate = args['MM_RATE']
         self.sj_shift = args['SJ_SHIFT']
@@ -74,13 +77,15 @@ class BAMtoELRconverter:
             'e_tag':self.end,
             'capped':self.capped,
             'stranded':self.stranded,
+            'reverse':self.reverse,
             'start_seq':self.start_seq,
             'end_seq':self.end_seq,
             'minlen_strict':self.minlen_strict,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
             'sj_shift':self.sj_shift,
-            'remove_noncanonical':self.remove_noncanonical
+            'remove_noncanonical':self.remove_noncanonical,
+            'labels_are_trimmed':not self.untrimmed,
         }
         if self.no_ends:
             self.config_dict['s_tag'] = False
@@ -155,23 +160,25 @@ class BAMtoELRconverter:
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
-        options_string += "  Input file:                         {}\n".format(self.input)
-        options_string += "  Reference genome file:              {}\n".format(self.genome)
-        options_string += "  Output file (-o):                   {}\n".format(self.output)
+        options_string += "  Input file:                          {}\n".format(self.input)
+        options_string += "  Reference genome file:               {}\n".format(self.genome)
+        options_string += "  Output file (-o):                    {}\n".format(self.output)
         options_string += "  *** Experiment parameters ***\n"
-        options_string += "  Reads start at RNA 5' ends (-s):    {}\n".format(self.start)
-        options_string += "  Reads are from capped RNA (-c):     {}\n".format(self.capped)
-        options_string += "  Reads end at RNA 3' ends (-e):      {}\n".format(self.end)
-        options_string += "  Strand specific (--stranded):       {}\n".format(self.stranded)
-        options_string += "  Start tag suffix (--start_seq):     {}\n".format(self.start_seq)
-        options_string += "  End tag prefix (--end_seq):         {}\n".format(self.end_seq)
-        options_string += "  Adjust splice sites (--sj_shift):   {}\n".format(self.sj_shift)
+        options_string += "  Reads start at RNA 5' ends (-s):     {}\n".format(self.start)
+        options_string += "  Reads are from capped RNA (-c):      {}\n".format(self.capped)
+        options_string += "  Reads end at RNA 3' ends (-e):       {}\n".format(self.end)
+        options_string += "  Untrimmed input reads (--untrimmed)  {}\n".format(self.untrimmed)
+        options_string += "  Strand specific (--stranded):        {}\n".format(self.stranded)
+        options_string += "  Strand specific reverse (--reverse): {}\n".format(self.reverse)
+        options_string += "  Start tag suffix (--start_seq):      {}\n".format(self.start_seq)
+        options_string += "  End tag prefix (--end_seq):          {}\n".format(self.end_seq)
+        options_string += "  Adjust splice sites (--sj_shift):    {}\n".format(self.sj_shift)
         options_string += "  *** Filters ***\n"
-        options_string += "  --record_artifacts:                 {}\n".format(self.record_artifacts)
-        options_string += "  --mismatch_rate:                    {}\n".format(self.mismatch_rate)
-        options_string += "  Perfect alignment minlen (--minlen_strict): {}\n".format(self.minlen_strict)
-        options_string += "  Relaxed alignment minlen (--minlen_loose):  {}\n".format(self.minlen_loose)
-        options_string += "  Secondary alignments (--secondary): {}\n".format(self.secondary)
+        options_string += "  --record_artifacts:                  {}\n".format(self.record_artifacts)
+        options_string += "  --mismatch_rate:                     {}\n".format(self.mismatch_rate)
+        options_string += "  Perfect minlen (--minlen_strict):    {}\n".format(self.minlen_strict)
+        options_string += "  Relaxed minlen (--minlen_loose):     {}\n".format(self.minlen_loose)
+        options_string += "  Secondary alignments (--secondary):  {}\n".format(self.secondary)
 
         if not self.genome:
             options_string += "\nWARNING: cap detection and artifact masking can only be done if a reference genome is provided."
