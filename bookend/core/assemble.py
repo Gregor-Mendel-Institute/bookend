@@ -6,7 +6,7 @@ import time
 import gzip
 import pysam
 from multiprocessing.dummy import Pool as ThreadPool    
-from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, read_generator
+from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset, read_generator, config_defaults
 from bookend.core.cython_utils._assembly_utils import Locus
 from bookend.core.elr_combine import ELRcombiner
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        # print(args)
+        print(args)
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
@@ -32,6 +32,7 @@ class Assembler:
         self.min_end = args['MIN_E']
         self.min_intron_length = args['MIN_INTRON_LEN']
         self.intron_filter = args['INTRON_FILTER']
+        self.truncation_filter = args['TRUNCATION_FILTER']
         self.min_proportion = args['MIN_PROPORTION']
         self.cap_bonus = args['CAP_BONUS']
         self.cap_filter = args['CAP_FILTER']
@@ -42,6 +43,7 @@ class Assembler:
         self.ignore_sources = not args['USE_SOURCES']
         self.require_cap = args['REQUIRE_CAP']
         self.antisense_filter = 0.01
+        config = config_defaults
         if self.ignore_labels:
             self.incomplete = True
         
@@ -57,7 +59,41 @@ class Assembler:
                     save = pysam.set_verbosity(0)
                     self.input_file = pysam.AlignmentFile(self.input)
                     save = pysam.set_verbosity(save)
-                    self.dataset = RNAseqDataset(chrom_array=self.input_file.header.references)
+                    try:
+                        longread = 'minimap' in self.input_file.header['PG'][0]['ID']
+                    except:
+                        longread = False
+                    
+                    if longread:
+                        print("WARNING: Detected long-read alignments. Setting defaults for unlabeled long-read cDNA.")
+                        print("Read the Bookend User Guide for long-read analysis recommendations.")
+                        long_defaults = {
+                            'source':'',
+                            's_tag':True,
+                            'e_tag':True,
+                            'labels_are_trimmed':False,
+                            'capped':False,
+                            'stranded':False,
+                            'reverse':False,
+                            'start_seq':None,
+                            'end_seq':None,
+                            'mismatch_rate':0.2,
+                            'error_rate':0.2,
+                            'min_reps':1,
+                            'cap_bonus':1,
+                            'sj_shift':2,
+                            'max_headclip':120,
+                            'gene_delim':'.',
+                            'remove_noncanonical':False,
+                            'secondary':False,
+                            'ignore_ends':False,
+                            'quality_filter':True,
+                            'reference':None,
+                            'sj':None,
+                        }
+                        config.update(long_defaults)
+                    
+                    self.dataset = RNAseqDataset(chrom_array=self.input_file.header.references, config=config)
                 elif self.file_type == 'elr.gz':
                     self.dataset = RNAseqDataset()
                     self.input_file = gzip.open(self.input, 'rt')
@@ -141,20 +177,23 @@ class Assembler:
                 complete=False, 
                 verbose=self.verbose, 
                 naive=self.ignore_sources, 
-                intron_filter=self.intron_filter, 
+                intron_filter=self.intron_filter,
+                splittable=True,
                 ignore_ends=self.ignore_labels, 
                 allow_incomplete=self.incomplete,
                 require_cap=self.require_cap,
                 min_start=self.min_start,
-                min_end=self.min_end
+                min_end=self.min_end,
+                assemble=True,
+                truncation_filter=self.truncation_filter,
             )
             self.chunk_counter = locus.chunk_number
             total_bases = locus.bases
+            transcripts_written = 0
             if total_bases > 0:
+                bases_used = 0
                 if self.verbose:
                     print('\n[{}:{}-{}] '.format(self.dataset.chrom_array[chrom], chunk[0].left(),chunk[-1].right()), end=" ")
-                    bases_used = 0
-                    transcripts_written = 0
                 
                 for transcript in locus.transcripts:
                     if self.passes_all_checks(transcript):
@@ -169,9 +208,8 @@ class Assembler:
                                 
                                 self.covfile.write('{}\t{}\n'.format(transcript.attributes['transcript_id'], '\t'.join([str(round(v,1)) for v in source_cov])))
                         
-                        if self.verbose:
-                            bases_used += transcript.attributes['bases']
-                            transcripts_written += 1
+                        bases_used += transcript.attributes['bases']
+                        transcripts_written += 1
                 
                 if self.verbose:
                     print('{} transcripts from {}/{} bases ({}%)'.format(
@@ -262,8 +300,8 @@ class Assembler:
             if not self.ignore_sources:
                 self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
         
-        for locus in self.generator:
-            self.process_entry(locus)
+        for chunk in self.generator:
+            self.process_entry(chunk)
         
         if len(self.input) == 1:
             self.output_file.close()

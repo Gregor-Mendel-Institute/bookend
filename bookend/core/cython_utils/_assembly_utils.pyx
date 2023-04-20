@@ -53,9 +53,9 @@ cdef class EndRange:
 
 cdef class Locus:
     cdef public int chrom, leftmost, rightmost, extend, end_extend, number_of_elements, min_overhang, chunk_number, oligo_len, min_intron_length
-    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose, simplify
+    cdef public bint naive, allow_incomplete, use_attributes, ignore_ends, require_cap, splittable, verbose, simplify, assemble
     cdef public tuple reads, frags
-    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, antisense_filter, dead_end_penalty, min_start, min_end
+    cdef public float weight, bases, raw_bases, minimum_proportion, cap_bonus, cap_filter, intron_filter, truncation_filter, antisense_filter, dead_end_penalty, min_start, min_end
     cdef public dict J_plus, J_minus, end_ranges, source_lookup, adj, exc, assembly_source_cov
     cdef public set branchpoints, SPbp, EPbp, SMbp, EMbp, DPbp, DMbp, APbp, AMbp
     cdef public list transcripts, traceback, sources, subproblem_indices, splits, gaps_plus, gaps_minus
@@ -63,7 +63,7 @@ cdef class Locus:
     cdef EndRange nullRange
     cdef Locus sublocus
     cdef public np.ndarray depth_matrix, strandratio, cov_plus, cov_minus, depth, read_lengths, discard_frags, member_lengths, frag_len, frag_by_pos, strand_array, weight_array, rep_array, membership, overlap, information_content, member_content, frag_strand_ratios, member_weights
-    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=True, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True, min_start=0, min_end=0):
+    def __init__(self, chrom, chunk_number, list_of_reads, max_gap=50, end_cluster=200, min_overhang=3, reduce=True, minimum_proportion=0.01, min_intron_length=50, antisense_filter=0.01, cap_bonus=5, cap_filter=.02, complete=False, verbose=False, naive=False, intron_filter=0.10, use_attributes=True, oligo_len=20, ignore_ends=False, allow_incomplete=False, require_cap=False, splittable=True, simplify=True, min_start=0, min_end=0, assemble=True, truncation_filter=.5):
         self.nullRange = EndRange(-1, -1, -1, -1, -1)
         self.oligo_len = oligo_len
         self.transcripts = []
@@ -74,6 +74,7 @@ cdef class Locus:
         self.minimum_proportion = minimum_proportion
         self.min_intron_length = min_intron_length
         self.intron_filter = intron_filter
+        self.truncation_filter = truncation_filter
         self.antisense_filter = antisense_filter
         self.min_overhang = min_overhang
         self.chrom = chrom
@@ -88,6 +89,7 @@ cdef class Locus:
         self.simplify = simplify
         self.min_start = min_start
         self.min_end = min_end
+        self.assemble = assemble
         self.assembly_source_cov = {}
         if self.ignore_ends:
             self.dead_end_penalty = 1
@@ -144,9 +146,9 @@ cdef class Locus:
             if len(self.splits) > 0:
                 if self.verbose:print('({} subchunks)'.format(len(self.splits)+1), end=" ")
                 for subchunk in ru.generate_subchunks(list_of_reads, self.splits):
-                    if ru.has_ends(subchunk, self.require_cap) or self.allow_incomplete:
+                    if len(subchunk) > 0 and (ru.has_ends(subchunk, self.require_cap) or self.allow_incomplete):
                         self.chunk_number += 1
-                        sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False)
+                        sublocus = Locus(self.chrom, self.chunk_number, subchunk, max_gap=self.extend, end_cluster=self.end_extend, min_overhang=self.min_overhang, reduce=True, minimum_proportion=self.minimum_proportion, min_intron_length=self.min_intron_length, antisense_filter=self.antisense_filter, cap_bonus=self.cap_bonus, cap_filter=self.cap_filter, complete=False, verbose=False, naive=self.naive, intron_filter=self.intron_filter, use_attributes=self.use_attributes, oligo_len=self.oligo_len, ignore_ends=self.ignore_ends, allow_incomplete=self.allow_incomplete, require_cap=self.require_cap, splittable=False, assemble=self.assemble)
                         self.transcripts += sublocus.transcripts
                         self.assembly_source_cov.update(sublocus.assembly_source_cov)
                         self.bases += sublocus.bases
@@ -158,7 +160,7 @@ cdef class Locus:
                     self.build_graph(reduce)
                 
                 if self.bases > 0:
-                    self.assemble_transcripts()
+                    self.assemble_transcripts(self.assemble)
     
     def __len__(self):
         return self.rightmost - self.leftmost
@@ -204,10 +206,10 @@ cdef class Locus:
         cdef dict jdict, leftsides, rightsides
         cdef list keys, spans
         cdef str k
-        cdef int i,l,r, Sp, Ep, Sm, Em, covp, covm, covn
+        cdef int i,l,r, Sp, Ep, Sm, Em, covp, covm, covn, strand
         cdef set prune
-        cdef np.ndarray counts
-        cdef float total, jcov, spanning_cov
+        cdef np.ndarray counts, cov
+        cdef float total, jcov, spanning_cov, unspliced_cov
         cdef bint passes
         cdef np.ndarray jspans
         Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
@@ -221,7 +223,14 @@ cdef class Locus:
             jspans[l:r+1] += self.J_minus[k]
         
 
-        for jdict in [self.J_plus, self.J_minus]:
+        for strand in [1,-1]:
+            if strand == 1:
+                jdict = self.J_plus
+                cov = self.cov_plus
+            elif strand == -1:
+                jdict = self.J_minus
+                cov = self.cov_minus
+            
             if jdict:
                 prune = set()
                 keys = sorted(list(jdict.keys()))
@@ -231,8 +240,9 @@ cdef class Locus:
                 for i in range(len(keys)):
                     l,r = spans[i]
                     spanning_cov = np.max(jspans[l:r+1])
+                    unspliced_cov = np.mean(cov[l:r])
                     jcov = jdict[keys[i]]
-                    if jcov < spanning_cov * self.minimum_proportion or r-l < min_intron_length:
+                    if jcov < spanning_cov * self.minimum_proportion or jcov < unspliced_cov * self.minimum_proportion or r-l < min_intron_length:
                         prune.add(keys[i])
                     else:
                         leftsides[l] = leftsides.get(l, [])+[keys[i]]
@@ -279,7 +289,7 @@ cdef class Locus:
             if self.min_overhang > 0:
                 prohibited_plus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
                 prohibited_plus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
-        
+
         for j in self.J_minus.keys():
             span = self.string_to_span(j)
             self.DMbp.add(span[1])
@@ -288,7 +298,7 @@ cdef class Locus:
             if self.min_overhang > 0:
                 prohibited_minus.update(range(span[0]-self.min_overhang, span[0]+self.min_overhang+1))
                 prohibited_minus.update(range(span[1]-self.min_overhang, span[1]+self.min_overhang+1))
-        
+
         for endtype in [Ep, Em, Sp, Sm]:
             if endtype == Sp:
                 pos = np.where(np.sum(self.depth_matrix[[Sp,Cp],],axis=0)>0)[0]
@@ -315,7 +325,7 @@ cdef class Locus:
             if endtype in [Sp, Sm]:
                 self.resolve_overlapping_ends(endtype)
                 self.enforce_cap_filter(endtype)
-        
+
         for endtype in [Ep, Em, Sp, Sm]:
             bpset = [self.SPbp, self.EPbp, self.SMbp, self.EMbp][endtype]
             for rng in self.end_ranges[endtype]:
@@ -349,7 +359,7 @@ cdef class Locus:
                 gap = next(gaps_plus)
         except: # Either no branchpoints or no gaps on the plus strand
             finished = True
-        
+
         while not finished:
             try:
                 lastbp, bp = bp, next(plus_bp)
@@ -375,13 +385,14 @@ cdef class Locus:
                 elif bp in rights: # Remove the branchpoint
                     rm_branchpoints.add(bp)
         
+        rm_branchpoints.difference_update(self.DMbp | self.EMbp | self.SMbp | self.AMbp)
         self.branchpoints.update(new_branchpoints)
         self.branchpoints.difference_update(rm_branchpoints)
         self.SPbp.difference_update(rm_branchpoints)
         self.EPbp.difference_update(rm_branchpoints)
         self.DPbp.difference_update(rm_branchpoints)
         self.APbp.difference_update(rm_branchpoints)
-        minus_bp = iter(sorted(set([0,len(self)]) |self.DMbp | self.EMbp | self.SMbp | self.AMbp))
+        minus_bp = iter(sorted(set([0,len(self)]) | self.DMbp | self.EMbp | self.SMbp | self.AMbp))
         gaps_minus = iter(self.gaps_minus)
         new_branchpoints, rm_branchpoints = set(), set()
         finished = False
@@ -392,7 +403,7 @@ cdef class Locus:
                 gap = next(gaps_minus)
         except: # Either no branchpoints or no gaps on the plus strand
             finished = True
-
+        
         while not finished:
             try:
                 lastbp, bp = bp, next(minus_bp)
@@ -418,6 +429,7 @@ cdef class Locus:
                 elif bp in rights: # Remove the branchpoint
                     rm_branchpoints.add(bp)
         
+        rm_branchpoints.difference_update(self.SPbp | self.APbp | self.DPbp | self.EPbp)
         self.branchpoints.update(new_branchpoints)
         self.branchpoints.difference_update(rm_branchpoints)
         self.SMbp.difference_update(rm_branchpoints)
@@ -606,7 +618,7 @@ cdef class Locus:
             np.ndarray value_order, passes
             EndRange e
             int p, maxp, prohibit_pos, i
-            float cumulative, threshold, v, r, maxv, weight
+            float cumulative, threshold, v, r, maxv, weight, total_weight
             list filtered_pos, end_ranges
             (int, int) current_range
             bint passed_prohibit
@@ -682,6 +694,8 @@ cdef class Locus:
         if self.passes_cap_filter(e):
             end_ranges.append(e)
         
+        total_weight = sum([e.weight for e in end_ranges])
+        end_ranges = [e for e in end_ranges if e.weight >= total_weight*self.minimum_proportion]
         return end_ranges
     
     cpdef int end_of_cluster(self, int pos, int boundary, float weight, list end_ranges, int extend, bint capped):
@@ -849,6 +863,9 @@ cdef class Locus:
         cdef list spans, splice_sites, sorted_splice_sites, intervening_junctions, skipped_frags
         cdef str junction_hash, junction, membership_hash
         membership = np.zeros(width, dtype=np.int8)
+        if ranges[0][0] - self.leftmost < 0 or ranges[-1][-1] > self.rightmost:
+            return membership
+        
         source_plus, sink_plus, source_minus, sink_minus = range(width-4, width)
         last_rfrag = 0
         if strand == 1:
@@ -1343,11 +1360,15 @@ cdef class Locus:
         if reduce: # Split graph into connected components and solve each on its own
             self.collapse_chains()
         
-        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter, allow_incomplete=self.allow_incomplete)
+        self.graph = ElementGraph(self.overlap, self.membership, self.weight_array, self.member_weights, self.strand_array, self.frag_len, self.naive, dead_end_penalty=self.dead_end_penalty, ignore_ends=self.ignore_ends, intron_filter=self.intron_filter, allow_incomplete=self.allow_incomplete, truncation_filter=self.truncation_filter)
     
-    cpdef void assemble_transcripts(self):
+    cpdef void assemble_transcripts(self, bint assemble):
         if self.graph is not None:
-            self.graph.assemble(self.minimum_proportion, self.simplify)
+            if assemble:
+                self.graph.assemble(self.minimum_proportion, self.simplify)
+            elif self.simplify: # Only filter, do not construct new paths not represented by >=1 full read
+                self.graph.remove_bad_assemblies(self.minimum_proportion)
+            
             counter = 1
             for path in self.graph.paths:
                 self.transcripts += self.convert_path(path, counter)
