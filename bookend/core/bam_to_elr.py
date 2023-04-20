@@ -15,9 +15,16 @@ from bookend.core.elr_to_bed import ELRtoBEDconverter
 class BAMtoELRconverter:
     def __init__(self, args):
         """Parses input arguments for converting BAM to ELR"""
+        print(args)
         self.source = args['SOURCE']
         self.genome = args['GENOME']
+        self.reference = args['REFERENCE']
+        self.splice = args['SPLICE']
+        self.chrom_names = args['CHROM_NAMES']
+        self.data_type = args['DATA_TYPE']
         self.stranded = args['STRANDED']
+        self.reverse = args['REVERSE']
+        self.stranded = self.stranded or self.reverse
         self.header = args['HEADER']
         self.start = args['START']
         self.capped = args['CAPPED']
@@ -27,6 +34,7 @@ class BAMtoELRconverter:
         self.output = args['OUTPUT']
         self.start_seq = args['START_SEQ']
         self.end_seq = args['END_SEQ']
+        self.untrimmed = args['UNTRIMMED']
         self.record_artifacts = args['RECORD_ARTIFACTS']
         self.mismatch_rate = args['MM_RATE']
         self.sj_shift = args['SJ_SHIFT']
@@ -74,13 +82,18 @@ class BAMtoELRconverter:
             'e_tag':self.end,
             'capped':self.capped,
             'stranded':self.stranded,
+            'reverse':self.reverse,
             'start_seq':self.start_seq,
             'end_seq':self.end_seq,
             'minlen_strict':self.minlen_strict,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
             'sj_shift':self.sj_shift,
-            'remove_noncanonical':self.remove_noncanonical
+            'remove_noncanonical':self.remove_noncanonical,
+            'labels_are_trimmed':not self.untrimmed,
+            'quality_filter':True,
+            'reference':self.reference,
+            'sj':self.splice,
         }
         if self.no_ends:
             self.config_dict['s_tag'] = False
@@ -88,6 +101,37 @@ class BAMtoELRconverter:
             self.config_dict['capped'] = False
             self.config_dict['start_seq'] = ''
             self.config_dict['end_seq'] = ''
+        
+        if self.data_type is not None:
+            if self.data_type.upper() in ['ONT','NANOPORE','OXFORD']:
+                """Reads are from Oxford Nanopore cDNA or PCR-cDNA kits, trimmed and oriented by bookend label or pychopper."""
+                self.config_dict['stranded'] = True
+                self.config_dict['max_headclip'] = 10
+                if self.untrimmed:
+                    self.config_dict['max_headclip'] = 120
+                    self.config_dict['stranded'] = False
+                    self.config_dict['s_tag'] = True
+                    self.config_dict['e_tag'] = True
+            elif self.data_type.upper() in ['PACBIO', 'ISOSEQ', 'ISOSEQ3', 'FLNC']:
+                """Reads are PacBio FLNCs, downstream of lima."""
+                self.config_dict['max_headclip'] = 4
+                self.config_dict['s_tag'] = True
+                self.config_dict['e_tag'] = True
+                self.config_dict['quality_filter'] = True
+            elif self.data_type.upper() in ['ONT-RNA','ONT_RNA','DIRECT_RNA', 'DIRECT-RNA']:
+                """Reads are from Oxford Nanopore direct RNA kit, downstream of basecalling."""
+                self.config_dict['stranded'] = True
+                self.config_dict['labels_are_trimmed'] = False
+                self.config_dict['quality_filter'] = True
+            elif self.data_type.strip('0123456789').upper() in ['SMART','SMARTER','SMARTSEQ','SMART-SEQ']:
+                """Reads are from a SMART protocol, labeled by bookend label."""
+                self.config_dict['stranded'] = False
+                self.config_dict['labels_are_trimmed'] = True
+                self.config_dict['quality_filter'] = True
+            else:
+                print("\nERROR: --data_type not recognized.")
+                print("Currently supported: ONT, PACBIO, DIRECT_RNA, SMARTSEQ")
+                sys.exit(1)
         
         save = pysam.set_verbosity(0)
         self.bam_in = pysam.AlignmentFile(self.input)
@@ -102,6 +146,19 @@ class BAMtoELRconverter:
             config=self.config_dict,
             genome_fasta=self.genome
         )
+        if self.chrom_names is not None:
+            # Swap chromosome names for the given 2-column TSV
+            chromdict = {l.split('\t')[0]:l.rstrip().split('\t')[1] for l in open(self.chrom_names,'r')}
+            chromdictrev = {v:k for k,v in chromdict.items()}
+            for i in range(len(self.dataset.chrom_array)):
+                c = self.dataset.chrom_array[i]
+                if c in chromdict.keys():
+                    self.dataset.genome[chromdict[c]] = self.dataset.genome[c]
+                    self.dataset.chrom_array[i] = chromdict[c]
+                elif c in chromdictrev.keys():
+                    self.dataset.chrom_array[i] = chromdictrev[c]
+                    self.dataset.genome[chromdictrev[c]] = self.dataset.genome[c]
+        
         self.sort_args = {
             'OUT':self.output,
             'FORCE':True,
@@ -146,7 +203,8 @@ class BAMtoELRconverter:
 
     def process_entry(self, bam_lines):
         self.dataset.read_list = []
-        self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
+        # self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
+        self.dataset.add_read_from_BAM(bam_lines)
         if len(self.dataset.read_list) > 0:
             self.write_elr(self.tempout_file)
         else:
@@ -155,68 +213,79 @@ class BAMtoELRconverter:
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend elr |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
-        options_string += "  Input file:                         {}\n".format(self.input)
-        options_string += "  Reference genome file:              {}\n".format(self.genome)
-        options_string += "  Output file (-o):                   {}\n".format(self.output)
+        options_string += "  Input file:                          {}\n".format(self.input)
+        options_string += "  Reference genome file:               {}\n".format(self.genome)
+        options_string += "  Reference splice junction file:      {}\n".format(self.splice)
+        options_string += "  Output file (-o):                    {}\n".format(self.output)
         options_string += "  *** Experiment parameters ***\n"
-        options_string += "  Reads start at RNA 5' ends (-s):    {}\n".format(self.start)
-        options_string += "  Reads are from capped RNA (-c):     {}\n".format(self.capped)
-        options_string += "  Reads end at RNA 3' ends (-e):      {}\n".format(self.end)
-        options_string += "  Strand specific (--stranded):       {}\n".format(self.stranded)
-        options_string += "  Start tag suffix (--start_seq):     {}\n".format(self.start_seq)
-        options_string += "  End tag prefix (--end_seq):         {}\n".format(self.end_seq)
-        options_string += "  Adjust splice sites (--sj_shift):   {}\n".format(self.sj_shift)
+        options_string += "  Reads start at RNA 5' ends (-s):     {}\n".format(self.start)
+        options_string += "  Reads are from capped RNA (-c):      {}\n".format(self.capped)
+        options_string += "  Reads end at RNA 3' ends (-e):       {}\n".format(self.end)
+        options_string += "  Untrimmed input reads (--untrimmed)  {}\n".format(self.untrimmed)
+        options_string += "  Strand specific (--stranded):        {}\n".format(self.stranded)
+        options_string += "  Strand specific reverse (--reverse): {}\n".format(self.reverse)
+        options_string += "  Start tag suffix (--start_seq):      {}\n".format(self.start_seq)
+        options_string += "  End tag prefix (--end_seq):          {}\n".format(self.end_seq)
+        options_string += "  Adjust splice sites (--sj_shift):    {}\n".format(self.sj_shift)
         options_string += "  *** Filters ***\n"
-        options_string += "  --record_artifacts:                 {}\n".format(self.record_artifacts)
-        options_string += "  --mismatch_rate:                    {}\n".format(self.mismatch_rate)
-        options_string += "  Perfect alignment minlen (--minlen_strict): {}\n".format(self.minlen_strict)
-        options_string += "  Relaxed alignment minlen (--minlen_loose):  {}\n".format(self.minlen_loose)
-        options_string += "  Secondary alignments (--secondary): {}\n".format(self.secondary)
+        options_string += "  --record_artifacts:                  {}\n".format(self.record_artifacts)
+        options_string += "  --mismatch_rate:                     {}\n".format(self.mismatch_rate)
+        options_string += "  --remove_noncanonical:               {}\n".format(self.remove_noncanonical)
+        options_string += "  Perfect minlen (--minlen_strict):    {}\n".format(self.minlen_strict)
+        options_string += "  Relaxed minlen (--minlen_loose):     {}\n".format(self.minlen_loose)
+        options_string += "  Secondary alignments (--secondary):  {}\n".format(self.secondary)
 
         if not self.genome:
             options_string += "\nWARNING: cap detection and artifact masking can only be done if a reference genome is provided."
             options_string += "\nProvide a genome fasta with --genome /path/to/fasta"
+            if self.remove_noncanonical:
+                options_string += "\nWARNING: noncanonical splice junctions can only be detected if --genome is provided."
+        
+        if not self.splice and not self.reference and self.sj_shift:
+            options_string += "\nWARNING: splice junction correction can only be performed with a splice junction reference file."
+            options_string += "\nProvide a BED12/GTF/GFF junction file with --reference /path/to/reference"
+            options_string += "\nor a STAR/BED6 intron file with --splice /path/to/introns."
         
         return options_string
     
     def display_summary(self):
         if self.record_artifacts:
-            summary = 'len\tS\ts\tE\te\n'
-            max_len = max([
-                max(self.dataset.label_tally['S']) if len(self.dataset.label_tally['S']) else 0,
-                max(self.dataset.label_tally['s']) if len(self.dataset.label_tally['s']) else 0, 
-                max(self.dataset.label_tally['E']) if len(self.dataset.label_tally['E']) else 0, 
-                max(self.dataset.label_tally['e']) if len(self.dataset.label_tally['e']) else 0
-            ])
-            for i in range(max_len+1):
-                summary += '{}\t{}\t{}\t{}\t{}\n'.format(
-                    i,
-                    self.dataset.label_tally['S'][i],
-                    self.dataset.label_tally['s'][i],
-                    self.dataset.label_tally['E'][i],
-                    self.dataset.label_tally['e'][i]
-                )
+            # summary = 'len\tS\ts\tE\te\n'
+            # max_len = max([
+            #     max(self.dataset.label_tally['S']) if len(self.dataset.label_tally['S']) else 0,
+            #     max(self.dataset.label_tally['s']) if len(self.dataset.label_tally['s']) else 0, 
+            #     max(self.dataset.label_tally['E']) if len(self.dataset.label_tally['E']) else 0, 
+            #     max(self.dataset.label_tally['e']) if len(self.dataset.label_tally['e']) else 0
+            # ])
+            # for i in range(max_len+1):
+            #     summary += '{}\t{}\t{}\t{}\t{}\n'.format(
+            #         i,
+            #         self.dataset.label_tally['S'][i],
+            #         self.dataset.label_tally['s'][i],
+            #         self.dataset.label_tally['E'][i],
+            #         self.dataset.label_tally['e'][i]
+            #     )
             
-            summary += 'Total\t{}\t{}\t{}\t{}\n'.format(
+            summary = 'Total\t{}\t{}\t{}\t{}\n'.format(
                 sum(self.dataset.label_tally['S'].values()),
                 sum(self.dataset.label_tally['s'].values()),
                 sum(self.dataset.label_tally['E'].values()),
                 sum(self.dataset.label_tally['e'].values())
             )
         else:
-            summary = 'len\tS\tE\n'
-            max_len = max([
-                max(self.dataset.label_tally['S']) if len(self.dataset.label_tally['S']) else 0,
-                max(self.dataset.label_tally['E']) if len(self.dataset.label_tally['E']) else 0
-            ])
-            for i in range(max_len+1):
-                summary += '{}\t{}\t{}\n'.format(
-                    i,
-                    self.dataset.label_tally['S'][i],
-                    self.dataset.label_tally['E'][i]
-                )
+            # summary = 'len\tS\tE\n'
+            # max_len = max([
+            #     max(self.dataset.label_tally['S']) if len(self.dataset.label_tally['S']) else 0,
+            #     max(self.dataset.label_tally['E']) if len(self.dataset.label_tally['E']) else 0
+            # ])
+            # for i in range(max_len+1):
+            #     summary += '{}\t{}\t{}\n'.format(
+            #         i,
+            #         self.dataset.label_tally['S'][i],
+            #         self.dataset.label_tally['E'][i]
+            #     )
             
-            summary += 'Total\t{}\t{}\n'.format(
+            summary = 'Total\t{}\t{}\n'.format(
                 sum(self.dataset.label_tally['S'].values()),
                 sum(self.dataset.label_tally['E'].values())
             )

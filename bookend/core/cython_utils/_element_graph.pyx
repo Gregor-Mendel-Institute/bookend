@@ -14,10 +14,10 @@ cdef class ElementGraph:
     cdef public np.ndarray assignments, overlap, end_reachability
     cdef readonly int number_of_elements, maxIC, max_isos
     cdef Element emptyPath
-    cdef public float bases, input_bases, dead_end_penalty, intron_filter
+    cdef public float bases, input_bases, dead_end_penalty, intron_filter, truncation_filter
     cdef public set SP, SM, EP, EM, end_elements, SPmembers, SMmembers, EPmembers, EMmembers
     cdef public bint no_ends, ignore_ends, naive, partial_coverage, allow_incomplete
-    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1, max_isos=10, allow_incomplete=False):
+    def __init__(self, np.ndarray overlap_matrix, np.ndarray membership_matrix, source_weight_array, member_weight_array, strands, lengths, naive=False, dead_end_penalty=0.1, partial_coverage=True, ignore_ends=False, intron_filter=0.1, max_isos=10, allow_incomplete=False, truncation_filter=.5):
         """Constructs a forward and reverse directed graph from the
         connection values (ones) in the overlap matrix.
         Additionally, stores the set of excluded edges for each node as an 'antigraph'
@@ -34,6 +34,7 @@ cdef class ElementGraph:
         self.naive = naive
         self.ignore_ends = ignore_ends
         self.intron_filter = intron_filter
+        self.truncation_filter = truncation_filter
         self.partial_coverage = partial_coverage
         self.max_isos = max_isos
         self.allow_incomplete = allow_incomplete
@@ -389,7 +390,8 @@ cdef class ElementGraph:
                         container_cov += p.bases / p.length
             
             if container_cov > 0:
-                if path.bases/path.length < container_cov:
+                path_cov = path.bases / path.length
+                if path_cov < (path_cov + container_cov) * self.truncation_filter:
                     bad_paths[i] = True
         
         if verbose:

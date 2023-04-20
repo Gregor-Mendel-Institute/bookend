@@ -24,6 +24,8 @@ class EndLabeler:
         self.verbose = args['VERBOSE']
         self.minstart = args['MIN_START']
         self.minend = args['MIN_END']
+        self.maxstart = args['MAX_START']
+        self.maxend = args['MAX_END']
         self.minlen = args['MINLEN']
         self.minqual = args['MINQUAL']
         self.qualmask = args['QUALMASK']
@@ -34,6 +36,7 @@ class EndLabeler:
         self.pseudomates = args['PSEUDOMATES']
         self.umi = args['UMI']
         self.umi_range = (0,0)
+        self.umi_count = 0
         if self.pseudomates:
             self.single_out = None
         else:
@@ -47,7 +50,7 @@ class EndLabeler:
         self.S5string = self.s_label
         if len(self.S5string) > 1:
             if self.umi == 'S':
-                self.umi_range = (self.S5string.find('N')-len(self.S5string), self.S5string.rfind('N')+1-len(self.S5string))
+                self.umi_range = (self.S5string.find('N'), self.S5string.rfind('N')+1)
                 if self.umi_range[1]-self.umi_range[0] == 0:
                     print("ERROR: No string of N's found for UMI in S label.")
                     sys.exit(1)
@@ -135,12 +138,15 @@ class EndLabeler:
         options_string += "  *** Experiment parameters ***\n"
         options_string += "  Start tag (-S/--start):            {}\n".format(self.s_label)
         options_string += "  End tag (-E/--end):                {}\n".format(self.e_label)
+        options_string += "  UMI (--umi):                       {} ({}-{})\n".format(self.umi, self.umi_range[0], self.umi_range[1])
         options_string += "  cDNA strand (--strand):            {}\n".format(self.strand)
         options_string += "  *** Filters ***\n"
         options_string += "  --discard_untrimmed:              {}\n".format(self.discard_untrimmed)
         options_string += "  --mismatch_rate:                   {}\n".format(self.mm_rate)
         options_string += "  S tag length min (--min_start):    {}\n".format(self.minstart)
         options_string += "  E tag length min (--min_end):      {}\n".format(self.minend)
+        options_string += "  S tag length max (--max_start):    {}\n".format(self.maxstart)
+        options_string += "  E tag length max (--max_end):      {}\n".format(self.maxend)
         options_string += "  Trimmed length min (--minlen):     {}\n".format(self.minlen)
         options_string += "  Min avg. phred score (--minqual):  {}\n".format(self.minqual)
         options_string += "  Phred to mask as N (--qualmask):   {}\n".format(self.qualmask)
@@ -171,6 +177,7 @@ class EndLabeler:
             summary_string = "Total reads processed: {}\n".format(total)
             summary_string += "Start labeled:   {} ({}%)\n".format(s_tag, int(s_tag/total*1000)/10)
             summary_string += "End labeled:     {} ({}%)\n".format(e_tag, int(e_tag/total*1000)/10)
+            summary_string += "UMIs detected:   {} ({}%)\n".format(self.umi_count, int(self.umi_count/total*1000)/10)
             summary_string += "Unlabeled:       {} ({}%)\n".format(no_tag, int(no_tag/total*1000)/10)
             summary_string += "Removed (short): {} ({}%)\n".format(xl_tag, int(xl_tag/total*1000)/10)
             summary_string += "Removed (qual):  {} ({}%)\n".format(xq_tag, int(xq_tag/total*1000)/10)
@@ -245,7 +252,7 @@ class EndLabeler:
                 file1_read[1], file1_read[3], file2_read[1], file2_read[3],
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], file2_read[1], trim1, trim2, label))
@@ -288,7 +295,7 @@ class EndLabeler:
                 file1_read[1], file1_read[3], '', '',
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], '', trim1, '', label))
@@ -309,6 +316,9 @@ class EndLabeler:
                     self.labeldict['XQ'] += 1
                 else:
                     self.labeldict['XL'] += 1
+        
+        if '_UMI=' in label:
+            self.umi_count += 1
 
 ##########################
 if __name__ == '__main__':
