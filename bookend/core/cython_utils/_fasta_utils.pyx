@@ -78,7 +78,7 @@ def _int_array():
     return int_array
 
 def _qual_array():
-    qual_array =  [0]*256
+    qual_array =  [int(i*.33) for i in list(range(256))]
     for i,q in enumerate(quality_scores):
         qual_array[ord(q)] = i
         qual_array[ord(q.lower())] = i
@@ -396,7 +396,8 @@ cpdef bint oligo_match(array.array a, array.array b, float mm_rate, int min_olig
 
 cpdef (int, int) best_sliding_fit(
         array.array query, array.array trim,
-        int monomer=-1, int minmatch=5, double mm_rate=0.06):
+        int monomer=-1, int minmatch=5, double mm_rate=0.06,
+        int maxlen=120):
     '''
     Slides trim along query and returns a double of
     (end_position, hamming_distance) for the longest possible match of trim in query.
@@ -419,7 +420,7 @@ cpdef (int, int) best_sliding_fit(
     cdef int[:] T = trim
     min_oligomer = min(3, minmatch)
     i = minmatch
-    while i <= q_len:
+    while i <= min(q_len,maxlen):
         max_mismatch = int(mm_rate*min(i,t_len))
         spacer = i-t_len # Calculate whether the trim array is shorter than i
         if spacer > 0:
@@ -607,7 +608,7 @@ cpdef (int, int, int) complementary_trim(
         array.array S3array, int S3monomer,
         array.array E5array, int E5monomer, 
         array.array E3array, int E3monomer, 
-        int minstart, int minend, float mm_rate):
+        int minstart, int minend, float mm_rate, int maxstart, int maxend):
     """Checks whether the reverse complement of a trimtype
     exists in a numeric nucleotide array.
     Returns a triple of (pos, ham, trimtype)"""
@@ -621,17 +622,17 @@ cpdef (int, int, int) complementary_trim(
     comptype = -1
     if trimtype == 0:
         nucarray_rev = nucarray[::-1]
-        pos,ham = best_sliding_fit(nucarray_rev, S3array, S3monomer, minstart, mm_rate)
+        pos,ham = best_sliding_fit(nucarray_rev, S3array, S3monomer, minstart, mm_rate, maxstart)
         comptype = 2
     elif trimtype == 2:
-        pos,ham = best_sliding_fit(nucarray, S5array, S5monomer, minstart, mm_rate)
+        pos,ham = best_sliding_fit(nucarray, S5array, S5monomer, minstart, mm_rate, maxstart)
         comptype = 0
     elif trimtype == 1:
         nucarray_rev = nucarray[::-1]
-        pos,ham = best_sliding_fit(nucarray_rev, E3array, E3monomer, minend, mm_rate)
+        pos,ham = best_sliding_fit(nucarray_rev, E3array, E3monomer, minend, mm_rate, maxend)
         comptype = 3
     elif trimtype == 3:
-        pos,ham = best_sliding_fit(nucarray, E5array, E5monomer, minend, mm_rate)
+        pos,ham = best_sliding_fit(nucarray, E5array, E5monomer, minend, mm_rate, maxend)
         comptype = 1
 
     if ham == -1:
@@ -724,7 +725,7 @@ def terminal_trim(
         array.array E5array, int E5monomer, 
         array.array E3array, int E3monomer, 
         str strand, int minstart, int minend, int minlen, double minqual, int qualmask, float mm_rate,
-        str umi, (int,int) umi_range):
+        str umi, (int,int) umi_range, int maxstart, int maxend):
     '''
     Trims the most well-supported adapter sequence(s) at the end(s)
     of RNA seq reads, based on the expected structure of the double-stranded cDNA.
@@ -757,7 +758,7 @@ def terminal_trim(
     ham1 = len(mate1array)
     trimtype1 = -1
     if strand != 'reverse': # Check for 5P adapter (sense orientation)
-        S5pos1,S5ham1 = best_sliding_fit(mate1array, S5array, S5monomer, minstart, mm_rate)
+        S5pos1,S5ham1 = best_sliding_fit(mate1array, S5array, S5monomer, minstart, mm_rate, maxstart)
         if S5ham1 != -1: # A match was found
             pos1 = S5pos1
             ham1 = S5ham1
@@ -765,7 +766,7 @@ def terminal_trim(
     
     if strand != 'forward': # Check for 3P adapter (antisense orientation)
         # (2) Check if E5 is a better match
-        E5pos1,E5ham1 = best_sliding_fit(mate1array, E5array, E5monomer, minend, mm_rate)
+        E5pos1,E5ham1 = best_sliding_fit(mate1array, E5array, E5monomer, minend, mm_rate, maxend)
         if E5ham1 != -1:
             if (E5pos1 > pos1) or (E5pos1 == pos1 and E5ham1 < ham1): # Improved match
                 pos1 = E5pos1
@@ -776,7 +777,7 @@ def terminal_trim(
         trimtype2 = -1
         mate1array_rev = mate1array[::-1]
         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
-            S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate)
+            S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate, maxstart)
             if S3ham1 != -1:
                 if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
                     if trimtype1 == 1: # Can be shared with first trim
@@ -791,7 +792,7 @@ def terminal_trim(
                         ham2 = -1
                         trimtype2 = -1
         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
-            E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate)
+            E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate, maxend)
             if E3ham1 != -1:
                 if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
                     if trimtype1 == 0: # Can be shared with first trim
@@ -835,14 +836,14 @@ def terminal_trim(
         ham2 = len(mate2array)
         trimtype2 = -1
         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)
-            S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate)
+            S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate, maxstart)
             if S5ham2 != -1: # A match was found
                 pos2 = S5pos2
                 ham2 = S5ham2
                 trimtype2 = 0
 
         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
-            E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate)
+            E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate, maxend)
             if E5ham2 != -1:
                 if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match
                     pos2 = E5pos2
@@ -870,7 +871,7 @@ def terminal_trim(
         
         if pos1 > pos2 or (pos1 == pos2 and ham1 <= ham2): # Mate1's trim is the best supported (wins ties)
             # Check for complement of mate1's trim
-            posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+            posC, hamC, trimtypeC = complementary_trim(mate2array, trimtype1, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate, maxstart, maxend)
             if trimtypeC != -1: # The complement putatively exists
                 trimC = trim_readstring(mate2, posC, trimtypeC, qual=False, reverse=reverse)
                 qtrmC = trim_readstring(qual2, posC, trimtypeC, qual=True, reverse=reverse)
@@ -910,7 +911,7 @@ def terminal_trim(
                 trim2, qtrm2, label2, trimtype2 = mate2, qual2, '', -1
         else: # Mate2's trim is the best supported.
             # Check for complement of mate2's trim
-            posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate)
+            posC, hamC, trimtypeC = complementary_trim(mate1array,trimtype2, S5array, S5monomer, S3array, S3monomer, E5array, E5monomer, E3array, E3monomer, minstart, minend, mm_rate, maxstart, maxend)
             if trimtypeC != -1: # The complement putatively exists
                 trimC = trim_readstring(mate1, posC, trimtypeC, qual=False, reverse=reverse)
                 qtrmC = trim_readstring(qual1, posC, trimtypeC, qual=True, reverse=reverse)

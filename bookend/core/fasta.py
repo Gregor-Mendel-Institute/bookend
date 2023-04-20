@@ -4,6 +4,7 @@
 import sys
 import copy
 import bookend.core.cython_utils._rnaseq_utils as ru
+import bookend.core.cython_utils._fasta_utils as fu
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
@@ -14,6 +15,7 @@ class FastaWriter:
         self.output = self.args['OUT']
         self.genome = self.args['GENOME']
         self.input = self.args['INPUT']
+        self.orf = self.args['ORF']
         self.allow_unstranded = self.args['UNSTRANDED']
         if len(self.input) == 0:
             parser.print_help()
@@ -53,10 +55,23 @@ class FastaWriter:
         return config_defaults, gtf_defaults, gff_defaults
     
     def output_transcripts(self, transcript):
-        """Writes the transcript FASTA entry corresponding to anRNAseqMapping object."""
+        """Writes the transcript FASTA entry corresponding to an RNAseqMapping object."""
+        sequence = self.dataset.get_transcript_fasta(transcript)
+        if self.orf:
+            orf = fu.longest_orf(sequence)[0]
+            if transcript.strand == 0:
+                rev_orf = fu.longest_orf(fu.rc(sequence))[0]
+                if len(rev_orf) > len(orf):
+                    orf = rev_orf
+            
+            sequence = orf
+        
+        if len(sequence) == 0:
+            sequence = '-'
+        
         self.output_file.write('>{}\n{}\n'.format(
             transcript.attributes['transcript_id'],
-            self.dataset.get_transcript_fasta(transcript)
+            sequence
         ))
     
     def process_entry(self, chunk):
