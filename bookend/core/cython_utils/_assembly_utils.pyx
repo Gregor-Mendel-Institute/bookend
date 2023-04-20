@@ -7,6 +7,7 @@ import bookend.core.cython_utils._rnaseq_utils as ru # RNAseqMapping, ELdata, ra
 from collections import Counter
 import cython
 import time
+np.seterr(divide='ignore')
 
 cdef class EndRange:
     cdef public int endtype
