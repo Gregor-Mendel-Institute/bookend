@@ -1,6 +1,7 @@
 #cython: language_level=3
 cimport cython
 import array
+import sys
 from cpython cimport array
 import numpy as np
 cimport numpy as np
@@ -583,7 +584,7 @@ cdef class RNAseqDataset():
                         sj_tuple = (fields[0], int(fields[1])-1, int(fields[2]), -1)
                     
                     sj_set.add(sj_tuple)
-            elif len(fields) == 6 or sj_file.lower().endswith('.bed'): # intron BED6 file
+            elif len(fields) == 6 and sj_file.lower().endswith('.bed'): # intron BED6 file
                 for line in open(sj_file,'r'):
                     fields = line.rstrip().split('\t')
                     if fields[5]=='+': # Forward strand
@@ -593,8 +594,9 @@ cdef class RNAseqDataset():
                     
                     sj_set.add(sj_tuple)
             else:
-                print("WARNING: --splice file not recognized. Provide SJ.out.tab or BED6.")
+                print("ERROR: --splice file not recognized. Provide SJ.out.tab or BED6.")
                 print("For BED12/GTF/GFF3, use --reference.")
+                sys.exit(1)
         
         for chrom in self.reference_dict.keys():
             for transcript in self.reference_dict[chrom]:
@@ -1731,73 +1733,23 @@ cpdef str get_flank(dict genome, str chrom, int pos, int strand, str label_type,
     
     return flank
 
-#TODO: Fix shift_junction for ONT reads
-cdef (int, int) shift_junction(set junctions, str chrom, int left, int right, int strand, int max_shift):
-    """Allow the junction boundaries to be remapped by up to max_shift if a canonical splice junction
-    motif is nearby."""
-    cdef str targetseq, queryseq
-    cdef int newleft, newright, shift, delta
-    cdef tuple old_junction, shifted_junction
-    old_junction = (chrom, left, right, strand)
-    if max_shift == 0 or old_junction in junctions:
-        return (old_junction[1], old_junction[2])
-    else:
-        for shift in range(1,max_shift+1):
-            newleft, newright = left+shift, right+shift
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted l+{}r+{}".format(shift))
-                return newleft, newright
-            
-            newleft, newright = left-shift, right-shift
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted l-{}r-{}".format(shift))
-                return newleft, newright
-            
-            newleft, newright = left+shift, right
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted l+{}".format(shift))
-                return newleft, newright
-            
-            newleft, newright = left-shift, right
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted l-{}".format(shift))
-                return newleft, newright
-            
-            newleft, newright = left, right+shift
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted r+{}".format(shift))
-                return newleft, newright
-            
-            newleft, newright = left, right-shift
-            shifted_junction = (chrom, newleft, newright, strand)
-            if shifted_junction in junctions:
-                print("Shifted r-{}".format(shift))
-                return newleft, newright
-
-        return (left, right)
-
-
-cdef bint junction_is_canonical(dict genome, str chrom, int left, int right, int strand):
-    """ Returns 1(+), -1(-), or 0(.) for a left/right
-    pair of splice junction positions based
+cdef int motif_strand(dict genome, str chrom, int left, int right):
+    """pair of splice junction positions based
     on the flanking genomic sequence """
     cdef str flanking_sequence
-    if chrom not in genome.keys():
+    cdef set canonical_plus = set(['GTAG','GCAG','ATAC','GAAG'])
+    cdef set canonical_minus = set(['CTAC','CTGC','GTAT','CTTC'])
+    if chrom not in genome:
         return 0
     
     flanking_sequence = get_flank(genome, chrom, left-1, 1, 'E', 2) + get_flank(genome, chrom, right, 1, 'S', 2)
     flanking_sequence = flanking_sequence.upper()
-    if strand == 1:
-        return flanking_sequence in ['GTAG','GCAG','ATAC']
-    elif strand == -1:
-        return flanking_sequence in ['CTAC','CTGC','GTAT']
-    
-    return False
+    if flanking_sequence in canonical_plus:
+        return 1
+    elif flanking_sequence in canonical_minus:
+        return -1
+    else:
+        return 0
 
 def parse_MD_string(str mdstring):
     """Creates a generator object to yield the elements
@@ -1997,10 +1949,10 @@ cdef class BAMobject:
             int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
             int i, gap_len, pos, map_strand, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors, sj_shift
             float weight
-            str ID, chrom, js, seq, aligned_seq, trimmed_nuc
+            str ID, chrom, seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
-            list splice, gaps, ranges, mapping_list, introns, newranges
+            list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands
             bint stranded, stranded_method, reverse, fiveprime, threeprime, junction_exists
             (int, int) g
             set intronset
@@ -2153,22 +2105,30 @@ cdef class BAMobject:
             
             if number_of_blocks == 1:
                 junction_strand = 0
-                splice = []
+                canonical = []
             else: # Check if the splice junctions can be used to assign a strand
-                splice = [False]*(number_of_blocks-1)
                 junction_strand = self.get_alignment_strand(line, map_strand)
-                intronset = set(introns)
-                if strand != 0: # Try to make junctions on the labeled strand work
-                    newranges, splice = self.get_splice_info(ranges, intronset, chrom, strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
-                    if all(splice): # The labeled strand works
-                        junction_strand = strand
-                        ranges = newranges
+                if strand == 0:
+                    strand, canonical = self.evaluate_splice_sites(chrom, junction_strand, introns)
+                else:
+                    strand, canonical = self.evaluate_splice_sites(chrom, strand, introns)
                 
-                if not all(splice) and junction_strand != 0:
-                    ranges, splice = self.get_splice_info(ranges, intronset, chrom, junction_strand, self.remove_noncanonical) # Check which gaps between exon blocks are present in intron blocks
-
+                if strand == 0: # Use genomic motifs to identify strand
+                    jstrands = [motif_strand(self.dataset.genome, chrom, left, right) for left,right in introns]
+                    consensus_strand = sum(jstrands)
+                    if consensus_strand > 0:
+                        strand, consensus_strand = 1, 1
+                    elif consensus_strand < 0:
+                        strand, consensus_strand = -1, -1
+                    
+                    canonical = [True if (js == consensus_strand and consensus_strand !=0) else False for js in jstrands]
+                
+                # Check if any splice junctions can be corrected by shifting
+                if self.sj_shift > 0:
+                    strand, ranges, canonical = self.adjust_splice_sites(strand, ranges, canonical, chrom)
+            
             # Reconcile strand information given by start, end, and splice
-            junction_exists = sum(splice) > 0
+            junction_exists = sum(canonical) > 0
             if junction_strand != 0 and junction_exists: # At least one strand-informative splice junction exists
                 if strand != junction_strand: # Splice disagrees with end tags; remove tags
                     strand = junction_strand
@@ -2177,8 +2137,11 @@ cdef class BAMobject:
             if not stranded_method and not s_tag and not e_tag and not junction_exists:
                 strand = 0 # No strand information can be found
             
+            if not self.remove_noncanonical:
+                canonical = [True]*len(canonical)
+            
             # Generate a ReadObject with the parsed attributes above
-            read_data = ELdata(chrom_id, 0, strand, ranges, splice, s_tag, e_tag, capped, round(weight,2), False)
+            read_data = ELdata(chrom_id, 0, strand, ranges, canonical, s_tag, e_tag, capped, round(weight,2), False)
             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
             current_mapping.e_len = e_tag_len
             current_mapping.s_len = s_tag_len
@@ -2193,6 +2156,87 @@ cdef class BAMobject:
         
         mapping_list = self.resolve_overlapping_mappings(mappings)
         return mapping_list
+    
+    def evaluate_splice_sites(self, chrom, strand, introns):
+        """Returns a list of bools (1 per gap) that summarizes whether
+        each splice junction is supported by the available SJDB."""
+        cdef list jstrands, canonical
+        cdef int l, r, js, junction_strand, consensus_strand
+        cdef bint seen_plus, seen_minus
+        jstrands = [0]*len(introns)
+        junction_strand = 0
+        if strand == 0: # No info provided by BAM attributes
+            seen_plus = False
+            seen_minus = False
+            for inum in range(len(introns)):
+                l,r = introns[inum]
+                js = self.check_sjdb(chrom, l, r)
+                seen_plus = seen_plus or js == 1
+                seen_minus = seen_minus or js == -1
+                jstrands[inum] = js
+
+            junction_strand = int(seen_plus) - int(seen_minus)
+        
+        consensus_strand = (strand + sum(jstrands))
+        if consensus_strand > 0:
+            consensus_strand = 1
+        elif consensus_strand < 0:
+            consensus_strand = -1
+        
+        canonical = [True if (js == consensus_strand and consensus_strand !=0) else False for js in jstrands]
+        return consensus_strand, canonical
+    
+    def adjust_splice_sites(self, strand, ranges, canonical, chrom):
+        """Use genome motif information to version of the exon list where borders
+        have been shifted to correct poorly-formed splice junctions."""
+        cdef int js, i, left, right, shiftleft, shiftright
+        # Shift to nearest SJDB first (allow indels)
+        if all(canonical):
+            return strand, ranges, canonical
+        
+        if self.dataset.has_genome or self.dataset.sj_set is not None:
+            for i in range(1, len(ranges)): # Iterate over introns
+                if not canonical[i-1]: # Skip any that are canonical
+                    left = ranges[i-1][1]
+                    right = ranges[i][0]
+                    shiftleft, shiftright, js = self.shift_junction(chrom, left, right, strand)
+                    if strand == 0 or js == strand:
+                        strand = js
+                        ranges[i-1] = (ranges[i-1][0], shiftleft)
+                        ranges[i] = (shiftright, ranges[i][1])
+                        canonical[i-1] = True
+        
+        return strand, ranges, canonical
+    
+    cdef (int, int, int) shift_junction(self, str chrom, int left, int right, int strand):
+        """Returns a new left/right border of an intron and its strand."""
+        cdef int i, js
+        for i in range(0, self.sj_shift+1): # Check SJDB, then genome
+            if strand >= 0:
+                if (chrom, left+i, right+i, 1) in self.dataset.sj_set:
+                    # print("Found forward SJDB at shift +{}".format(i))
+                    return (left+i, right+i, 1)
+                elif (chrom, left-i, right-i, 1) in self.dataset.sj_set:
+                    # print("Found forward SJDB at shift -{}".format(i))
+                    return (left-i, right-i, 1)
+            
+            if strand <= 0:
+                if (chrom, left+i, right+i, -1) in self.dataset.sj_set:
+                    # print("Found reverse SJDB at shift +{}".format(i))
+                    return (left+i, right+i, -1)
+                elif (chrom, left-i, right-i, -1) in self.dataset.sj_set:
+                    # print("Found reverse SJDB at shift -{}".format(i))
+                    return (left-i, right-i, -1)
+            
+            js = motif_strand(self.dataset.genome, chrom, left+i, right+i)
+            if (js == strand and strand != 0) or (js !=0 and strand == 0):
+                # print("Found {} motif at shift +{}".format(js, i))
+                return (left+i, right+i, js)
+            
+            js = motif_strand(self.dataset.genome, chrom, left-i, right-i)
+            if (js == strand and strand != 0) or (js !=0 and strand == 0):
+                # print("Found {} motif at shift -{}".format(js, i))
+                return (left-i, right-i, js)
     
     cdef list resolve_overlapping_mappings(self, dict mappings):
         """Decision tree for simplifying multimappers """
@@ -2270,33 +2314,14 @@ cdef class BAMobject:
                 alignment_strand = 0
         
         return alignment_strand
-
-    cdef tuple get_splice_info(self, list ranges, set introns, str chrom, int alignment_strand, bint remove_noncanonical=False):
-        """Returns a list of booleans denoting whether each gap
-        between ranges is a splice junction or not on the given alignment strand."""
-        cdef list splice
-        cdef Py_ssize_t i, range_len, gap_len
-        cdef junction_strand
-        cdef (int, int) g, shift_g
-        cdef tuple junction
-        cdef int strand, l, r, s
-        range_len = len(ranges)
-        gap_len = range_len - 1
-        gaps = [(ranges[i][1], ranges[i+1][0]) for i in range(range_len-1)] # List of all gaps between ranges
-        splice = [False]*gap_len # List of booleans indicating whether each gap is a splice junction
-        for i in range(gap_len):
-            g = gaps[i]
-            splice[i] = g in introns
-            junction = (chrom, g[0], g[1], alignment_strand)
-            shift_g = shift_junction(self.dataset.sj_set, chrom, g[0], g[1], alignment_strand, self.sj_shift)
-            if shift_g != g: # Update ranges with the shifted junction
-                ranges[i] = (ranges[i][0], g[0])
-                ranges[i+1] = (g[1], ranges[i+1][1])
-            
-            if self.dataset.has_genome and self.remove_noncanonical: # Filter noncanonical junctions
-                splice[i] = junction_is_canonical(self.dataset.genome, chrom, g[0], g[1], alignment_strand)
-        
-        return ranges, splice
+    
+    cdef int check_sjdb(self, str chrom, int start, int end):
+        '''Returns the strand of'''
+        cdef int strand
+        strand = 0
+        strand += int((chrom, start, end, 1) in self.dataset.sj_set)
+        strand -= int((chrom, start, end, -1) in self.dataset.sj_set)
+        return strand
     
     cdef int orient_read_by_softclip(self, str seq, int head, int tail, int eval_length=15):
         """Assume end labels are present as softclipped sequences on 

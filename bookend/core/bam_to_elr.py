@@ -15,7 +15,6 @@ from bookend.core.elr_to_bed import ELRtoBEDconverter
 class BAMtoELRconverter:
     def __init__(self, args):
         """Parses input arguments for converting BAM to ELR"""
-        print(args)
         self.source = args['SOURCE']
         self.genome = args['GENOME']
         self.reference = args['REFERENCE']
@@ -138,6 +137,10 @@ class BAMtoELRconverter:
         save = pysam.set_verbosity(save)
         if self.source is None:
             self.source = self.bam_in.header['PG'][0]['ID']
+        
+        if self.bam_in.header.get("HD",{}).get("SO",'unsorted') == 'coordinate':
+            print("WARNING: BAM sorted by coordinate. Mate pairs will not be merged.")
+            print("Sort by read name (samtools sort -n) if using paired-end reads.")
         
         self.dataset = RNAseqDataset(
             chrom_array=self.bam_in.header.references, 

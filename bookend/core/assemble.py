@@ -91,6 +91,9 @@ class Assembler:
                             'sj':None,
                         }
                         config.update(long_defaults)
+                    elif self.input_file.header.get("HD",{}).get("SO",'unsorted') != 'coordinate':
+                        print("ERROR: BAM input reads must be sorted by coordinate.")
+                        sys.exit(1)
                     
                     self.dataset = RNAseqDataset(chrom_array=self.input_file.header.references, config=config)
                 elif self.file_type == 'elr.gz':
