@@ -106,6 +106,7 @@ class BAMtoELRconverter:
                 """Reads are from Oxford Nanopore cDNA or PCR-cDNA kits, trimmed and oriented by bookend label or pychopper."""
                 self.config_dict['stranded'] = True
                 self.config_dict['max_headclip'] = 10
+                self.config_dict['quality_filter'] = False
                 if self.untrimmed:
                     self.config_dict['max_headclip'] = 120
                     self.config_dict['stranded'] = False
@@ -116,17 +117,17 @@ class BAMtoELRconverter:
                 self.config_dict['max_headclip'] = 4
                 self.config_dict['s_tag'] = True
                 self.config_dict['e_tag'] = True
-                self.config_dict['quality_filter'] = True
+                self.config_dict['quality_filter'] = False
             elif self.data_type.upper() in ['ONT-RNA','ONT_RNA','DIRECT_RNA', 'DIRECT-RNA']:
                 """Reads are from Oxford Nanopore direct RNA kit, downstream of basecalling."""
                 self.config_dict['stranded'] = True
                 self.config_dict['labels_are_trimmed'] = False
-                self.config_dict['quality_filter'] = True
+                self.config_dict['quality_filter'] = False
             elif self.data_type.strip('0123456789').upper() in ['SMART','SMARTER','SMARTSEQ','SMART-SEQ']:
                 """Reads are from a SMART protocol, labeled by bookend label."""
                 self.config_dict['stranded'] = False
                 self.config_dict['labels_are_trimmed'] = True
-                self.config_dict['quality_filter'] = True
+                self.config_dict['quality_filter'] = False
             else:
                 print("\nERROR: --data_type not recognized.")
                 print("Currently supported: ONT, PACBIO, DIRECT_RNA, SMARTSEQ")

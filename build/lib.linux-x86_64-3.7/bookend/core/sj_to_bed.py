@@ -19,9 +19,11 @@ class SJtoBEDconverter:
             l=line.rstrip().split('\t')
             reads = str(int(l[6])+int(l[7]))
             if l[3]=='1':
-                outline = '\t'.join([l[0],str(int(l[1])-1),l[2],'SJ.'+str(counter),reads,'+'])
+                outline = '\t'.join([l[0],str(int(l[1])-1),l[2],'SJ.'+str(counter),reads,'+','.','.','0,120,0'])
             elif l[3]=='2':
-                outline = '\t'.join([l[0],str(int(l[1])-1),l[2],'SJ.'+str(counter),reads,'-'])
+                outline = '\t'.join([l[0],str(int(l[1])-1),l[2],'SJ.'+str(counter),reads,'-','.','.','0,0,120'])
+            else:
+                outline = '\t'.join([l[0],str(int(l[1])-1),l[2],'SJ.'+str(counter),reads,'.','.','.','120,0,0'])
 
             output_file.write(outline+'\n')
         

@@ -285,6 +285,8 @@ sj_merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='sj
 sj_merge_parser.add_argument("--format", dest='FORMAT', help="Output file format", default='star', type=str, choices=['bed','star'])
 sj_merge_parser.add_argument("--min_unique", dest='MIN_UNIQUE', help="Filter SJs with fewer unique reads.", default=0, type=int)
 sj_merge_parser.add_argument("--min_reps", dest='MIN_REPS', help="Filter SJs detected in fewer than this many files.", default=1, type=int)
+sj_merge_parser.add_argument('--min_proportion', dest='MIN_PROPORTION', type=float, default=0.01, help="[float 0-1] Exclude juctions < this proportion of the most abundant overlapping junction.")
+sj_merge_parser.add_argument("--strict_overhang", dest='STRICT_OVERHANG', help="Filter multimapping and noncanonical SJs with short overhangs.", default=20, type=int)
 sj_merge_parser.add_argument("--new", dest='NEW', help="Keep only SJs not present in the reference SJDB", default=False, action='store_true')
 sj_merge_parser.add_argument("INPUT", nargs='+', default=[])
 sj_merge_parser.set_defaults(object='SJmerger')

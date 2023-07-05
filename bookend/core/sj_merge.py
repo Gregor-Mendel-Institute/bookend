@@ -112,9 +112,12 @@ class SJmerger:
         self.output = args['OUT']
         self.min_unique = args['MIN_UNIQUE']
         self.min_reps = args['MIN_REPS']
+        self.strict_overhang = args['STRICT_OVERHANG']
+        self.min_proportion = args['MIN_PROPORTION']
         self.format = args['FORMAT']
         self.new = args['NEW']
         self.sj_dict = {}
+        self.verbose = False
     
     def run(self):
         print(self.display_options())
@@ -138,6 +141,35 @@ class SJmerger:
         
         sjf.close()
     
+    def generate_chunks(self):
+        """Yields a contiguous chunk of all annotation objects as a list
+        by interleaving all sorted annotations together."""
+        sj_list = sorted(list(self.sj_dict.values()))
+        number_of_items = len(sj_list)
+        if len(sj_list) == 0:
+            return
+
+        chrom = sj_list[0].chrom
+        left = 0
+        rightmost = -1
+        for i in range(number_of_items):
+            sj = sj_list[i]
+            if rightmost > 0:
+                if sj.chrom != chrom: # Moved up a chromosome
+                    yield sj_list[left:i]
+                    chrom = sj.chrom
+                    rightmost = sj.end
+                    left = i
+                
+                elif sj.start > rightmost: # A gap was jumped
+                    yield sj_list[left:i]
+                    left = i
+            
+            if sj.end > rightmost:
+                rightmost = sj.end
+        
+        yield sj_list[left:]
+
     def write_sj_dict_to_file(self):
         outfile_name = self.output
         if self.format == 'star' and not outfile_name.endswith('.SJ.out.tab'):
@@ -146,24 +178,37 @@ class SJmerger:
             outfile_name += '.bed'
 
         output_file = open(outfile_name, 'w')
-        for sj_hash, sj in sorted(list(self.sj_dict.items())):
-            if self.new and not sj.new: continue
-            if sj.count < self.min_reps: continue
-            if sj.unique < self.min_unique: continue
-            output_file.write(sj.as_string(self.format))
+        for chunk in self.generate_chunks():
+            if self.verbose:
+                left = min([j.start for j in chunk])
+                right = max([j.end for j in chunk])
+                print("Checking {} junctions, (chromosome {}:{}-{}).".format(
+                    len(chunk), chunk[0].chrom, left, right
+                ))
+            
+            for sj in chunk:
+                sum_overlap = sum([j.unique+j.multi for j in chunk if not ((j.end < sj.start and j.start < sj.start) or (j.start > sj.end and j.end > sj.end))])
+                if self.new and not sj.new: continue
+                if sj.count < self.min_reps: continue
+                if sj.unique < self.min_unique: continue
+                if sj.unique+sj.multi < self.min_proportion * sum_overlap: continue
+                if sj.overhang < self.strict_overhang and (sj.unique == 0 or sj.motif not in  ['1','2','3','4']):continue
+                output_file.write(sj.as_string(self.format))
         
         output_file.close()
     
     def display_options(self):
         """Returns a string describing all input args"""
         options_string = "\n/| bookend merge-sj |\\\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\n"
-        options_string += "  Input file:    {}\n".format(self.input)
-        options_string += "  Output file:   {}\n".format(self.output)
+        options_string += "  Input file:      {}\n".format(self.input)
+        options_string += "  Output file:     {}\n".format(self.output)
         options_string += "  *** Parameters ***\n"
-        options_string += "  Output format: {}\n".format(self.format)
-        options_string += "  Min unique:    {}\n".format(self.min_unique)
-        options_string += "  Min reps:      {}\n".format(self.min_reps)
-        options_string += "  Only new SJs:  {}\n".format(self.new)
+        options_string += "  Output format:   {}\n".format(self.format)
+        options_string += "  Min unique:      {}\n".format(self.min_unique)
+        options_string += "  Min reps:        {}\n".format(self.min_reps)
+        options_string += "  Min proportion:  {}\n".format(self.min_proportion)
+        options_string += "  Strict overhang: {}\n".format(self.strict_overhang)
+        options_string += "  Only new SJs:    {}\n".format(self.new)
         return options_string
 
 if __name__ == '__main__':
