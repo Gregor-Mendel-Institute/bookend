@@ -9,7 +9,7 @@ Take a look at the [Bookend publication](https://genomebiology.biomedcentral.com
 ## Installation  
 Bookend can be installed through the Python Package Index (PyPI) on UNIX systems with Python 3.6+ using the command:
 ```
-pip install bookend-rna
+pip install bookend-rna --upgrade
 ```
 
 If installing from the GitHub source code, perform the following steps:
@@ -23,15 +23,16 @@ Once installed, all utilities can be accessed on the command as bookend subcomma
   
     usage: bookend [subcommand] [options] [input file(s)]
     Subcommands (use -h/--help for more info):
-
+    
         label    (Label 5' and 3' ends in a FASTQ file)
         elr      (Convert a BAM/SAM file to the end-labeled read format)
         assemble (Assemble transcripts from aligned end-labeled reads)
         condense (Partial assembly that leaves keeps all fragments; use for meta-assembly)
         classify (Compare an assembly to the transcripts of a reference annotation)
+        merge    (Combine GTF files into a unified annotation)
         bedgraph (Write a coverage Bedgraph file of end-labeled reads)
         fasta    (Write a transcript FASTA file from an annotation and genome)
-
+    
         --end-labeled read (ELR) operations--
         elr-sort
         elr-subset
@@ -44,4 +45,4 @@ Once installed, all utilities can be accessed on the command as bookend subcomma
         elr-to-bed
         sam-to-sj
         sj-to-bed
-        sj-merge
+        sj-merge  
