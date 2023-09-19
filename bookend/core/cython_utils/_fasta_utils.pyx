@@ -46,7 +46,10 @@ quality_scores = [
     '6','7','8','9',':',
     ';','<','=','>','?',
     '@','A','B','C','D',
-    'E','F','G','H','I','J'
+    'E','F','G','H','I','J',
+    'K','L','M','N','O','P',
+    'Q','R','S','T','U','V',
+    'W','X','Y','Z'
 ]
 
 
@@ -215,17 +218,6 @@ aminos_ambiguous = [
     'R','R','R','R','R',
     'R','R','R','R',
     '-','-'
-]
-
-quality_scores = [
-    '!','"','#','$','%','&',
-    "'",'(',')','*','+',
-    ',','-','.','/','0',
-    '1','2','3','4','5',
-    '6','7','8','9',':',
-    ';','<','=','>','?',
-    '@','A','B','C','D',
-    'E','F','G','H','I','J'
 ]
 
 CODONhash = {}
@@ -418,7 +410,7 @@ cpdef (int, int) best_sliding_fit(
     
     cdef int[:] Q = query
     cdef int[:] T = trim
-    min_oligomer = min(3, minmatch)
+    min_oligomer = 5
     i = minmatch
     while i <= min(q_len,maxlen):
         max_mismatch = int(mm_rate*min(i,t_len))
@@ -462,7 +454,7 @@ cpdef (int, int) best_sliding_fit(
                     best_ham = ham
                     a_i = Q[i]
                     n = i
-                    while ham <= max_mismatch: # Keep track of how many mismatches are encountered during monomer extension
+                    while ham <= max_mismatch and best_pos < maxlen: # Keep track of how many mismatches are encountered during monomer extension
                         if not a_i & monomer:
                             ham += 1
                             oligo_counter = 0
@@ -768,7 +760,7 @@ def terminal_trim(
         # (2) Check if E5 is a better match
         E5pos1,E5ham1 = best_sliding_fit(mate1array, E5array, E5monomer, minend, mm_rate, maxend)
         if E5ham1 != -1:
-            if (E5pos1 > pos1) or (E5pos1 == pos1 and E5ham1 < ham1): # Improved match
+            if (E5ham1 < ham1) or (E5pos1 > pos1 and E5ham1 == ham1): # Improved match
                 pos1 = E5pos1
                 ham1 = E5ham1
                 trimtype1 = 1
@@ -779,7 +771,7 @@ def terminal_trim(
         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
             S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate, maxstart)
             if S3ham1 != -1:
-                if (S3pos1 > pos1) or (S3pos1 == pos1 and S3ham1 < ham1) or trimtype1 == 1: # Improved match
+                if (S3ham1 < ham1) or (S3pos1 > pos1 and S3ham1 == ham1) or trimtype1 == 1: # Improved match
                     if trimtype1 == 1: # Can be shared with first trim
                         pos2 = S3pos1
                         ham2 = S3ham1
@@ -794,7 +786,7 @@ def terminal_trim(
         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
             E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate, maxend)
             if E3ham1 != -1:
-                if (E3pos1 > pos1) or (E3pos1 == pos1 and E3ham1 < ham1) or trimtype1 == 0: # Improved match
+                if (E3ham1 < ham1) or (E3pos1 > pos1 and E3ham1 == ham1) or trimtype1 == 0: # Improved match
                     if trimtype1 == 0: # Can be shared with first trim
                         pos2 = E3pos1
                         ham2 = E3ham1
@@ -820,6 +812,7 @@ def terminal_trim(
             elif trimtype1 == 1: # E5 + S3 trim
                 trim1 = trim1[pos2:]
                 qtrm1 = qtrm1[pos2:]
+                umilabel = get_umilabel(mate1, pos2, trimtype2, umi, umi_range)
                 label1 = 'S'+str(pos2)+label1
         
         if len(trim1) < minlen: # trim1 length fail
@@ -845,7 +838,7 @@ def terminal_trim(
         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
             E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate, maxend)
             if E5ham2 != -1:
-                if (E5pos2 > pos2) or (E5pos2 == pos2 and E5ham2 < ham2): # Improved match
+                if (E5ham2 == ham2) or (E5pos2 > pos2 and E5ham2 == ham2): # Improved match
                     pos2 = E5pos2
                     ham2 = E5ham2
                     trimtype2 = 1

@@ -100,6 +100,10 @@ cdef class Locus:
             self.dead_end_penalty = 0
         
         if len(list_of_reads) > 0:
+            list_of_reads = [read for read in list_of_reads if not read.is_malformed()]
+            if len(list_of_reads) == 0:
+                return
+            
             self.leftmost, self.rightmost = ru.range_of_reads(list_of_reads)
             if self.ignore_ends:
                 self.allow_incomplete = True

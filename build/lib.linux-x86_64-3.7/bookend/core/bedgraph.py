@@ -61,7 +61,7 @@ class Bedgrapher:
             print("\nERROR: No input file(s) provided.")
             sys.exit(1)
         
-        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, 0, 0)
+        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, 0, 0, 100000)
         self.chunk_counter = 0
         self.output_file = open(self.output,'w')
     

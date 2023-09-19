@@ -7,7 +7,7 @@ import os
 if __name__ == '__main__':
     sys.path.append('../../bookend')
 
-from bookend.core.cython_utils._rnaseq_utils import RNAseqDataset
+import bookend.core.cython_utils._rnaseq_utils as ru
 import pysam
 from bookend.core.elr_sort import ELRsorter
 from bookend.core.elr_to_bed import ELRtoBEDconverter
@@ -15,6 +15,7 @@ from bookend.core.elr_to_bed import ELRtoBEDconverter
 class BAMtoELRconverter:
     def __init__(self, args):
         """Parses input arguments for converting BAM to ELR"""
+        # print(args)
         self.source = args['SOURCE']
         self.genome = args['GENOME']
         self.reference = args['REFERENCE']
@@ -41,6 +42,7 @@ class BAMtoELRconverter:
         self.minlen_loose = args['MINLEN_LOOSE']
         self.input = args['INPUT']
         self.error_rate = args['ERROR_RATE']
+        self.max_intron = args['MAX_INTRON']
         self.remove_noncanonical = args['REMOVE_NONCANONICAL']
         if self.start or self.end or self.capped:
             self.stranded = True
@@ -85,8 +87,10 @@ class BAMtoELRconverter:
             'start_seq':self.start_seq,
             'end_seq':self.end_seq,
             'minlen_strict':self.minlen_strict,
+            'max_intron':self.max_intron,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
+            'error_rate' : self.error_rate,
             'sj_shift':self.sj_shift,
             'remove_noncanonical':self.remove_noncanonical,
             'labels_are_trimmed':not self.untrimmed,
@@ -107,20 +111,28 @@ class BAMtoELRconverter:
                 self.config_dict['stranded'] = True
                 self.config_dict['max_headclip'] = 10
                 self.config_dict['quality_filter'] = False
+                self.config_dict['error_rate'] = 0.4
+                self.config_dict['remove_noncanonical'] = True
+                self.config_dict['remove_gapped_termini'] = True
                 if self.untrimmed:
                     self.config_dict['max_headclip'] = 120
+                    self.config_dict['labels_are_trimmed'] = False
                     self.config_dict['stranded'] = False
-                    self.config_dict['s_tag'] = True
-                    self.config_dict['e_tag'] = True
+                    self.config_dict['s_tag'] = False
+                    self.config_dict['e_tag'] = False
             elif self.data_type.upper() in ['PACBIO', 'ISOSEQ', 'ISOSEQ3', 'FLNC']:
                 """Reads are PacBio FLNCs, downstream of lima."""
                 self.config_dict['max_headclip'] = 4
                 self.config_dict['s_tag'] = True
                 self.config_dict['e_tag'] = True
                 self.config_dict['quality_filter'] = False
+                self.config_dict['remove_noncanonical'] = True
+                self.config_dict['remove_gapped_termini'] = True
             elif self.data_type.upper() in ['ONT-RNA','ONT_RNA','DIRECT_RNA', 'DIRECT-RNA']:
                 """Reads are from Oxford Nanopore direct RNA kit, downstream of basecalling."""
                 self.config_dict['stranded'] = True
+                self.config_dict['remove_noncanonical'] = True
+                self.config_dict['remove_gapped_termini'] = True
                 self.config_dict['labels_are_trimmed'] = False
                 self.config_dict['quality_filter'] = False
             elif self.data_type.strip('0123456789').upper() in ['SMART','SMARTER','SMARTSEQ','SMART-SEQ']:
@@ -143,7 +155,7 @@ class BAMtoELRconverter:
             print("WARNING: BAM sorted by coordinate. Mate pairs will not be merged.")
             print("Sort by read name (samtools sort -n) if using paired-end reads.")
         
-        self.dataset = RNAseqDataset(
+        self.dataset = ru.RNAseqDataset(
             chrom_array=self.bam_in.header.references, 
             chrom_lengths=list(self.bam_in.header.lengths),
             source_array=[self.source],
@@ -195,14 +207,15 @@ class BAMtoELRconverter:
         """Takes a list of bed lines and writes
         them to the output stream.
         """
-        if output == 'stdout':
-            for output_string in lines:
-                print(output_string)
-        else:
-            output.write('\n'.join(lines)+'\n')
+        if len(lines) > 0:
+            if output == 'stdout':
+                for output_string in lines:
+                    print(output_string)
+            else:
+                output.write('\n'.join(lines)+'\n')
 
     def write_elr(self, output):
-        out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list]
+        out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list if not mapping.is_malformed()]
         self.output_lines(out_strings, output)
 
     def process_entry(self, bam_lines):

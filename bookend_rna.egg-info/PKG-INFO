@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: bookend-rna
-Version: 1.1.0
+Version: 1.1.2
 Summary: End-guided transcript assembler for short and long RNA-seq reads.
 Home-page: https://github.com/Gregor-Mendel-Institute/bookend
 Author: Michael A. Schon

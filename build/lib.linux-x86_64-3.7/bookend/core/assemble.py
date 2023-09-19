@@ -23,6 +23,7 @@ class Assembler:
         self.cov_out = args['COV_OUT']
         self.incomplete = args['INCOMPLETE']
         self.max_gap = args['MAX_GAP']
+        self.max_intron = args['MAX_INTRON']
         self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
         self.min_cov = args['MIN_COV']
@@ -77,6 +78,7 @@ class Assembler:
                             'start_seq':None,
                             'end_seq':None,
                             'mismatch_rate':0.2,
+                            'max_intron':self.max_intron,
                             'error_rate':0.2,
                             'min_reps':1,
                             'cap_bonus':1,
@@ -133,7 +135,7 @@ class Assembler:
         if self.output_type is None:
             self.output_type = 'gtf'
         
-        self.generator = read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
+        self.generator = read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0, self.max_intron)
         self.chunk_counter = 0
         self.transcript_counter = 0
         self.output_file = open(self.output,'w')
@@ -278,6 +280,7 @@ class Assembler:
         'transcript' is an RNAseqMapping object,
         see _rnaseq_utils.pyx for details.
         """
+        if transcript.is_malformed(): return False
         if transcript.coverage < self.min_cov: return False
         if not self.incomplete and not transcript.complete: return False
         if transcript.attributes['length'] < self.minlen: return False

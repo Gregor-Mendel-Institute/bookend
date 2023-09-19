@@ -168,6 +168,15 @@ cdef class RNAseqMapping():
         
         return shared
     
+    cpdef bint is_malformed(self):
+        """Returns if any exons are length zero."""
+        cdef int l,r
+        for l,r in self.ranges:
+            if r <= l:
+                return True
+        
+        return False
+    
     cpdef bint ends_clash(self, RNAseqMapping other):
         """Returns a boolean of whether the combination of end tags between
         self and other can be substrings of the same object."""
@@ -468,9 +477,11 @@ config_defaults = {
     'cap_bonus':5,
     'sj_shift':0,
     'max_headclip':4,
+    'max_intron':100000,
     'confidence_threshold':0.5,
     'gene_delim':'.',
     'remove_noncanonical':False,
+    'remove_gapped_termini':False,
     'secondary':False,
     'ignore_ends':False,
     'labels_are_trimmed':True,
@@ -478,20 +489,39 @@ config_defaults = {
     'reference':None,
     'sj':None,
 }
-
+gtf_defaults = {
+    'parent_types':set(['transcript']),
+    'parent_key_transcript':['transcript_id', 'Name'],
+    'parent_key_gene':'gene_id',
+    'child_types':set(['exon']),
+    'child_key_transcript':['transcript_id', 'Parent'],
+    'child_key_gene':'gene_id'
+}
+gff_defaults = {
+    'parent_types':set([    
+        'mRNA','transcript',
+        'snoRNA','tRNA','snRNA', 'miRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
+        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
+        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
+    'parent_key_transcript':['transcript_id'],
+    'parent_key_gene':'gene',
+    'child_types':set(['exon','pseudogenic_exon']),
+    'child_key_transcript':['transcript_id', 'Parent'],
+    'child_key_gene':'gene'
+}
 cdef class RNAseqDataset():
     cdef public list read_list, chrom_array, source_array, chrom_lengths
-    cdef public int chrom_index, source_index, sj_shift, max_headclip
-    cdef public dict chrom_dict, source_dict, reference_dict
+    cdef public int chrom_index, source_index, sj_shift, max_headclip, max_intron
+    cdef public dict chrom_dict, source_dict, reference_dict, gtf_config, gff_config
     cdef readonly dict config, genome, label_tally
-    cdef readonly bint s_tag, e_tag, capped, stranded, reverse, ignore_ends, remove_noncanonical, labels_are_trimmed, quality_filter, verbose, secondary, has_genome
-    cdef readonly str start_seq, end_seq, gene_delim
+    cdef readonly bint s_tag, e_tag, capped, stranded, reverse, ignore_ends, remove_noncanonical, labels_are_trimmed, quality_filter, verbose, secondary, has_genome, remove_gapped_termini
+    cdef readonly str start_seq, end_seq, start_seq_rc, end_seq_rc, gene_delim
     cdef readonly int minlen, minlen_strict, minlen_loose
     cdef readonly float mismatch_rate, error_rate
     cdef readonly array.array start_array, end_array
     cdef public set sj_set
 
-    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults):
+    def __init__(self, chrom_array=None, source_array=None, chrom_lengths=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults):
         """Container for RNAseqMapping objects. Stores a reference dictionary for all
         chromosome names and sample names. Contains methods for parsing
         a variety of files into a collection of read objects."""
@@ -499,6 +529,8 @@ cdef class RNAseqDataset():
         self.config.update(config)
         self.label_tally = {'S':Counter(), 's':Counter(), 'E':Counter(), 'e':Counter()}
         self.read_list = []
+        self.gtf_config = gtf_config
+        self.gff_config = gff_config
         self.s_tag = self.config['s_tag']
         self.e_tag = self.config['e_tag']
         self.capped = self.config['capped']
@@ -509,11 +541,13 @@ cdef class RNAseqDataset():
         self.minlen_strict = self.config['minlen_strict']
         self.minlen_loose = self.config['minlen_loose']
         self.minlen = self.minlen_strict
+        self.max_intron = self.config['max_intron']
         self.mismatch_rate = self.config['mismatch_rate']
         self.error_rate = self.config['error_rate']
         self.sj_shift = self.config['sj_shift']
         self.max_headclip = self.config['max_headclip']
         self.remove_noncanonical = self.config['remove_noncanonical']
+        self.remove_gapped_termini = self.config['remove_gapped_termini']
         self.labels_are_trimmed = self.config['labels_are_trimmed']
         self.quality_filter = self.config['quality_filter']
         self.ignore_ends = self.config['ignore_ends']
@@ -521,16 +555,19 @@ cdef class RNAseqDataset():
         self.gene_delim = self.config['gene_delim']
         self.verbose = self.config.get('verbose', False)
         if self.start_seq in ['None', 'False', '']:
+            self.start_seq_rc = ''
             self.start_array = fu.nuc_to_int('x')
         else:    
+            self.start_seq_rc = fu.rc(self.start_seq)
             self.start_array = fu.nuc_to_int(self.start_seq)
         
         if self.end_seq in ['None', 'False', '']:
+            self.end_seq_rc = ''
             self.end_array = fu.nuc_to_int('x')
         else:    
+            self.end_seq_rc = fu.rc(self.end_seq)
             self.end_array = fu.nuc_to_int(self.end_seq)
         
-        self.end_array = fu.nuc_to_int(self.end_seq)
         self.chrom_lengths = chrom_lengths
         self.reference_dict = {}
         self.chrom_dict = {}
@@ -893,26 +930,6 @@ cdef class RNAseqDataset():
 ######################################
 # Utilities for GTF/GFF file parsing #
 ######################################
-gtf_defaults = {
-    'parent_types':set(['transcript']),
-    'parent_key_transcript':['transcript_id', 'Name'],
-    'parent_key_gene':'gene_id',
-    'child_types':set(['exon']),
-    'child_key_transcript':['transcript_id', 'Parent'],
-    'child_key_gene':'gene_id'
-}
-gff_defaults = {
-    'parent_types':set([    
-        'mRNA','transcript',
-        'snoRNA','tRNA','snRNA', 'miRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
-        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
-        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
-    'parent_key_transcript':['transcript_id'],
-    'parent_key_gene':'gene',
-    'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':['transcript_id', 'Parent'],
-    'child_key_gene':'gene'
-}
 gtf_colorcode = {
     '3prime_overlapping_ncRNA': '203,98,130',
     'antisense': '194,71,71', 
@@ -1075,7 +1092,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     """Child of an RNAseqDataset. Parses a set of input annotations (GFF3/GTF/BED12/ELR).
     Has methods that allow these annotations to be merged together to
     form a single consensus or to be merged directly into a 'reference' annotation."""
-    cdef public dict annotations, gtf_config, gff_config
+    cdef public dict annotations
     cdef public object generator
     cdef public int number_of_assemblies, counter, min_reps, confidence
     cdef public float cap_bonus
@@ -1352,7 +1369,7 @@ cdef parse_ELR_line(str elr_line):
     chrom = int(chrom_num)
     source = int(source_num)
     startpos = int(chromStart)
-    label_indices = [i for i,character in enumerate(EL_CIGAR) if not character.isdigit()]
+    label_indices = [i for i,character in enumerate(EL_CIGAR) if not (character.isdigit() or character=='-')]
     feature_lengths = [int(EL_CIGAR[a+1:b]) for a,b in zip(label_indices[:-1],label_indices[1:])]
     ranges = []
     splice = []
@@ -1600,8 +1617,8 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
             weight = float(1)
         
         label = None
-    elif len(bed_elements) == 6:
-        chrom_string, chromStart, end, readname, score, bed_strand = bed_elements
+    else:
+        chrom_string, chromStart, end, readname, score, bed_strand = bed_elements[:6]
         blockSizes = str(int(end)-int(chromStart))
         blockStarts = '0'
         label = None
@@ -1802,7 +1819,11 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
     exon_size = 0
     i = 0
     mismatch_generator = parse_MD_string(mdstring)
-    match_count = int(next(mismatch_generator))
+    try:
+        match_count = int(next(mismatch_generator))
+    except:
+        match_count = 0
+    
     for i in range(cigar_len):
         operator = cigartuples[i][0]
         o_len = cigartuples[i][1]
@@ -1812,7 +1833,7 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
             else:
                 tail = o_len
         
-        if operator == 0: # Match
+        if operator in [0,7,8]: # Match
             if jumped: # The last match was across an intron, dump it
                 jumped = False
                 if quality_filter and exon_size > 0 and mismatches/exon_size > error_rate: # Last exon didn't pass quality threshold
@@ -1820,15 +1841,23 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
                     if len(ranges) == 0:
                         head = -1
                 
-                ranges += [(current_pos,current_pos+o_len)]
+                if len(ranges) > 0: # Adjust last exon border to match gap
+                    ranges[-1] = (ranges[-1][0], gaps[-1][0])
+                    ranges += [(gaps[-1][1],current_pos+o_len)] # Adjust left border to match gap
+                else:
+                    ranges += [(current_pos,current_pos+o_len)] # Adjust left border to match gap
+
                 mismatches = 0
                 exon_size = 0
             else: # Continuation of exon, update right side
                 ranges[-1] = (ranges[-1][0], current_pos+o_len)
             
             exon_size += o_len
-            match_count -= o_len
             current_pos += o_len
+            if operator == 8:
+                mismatches += o_len
+            else:
+                match_count -= o_len
         elif operator == 3: # Skipped region (N)
             leftside = current_pos
             current_pos += o_len
@@ -1923,8 +1952,8 @@ cdef class BAMobject:
     cdef readonly RNAseqDataset dataset
     cdef readonly list input_lines
     cdef readonly float error_rate
-    cdef readonly bint ignore_ends, secondary, remove_noncanonical, quality_filter
-    cdef readonly int max_headclip, sj_shift
+    cdef readonly bint ignore_ends, secondary, remove_noncanonical, remove_gapped_termini, quality_filter
+    cdef readonly int max_headclip, sj_shift, max_intron
     def __init__(self, RNAseqDataset dataset, list input_lines):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
         Quality control of end labels:
@@ -1938,7 +1967,9 @@ cdef class BAMobject:
         self.input_lines = input_lines
         self.ignore_ends = self.dataset.ignore_ends
         self.secondary = self.dataset.secondary
+        self.max_intron = self.dataset.max_intron
         self.remove_noncanonical = self.dataset.remove_noncanonical
+        self.remove_gapped_termini = self.dataset.remove_gapped_termini
         self.error_rate = self.dataset.error_rate
         self.quality_filter = self.dataset.quality_filter
         self.max_headclip = self.dataset.max_headclip
@@ -1947,7 +1978,7 @@ cdef class BAMobject:
     cpdef list generate_read(self):
         cdef:
             int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
-            int i, gap_len, pos, map_strand, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors, sj_shift
+            int i, gap_len, pos, map_strand, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors, sj_shift, longest_intron
             float weight
             str ID, chrom, seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
@@ -1984,8 +2015,8 @@ cdef class BAMobject:
         if not self.ignore_ends:
             ID_tags = parse_tag(ID)
         
-        s_tag_len = ID_tags[2]
-        e_tag_len = ID_tags[3]
+        s_tag_len = max([ID_tags[2], (0, s_len)[self.dataset.s_tag]])
+        e_tag_len = max([ID_tags[3], (0, e_len)[self.dataset.e_tag]])
         if s_tag_len > 0:
             if s_tag_len < s_len:
                 s_len = s_tag_len
@@ -2056,52 +2087,7 @@ cdef class BAMobject:
             # EVALUATE SOFTCLIPPED NUCLEOTIDES
             fiveprime = mate == 1
             threeprime = (mate == 1 and not line.is_paired) or mate == 2
-            if self.dataset.labels_are_trimmed:
-                s_tag, e_tag, capped = self.filter_labels_by_softclip_length(s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail, self.max_headclip)
-            elif not stranded_method: # Labels are untrimmed and it's an unstranded method, e.g. ONT cDNA
-                strand = self.orient_read_by_softclip(seq, head, tail)
-                if strand == 0: # Read couldn't be oriented by tags; remove them
-                    s_tag, e_tag, capped = False, False, False
-                else:
-                    s_tag, e_tag = True, True
-
-            # Check for uuG's (5') or terminal mismatches (3')
-            e_tag_added = False
-            if self.dataset.has_genome:
-                start_pos = 0
-                end_pos = 0
-                if strand == 1:
-                    start_pos = ranges[0][0]
-                    end_pos = ranges[-1][-1]-1
-                elif strand == -1:
-                    start_pos = ranges[-1][-1]-1
-                    end_pos = ranges[0][0]
-                
-                if s_tag and fiveprime:
-                    if head > 0 or tail > 0:
-                        capped = self.untemplated_upstream_g(strand, head, tail, seq, chrom, ranges)
-                    
-                    if self.matches_masking_sequence(chrom, start_pos, strand, 'S', s_len): # Too similar to the 5' masking sequence
-                        s_tag = capped = False
-                
-                if e_tag and threeprime:
-                    if head > 0 or tail > 0:
-                        self.restore_terminal_mismatches(strand, head, tail, ranges)
-                    
-                    if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
-                        e_tag = False
-                elif threeprime:
-                    # Check for softclipped poly(A) tails
-                    e_tag, strand = self.softclipped_polya(strand, head, tail, seq, chrom, ranges)
-                    if self.matches_masking_sequence(chrom, end_pos, strand, 'E', e_len): # Too similar to the 3' masking sequence
-                        e_tag = False
-                    
-                    if e_tag:
-                        e_tag_added = True
-                        if strand == 1:
-                            e_tag_len = max(e_tag_len, tail)
-                        elif strand == -1:
-                            e_tag_len = max(e_tag_len, head)
+            s_tag, e_tag, capped, strand = self.filter_labels_by_softclip(chrom, ranges, seq, s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail, self.max_headclip)
             
             if number_of_blocks == 1:
                 junction_strand = 0
@@ -2113,7 +2099,7 @@ cdef class BAMobject:
                 else:
                     strand, canonical = self.evaluate_splice_sites(chrom, strand, introns)
                 
-                if strand == 0: # Use genomic motifs to identify strand
+                if len(self.dataset.genome) > 0: # Use genomic motifs to identify strand
                     jstrands = [motif_strand(self.dataset.genome, chrom, left, right) for left,right in introns]
                     consensus_strand = sum(jstrands)
                     if consensus_strand > 0:
@@ -2121,7 +2107,7 @@ cdef class BAMobject:
                     elif consensus_strand < 0:
                         strand, consensus_strand = -1, -1
                     
-                    canonical = [True if (js == consensus_strand and consensus_strand !=0) else False for js in jstrands]
+                    canonical = [True if ((js == consensus_strand and consensus_strand !=0) or can) else False for js,can in zip(jstrands, canonical)]
                 
                 # Check if any splice junctions can be corrected by shifting
                 if self.sj_shift > 0:
@@ -2137,12 +2123,23 @@ cdef class BAMobject:
             if not stranded_method and not s_tag and not e_tag and not junction_exists:
                 strand = 0 # No strand information can be found
             
-            if not self.remove_noncanonical:
+            if not self.remove_noncanonical or (len(self.dataset.genome)==0 and len(self.dataset.sj_set)==0):
                 canonical = [True]*len(canonical)
+            
+            if self.remove_gapped_termini:
+                ranges, canonical = self.remove_terminal_gaps(ranges, canonical)
             
             # Generate a ReadObject with the parsed attributes above
             read_data = ELdata(chrom_id, 0, strand, ranges, canonical, s_tag, e_tag, capped, round(weight,2), False)
             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
+            if current_mapping.get_length() < self.dataset.minlen_strict:
+                continue
+            
+            longest_intron = max([0]+[(j[1]-j[0]) for j in current_mapping.junctions()])
+            if longest_intron > self.max_intron:
+                # print(f'REMOVING {current_mapping}: intron length {longest_intron}')
+                continue
+
             current_mapping.e_len = e_tag_len
             current_mapping.s_len = s_tag_len
             if map_number not in mappings:
@@ -2157,6 +2154,152 @@ cdef class BAMobject:
         mapping_list = self.resolve_overlapping_mappings(mappings)
         return mapping_list
     
+    cdef (bint, bint, bint, int) filter_labels_by_softclip(self, str chrom, list ranges, str seq, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail, int max_headclip, int eval_length=10):
+        """Examines the left and right softclip of the read to determine
+        if s_tag, capped, e_tag, or strand attributes should be modified."""
+        cdef str leftclip, rightclip
+        cdef int left_pos, right_pos, clipstrand
+        cdef bint start_plus, start_minus, end_plus, end_minus, capped_plus, capped_minus
+        # Get softclipped nucleotide sequences
+        if head == 0 and tail == 0: # No softclipping at all, pass defaults
+            capped = self.dataset.capped
+        else:
+            if head < 0:
+                s_tag = False if strand == 1 else s_tag
+                e_tag = False if strand == -1 else e_tag
+                capped = False if strand == 1 else capped
+            elif head == 0:
+                leftclip = ''
+            else:
+                leftclip = seq[max(0,head-eval_length):head]
+            
+            if tail < 0:
+                s_tag = False if strand == -1 else s_tag
+                e_tag = False if strand == 1 else e_tag
+                capped = False if strand == -1 else capped            
+            elif tail == 0:
+                rightclip = ''
+            else:
+                rightclip = seq[-tail:len(seq)-tail+eval_length]
+            
+            # Determine strand by clipped sequences
+            capped_plus, capped_minus = False, False
+            start_plus = head >= 3 and leftclip[-3:] == 'G'*len(leftclip[-3:])
+            if start_plus or (strand == 1 and s_tag):
+                capped_plus = capped or (0 < len(leftclip) < 5 and leftclip == 'G'*len(leftclip)) or leftclip[-4:] == 'GGGG'
+            
+            start_minus = tail >= 3 and rightclip[:3] == 'C'*len(rightclip[:3])
+            if start_minus or (strand == -1 and s_tag):
+                capped_minus = capped or (0 < len(rightclip) < 5 and rightclip == 'C'*len(rightclip)) or rightclip[-4:] == 'CCCC'
+            
+            end_plus = rightclip.count('A') >= (1.0 - self.dataset.mismatch_rate) * max([5, len(rightclip)])
+            end_minus = leftclip.count('T') >= (1.0 - self.dataset.mismatch_rate) * max([5, len(leftclip)])
+            
+            # Reconcile clipped labels with preset labels
+            if (start_plus or end_plus) and not (start_minus or end_minus):
+                s_tag = start_plus or (s_tag and 0 < head < 5)
+                e_tag = end_plus or (e_tag and tail == 0)
+                capped = capped_plus
+                strand = 1
+            elif (start_minus or end_minus) and not (start_plus or end_plus):
+                s_tag = start_minus or (s_tag and 0 < tail < 5)
+                e_tag = end_minus or (e_tag and head == 0)
+                capped = capped_minus
+                strand = -1
+            else: # softclipping is inconsistent
+                if start_plus and end_plus: # both tags agree, override strand
+                    strand = 1
+                    s_tag, e_tag, capped = start_plus, end_plus, capped_plus
+                
+                if start_minus and end_minus: # both tags agree, override strand
+                    strand = -1
+                    s_tag, e_tag, capped = start_minus, end_minus, capped_minus
+                
+                # default strand wins
+                if strand == 1:
+                    s_tag = start_plus or (s_tag and 0 < head < 5)
+                    e_tag = end_plus or (e_tag and tail == 0)
+                    capped = capped_plus
+                elif strand == -1:
+                    s_tag = start_minus or (s_tag and 0 < tail < 5)
+                    e_tag = end_minus or (e_tag and head == 0)
+                    capped = capped_minus
+        
+        # Perform artifact masking against genome sequence
+        left_pos = ranges[0][0]
+        right_pos = ranges[-1][1]-1
+        if self.dataset.has_genome:
+            if strand == 1:
+                if s_tag:
+                    s_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'S', min(max(5,head), len(self.dataset.start_seq)))
+                    capped = capped and s_tag
+                if e_tag:
+                    e_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'E', min(max(5,tail),len(self.dataset.end_seq)))
+            elif strand == -1:
+                if s_tag:
+                    s_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'S', min(max(5,tail),len(self.dataset.start_seq)))
+                    capped = capped and s_tag
+                if e_tag:
+                    e_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'E', min(max(5,head),len(self.dataset.end_seq)))
+        
+        s_tag = s_tag and fiveprime
+        capped = capped and s_tag
+        e_tag = e_tag and threeprime
+        return s_tag, e_tag, capped, strand
+    
+    cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):
+        """Evaluates whether a clipped tag matches too closely
+        with a genome-templated region could have caused 
+        false positive end signal"""
+        ## 5'
+        flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
+        
+        if len(flank) > 0:
+            if readtype == 'S':
+                flankmatch = self.dataset.start_array[-length:][::-1]
+                flank = flank[::-1]
+            elif readtype == 'E':
+                flankmatch = self.dataset.end_array[:length]
+            
+            if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):
+                return True
+        
+        return False
+    
+    def remove_terminal_gaps(self, ranges, canonical):
+        '''Cuts off first and last exons if they are separated by a
+        non-splice gap from the rest of the alignment.'''
+        if len(canonical) == 0: # No gaps
+            return ranges, canonical
+        elif len(canonical) == 1: # Special case: single gap
+            if not canonical[0]: # Pick the longer exon
+                biggest = 0
+                best_i = 0
+                for i in range(len(ranges)):
+                    size = ranges[i][1] - ranges[i][0]
+                    if size > biggest:
+                        best_i = i
+                        biggest = size
+                
+                return [ranges[best_i]], []
+        else:
+            if not canonical[0]: # Starting gap
+                ranges = ranges[1:]
+                if len(canonical) > 1:
+                    canonical = canonical[1:]
+                else:
+                    canonical = []
+            
+            if len(canonical) > 0:
+                if not canonical[-1]: # Ending gap
+                    ranges = ranges[:-1]
+                    if len(canonical) > 1:
+                        canonical = canonical[:-1]
+                    else:
+                        canonical = []
+        
+        return ranges, canonical
+    
     def evaluate_splice_sites(self, chrom, strand, introns):
         """Returns a list of bools (1 per gap) that summarizes whether
         each splice junction is supported by the available SJDB."""
@@ -2164,18 +2307,14 @@ cdef class BAMobject:
         cdef int l, r, js, junction_strand, consensus_strand
         cdef bint seen_plus, seen_minus
         jstrands = [0]*len(introns)
-        junction_strand = 0
-        if strand == 0: # No info provided by BAM attributes
-            seen_plus = False
-            seen_minus = False
-            for inum in range(len(introns)):
-                l,r = introns[inum]
-                js = self.check_sjdb(chrom, l, r)
-                seen_plus = seen_plus or js == 1
-                seen_minus = seen_minus or js == -1
-                jstrands[inum] = js
-
-            junction_strand = int(seen_plus) - int(seen_minus)
+        seen_plus = False
+        seen_minus = False
+        for inum in range(len(introns)):
+            l,r = introns[inum]
+            js = self.check_sjdb(chrom, l, r)
+            seen_plus = seen_plus or js == 1
+            seen_minus = seen_minus or js == -1
+            jstrands[inum] = js
         
         consensus_strand = (strand + sum(jstrands))
         if consensus_strand > 0:
@@ -2184,6 +2323,7 @@ cdef class BAMobject:
             consensus_strand = -1
         
         canonical = [True if (js == consensus_strand and consensus_strand !=0) else False for js in jstrands]
+        # print('evaluate_splice_sites: {}'.format(canonical))
         return consensus_strand, canonical
     
     def adjust_splice_sites(self, strand, ranges, canonical, chrom):
@@ -2208,7 +2348,7 @@ cdef class BAMobject:
         
         return strand, ranges, canonical
     
-    cdef (int, int, int) shift_junction(self, str chrom, int left, int right, int strand):
+    cdef (int, int, int) shift_junction(self, str chrom, int left, int right, int strand, bint indel=True):
         """Returns a new left/right border of an intron and its strand."""
         cdef int i, js
         for i in range(0, self.sj_shift+1): # Check SJDB, then genome
@@ -2322,170 +2462,14 @@ cdef class BAMobject:
         strand += int((chrom, start, end, 1) in self.dataset.sj_set)
         strand -= int((chrom, start, end, -1) in self.dataset.sj_set)
         return strand
-    
-    cdef int orient_read_by_softclip(self, str seq, int head, int tail, int eval_length=15):
-        """Assume end labels are present as softclipped sequences on 
-        either end of the read. Return a strand guess based on which
-        softclip is the most poly(A)."""
-        cdef int strand, minus_score, plus_score
-        cdef str headseq, tailseq, i
-        strand = 0
-        minus_score = sum([1 for s in seq[max(0,head-eval_length):head] if s == 'T'])
-        plus_score = sum([1 for s in seq[-tail:len(seq)-tail+eval_length] if s == 'A'])
-        if plus_score > minus_score and plus_score >= (1-self.error_rate)*eval_length:
-            strand = 1
-        elif minus_score > plus_score and minus_score >= (1-self.error_rate)*eval_length:
-            strand = -1
-        
-        return strand
 
-    cdef (bint, bint, bint) filter_labels_by_softclip_length(self, bint s_tag, bint e_tag, bint capped, bint fiveprime, bint threeprime, int strand, int head, int tail, int max_headclip):
-        """Determines whether the s_tag, e_tag and capped parameters
-        should be removed an alignment that has softclipping on its edges."""  
-        if strand == 0:
-            return False, False, False
 
-        if not fiveprime:
-            s_tag = capped = False
-        else:
-            if strand == 1 and (head == -1 or head > max_headclip):
-                s_tag = capped = False
-            elif strand == -1 and (tail == -1 or tail > max_headclip):
-                s_tag = capped = False
-        
-        if not threeprime:
-            e_tag = False
-        else:
-            if strand == 1 and tail == -1:
-                e_tag = False
-            elif strand == -1 and head == -1:
-                e_tag = False
-        
-        return s_tag, e_tag, capped
-    
-    cdef bint untemplated_upstream_g(self, int strand, int head, int tail, str seq, str chrom, list ranges):
-        """Checks (1) if a softclipped string at a read's 5' end
-        is an oligomer of G and (2) if that oligomer does not match the genome.
-        Returns True if evidence supports a cap."""
-        if strand == 1:
-            if head <= 0 or head > 4:
-                return False
-            
-            if seq[head-1] == 'G': # Softclipped nucleotides are G
-                if get_flank(self.dataset.genome, chrom, ranges[0][0], 1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                    return True # One or more upstream untemplated Gs were detected
-                else:
-                    return False
-        elif strand == -1:
-            if tail <= 0 or tail > 4:
-                return False
-            
-            if seq[-tail] == 'C': # Sofclipped nucleotides are (antisense) G
-                if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, -1, 'S', 1) != 'G': # The flanking nucleotide is NOT G
-                    return True
-                else:
-                    return False
-
-    cdef (bint, int) softclipped_polya(self, int strand, int head, int tail, str seq, str chrom, list ranges):
-        """Checks (1) if softclip 3' bases are oligo-A and
-        (2) that oligomer does not match the genome."""
-        cdef str l
-        cdef int trim, trim_end, polya_length
-        if strand >= 0:
-            polya_length = min(tail, 10)
-            trim_end = len(seq) if polya_length == tail else -tail+polya_length
-            if tail > 1 and set(seq[-tail:trim_end]) == {'A'}: # Softclipped nucleotides are A
-                if get_flank(self.dataset.genome, chrom, ranges[-1][-1]-1, 1, 'E', tail) != 'A'*polya_length: # The flanking nucleotides are NOT A
-                    # One or more downstream untemplated As were detected
-                    return True, 1
-                else:
-                    return False, strand
-        
-        if strand <= 0:
-            polya_length = min(head, 10)
-            if head > 1 and set(seq[head-polya_length:head]) == {'T'}: # Sofclipped nucleotides are (antisense) A
-                if get_flank(self.dataset.genome, chrom, ranges[0][0], -1, 'E', head) != 'A'*polya_length:
-                    # One or more upstream untemplated Ts were detected
-                    return True, -1
-                else:
-                    return False, strand
-        
-        return False, strand
-    
-    #TODO: Finish update_trimmed_ranges
-    # cdef void update_trimmed_ranges(self, RNAseqMapping trimmed, RNAseqMapping mate, str aligned_seq, int strand):
-    #     """Given a read with a softclipped A string,
-    #     remove additional (templated) terminal As and 
-    #     update both mates' terminal range."""
-    #     cdef int trim, pos, trimpos
-    #     cdef str l
-    #     cdef (int, int) m
-    #     trim = 0
-    #     if strand == 1:
-    #         pos = len(aligned_seq)-1
-    #         l = aligned_seq[pos]
-    #         while l == 'A':
-    #             trim += 1
-    #             pos -= 1
-    #             l = aligned_seq[pos]
-            
-    #         if trim > 0:
-    #             trimpos = ranges[-1][1]-trim
-    #             if trimmed.ranges[-1][0] >= trimpos:
-    #                 trimmed.ranges = trimmed.ranges[:-1]
-    #                 trimmed.e_tag = False
-    #                 mate.ranges = [m for m in mate.ranges if m[0]]
-    #             trimmed.ranges[-1] = (ranges[-1][0],ranges[-1][1]-trim)
-    #     else:
-    #         pos = 0
-    #         l = aligned_seq[pos]
-    #         while l == 'T':
-    #             trim += 1
-    #             pos += 1
-    #             l = aligned_seq[pos]
-            
-    #     seq_iter = iter(seq[:-tail][::-1])
-    #     while l == 'A':
-    #         trim += 1
-    #         l = next(seq_iter)
-        
-    #     if trim > 0: # Remove extra nucleotides from the end
-    #         ranges[0] = (ranges[0][0]+trim,ranges[0][1])
-        
-
-    cdef void restore_terminal_mismatches(self, int strand, int head, int tail, list ranges):
-        """Updates the mapping ranges of a read with a softclipped
-        sequenced added back to one end."""
-        if strand == 1: 
-            if 0 < tail < 4: # Short right clip exists
-                ranges[-1] = (ranges[-1][0],ranges[-1][1]+tail)
-        elif strand == -1:
-            if 0 < head < 4 and ranges[0][0] > head: # Short left clip exists
-                ranges[0] = (ranges[0][0]-head,ranges[0][1])
-
-    cdef bint matches_masking_sequence(self, str chrom, int position, int strand, str readtype, int length):
-        """Evaluates whether a clipped tag matches too closely
-        with a genome-templated region could have caused 
-        false positive end signal"""
-        ## 5'
-        flank = get_flank(self.dataset.genome, chrom, position, strand, readtype, length) # Get upstream flanking sequence to start
-        if len(flank) > 0:
-            if readtype == 'S':
-                flankmatch = self.dataset.start_array[-length:][::-1]
-                flank = flank[::-1]
-            elif readtype == 'E':
-                flankmatch = self.dataset.end_array[:length]
-            
-            if fu.oligo_match(fu.nuc_to_int(flank), flankmatch, self.dataset.mismatch_rate):
-                return True
-        
-        return False
-
-def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion):
+def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, float minimum_proportion, int max_intron=100000):
     """Yields a contiguous chunk of reads from the input file
     separated on either side by a gaps > max_gap"""
     cdef RNAseqMapping read, outread
     cdef int l, r, old_chrom, old_l, old_r, rightmost, k
+    cdef (int, int) j
     cdef float read_weight, span_weight, current_cov
     cdef set covered_positions
     cdef list passed_positions
@@ -2518,6 +2502,10 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
             continue
         
         read = dataset.read_list[-1]
+        if read.is_malformed() or any([(j[1]-j[0]) > max_intron for j in read.junctions()]):
+            del dataset.read_list[-1]
+            continue
+        
         l, r = read.span
         read_weight = read.weight * (r-l)
         current_cov += read.weight

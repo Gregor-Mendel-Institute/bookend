@@ -15,9 +15,11 @@ if __name__ == '__main__':
 class Condenser:
     def __init__(self, args, printargs=False):
         """Parses input arguments for assembly"""
+        # print(args)
         self.start_time = time.time()
         self.output = args['OUT']
         self.max_gap = args['MAX_GAP']
+        self.max_intron = self.args['MAX_INTRON']
         self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
         self.min_cov = args['MIN_COV']
@@ -49,7 +51,7 @@ class Condenser:
             sys.exit(1)
         
         self.output_type = 'elr'
-        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0)
+        self.generator = ru.read_generator(self.input_file, self.dataset, self.file_type, self.max_gap, 0, self.max_intron)
         self.chunk_counter = 0
         self.transcripts_written = 0
         self.bases_used = 0
@@ -208,6 +210,7 @@ class Condenser:
         'transcript' is an RNAseqMapping object,
         see _rnaseq_utils.pyx for details.
         """
+        if transcript.is_malformed(): return False
         if transcript.coverage < self.min_cov: return False
         if transcript.attributes.get('length',transcript.get_length()) < self.minlen: return False
         return True

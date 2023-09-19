@@ -50,9 +50,18 @@ class EndLabeler:
         self.S5string = self.s_label
         if len(self.S5string) > 1:
             if self.umi == 'S':
-                self.umi_range = (self.S5string.find('N'), self.S5string.rfind('N')+1)
-                if self.umi_range[1]-self.umi_range[0] == 0:
-                    print("ERROR: No string of N's found for UMI in S label.")
+                umi_start = -1
+                umi_end = -1
+                for i,n in enumerate(self.S5string.upper()):
+                    if n in 'MRWSYKVHDBN':
+                        if umi_start == -1:
+                            umi_start = i
+                        
+                        umi_end = i + 1
+                
+                self.umi_range = (umi_start, umi_end)
+                if umi_start == -1:
+                    print("ERROR: No random bases found for UMI in S label.")
                     sys.exit(1)
             
             if self.S5string[-1] == '+': # 3'-terminal monomer is specified
@@ -69,9 +78,18 @@ class EndLabeler:
         self.E5string = self.e_label
         if len(self.E5string) > 1:
             if self.umi == 'E':
-                self.umi_range = (self.E5string.find('N')-len(self.E5string), self.E5string.rfind('N')+1-len(self.S5string))
-                if self.umi_range[1]-self.umi_range[0] == 0:
-                    print("ERROR: No string of N's found for UMI in E label.")
+                umi_start = -1
+                umi_end = -1
+                for i,n in enumerate(self.S5string.upper()):
+                    if n in 'MRWSYKVHDBN':
+                        if umi_start == -1:
+                            umi_start = i
+                        
+                        umi_end = i + 1
+                
+                self.umi_range = (umi_start-len(self.E5string), umi_end-len(self.E5string))
+                if umi_start == -1:
+                    print("ERROR: No random bases found for UMI in E label.")
                     sys.exit(1)
             
             if self.E5string[-1] == '+': # Monomer is specified
@@ -173,7 +191,8 @@ class EndLabeler:
             e_tag = sum([self.labeldict[k] for k in self.labeldict.keys() if 'E' in k])
             xl_tag = self.labeldict.get('XL', 0)
             xq_tag = self.labeldict.get('XQ', 0)
-            kept = total-(xl_tag+xq_tag)
+            xd_tag = self.labeldict.get('XD', 0)
+            kept = total-(xl_tag+xq_tag+xd_tag)
             summary_string = "Total reads processed: {}\n".format(total)
             summary_string += "Start labeled:   {} ({}%)\n".format(s_tag, int(s_tag/total*1000)/10)
             summary_string += "End labeled:     {} ({}%)\n".format(e_tag, int(e_tag/total*1000)/10)
@@ -316,6 +335,7 @@ class EndLabeler:
                     self.labeldict['XQ'] += 1
                 else:
                     self.labeldict['XL'] += 1
+                    # print("TOOSHORT: "+file1_read[1]+' > '+trim1+'('+label+')')
         
         if '_UMI=' in label:
             self.umi_count += 1

@@ -146,7 +146,7 @@ class GTFconverter:
                 out_string = mapping_object.write_as_elr(condense=condense, endweights=endweights)
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
-                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80')
+                color = mapping_object.attributes.get('itemRgb',self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80'))
                 longStart, longEnd = None, None
                 if self.extend:
                     if mapping_object.strand == 1:

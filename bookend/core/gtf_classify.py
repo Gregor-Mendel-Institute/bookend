@@ -197,11 +197,14 @@ class AssemblyClassifier:
             right_diff = transcript.ranges[-1][1]-ref.ranges[-1][1]
             diff5p = left_diff if transcript.strand == 1 else right_diff
             diff3p = right_diff if transcript.strand == 1 else left_diff
-            if transcript.splice_match(ref, ignore_ends=True):
+            if transcript.splice_match(ref, ignore_ends=True) and transcript.strand == ref.strand:
                 if abs(left_diff) <= self.end_buffer and abs(right_diff) <= self.end_buffer:
                     match_type = 8 # full_match
                 else:
-                    match_type = 7 # exon_match
+                    if tlen < .5 * reflen:
+                        match_type = 5 # fragment
+                    else:
+                        match_type = 7 # exon_match
             elif transcript.is_compatible(ref, ignore_ends=True, ignore_source=True): # Truncation or extension
                 if reflen > tlen:
                     match_type = 5 # truncation
