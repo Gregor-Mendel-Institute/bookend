@@ -123,6 +123,7 @@ class BAMtoELRconverter:
             elif self.data_type.upper() in ['PACBIO', 'ISOSEQ', 'ISOSEQ3', 'FLNC']:
                 """Reads are PacBio FLNCs, downstream of lima."""
                 self.config_dict['max_headclip'] = 4
+                self.config_dict['stranded'] = True
                 self.config_dict['s_tag'] = True
                 self.config_dict['e_tag'] = True
                 self.config_dict['quality_filter'] = False

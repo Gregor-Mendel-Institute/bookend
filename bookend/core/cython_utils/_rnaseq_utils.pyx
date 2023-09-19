@@ -2088,7 +2088,6 @@ cdef class BAMobject:
             fiveprime = mate == 1
             threeprime = (mate == 1 and not line.is_paired) or mate == 2
             s_tag, e_tag, capped, strand = self.filter_labels_by_softclip(chrom, ranges, seq, s_tag, e_tag, capped, fiveprime, threeprime, strand, head, tail, self.max_headclip)
-            
             if number_of_blocks == 1:
                 junction_strand = 0
                 canonical = []
@@ -2197,12 +2196,12 @@ cdef class BAMobject:
             
             # Reconcile clipped labels with preset labels
             if (start_plus or end_plus) and not (start_minus or end_minus):
-                s_tag = start_plus or (s_tag and 0 < head < 5)
+                s_tag = start_plus or (s_tag and 0 <= head < 5)
                 e_tag = end_plus or (e_tag and tail == 0)
                 capped = capped_plus
                 strand = 1
             elif (start_minus or end_minus) and not (start_plus or end_plus):
-                s_tag = start_minus or (s_tag and 0 < tail < 5)
+                s_tag = start_minus or (s_tag and 0 <= tail < 5)
                 e_tag = end_minus or (e_tag and head == 0)
                 capped = capped_minus
                 strand = -1
