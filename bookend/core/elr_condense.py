@@ -19,7 +19,7 @@ class Condenser:
         self.start_time = time.time()
         self.output = args['OUT']
         self.max_gap = args['MAX_GAP']
-        self.max_intron = self.args['MAX_INTRON']
+        self.max_intron = args['MAX_INTRON']
         self.end_cluster = args['END_CLUSTER']
         self.min_overhang = args['MIN_OVERHANG']
         self.min_cov = args['MIN_COV']
