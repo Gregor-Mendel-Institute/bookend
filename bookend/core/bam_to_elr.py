@@ -43,7 +43,7 @@ class BAMtoELRconverter:
         self.input = args['INPUT']
         self.error_rate = args['ERROR_RATE']
         self.max_intron = args['MAX_INTRON']
-        self.remove_noncanonical = args['REMOVE_NONCANONICAL']
+        self.allow_noncanonical = args['ALLOW_NONCANONICAL']
         if self.start or self.end or self.capped:
             self.stranded = True
         
@@ -92,7 +92,7 @@ class BAMtoELRconverter:
             'mismatch_rate':self.mismatch_rate,
             'error_rate' : self.error_rate,
             'sj_shift':self.sj_shift,
-            'remove_noncanonical':self.remove_noncanonical,
+            'remove_noncanonical':not self.allow_noncanonical,
             'labels_are_trimmed':not self.untrimmed,
             'quality_filter':True,
             'reference':self.reference,
@@ -114,7 +114,6 @@ class BAMtoELRconverter:
                 self.config_dict['max_headclip'] = 10
                 self.config_dict['quality_filter'] = False
                 self.config_dict['error_rate'] = 0.2
-                self.config_dict['remove_noncanonical'] = True
                 self.config_dict['remove_gapped_termini'] = True
                 if self.untrimmed:
                     self.config_dict['max_headclip'] = 120
@@ -129,12 +128,10 @@ class BAMtoELRconverter:
                 self.config_dict['s_tag'] = True
                 self.config_dict['e_tag'] = True
                 self.config_dict['quality_filter'] = False
-                self.config_dict['remove_noncanonical'] = True
                 self.config_dict['remove_gapped_termini'] = True
             elif self.data_type.upper() in ['ONT-RNA','ONT_RNA','DIRECT_RNA', 'DIRECT-RNA']:
                 """Reads are from Oxford Nanopore direct RNA kit, downstream of basecalling."""
                 self.config_dict['stranded'] = True
-                self.config_dict['remove_noncanonical'] = True
                 self.config_dict['remove_gapped_termini'] = True
                 self.config_dict['labels_are_trimmed'] = False
                 self.config_dict['quality_filter'] = False
@@ -250,7 +247,7 @@ class BAMtoELRconverter:
         options_string += "  *** Filters ***\n"
         options_string += "  --record_artifacts:                  {}\n".format(self.record_artifacts)
         options_string += "  --mismatch_rate:                     {}\n".format(self.mismatch_rate)
-        options_string += "  --remove_noncanonical:               {}\n".format(self.remove_noncanonical)
+        options_string += "  --allow_noncanonical:               {}\n".format(self.allow_noncanonical)
         options_string += "  Perfect minlen (--minlen_strict):    {}\n".format(self.minlen_strict)
         options_string += "  Relaxed minlen (--minlen_loose):     {}\n".format(self.minlen_loose)
         options_string += "  Secondary alignments (--secondary):  {}\n".format(self.secondary)
@@ -258,7 +255,7 @@ class BAMtoELRconverter:
         if not self.genome:
             options_string += "\nWARNING: cap detection and artifact masking can only be done if a reference genome is provided."
             options_string += "\nProvide a genome fasta with --genome /path/to/fasta"
-            if self.remove_noncanonical:
+            if self.allow_noncanonical:
                 options_string += "\nWARNING: noncanonical splice junctions can only be detected if --genome is provided."
         
         if not self.splice and not self.reference and self.sj_shift:

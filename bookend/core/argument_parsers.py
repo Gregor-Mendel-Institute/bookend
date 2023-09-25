@@ -124,7 +124,7 @@ bam_to_elr_parser.add_argument("--header", dest='HEADER', type=str, default=None
 bam_to_elr_parser.add_argument("--record_artifacts", dest='RECORD_ARTIFACTS', default=False, action='store_true', help="Reports artifact-masked S/E labels as >/].")
 bam_to_elr_parser.add_argument("--split", dest='SPLIT', default=False, action='store_true', help="Separate reads into different files by their multimapping number.")
 bam_to_elr_parser.add_argument("--untrimmed", dest='UNTRIMMED', default=False, action='store_true', help="(overrides -s -c -e) End labels were not trimmed from input reads prior to alignment.")
-bam_to_elr_parser.add_argument("--remove_noncanonical", dest='REMOVE_NONCANONICAL', default=False, action='store_true', help="Require canonical splice junction motifs (GT/AG, GC/AG, AT/AC).")
+bam_to_elr_parser.add_argument("--allow_noncanonical", dest='ALLOW_NONCANONICAL', default=False, action='store_true', help="Do not require canonical splice junction motifs (GT/AG, GC/AG, AT/AC).")
 bam_to_elr_parser.add_argument("--sj_shift", dest='SJ_SHIFT', default=0, type=int, help="Shift up to this many bases to find a canonical splice junction")
 bam_to_elr_parser.add_argument("--minlen_strict", dest='MINLEN_STRICT', default=18, type=int, help="Keep reads down to this length only if perfectly aligned.")
 bam_to_elr_parser.add_argument("--minlen_loose", dest='MINLEN_LOOSE', default=25, type=int, help="Keep reads down to this length if they passed alignment parameters.")
