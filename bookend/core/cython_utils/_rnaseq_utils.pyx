@@ -805,6 +805,7 @@ cdef class RNAseqDataset():
             total_coverage += coverage
             total_s += s
             total_e += e
+
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
@@ -850,6 +851,7 @@ cdef class RNAseqDataset():
         cdef AnnotationObject child
         cdef str transcript_id, chrom
         if len(children) == 0:return (0., 0., 0.)
+        if parent.keep == False:return (0., 0., 0.)
         transcript_id = children[0].transcript_id
         if not transcript_id:
             return (0., 0., 0.)
@@ -1791,7 +1793,7 @@ def parse_MD_string(str mdstring):
 
 
 
-cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=0.1, bint quality_filter=False):
+cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=0.1, bint quality_filter=False, int maxindel=10):
     """Converts the po and pysam-parsed CIGAR object of a SAM file to 
     an array of 0-indexed open (left,right) blocks as ranges and gaps.
     CIGAR operators:
@@ -1805,15 +1807,17 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
     """
     cdef list ranges, gaps
     cdef int cigar_len, head, tail, current_pos, operator, o_len, i, leftside, rightside, match_count
-    cdef bint first_element, jumped
+    cdef bint first_element, jumped, indel_too_large
     cdef str next_match
     ranges = []
     gaps = []
+    badgaps = []
     head = 0
     tail = 0
     current_pos = pos
     first_element = True
     jumped = True
+    indel_too_large = False
     cigar_len = len(cigartuples)
     mismatches = 0
     exon_size = 0
@@ -1829,26 +1833,34 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
         o_len = cigartuples[i][1]
         if operator == 4 or operator == 5: # Softclipped ranges are stored in either head or tail
             if first_element:
-                head = o_len
+                head = -1 if operator == 5 else o_len
             else:
-                tail = o_len
+                tail = -1 if operator == 5 else o_len
         
         if operator in [0,7,8]: # Match
             if jumped: # The last match was across an intron, dump it
                 jumped = False
-                if quality_filter and exon_size > 0 and mismatches/exon_size > error_rate: # Last exon didn't pass quality threshold
-                    del ranges[-1]
-                    if len(ranges) == 0:
-                        head = -1
+                if indel_too_large or (quality_filter and exon_size > 0 and mismatches/exon_size > error_rate): # Last exon didn't pass quality threshold
+                    del ranges[-1] # Get rid of the last exon which contains the mapping error(s)
+                    if len(ranges) == 0: # This removed the leftmost block
+                        head = -1 # Hardclip the head
+                        gaps = [] # Remove all gaps
+                        badgaps = []
+                    elif len(ranges) > 0: # Deleted an internal exon; extend the last gap
+                        gaps[-1] = (gaps[-2][0], current_pos)
+                        badgaps[-1] = True
+                        del gaps[-2]
+                        del badgaps[-2]
                 
                 if len(ranges) > 0: # Adjust last exon border to match gap
                     ranges[-1] = (ranges[-1][0], gaps[-1][0])
-                    ranges += [(gaps[-1][1],current_pos+o_len)] # Adjust left border to match gap
+                    ranges += [(gaps[-1][1],current_pos+o_len)] # Start the next exon from the last junction border
                 else:
-                    ranges += [(current_pos,current_pos+o_len)] # Adjust left border to match gap
-
+                    ranges += [(current_pos,current_pos+o_len)] # Add a first exon
+                
                 mismatches = 0
                 exon_size = 0
+                indel_too_large = False
             else: # Continuation of exon, update right side
                 ranges[-1] = (ranges[-1][0], current_pos+o_len)
             
@@ -1862,13 +1874,21 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
             leftside = current_pos
             current_pos += o_len
             rightside = current_pos
-            gaps += [(leftside,rightside)]
+            if not jumped:
+                gaps += [(leftside,rightside)] # Add a new junction
+                badgaps += [False]
+            else: # No matches encountered in last exon, merge with previous
+                gaps[-1] = (gaps[-1][0],rightside)
+                badgaps[-1] = True
+
             jumped = True
         elif operator == 2: # Deletion in query
             current_pos += o_len
             mismatches += o_len
+            indel_too_large = indel_too_large or o_len > maxindel
         elif operator == 1: # Insertion in query
             mismatches += o_len
+            indel_too_large = indel_too_large or o_len > maxindel
         
         while match_count < 0:
             try:
@@ -1884,11 +1904,16 @@ cpdef parse_SAM_CIGAR(int pos, list cigartuples, str mdstring, float error_rate=
 
         first_element = False
     
-    if quality_filter and exon_size > 0 and mismatches/exon_size > error_rate: # Last exon didn't pass quality threshold
+    if indel_too_large or (quality_filter and exon_size > 0 and mismatches/exon_size > error_rate): # Last exon didn't pass quality threshold
         del ranges[-1]
+        if len(gaps) > 0:
+            del gaps[-1]
+            del badgaps[-1]
+        
         tail = -1
     
-    return ranges, gaps, head, tail
+    assert len(gaps) == len(badgaps)
+    return ranges, gaps, badgaps, head, tail
 
 
 cdef bint is_homopolymer(str string, float threshold=0.8):
@@ -1983,8 +2008,8 @@ cdef class BAMobject:
             str ID, chrom, seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
-            list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands
-            bint stranded, stranded_method, reverse, fiveprime, threeprime, junction_exists
+            list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands, badgaps
+            bint stranded, stranded_method, reverse, fiveprime, threeprime, junction_exists, c, b
             (int, int) g
             set intronset
             array.array flankmatch
@@ -2065,7 +2090,7 @@ cdef class BAMobject:
             except KeyError:
                 mdstring = str(len(seq))
             
-            ranges, introns, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate, self.quality_filter)
+            ranges, introns, badgaps, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate, self.quality_filter)
             number_of_blocks = len(ranges)
             if number_of_blocks == 0: # No exons of passing quality were found
                 continue
@@ -2094,9 +2119,9 @@ cdef class BAMobject:
             else: # Check if the splice junctions can be used to assign a strand
                 junction_strand = self.get_alignment_strand(line, map_strand)
                 if strand == 0:
-                    strand, canonical = self.evaluate_splice_sites(chrom, junction_strand, introns)
+                    strand, canonical = self.evaluate_splice_sites(chrom, junction_strand, introns, badgaps)
                 else:
-                    strand, canonical = self.evaluate_splice_sites(chrom, strand, introns)
+                    strand, canonical = self.evaluate_splice_sites(chrom, strand, introns, badgaps)
                 
                 if len(self.dataset.genome) > 0: # Use genomic motifs to identify strand
                     jstrands = [motif_strand(self.dataset.genome, chrom, left, right) for left,right in introns]
@@ -2107,6 +2132,7 @@ cdef class BAMobject:
                         strand, consensus_strand = -1, -1
                     
                     canonical = [True if ((js == consensus_strand and consensus_strand !=0) or can) else False for js,can in zip(jstrands, canonical)]
+
                 
                 # Check if any splice junctions can be corrected by shifting
                 if self.sj_shift > 0:
@@ -2125,8 +2151,17 @@ cdef class BAMobject:
             if not self.remove_noncanonical or (len(self.dataset.genome)==0 and len(self.dataset.sj_set)==0):
                 canonical = [True]*len(canonical)
             
+            canonical = [c and not b for c,b in zip(canonical, badgaps)] # All bad gaps are False
             if self.remove_gapped_termini:
-                ranges, canonical = self.remove_terminal_gaps(ranges, canonical)
+                ranges, canonical, left_trim, right_trim = self.remove_terminal_gaps(ranges, canonical)
+                if strand == 1:
+                    s_tag = s_tag and not left_trim
+                    capped = capped and not left_trim
+                    e_tag = e_tag and not right_trim
+                elif strand == -1:
+                    s_tag = s_tag and not right_trim
+                    capped = capped and not right_trim
+                    e_tag = e_tag and not left_trim
             
             # Generate a ReadObject with the parsed attributes above
             read_data = ELdata(chrom_id, 0, strand, ranges, canonical, s_tag, e_tag, capped, round(weight,2), False)
@@ -2167,6 +2202,7 @@ cdef class BAMobject:
                 s_tag = False if strand == 1 else s_tag
                 e_tag = False if strand == -1 else e_tag
                 capped = False if strand == 1 else capped
+                leftclip = ''
             elif head == 0:
                 leftclip = ''
             else:
@@ -2175,7 +2211,8 @@ cdef class BAMobject:
             if tail < 0:
                 s_tag = False if strand == -1 else s_tag
                 e_tag = False if strand == 1 else e_tag
-                capped = False if strand == -1 else capped            
+                capped = False if strand == -1 else capped
+                rightclip = ''
             elif tail == 0:
                 rightclip = ''
             else:
@@ -2191,18 +2228,18 @@ cdef class BAMobject:
             if start_minus or (strand == -1 and s_tag):
                 capped_minus = capped or (0 < len(rightclip) < 5 and rightclip == 'C'*len(rightclip)) or rightclip[-4:] == 'CCCC'
             
-            end_plus = rightclip.count('A') >= (1.0 - self.dataset.mismatch_rate) * max([5, len(rightclip)])
-            end_minus = leftclip.count('T') >= (1.0 - self.dataset.mismatch_rate) * max([5, len(leftclip)])
+            end_plus = rightclip.count('A') >= (1.0 - self.dataset.mismatch_rate) * max([1, len(rightclip)])
+            end_minus = leftclip.count('T') >= (1.0 - self.dataset.mismatch_rate) * max([1, len(leftclip)])
             
             # Reconcile clipped labels with preset labels
             if (start_plus or end_plus) and not (start_minus or end_minus):
                 s_tag = start_plus or (s_tag and 0 <= head < 5)
-                e_tag = end_plus or (e_tag and tail == 0)
+                e_tag = (end_plus and tail >= 3) or (e_tag and 0 <= tail < 3)
                 capped = capped_plus
                 strand = 1
             elif (start_minus or end_minus) and not (start_plus or end_plus):
                 s_tag = start_minus or (s_tag and 0 <= tail < 5)
-                e_tag = end_minus or (e_tag and head == 0)
+                e_tag = (end_minus and head >= 3) or (e_tag and 0 <= head < 3)
                 capped = capped_minus
                 strand = -1
             else: # softclipping is inconsistent
@@ -2216,12 +2253,12 @@ cdef class BAMobject:
                 
                 # default strand wins
                 if strand == 1:
-                    s_tag = start_plus or (s_tag and 0 < head < 5)
-                    e_tag = end_plus or (e_tag and tail == 0)
+                    s_tag = start_plus or (s_tag and 0 <= head < 5)
+                    e_tag = end_plus or (e_tag and 0 <= tail < 3)
                     capped = capped_plus
                 elif strand == -1:
-                    s_tag = start_minus or (s_tag and 0 < tail < 5)
-                    e_tag = end_minus or (e_tag and head == 0)
+                    s_tag = start_minus or (s_tag and 0 <= tail < 5)
+                    e_tag = end_minus or (e_tag and 0 <= head < 3)
                     capped = capped_minus
         
         # Perform artifact masking against genome sequence
@@ -2230,16 +2267,16 @@ cdef class BAMobject:
         if self.dataset.has_genome:
             if strand == 1:
                 if s_tag:
-                    s_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'S', min(max(5,head), len(self.dataset.start_seq)))
+                    s_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'S', min([5 if head < 3 else head, len(self.dataset.start_seq)]))
                     capped = capped and s_tag
                 if e_tag:
-                    e_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'E', min(max(5,tail),len(self.dataset.end_seq)))
+                    e_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'E', min([eval_length if tail < 3 else tail, len(self.dataset.end_seq)]))
             elif strand == -1:
                 if s_tag:
-                    s_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'S', min(max(5,tail),len(self.dataset.start_seq)))
+                    s_tag = not self.matches_masking_sequence(chrom, right_pos, strand, 'S', min([5 if tail < 3 else tail,len(self.dataset.start_seq)]))
                     capped = capped and s_tag
                 if e_tag:
-                    e_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'E', min(max(5,head),len(self.dataset.end_seq)))
+                    e_tag = not self.matches_masking_sequence(chrom, left_pos, strand, 'E', min([eval_length if tail < 3 else tail, len(self.dataset.end_seq)]))
         
         s_tag = s_tag and fiveprime
         capped = capped and s_tag
@@ -2265,11 +2302,13 @@ cdef class BAMobject:
         
         return False
     
-    def remove_terminal_gaps(self, ranges, canonical):
-        '''Cuts off first and last exons if they are separated by a
+    def remove_terminal_gaps(self, ranges, canonical, left_trim=False, right_trim=False):
+        '''Recursively cuts off first and last exons if they are separated by a
         non-splice gap from the rest of the alignment.'''
+        new_left_trim = False
+        new_right_trim = False
         if len(canonical) == 0: # No gaps
-            return ranges, canonical
+            return ranges, canonical, left_trim or False, right_trim or False
         elif len(canonical) == 1: # Special case: single gap
             if not canonical[0]: # Pick the longer exon
                 biggest = 0
@@ -2280,9 +2319,10 @@ cdef class BAMobject:
                         best_i = i
                         biggest = size
                 
-                return [ranges[best_i]], []
+                return [ranges[best_i]], [], left_trim or best_i==1, right_trim or best_i==0
         else:
             if not canonical[0]: # Starting gap
+                new_left_trim = True
                 ranges = ranges[1:]
                 if len(canonical) > 1:
                     canonical = canonical[1:]
@@ -2291,15 +2331,19 @@ cdef class BAMobject:
             
             if len(canonical) > 0:
                 if not canonical[-1]: # Ending gap
+                    new_right_trim = True
                     ranges = ranges[:-1]
                     if len(canonical) > 1:
                         canonical = canonical[:-1]
                     else:
                         canonical = []
         
-        return ranges, canonical
+        if new_left_trim or new_right_trim:
+            return self.remove_terminal_gaps(ranges, canonical, left_trim or new_left_trim, right_trim or new_right_trim)
+        else:
+            return ranges, canonical, left_trim, right_trim
     
-    def evaluate_splice_sites(self, chrom, strand, introns):
+    cpdef evaluate_splice_sites(self, chrom, int strand, list introns, list badgaps):
         """Returns a list of bools (1 per gap) that summarizes whether
         each splice junction is supported by the available SJDB."""
         cdef list jstrands, canonical
@@ -2322,6 +2366,7 @@ cdef class BAMobject:
             consensus_strand = -1
         
         canonical = [True if (js == consensus_strand and consensus_strand !=0) else False for js in jstrands]
+        canonical = [c and not b for c,b in zip(canonical, badgaps)] # All bad gaps are False
         # print('evaluate_splice_sites: {}'.format(canonical))
         return consensus_strand, canonical
     
@@ -2425,7 +2470,7 @@ cdef class BAMobject:
     
     cdef bint should_skip(self, line):
         """The read should not be processed."""
-        return line.is_unmapped or line.is_supplementary or (line.is_secondary and not self.secondary) or (line.is_paired and not line.is_proper_pair)
+        return line.is_unmapped or ((line.is_supplementary or line.is_secondary) and not self.secondary) or (line.is_paired and not line.is_proper_pair)
     
     cdef bint fails_stringent_filters(self, int Nmap, int match_length, int head, int tail, int errors):
         """Reads below the 'minlen_loose' length should be treated

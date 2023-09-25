@@ -66,6 +66,7 @@ class GTFconverter:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
+        # print(gff_defaults)
         self.dataset.source_array = [self.source]
         self.generator = self.dataset.generator
         self.locus_counter = 0

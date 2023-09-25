@@ -109,9 +109,11 @@ class BAMtoELRconverter:
             if self.data_type.upper() in ['ONT','NANOPORE','OXFORD']:
                 """Reads are from Oxford Nanopore cDNA or PCR-cDNA kits, trimmed and oriented by bookend label or pychopper."""
                 self.config_dict['stranded'] = True
+                self.config_dict['s_tag'] = True
+                self.config_dict['e_tag'] = True
                 self.config_dict['max_headclip'] = 10
                 self.config_dict['quality_filter'] = False
-                self.config_dict['error_rate'] = 0.4
+                self.config_dict['error_rate'] = 0.2
                 self.config_dict['remove_noncanonical'] = True
                 self.config_dict['remove_gapped_termini'] = True
                 if self.untrimmed:
