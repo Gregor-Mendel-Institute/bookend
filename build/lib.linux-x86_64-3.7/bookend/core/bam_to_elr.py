@@ -140,6 +140,7 @@ class BAMtoELRconverter:
                 self.config_dict['stranded'] = False
                 self.config_dict['labels_are_trimmed'] = True
                 self.config_dict['quality_filter'] = False
+                self.config_dict['remove_gapped_termini'] = True
             else:
                 print("\nERROR: --data_type not recognized.")
                 print("Currently supported: ONT, PACBIO, DIRECT_RNA, SMARTSEQ")

@@ -13,6 +13,7 @@ if __name__ == '__main__':
 class AssemblyClassifier:
     def __init__(self, args):
         """Parses input arguments for assembly"""
+        print(args)
         self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p')
         self.args = args
         self.output = self.args['OUT']
@@ -61,17 +62,20 @@ class AssemblyClassifier:
         self.input_transcript_count = 0
         self.transcript_counter = 0
         self.updated_transcript_counter = 0
-        self.match_types = [
-            'intergenic', # 0 (lowest classification) no ref match
-            'ambiguous',  # 1 overlapping with no strand information
-            'antisense',  # 2 only overlaps a ref in antisense
-            'intronic',   # 3 fully contained in a ref intron (sense)
-            'isoform',    # 4 overlaps, incompatible exon chain
-            'fragment',   # 5 compatible with, but fewer exons than, a ref
-            'fusion',     # 6 shares exons with 2 or more ref genes
-            'exon_match', # 7 shares entire exon chain, but not ends
-            'full_match'  # 8 shares entire exon chan and ends
-        ]
+        self.match_types = {
+            0:'intergenic', # 0 (lowest classification) no ref match
+            1:'ambiguous',  # 1 overlapping with no strand information
+            2:'antisense',  # 2 only overlaps a ref in antisense
+            3:'intronic',   # 3 fully contained in a ref intron (sense)
+            4:'splice_variant',    # 4 overlaps, incompatible exon chain
+            4.1:'alt_tss',    # 4.1 overlaps, >=1 exon difference at 5' end
+            4.2:'alt_pas',    # 4.2 overlaps, >=1 exon difference at 3' end
+            4.3:'retained_intron',    # 4.3 overlaps, subset of introns
+            5:'fragment',   # 5 compatible with, but fewer exons than, a ref
+            6:'fusion',     # 6 shares exons with 2 or more ref genes
+            7:'exon_match', # 7 shares entire exon chain, but not ends
+            8:'full_match'  # 8 shares entire exon chan and ends
+        }
     
     def make_config_dicts(self):
         """Converts commandline input into three config dicts
@@ -148,8 +152,8 @@ class AssemblyClassifier:
         elif new_match.matchtype == 8:
             return new_match
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
-            if new_match.exonoverlap >= .9*new_match.reflen or new_match.matchtype == 4:
-                if old_match.exonoverlap >= .9*old_match.reflen or old_match.matchtype == 4:
+            if new_match.exonoverlap >= .9*new_match.reflen or int(new_match.matchtype) in [4,6,7]:
+                if old_match.exonoverlap >= .9*old_match.reflen or int(old_match.matchtype) in [4,6,7]:
                     if old_match.ref.shared_bases(new_match.ref) < .9*min([old_match.reflen, new_match.reflen]):
                         fused_match = self.match_data(
                             6, 
@@ -218,10 +222,29 @@ class AssemblyClassifier:
                 elif shared_bases == 0:
                     match_type = 3
                 else: # At least some shared, sense, exonic sequence
-                    match_type = 4 # isoform
+                    if transcript.is_compatible(ref, ignore_ends=True, ignore_source=True, ignore_overhang=True): # End variant
+                        if transcript.strand == 1:
+                            if ref.ranges[0][1] < transcript.ranges[0][0] or transcript.ranges[0][1] < ref.ranges[0][0]:
+                                match_type = 4.1 # alt_tss
+                            if ref.ranges[-1][0] > transcript.ranges[-1][1] or transcript.ranges[-1][0] > ref.ranges[-1][1]:
+                                if not (match_type == 4.1 and abs(diff5p) > abs(diff3p)):
+                                    match_type = 4.2 # alt_pas
+                        elif transcript.strand == -1:
+                            if ref.ranges[-1][0] > transcript.ranges[-1][1] or transcript.ranges[-1][0] > ref.ranges[-1][1]:
+                                match_type = 4.1 # alt_tss
+                            if ref.ranges[0][1] < transcript.ranges[0][0] or transcript.ranges[0][1] < ref.ranges[0][0]:
+                                if not (match_type == 4.1 and abs(diff5p) > abs(diff3p)):
+                                    match_type = 4.2 # alt_pas
+                    elif transcript.is_compatible(ref, ignore_ends=True, ignore_source=True, allow_intron_retention=True):
+                        if transcript.ranges[0][0] < ref.ranges[0][1] and transcript.ranges[-1][1] > ref.ranges[-1][0]:
+                            match_type = 4.3 # intron_retention
+                        else:
+                            match_type = 5 # truncation with retained introns
+                    else:
+                        match_type = 4 # Other isoform
             
             if not self.match_unstranded:
-                if transcript.strand == 0 and match_type in [8, 7, 4]:
+                if transcript.strand == 0 and int(match_type) in [8, 7, 4]:
                     match_type = 1
             
             new_match = self.match_data(match_type, ref.attributes['transcript_id'], ref.attributes[self.gene_attr], shared_bases, reflen, tlen, ref, diff5p, diff3p)

@@ -19,6 +19,7 @@ bookend/core/gtf_classify.py
 bookend/core/gtf_ends.py
 bookend/core/gtf_merge.py
 bookend/core/gtf_to_bed.py
+bookend/core/quantify.py
 bookend/core/sam_sj_out.py
 bookend/core/sj_merge.py
 bookend/core/sj_to_bed.py

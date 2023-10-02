@@ -70,6 +70,9 @@ def import_object(object_name):
     elif object_name == 'GTFendwriter':
         from .core.gtf_ends import GTFendwriter
         objectClass = GTFendwriter
+    elif object_name == 'ELRquantifier':
+        from .core.quantify import ELRquantifier
+        objectClass = ELRquantifier
     elif object_name == 'ELRsimulator':
         from .core.elr_simulate import ELRsimulator
         objectClass = ELRsimulator

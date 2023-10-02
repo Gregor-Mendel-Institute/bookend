@@ -233,7 +233,7 @@ cdef class RNAseqMapping():
             
         return False
 
-    cpdef bint is_compatible(self, RNAseqMapping other, bint ignore_ends=False, bint ignore_source=False):
+    cpdef bint is_compatible(self, RNAseqMapping other, bint ignore_ends=False, bint ignore_source=False, bint ignore_overhang=False, bint allow_intron_retention=False):
         """Self and other contain no attributes that demonstrate they could
         not be subsequences of a common longer molecule."""
         cdef (int, int) overlap
@@ -258,11 +258,20 @@ cdef class RNAseqMapping():
         # If the two reads share a chrom and strand and overlap,
         # check the overlapping range for identical splice architecture
         overlap = self.overlap_range(other)
-        j1 = [j for j in self.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
-        j2 = [j for j in other.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
+        if ignore_overhang:
+            j1 = [j for j in self.junctions() if j[0] > overlap[0] and j[1] < overlap[1]]
+            j2 = [j for j in other.junctions() if j[0] > overlap[0] and j[1] < overlap[1]]
+        else:
+            j1 = [j for j in self.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
+            j2 = [j for j in other.junctions() if j[1] > overlap[0] and j[0] < overlap[1]]
+        
         if j1 == j2:
             return True
         
+        if allow_intron_retention and all([j in j2 for j in j1]):
+            # Every intron contained in j1 is also present in j2
+            return True
+
         return False
         
     cpdef bint is_identical(self, RNAseqMapping other):
@@ -813,7 +822,9 @@ cdef class RNAseqDataset():
                 item.attributes['source'] = name
                 total_coverage += item.weight
                 chrom = self.chrom_array[item.chrom]
-                if chrom not in object_dict.keys(): object_dict[chrom] = []
+                if chrom not in object_dict.keys():
+                    object_dict[chrom] = []
+                
                 object_dict[chrom].append(item)
         elif format == 'ELR':
             counter = 0
@@ -920,7 +931,7 @@ cdef class RNAseqDataset():
         new_read.attributes['cov'] = new_read.weight
         return new_read
     
-    cdef RNAseqMapping parse_elr_line(self, str line, str name, str counter):
+    cdef RNAseqMapping parse_elr_line(self, str line, str name, int counter):
         cdef RNAseqMapping new_read
         new_read = elr_to_readobject(line)
         new_read.attributes['gene_id'] = name
@@ -1100,7 +1111,7 @@ cdef class AnnotationDataset(RNAseqDataset):
     cdef public float cap_bonus
     def __init__(self, annotation_files, reference=None, genome_fasta=None, config=config_defaults, gtf_config=gtf_defaults, gff_config=gff_defaults, confidence=1):
         RNAseqDataset.__init__(self, None, None, None, genome_fasta, config)
-        self.source_array = annotation_files
+        self.source_array = ['reference'] + annotation_files
         self.min_reps = config['min_reps']
         self.cap_bonus = config['cap_bonus']
         self.verbose = config.get('verbose',False)
@@ -1112,40 +1123,16 @@ cdef class AnnotationDataset(RNAseqDataset):
         cdef RNAseqMapping v
         self.chrom_dict = {k:i for k,i in zip(self.chrom_array,range(len(self.chrom_array)))}
         self.source_dict = {k:i for k,i in zip(self.source_array,range(len(self.source_array)))}
-        # self.chrom_index = 0
-        # self.chrom_array = []
-        # if chrom_array is not None:
-        #     for c in chrom_array:
-        #         self.add_chrom(c)
-        
-        # if genome_fasta is not None:
-        #     self.genome, index = fu.import_genome(genome_fasta)
-        #     if chrom_array is None:
-        #         index_lines = [l.split('\t') for l in index.rstrip().split('\n')]
-        #         self.chrom_array = [l[0] for l in index_lines]
-        #         self.chrom_lengths = [int(l[1]) for l in index_lines]
-        #         self.chrom_index = len(self.chrom_array)
-        #         self.chrom_dict = dict(zip(self.chrom_array, range(self.chrom_index)))
-        # else:
-        #     self.genome = {}
-        
-        # self.source_dict = {}
-        # self.source_index = 0
-        # self.source_array = []
-        # if source_array is not None:
-        #     for s in source_array:
-        #         self.add_source(s)
-        
         self.annotations = {}
-        for f in annotation_files:
-            self.annotations[f] = self.import_annotation(f, f)
-        
         if reference is not None:
             self.annotations['reference'] = self.import_annotation(reference, 'reference')
             for k in self.annotations['reference'].keys():
                 for v in self.annotations['reference'][k]:
                     v.is_reference = True
                     v.attributes['TPM'] = 1
+        
+        for f in annotation_files:
+            self.annotations[f] = self.import_annotation(f, f)
         
         self.counter = 0
         self.generator = self.generate_loci()
