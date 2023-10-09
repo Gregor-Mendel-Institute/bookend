@@ -1511,21 +1511,47 @@ cpdef build_depth_matrix(int leftmost, int rightmost, tuple reads, bint use_attr
         
     return depth_matrix, J_plus, J_minus
 
-cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype='', int strand=0):
+cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype='', int strand=0, int sig=1, bint infer_strand=False):
     """Returns a list of bedgraph lines from an array of height values."""
     cdef:
         int p, lastp
         float v, lastv
         str output = ''
-        np.ndarray coverage, positions, values
+        np.ndarray coverage, positions, values, covstranded, strandratio
         bint contiguous
     
     if seqtype.upper() == 'COV' or seqtype == '':
         contiguous = True
         if strand == 1:
-            coverage = depth_matrix[-3,:]
+            if infer_strand:
+                Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+                covstranded = np.sum(depth_matrix[(covp,covm),:],axis=0)
+                strandedpositions = np.where(covstranded > 0)[0]
+                if strandedpositions.shape[0] > 0: # Some reads to inform the strand
+                    strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
+                    strandratio[strandratio < .01] = 0
+                    strandratio[strandratio > .99] = 1
+                    coverage = depth_matrix[covp,:] + depth_matrix[covn,:]*strandratio
+                else:
+                    strandratio = np.full(depth_matrix.shape[1], .5)
+                    coverage = depth_matrix[covn,:]*strandratio
+            else:
+                coverage = depth_matrix[-3,:]
         elif strand == -1:
-            coverage = depth_matrix[-2,:]
+            if infer_strand:
+                Sp, Ep, Sm, Em, Cp, Cm, covp, covm, covn = range(9)
+                covstranded = np.sum(depth_matrix[(covp,covm),:],axis=0)
+                strandedpositions = np.where(covstranded > 0)[0]
+                if strandedpositions.shape[0] > 0: # Some reads to inform the strand
+                    strandratio = np.array(np.interp(range(covstranded.shape[0]), strandedpositions, depth_matrix[covp,strandedpositions]/covstranded[strandedpositions]),dtype=np.float32)
+                    strandratio[strandratio < .01] = 0
+                    strandratio[strandratio > .99] = 1
+                    coverage = depth_matrix[covm,:] + depth_matrix[covn,:]*(1-strandratio)
+                else:
+                    strandratio = np.full(depth_matrix.shape[1], .5)
+                    coverage = depth_matrix[covn,:]*strandratio
+            else:
+                coverage = depth_matrix[-2,:]
         else:
             coverage = np.sum(depth_matrix[-3:,:], axis=0)
     elif seqtype.upper() == '5P':
@@ -1566,13 +1592,13 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
     lastp, lastv = -1, 0
     for p,v in zip(positions, values):
         if lastp >= 0 and lastv != 0:
-            output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, lastv)
+            output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, round(lastv, sig))
         
         lastp, lastv = p, v
     
     
     if lastv != 0 and lastp >= 0:
-        output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, coverage.shape[0]][contiguous]+leftmost, lastv)
+        output += '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, coverage.shape[0]][contiguous]+leftmost, round(lastv, sig))
     
     return output
 

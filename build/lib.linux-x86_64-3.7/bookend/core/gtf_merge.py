@@ -17,7 +17,7 @@ class AnnotationMerger(AssemblyClassifier):
     based on the classifications.'''
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        print(args)
+        # print(args)
         self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p')
         self.args = args
         self.reference = self.args['REFERENCE']
@@ -29,6 +29,8 @@ class AnnotationMerger(AssemblyClassifier):
         self.allow_unstranded = self.args['UNSTRANDED']
         self.refname = self.args['REFNAME']
         self.min_len = self.args['MIN_LEN']
+        self.min_start = self.args['MIN_S']
+        self.min_end = self.args['MIN_E']
         self.min_reps = self.args['REP_FILTER']
         self.tpm_filter = self.args['TPM_FILTER']
         self.confidence = self.args['CONFIDENCE']
@@ -67,7 +69,7 @@ class AnnotationMerger(AssemblyClassifier):
             self.output_file = open(self.output,'w')
         
         self.table_file = open(self.table, 'w')
-        self.table_file.write('transcript_id\tclass\tgene_id\tchrom\tstart\tend\tstrand\texons\tlength\tref_length\toverlap\tdiff5p\tdiff3p\tcov\tTPM\tS.reads\tE.reads\n')
+        self.table_file.write('transcript_id\tclass\tgene_id\tchrom\tstart\tend\tstrand\texons\tlength\tref_length\toverlap\tdiff5p\tdiff3p\tcov\tTPM\tS.reads\tS.capped\tE.reads\n')
         print(self.display_options())
         if self.genome is None:
             print("WARNING: no genome FASTA provided, so splice junction motifs cannot be assessed.")
@@ -126,13 +128,14 @@ class AnnotationMerger(AssemblyClassifier):
         and update the reference by (1) replacement iff ORF is unchanged,
         (2) isoform if no containment or if ORF changes, (3) antisense, (4) intergenic.
         Updates the list of ref_reads in-place."""
-        sort_order = argsort([-t.get_length() for t in merged_assemblies])
+        # sort_order = argsort([-(t.right() - t.left()) for t in merged_assemblies])
+        sort_order = argsort([-float(t.weight) for t in merged_assemblies])
         counts_by_gene = Counter([t.attributes['gene_id'] for t in ref_transcripts])
         merged_annotations = copy.copy(ref_transcripts)
         for i in sort_order:
             transcript = merged_assemblies[i]
             # Create a match_data object (matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p)
-            ref_match = self.calculate_match_type(transcript, ref_transcripts)
+            ref_match = self.calculate_match_type(transcript, merged_annotations)
             transcript.attributes['class'] = self.match_types[ref_match.matchtype]
             transcript.attributes['gene_id'] = ref_match.gene
             transcript.attributes['overlap'] = ref_match.exonoverlap
@@ -150,10 +153,9 @@ class AnnotationMerger(AssemblyClassifier):
                 ref.attributes['itemRgb'] = self.class_colors['full_match']
                 continue
             elif ref_match.matchtype == 7: # exon_match, merge with ref, use .i<num> if kept
-                gene_id = ref_match.transcript
+                gene_id = ref_match.gene
             elif ref_match.matchtype in [5,6]: # fragment, fusion, treat strictly, use .i<num> if kept
                 gene_id = ref_match.gene
-                gene_id = '_'.join(ref_match.gene.split(','))
             elif int(ref_match.matchtype) in [4,1]: # isoform, use .i<num> transcript id
                 gene_id = ref_match.gene
             elif ref_match.matchtype == 3: # intronic, use -IT gene suffix
@@ -162,34 +164,27 @@ class AnnotationMerger(AssemblyClassifier):
                 gene_id = '{}-AS'.format(ref_match.gene)
             elif ref_match.matchtype == 0: # intergenic, use BOOKEND_<num> gene name
                 self.new_gene_counter += 1
-                gene_id = 'BOOKEND_{}'.format(self.new_gene_counter)
+                gene_id = 'BOOKEND-{}'.format(self.new_gene_counter)
             
+            gene_id = ','.join(sorted(set(gene_id.split(','))))
             counts_by_gene[gene_id] += 1
             transcript_count = counts_by_gene[gene_id]
-            if ref_match.matchtype == 7:
-                transcript_id = '{}_{}'.format(gene_id, transcript_count)
-            else:
-                transcript_id = '{}.i{}'.format(gene_id, transcript_count)
+            transcript_id = '{}.i{}'.format(gene_id, transcript_count)
             
             transcript.attributes['gene_id'] = gene_id
             transcript.attributes['transcript_id'] = transcript_id
             transcript.attributes['itemRgb'] = self.class_colors[transcript.attributes['class']]
-            if '-AS' in gene_id: # Handle novel antisense isoforms
-                if int(ref_match.matchtype) in [1,4,5,6,7]:
-                    transcript.attributes['class'] = 'antisense'
-                    transcript.attributes['itemRgb'] = self.class_colors['antisense']
-            if 'BOOKEND' in gene_id: # Handle novel intergenic isoforms
-                if int(ref_match.matchtype) in [1,4,5,6,7]:
-                    transcript.attributes['class'] = 'intergenic'
-                    transcript.attributes['itemRgb'] = self.class_colors['intergenic']
             
             if 4 <= ref_match.matchtype < 8 and ref is not None:
                 operator = sum if self.attr_merge == 'sum' else max
                 self.merge_ends(ref, transcript, operator, both=True)
-            
-            merged_annotations.append(transcript)
-            if ref_match.matchtype in [0,2]:
-                ref_transcripts.append(transcript)
+                new_match = self.calculate_match_type(transcript, [ref])
+                if new_match.matchtype == 8:
+                    self.add_rep(ref, transcript)
+                else:
+                    merged_annotations.append(transcript)
+            else:
+                merged_annotations.append(transcript)
         
         return sorted(merged_annotations)
     
@@ -213,6 +208,7 @@ class AnnotationMerger(AssemblyClassifier):
     def passes_filters(self, transcript):
         """The transcript is a suspected artifact and must pass the
         high-confidence filters defined by the user."""
+        robust = transcript.attributes.get('robust',False)
         stringent = transcript.attributes.get('class', 'reference') in ['fusion','fragment','retained_intron']
         if self.dataset.has_genome:
             stringent = stringent or self.noncanonical_junctions(transcript)
@@ -224,8 +220,9 @@ class AnnotationMerger(AssemblyClassifier):
 
         if self.keep_refs and transcript.is_reference:
             return True
-        
-        if int(transcript.attributes.get('reps',0)) < self.min_reps * multiplier:
+
+        min_reps = 1 if robust else self.min_reps
+        if int(transcript.attributes.get('reps',0)) < min_reps * multiplier:
             if self.verbose: print('Removed {} (min reps)'.format(transcript.attributes['transcript_id']))
             return False
         if not self.allow_unstranded and transcript.strand == 0:
@@ -235,7 +232,7 @@ class AnnotationMerger(AssemblyClassifier):
             if self.verbose: print('Removed {} (min length)'.format(transcript.attributes['transcript_id']))
             return False
         if (transcript.ranges[0][1]-transcript.ranges[0][0]) < self.min_terminal or (transcript.ranges[-1][1]-transcript.ranges[-1][0]) < self.min_terminal:
-            if int(transcript.attributes.get('reps',0)) < self.min_reps * self.confidence:
+            if int(transcript.attributes.get('reps',0)) < min_reps * self.confidence:
                 if self.verbose: print('Removed {} (min terminal exon)'.format(transcript.attributes['transcript_id']))
                 return False
         if float(transcript.attributes.get('TPM',0)) < self.tpm_filter * multiplier:
@@ -247,6 +244,24 @@ class AnnotationMerger(AssemblyClassifier):
                 if self.verbose: print('Removed {} (cap percent)'.format(transcript.attributes['transcript_id']))
                 return False
         
+        if transcript.attributes.get('class', 'reference') == 'alt_tss':
+            if self.min_start * self.confidence > float(transcript.attributes.get('S.reads',self.min_start)):
+                if self.verbose: print('Removed {} (min start reads)'.format(transcript.attributes['transcript_id']))
+                return False
+        else:
+            if self.min_start > float(transcript.attributes.get('S.reads',self.min_start)):
+                if self.verbose: print('Removed {} (min start reads)'.format(transcript.attributes['transcript_id']))
+                return False
+
+        if transcript.attributes.get('class', 'reference') == 'alt_pas':
+            if self.min_end * self.confidence > float(transcript.attributes.get('E.reads',self.min_end)):
+                if self.verbose: print('Removed {} (min end reads)'.format(transcript.attributes['transcript_id']))
+                return False
+        else:
+            if self.min_end > float(transcript.attributes.get('E.reads',self.min_end)):
+                if self.verbose: print('Removed {} (min end reads)'.format(transcript.attributes['transcript_id']))
+                return False
+
         if transcript.attributes['class'] in self.discard:
             if self.verbose: print('Removed {} (discard class: {})'.format(transcript.attributes['transcript_id'], transcript.attributes['class']))
             return False
@@ -270,9 +285,18 @@ class AnnotationMerger(AssemblyClassifier):
         return a consensus set of RNAseqMapping objects.'''
         merged_assemblies = []
         # Process assemblies in order of decreasing length
-        sort_order = argsort([-t.get_length() for t in assemblies])
+        # sort_order = argsort([-(t.right() - t.left()) for t in assemblies])
+        sort_order = argsort([-float(t.weight) for t in assemblies])
         for i in sort_order:
             transcript = assemblies[i]
+            samples = int(transcript.attributes.get('samples',-1))
+            if samples == 0:
+                if self.verbose:
+                    if self.verbose: print('Removed {} (not expressed)'.format(transcript.attributes['transcript_id']))
+                
+                continue
+            
+            transcript.attributes['robust'] = True if samples >= 3 else False
             mergematch = self.calculate_match_type(transcript, merged_assemblies)
             if mergematch.matchtype == 8: # Add attributes of assembly to existing match
                 original = [t for t in assemblies if t.attributes['transcript_id'] == mergematch.transcript][0]
@@ -310,6 +334,18 @@ class AnnotationMerger(AssemblyClassifier):
                 transcript.attributes['source'] = transcript.attributes['source'].replace('reference',self.refname)
                 self.updated_transcript_counter += 1
             
+            del transcript.attributes['robust']
+            if 'S.peak' in transcript.attributes:
+                del transcript.attributes['S.peak']
+            
+            if 'E.peak' in transcript.attributes:
+                del transcript.attributes['E.peak']
+            
+            transcript.attributes['S.reads'] = round(float(transcript.attributes['S.reads']),1)
+            transcript.attributes['S.capped'] = round(float(transcript.attributes['S.capped']),1)
+            transcript.attributes['E.reads'] = round(float(transcript.attributes['E.reads']),1)
+            transcript.attributes['bases'] = round(float(transcript.attributes['bases']))
+            transcript.attributes['TPM'] = round(float(transcript.attributes['TPM']),2)
             self.transcript_counter += 1
             self.update_table(transcript)
             self.output_transcript(transcript, self.output_type)
@@ -353,28 +389,26 @@ class AnnotationMerger(AssemblyClassifier):
             new3p = new3p and (t2_er <= (t1.ranges[0][1] - self.min_terminal) and t1_er <= (t2.ranges[0][1] - self.min_terminal))
         
         if new5p: # The 5' end needs to be updated
-            t1_s = float(t1.attributes.get('S.reads',0))
-            t2_s = float(t2.attributes.get('S.reads',0))
-            t1_c = float(t1.attributes.get('S.capped',0))
-            t2_c = float(t2.attributes.get('S.capped',0))
+            t1_s = float(t1.attributes.get('S.peak',t1.attributes.get('S.reads',0)))
+            t2_s = float(t2.attributes.get('S.peak',t2.attributes.get('S.reads',0)))
             if t1_s > t2_s:
                 spos = t1_spos
+                t1.attributes['S.peak'] = t1_s
+                t2.attributes['S.peak'] = t1_s
+                s_left = t2_sl if replace else min([t1_sl, t2_spos])
+                s_right = t2_sr if replace else max([t1_sr, t2_spos])
             else:
                 spos = t2_spos
+                t1.attributes['S.peak'] = t2_s
+                t2.attributes['S.peak'] = t2_s
+                s_left = t2_sl if replace else min([t2_sl, t1_spos])
+                s_right = t2_sr if replace else max([t2_sr, t1_spos])
             
-            s_left = t2_sl if replace else  min([t1_sl, t2_sl])
-            s_right = t2_sr if replace else  max([t1_sr, t2_sr])
-            s_reads = operator([t1_s, t2_s])
-            s_capped = operator([t1_c, t2_c])
             t1.attributes['S.left'] = s_left
             t1.attributes['S.right'] = s_right
-            t1.attributes['S.reads'] = s_reads
-            t1.attributes['S.capped'] = s_capped
             if both:
                 t2.attributes['S.left'] = s_left
                 t2.attributes['S.right'] = s_right
-                t2.attributes['S.reads'] = s_reads
-                t2.attributes['S.capped'] = s_capped
             
             if t1.strand == 1:
                 t1.ranges[0] = (spos, t1.ranges[0][1])
@@ -386,23 +420,26 @@ class AnnotationMerger(AssemblyClassifier):
                     t2.ranges[-1] = (t2.ranges[-1][0], spos)
         
         if new3p: # The 3' end nees to be updated
-            t1_e = float(t1.attributes.get('E.reads',0))
-            t2_e = float(t2.attributes.get('E.reads',0))
+            t1_e = float(t1.attributes.get('E.peak',t1.attributes.get('E.reads',0)))
+            t2_e = float(t2.attributes.get('E.peak',t2.attributes.get('E.reads',0)))
             if t1_e > t2_e:
                 epos = t1_epos
+                t1.attributes['E.peak'] = t1_e
+                t2.attributes['E.peak'] = t1_e
+                e_left = t1_el if replace else min([t1_el, t2_epos])
+                e_right = t1_er if replace else max([t1_er, t2_epos])
             else:
                 epos = t2_epos
+                t1.attributes['E.peak'] = t2_e
+                t2.attributes['E.peak'] = t2_e
+                e_left = t2_el if replace else min([t2_el, t1_epos])
+                e_right = t2_er if replace else max([t2_er, t1_epos])
             
-            e_left = t2_el if replace else min([t1_el, t2_el])
-            e_right = t2_er if replace else min([t1_er, t2_er])
-            e_reads = operator([float(t1.attributes['E.reads']), float(t2.attributes['E.reads'])])
             t1.attributes['E.left'] = e_left
             t1.attributes['E.right'] = e_right
-            t1.attributes['E.reads'] = e_reads
             if both:
                 t2.attributes['E.left'] = e_left
                 t2.attributes['E.right'] = e_right
-                t2.attributes['E.reads'] = e_reads
             
             if t1.strand == 1:
                 t1.ranges[-1] = (t1.ranges[-1][0], epos)
@@ -420,6 +457,7 @@ class AnnotationMerger(AssemblyClassifier):
     def add_rep(self, original, rep):
         '''Incorporate the information from a repeated RNAseqMapping
         object into one that already exists. Edits original in-place.'''
+        operator = sum if self.attr_merge == 'sum' else max
         if original.attributes['source'] == 'reference': # Validation of a reference transcript
             gene_id = original.attributes['gene_id']
             transcript_id = original.attributes['transcript_id']
@@ -427,27 +465,39 @@ class AnnotationMerger(AssemblyClassifier):
             original.attributes['gene_id'] = gene_id
             original.attributes['transcript_id'] = transcript_id
             original.attributes['source'] = 'reference;{}'.format(original.attributes['source'])
+            original.attributes['robust'] = rep.attributes.get('robust',False)
             original.ranges[0] = (rep.ranges[0][0], original.ranges[0][1])
             original.ranges[-1] = (original.ranges[-1][0], rep.ranges[-1][1])
             original.span = (original.ranges[0][0], original.ranges[-1][1])
+            if 'samples' in rep.attributes: original.attributes['samples'] = operator([int(rep.attributes['samples']), int(rep.attributes.get('samples',1))])
+            if 'cov' in rep.attributes: original.attributes['cov'] = operator([float(rep.attributes['cov']), float(rep.attributes.get('cov',0))])
+            if 'bases' in rep.attributes: original.attributes['bases'] = operator([float(rep.attributes['bases']), float(rep.attributes.get('bases',0))])
+            if 'TPM' in rep.attributes: original.attributes['TPM'] = operator([float(rep.attributes['TPM']), float(rep.attributes.get('TPM',0))])
+            if 'S.reads' in rep.attributes: original.attributes['S.reads'] = operator([float(rep.attributes['S.reads']), float(rep.attributes.get('S.reads',0))])
+            if 'S.capped' in rep.attributes: original.attributes['S.capped'] = operator([float(rep.attributes['S.capped']), float(rep.attributes.get('S.capped',0))])
+            if 'E.reads' in rep.attributes: original.attributes['E.reads'] = operator([float(rep.attributes['E.reads']), float(rep.attributes.get('E.reads',0))])
+            if 'S.left' in rep.attributes: original.attributes['S.left'] = int(rep.attributes['S.left'])
+            if 'S.right' in rep.attributes: original.attributes['S.right'] = int(rep.attributes['S.right'])
+            if 'E.left' in rep.attributes: original.attributes['E.left'] = int(rep.attributes['E.left'])
+            if 'E.right' in rep.attributes: original.attributes['E.right'] = int(rep.attributes['E.right'])
+            
         else:
-            operator = sum if self.attr_merge == 'sum' else max
-            original.attributes['source'] += ';{}'.format(rep.attributes['source'])
-            original.attributes['reps'] = original.attributes.get('reps',1) + 1
-            if 'cov' in original.attributes:
-                original.attributes['cov'] = operator([float(original.attributes['cov']), float(rep.attributes.get('cov',0))])
-            
-            if 'bases' in original.attributes:
-                original.attributes['bases'] = operator([float(original.attributes['bases']), float(rep.attributes.get('bases',0))])
-            
-            if 'TPM' in original.attributes:
-                original.attributes['TPM'] = operator([float(original.attributes['TPM']), float(rep.attributes.get('TPM',0))])
-            
+            reps = sorted(set(original.attributes['source'].split(';')+rep.attributes['source'].split(';')))
+            original.attributes['source']  =  ';'.join(reps)
+            original.attributes['reps'] = len(reps)
+            original.attributes['robust'] = original.attributes.get('robust',False) or rep.attributes.get('robust',False)
+            if 'samples' in original.attributes: original.attributes['samples'] = operator([int(original.attributes['samples']), int(rep.attributes.get('samples',1))])
+            if 'cov' in original.attributes: original.attributes['cov'] = operator([float(original.attributes['cov']), float(rep.attributes.get('cov',0))])
+            if 'bases' in original.attributes: original.attributes['bases'] = operator([float(original.attributes['bases']), float(rep.attributes.get('bases',0))])
+            if 'TPM' in original.attributes: original.attributes['TPM'] = operator([float(original.attributes['TPM']), float(rep.attributes.get('TPM',0))])
+            if 'S.reads' in original.attributes: original.attributes['S.reads'] = operator([float(original.attributes['S.reads']), float(rep.attributes.get('S.reads',0))])
+            if 'S.capped' in original.attributes: original.attributes['S.capped'] = operator([float(original.attributes['S.capped']), float(rep.attributes.get('S.capped',0))])
+            if 'E.reads' in original.attributes: original.attributes['E.reads'] = operator([float(original.attributes['E.reads']), float(rep.attributes.get('E.reads',0))])            
             self.merge_ends(original, rep, operator)
     
     def update_table(self, transcript):
         '''Writes a summary table like the output of bookend classify.''' 
-        classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+        classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
             transcript.attributes['transcript_id'],
             transcript.attributes['class'],
             transcript.attributes['gene_id'],
@@ -464,6 +514,7 @@ class AnnotationMerger(AssemblyClassifier):
             round(float(transcript.attributes.get('cov', 0)),1),
             round(float(transcript.attributes.get('TPM', 0)),1),
             round(float(transcript.attributes.get('S.reads', 0)),1),
+            round(float(transcript.attributes.get('S.capped', 0)),1),
             round(float(transcript.attributes.get('E.reads', 0)),1)
         )
         self.table_file.write(classification)

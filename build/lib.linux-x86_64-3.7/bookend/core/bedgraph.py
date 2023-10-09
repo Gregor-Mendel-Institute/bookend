@@ -20,7 +20,8 @@ class Bedgrapher:
         self.strand = args['STRAND']
         self.intstrand = {'.':0,'+':1,'-':-1}[self.strand]
         self.output = args['OUT']
-        self.input = args['INPUT']    
+        self.input = args['INPUT']
+        self.infer_strand = args['INFER_STRAND']
         # self.scale = args['SCALE']    
         if len(self.input) == 1:
             self.input = self.input[0]
@@ -71,7 +72,7 @@ class Bedgrapher:
             self.chunk_counter += 1
             leftmost, rightmost = ru.range_of_reads(chunk)
             depth_matrix, J_plus, J_minus = ru.build_depth_matrix(leftmost, rightmost, tuple(chunk), use_attributes=True, splice=True)
-            self.output_file.write(ru.bedgraph(chrom, leftmost, depth_matrix, self.type, self.intstrand))
+            self.output_file.write(ru.bedgraph(chrom, leftmost, depth_matrix, self.type, self.intstrand, infer_strand=self.infer_strand))
     
     def display_options(self):
         """Returns a string describing all input args"""

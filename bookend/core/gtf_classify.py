@@ -13,7 +13,7 @@ if __name__ == '__main__':
 class AssemblyClassifier:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        print(args)
+        # print(args)
         self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p')
         self.args = args
         self.output = self.args['OUT']
@@ -205,7 +205,7 @@ class AssemblyClassifier:
                 if abs(left_diff) <= self.end_buffer and abs(right_diff) <= self.end_buffer:
                     match_type = 8 # full_match
                 else:
-                    if tlen < .5 * reflen:
+                    if tlen < .6 * reflen:
                         match_type = 5 # fragment
                     else:
                         match_type = 7 # exon_match
