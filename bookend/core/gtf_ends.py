@@ -12,6 +12,7 @@ class GTFendwriter:
         self.input = args['INPUT']
         self.output = args['OUT']
         self.extend = args['EXTEND']
+        self.min_terminal = args['MIN_TERMINAL']
         self.force = args['FORCE']
         self.name_attr = args['NAME_ATTR']
         self.score = args['SCORE']
@@ -23,6 +24,7 @@ class GTFendwriter:
         self.child_key_gene = args['CHILD_ATTR_GENE']
         self.parent_key_transcript = args['PARENT_ATTR_TRANSCRIPT']
         self.child_key_transcript = args['CHILD_ATTR_TRANSCRIPT']
+        self.nomerge = args['NO_MERGE']
         self.type = args['TYPE'].upper()
         self.source = self.input        
         self.linecount = 0
@@ -102,12 +104,12 @@ class GTFendwriter:
             gff_defaults['child_key_transcript'] += self.child_key_transcript
         
         if self.parent_key_gene is not None:
-            gtf_defaults['parent_key_gene'] = self.parent_key_gene
-            gff_defaults['parent_key_gene'] = self.parent_key_gene
+            gtf_defaults['parent_key_gene'] += self.parent_key_gene
+            gff_defaults['parent_key_gene'] += self.parent_key_gene
         
         if self.child_key_gene is not None:
-            gtf_defaults['child_key_gene'] = self.child_key_gene
-            gff_defaults['child_key_gene'] = self.child_key_gene    
+            gtf_defaults['child_key_gene'] += self.child_key_gene
+            gff_defaults['child_key_gene'] += self.child_key_gene    
         
         return config_defaults, gtf_defaults, gff_defaults
     
@@ -125,44 +127,96 @@ class GTFendwriter:
             if transcript.strand == 1:
                 startname = str(name)
                 endname = str(name)
+                sbound = transcript.ranges[0][1]-self.min_terminal
+                ebound = transcript.ranges[-1][0]+self.min_terminal
                 if self.extend is None:
                     pos = transcript.left()
-                    start = (int(transcript.attributes.get('S.left',pos)), int(transcript.attributes.get('S.right',pos)), pos, startname) 
+                    start = (
+                        min(sbound, int(transcript.attributes.get('S.left',pos))),
+                        min(sbound, int(transcript.attributes.get('S.right',pos))),
+                        pos, 
+                        startname
+                    ) 
                     pos = transcript.right()
-                    end = (int(transcript.attributes.get('E.left',pos)), int(transcript.attributes.get('E.right',pos)), pos, endname)
+                    end = (
+                        max(ebound, int(transcript.attributes.get('E.left',pos))),
+                        max(ebound, int(transcript.attributes.get('E.right',pos))),
+                        pos,
+                        endname
+                    )
                 else:
                     pos = transcript.left()
-                    start = (pos-self.extend, pos+self.extend, pos, startname)
+                    start = (
+                        min(sbound, int(transcript.attributes.get('S.left',pos))-self.extend),
+                        min(sbound, int(transcript.attributes.get('S.right',pos))+self.extend),
+                        pos,
+                        startname
+                    )
                     pos = transcript.right()
-                    end = (pos-self.extend, pos+self.extend, pos, endname)
+                    end = (
+                        max(ebound, int(transcript.attributes.get('E.left',pos))-self.extend),
+                        max(ebound, int(transcript.attributes.get('E.right',pos))+self.extend),
+                        pos, 
+                        endname
+                    )
                 
                 SP.append(start)
                 EP.append(end)
             elif transcript.strand == -1:
                 startname = str(name)
                 endname = str(name)
+                sbound = transcript.ranges[-1][0]+self.min_terminal
+                ebound = transcript.ranges[0][1]-self.min_terminal
                 if self.extend is None:
                     pos = transcript.right()
-                    start = (int(transcript.attributes.get('S.left',pos)), int(transcript.attributes.get('S.right',pos)), pos, startname) 
+                    start = (
+                        max(sbound, int(transcript.attributes.get('S.left',pos))), 
+                        max(sbound, int(transcript.attributes.get('S.right',pos))), 
+                        pos, 
+                    startname) 
                     pos = transcript.left()
-                    end = (int(transcript.attributes.get('E.left',pos)), int(transcript.attributes.get('E.right',pos)), pos, endname)
+                    end = (
+                        min(ebound, int(transcript.attributes.get('E.left',pos))), 
+                        min(ebound, int(transcript.attributes.get('E.right',pos))), 
+                        pos, 
+                        endname
+                    )
                 else:
                     pos = transcript.right()
-                    start = (pos-self.extend, pos+self.extend, pos, startname)
+                    start = (
+                        max(sbound, int(transcript.attributes.get('S.left',pos))-self.extend),
+                        max(sbound, int(transcript.attributes.get('S.right',pos))+self.extend), 
+                        pos, 
+                        startname
+                    )
                     pos = transcript.left()
-                    end = (pos-self.extend, pos+self.extend, pos, endname)
+                    end = (
+                        min(ebound, int(transcript.attributes.get('E.left',pos))-self.extend), 
+                        min(ebound, int(transcript.attributes.get('E.right',pos))+self.extend), 
+                        pos, 
+                        endname
+                    )
                 
                 SM.append(start)
                 EM.append(end)
             
         SPout, SMout, EPout, EMout = [], [], [], []
-        if self.type in ['ALL','S']:
-            SPout = self.merge_ends(sorted(SP), 'SP')
-            SMout = self.merge_ends(sorted(SM), 'SM')
+        if self.nomerge:
+            if self.type in ['ALL','S']:
+                SPout = sorted(SP)
+                SMout = sorted(SM)
+            
+            if self.type in ['ALL','E']:
+                EPout = sorted(EP)
+                EMout = sorted(EM)
+        else:
+            if self.type in ['ALL','S']:
+                SPout = self.merge_ends(sorted(SP), 'SP')
+                SMout = self.merge_ends(sorted(SM), 'SM')
 
-        if self.type in ['ALL','E']:
-            EPout = self.merge_ends(sorted(EP), 'EP')
-            EMout = self.merge_ends(sorted(EM), 'EM')
+            if self.type in ['ALL','E']:
+                EPout = self.merge_ends(sorted(EP), 'EP')
+                EMout = self.merge_ends(sorted(EM), 'EM')
         
         for bed in sorted([(l,r,'SP:'+name,peak,'+') for l,r,peak,name in SPout] +
             [(l,r,'SM:'+name,peak,'-') for l,r,peak,name in SMout] +
@@ -190,7 +244,7 @@ class GTFendwriter:
                         min(last_tuple[0],next_tuple[0]),
                         max(last_tuple[1], next_tuple[1]),
                         peakfunction(last_tuple[2],next_tuple[2]),
-                        ','.join([last_tuple[3], next_tuple[3]])
+                        '_'.join([last_tuple[3], next_tuple[3]])
                     )
             
             mergelist.append(last_tuple)

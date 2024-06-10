@@ -66,7 +66,6 @@ class GTFconverter:
             gtf_config=gtf_defaults, 
             gff_config=gff_defaults
         )
-        # print(gff_defaults)
         self.dataset.source_array = [self.source]
         self.generator = self.dataset.generator
         self.locus_counter = 0
@@ -127,12 +126,12 @@ class GTFconverter:
             gff_defaults['child_key_transcript'] += self.child_key_transcript
         
         if self.parent_key_gene is not None:
-            gtf_defaults['parent_key_gene'] = self.parent_key_gene
-            gff_defaults['parent_key_gene'] = self.parent_key_gene
+            gtf_defaults['parent_key_gene'] += self.parent_key_gene
+            gff_defaults['parent_key_gene'] += self.parent_key_gene
         
         if self.child_key_gene is not None:
-            gtf_defaults['child_key_gene'] = self.child_key_gene
-            gff_defaults['child_key_gene'] = self.child_key_gene    
+            gtf_defaults['child_key_gene'] += self.child_key_gene
+            gff_defaults['child_key_gene'] += self.child_key_gene    
         
         return config_defaults, gtf_defaults, gff_defaults
     
@@ -147,7 +146,7 @@ class GTFconverter:
                 out_string = mapping_object.write_as_elr(condense=condense, endweights=endweights)
             else:
                 score_column = mapping_object.attributes.get(self.score, '.')
-                color = mapping_object.attributes.get('itemRgb',self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80'))
+                color = self.color_code.get(mapping_object.attributes.get(self.color_key, '.'), '80,80,80')
                 longStart, longEnd = None, None
                 if self.extend:
                     if mapping_object.strand == 1:
