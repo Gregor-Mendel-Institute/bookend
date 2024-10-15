@@ -1097,42 +1097,111 @@ def translate(codon):
     else:
         return c
 
-def longest_orf(sequence,allow_truncation=True):
-    """Locates the longest open reading frame.
-    
-    Outputs a triple of:
+def get_orfs(str sequence, bint startless=False, bint stopless=False, int min_aa=10):
+    """Returns an iterator of each ORF from a DNA sequence that passes length min_aa.
+    Outputs a tuple of:
         amino acid sequence (string)
         start:stop positions in nucleotide sequence (0-indexed int)
-        Is the codon full or truncated? (bool)
+        Does the codon contain a start? (bool)
+        Does the codon contain a stop? (bool)
     """
+    cdef:
+        int i, f, maxorf
+        list frame, firststart
+        (int, int) span
+        str orf
+    
     sequence = sequence.upper()
-    frame  = {}
-    frame[0] = [sequence[i:(i+3)] for i in range(0,len(sequence),3)]
-    frame[1] = [sequence[i:(i+3)] for i in range(1,len(sequence),3)]
-    frame[2] = [sequence[i:(i+3)] for i in range(2,len(sequence),3)]
-    orf = ''
-    span = []
-    stopless = False
-    start_met = re.compile('^.*?(M.*)$')
-    for f in [0,1,2]:
-        translation = ''.join([translate(i) for i in frame[f]])
-        potential_orfs = translation.split('-')
-        stopless_list = [False]*(len(potential_orfs)-1)+[True]
-        if not allow_truncation:
-            potential_orfs = potential_orfs[:-1]
-            stopless = stopless_list[:-1]
-        for p,s in zip(potential_orfs,stopless_list):
-            M_match = start_met.match(p)
-            if M_match:
-                o = M_match.groups()[0]
-                if len(o) > len(orf):
-                    orf = o
-                    if s:
-                        stopless = True
-                        span = [i*3+f for i in re.search(
-                            o,translation).span()]
-                    else:
-                        stopless = False
-                        span = [i*3+f for i in re.search(
-                            o+'-',translation).span()]
-    return (orf,span,stopless)
+    frame  = [
+        ''.join([translate(sequence[i:(i+3)]) for i in range(0,len(sequence),3)]),
+        ''.join([translate(sequence[i:(i+3)]) for i in range(1,len(sequence),3)]),
+        ''.join([translate(sequence[i:(i+3)]) for i in range(2,len(sequence),3)])
+    ]
+    maxorf = int(len(sequence) * .33333)
+    firststart = [-2, -2, -2]
+    for i in range(maxorf):
+        # Check for start codon in each frame
+        for f in [0,1,2]:
+            if len(frame[f]) > i:
+                if firststart[f] < 0 and frame[f][i] == 'M':
+                    firststart[f] = i
+
+                # Check for stop codon in each frame
+                if frame[f][i] == '-':
+                    if startless and firststart[f] == -2: # Allow startless ORF
+                        orf = frame[f][:i]
+                        span = (f, f+(i+1)*3)
+                        if len(orf) > min_aa:
+                            yield (orf,span,True,False)
+                    elif firststart[f] >= 0:
+                        orf = frame[f][firststart[f]:i]
+                        span = (f+firststart[f]*3, f+(i+1)*3)
+                        if len(orf) > min_aa:
+                            yield (orf,span,False,False)
+                    
+                    firststart[f] = -1
+    
+    # Return stopless codons
+    if stopless:
+        for f in [0,1,2]:
+            if startless and firststart[f] == -2: # Allow startless ORF
+                    orf = frame[f]
+                    span = (f, f+(i+1)*3)
+                    if len(orf) > min_aa:
+                        yield (orf,span,True,True)
+            elif firststart[f] > 0:
+                orf = frame[f][firststart[f]:]
+                span = (f+firststart[f]*3, f+(i+1)*3)
+                if len(orf) > min_aa:
+                    yield (orf,span,False,True)
+
+
+def longest_orf(sequence,allow_truncation=False,min_aa=10):
+    """Locates the longest open reading frame.    
+    Outputs a tuple of:
+        amino acid sequence (string)
+        start:stop positions in nucleotide sequence (0-indexed int)
+        Does the codon contain a start? (bool)
+        Does the codon contain a stop? (bool)
+    """
+    cdef:
+        int longest
+        str orf, best_orf
+        (int, int) span, best_span
+        bint startless, stopless, best_startless, best_stopless
+    
+    best_orf = ''
+    best_span = (-1,-1)
+    best_startless, best_stopless = True, True
+    longest = 0
+    for orf, span, startless, stopless in get_orfs(sequence, allow_truncation, allow_truncation, min_aa):
+        if len(orf) > longest:
+            best_orf, best_span, best_startless, best_stopless = orf, span, startless, stopless
+            longest = len(best_orf)
+
+    return (best_orf, best_span, best_startless, best_stopless)
+
+def first_orf(sequence,allow_truncation=False,min_aa=10):
+    """Locates the first open reading frame > length min_aa
+    Outputs a tuple of:
+        amino acid sequence (string)
+        start:stop positions in nucleotide sequence (0-indexed int)
+        Does the codon contain a start? (bool)
+        Does the codon contain a stop? (bool)
+    """
+    cdef:
+        int first
+        str orf, best_orf
+        (int, int) span, best_span
+        bint startless, stopless, best_startless, best_stopless
+    
+    best_orf = ''
+    best_span = (-1,-1)
+    best_startless, best_stopless = True, True
+    first = -1
+    for orf, span, startless, stopless in get_orfs(sequence, allow_truncation, allow_truncation, min_aa):
+        if span[0] < first or first == -1:
+            best_orf, best_span, best_startless, best_stopless = orf, span, startless, stopless
+            first = span[0]
+
+    return (best_orf, best_span, best_startless, best_stopless)

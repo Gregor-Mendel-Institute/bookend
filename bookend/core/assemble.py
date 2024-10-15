@@ -17,6 +17,7 @@ if __name__ == '__main__':
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
+        # print(args)
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']
@@ -305,8 +306,8 @@ class Assembler:
             if not self.ignore_sources:
                 self.covfile.write('{}\n'.format('\t'.join(self.dataset.source_array)))
         
-        for chunk in self.generator:
-            self.process_entry(chunk)
+        for self.chunk in self.generator:
+            self.process_entry(self.chunk)
         
         if len(self.input) == 1:
             self.output_file.close()

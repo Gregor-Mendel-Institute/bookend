@@ -5,9 +5,7 @@ Summary: End-guided transcript assembler for short and long RNA-seq reads.
 Home-page: https://github.com/Gregor-Mendel-Institute/bookend
 Author: Michael A. Schon
 Author-email: michael.schon@wur.nl
-License: UNKNOWN
 Keywords: transcriptome assembler bioinformatics rna sequencing
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -63,5 +61,3 @@ Once installed, all utilities can be accessed on the command as bookend subcomma
         sam-to-sj
         sj-to-bed
         sj-merge  
-
-

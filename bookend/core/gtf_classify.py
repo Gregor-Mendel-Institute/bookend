@@ -22,6 +22,7 @@ class AssemblyClassifier:
         self.verbose = self.args['VERBOSE']
         self.reference = self.args['REFERENCE']
         self.match_unstranded = self.args['UNSTRANDED']
+        self.pass_attr = self.args['PASS_ATTR']
         if len(self.input) == 0 and self.reference is None:
             parser.print_help()
             sys.exit(0)
@@ -45,6 +46,10 @@ class AssemblyClassifier:
         
         print(self.display_options())
         config_defaults, gtf_defaults, gff_defaults = self.make_config_dicts()
+        self.gtf_parent = gtf_defaults['parent_types']
+        self.gtf_child = gtf_defaults['child_types']
+        self.gff_parent = gff_defaults['parent_types']
+        self.gff_child = gff_defaults['child_types']
         self.dataset = ru.AnnotationDataset(
             annotation_files=self.input, 
             reference=self.reference, 
@@ -94,11 +99,11 @@ class AssemblyClassifier:
         if self.gene_attr is None:
             self.gene_attr = gtf_defaults['parent_key_gene']
         else:
-            gff_defaults['parent_key_gene'] += self.gene_attr
-            gtf_defaults['parent_key_gene'] += self.gene_attr
+            gff_defaults['parent_key_gene'] = self.gene_attr
+            gtf_defaults['parent_key_gene'] = self.gene_attr
         
         if self.gene_attr_child is not None:
-            gff_defaults['child_key_gene'] += self.gene_attr_child
+            gff_defaults['child_key_gene'] = self.gene_attr_child
         
         if self.refid_parent is not None:
             gff_defaults['parent_key_transcript'] += self.refid_parent
@@ -117,6 +122,7 @@ class AssemblyClassifier:
         """
         for transcript in input_transcripts:
             match_data = self.calculate_match_type(transcript, reference_transcripts)
+            attrdonor = match_data.ref if (self.pass_attr  and match_data.ref is not None) else transcript
             classification = '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
                 transcript.attributes['transcript_id'],
                 self.match_types[match_data.matchtype],
@@ -127,10 +133,10 @@ class AssemblyClassifier:
                 match_data.exonoverlap,
                 match_data.diff5p,
                 match_data.diff3p,
-                round(float(transcript.attributes.get('cov', 0)),1),
-                round(float(transcript.attributes.get('S.reads', 0)),1),
-                round(float(transcript.attributes.get('S.capped', 0)),1),
-                round(float(transcript.attributes.get('E.reads', 0)),1)
+                round(float(attrdonor.attributes.get('cov', 0)),1),
+                round(float(attrdonor.attributes.get('S.reads', 0)),1),
+                round(float(attrdonor.attributes.get('S.capped', 0)),1),
+                round(float(attrdonor.attributes.get('E.reads', 0)),1)
             )
             self.output_file.write(classification)
             if self.verbose:
@@ -152,21 +158,22 @@ class AssemblyClassifier:
         elif new_match.matchtype == 8:
             return new_match
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
-            if new_match.exonoverlap >= .9*new_match.reflen or int(new_match.matchtype) in [4,6,7]:
-                if old_match.exonoverlap >= .9*old_match.reflen or int(old_match.matchtype) in [4,6,7]:
-                    if old_match.ref.shared_bases(new_match.ref) < .9*min([old_match.reflen, new_match.reflen]):
-                        fused_match = self.match_data(
-                            6, 
-                            '{},{}'.format(old_match.transcript, new_match.transcript), 
-                            '{},{}'.format(old_match.gene, new_match.gene),
-                            max(old_match.exonoverlap, new_match.exonoverlap),
-                            max(old_match.reflen, new_match.reflen),
-                            old_match.tlen,
-                            old_match.ref if old_match.exonoverlap > new_match.exonoverlap else new_match.ref,
-                            old_match.diff5p if abs(old_match.diff5p) <= abs(new_match.diff5p) else new_match.diff5p,
-                            old_match.diff3p if abs(old_match.diff3p) <= abs(new_match.diff3p) else new_match.diff3p
-                        )
-                        return fused_match
+            if new_match.matchtype != 2 and old_match.matchtype != 2:
+                if new_match.exonoverlap >= .9*new_match.reflen or int(new_match.matchtype) in [4,6,7]:
+                    if old_match.exonoverlap >= .9*old_match.reflen or int(old_match.matchtype) in [4,6,7]:
+                        if old_match.ref.shared_bases(new_match.ref) < .9*min([old_match.reflen, new_match.reflen]):
+                            fused_match = self.match_data(
+                                6, 
+                                '{}_{}'.format(old_match.transcript, new_match.transcript), 
+                                '{}_{}'.format(old_match.gene, new_match.gene),
+                                max(old_match.exonoverlap, new_match.exonoverlap),
+                                max(old_match.reflen, new_match.reflen),
+                                old_match.tlen,
+                                old_match.ref if old_match.exonoverlap > new_match.exonoverlap else new_match.ref,
+                                old_match.diff5p if abs(old_match.diff5p) <= abs(new_match.diff5p) else new_match.diff5p,
+                                old_match.diff3p if abs(old_match.diff3p) <= abs(new_match.diff3p) else new_match.diff3p
+                            )
+                            return fused_match
         
         if new_match.matchtype > old_match.matchtype:
             return new_match

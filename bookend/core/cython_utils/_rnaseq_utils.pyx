@@ -101,6 +101,47 @@ cdef class RNAseqMapping():
         
         return length
 
+    cpdef shift_by(self, int offset):
+        """Offsets in-place the ends of the object by <offset> bases downstream."""
+        cdef int remainder, exon, newleft, newright, junction
+        offset *= self.strand
+        if len(self.ranges) == 1: # Special case - single exon
+            self.ranges = [(self.ranges[0][0]+offset, self.ranges[0][1]+offset)]
+        else:
+            # shift left
+            remainder = 0
+            exon = 0
+            lastrange = len(self.ranges)-1
+            newleft = self.ranges[0][0] + offset
+            junction = self.ranges[0][1]
+            while newleft >= junction: # Lose an exon
+                remainder = newleft - junction
+                exon += 1
+                newleft = self.ranges[exon][0] + remainder
+                junction = self.ranges[exon][1] + (offset * (exon==lastrange))
+                self.splice = self.splice[1:]
+            
+            self.ranges = self.ranges[exon:]
+            self.ranges[0] = (newleft, self.ranges[0][1])
+
+            # shift right
+            remainder = 0
+            lastrange = len(self.ranges)-1
+            exon = lastrange
+            newright = self.ranges[lastrange][1] + offset
+            junction = self.ranges[lastrange][0]
+            while newright <= junction: # Lose an exon
+                remainder = newright - junction
+                exon -= 1
+                newright = self.ranges[exon][1] + remainder
+                junction = self.ranges[exon][0] + (offset * (exon==0))
+                self.splice = self.splice[:-1]
+            
+            self.ranges = self.ranges[:(exon+1)]
+            self.ranges[-1] = (self.ranges[-1][0], newright)
+        
+        self.span = (self.ranges[0][0], self.ranges[-1][1])
+
     cpdef gaps(self):
         """Returns an array of 0-indexed (start, end) tuples of gaps between ranges"""
         if len(self.ranges) == 1:
@@ -510,8 +551,9 @@ gff_defaults = {
     'parent_types':set([    
         'mRNA','transcript',
         'snoRNA','tRNA','snRNA', 'miRNA','rRNA','ncRNA','mRNA_TE_gene','pseudogenic_transcript',
-        'antisense_lncRNA','antisense_RNA','lnc_RNA', 'primary_transcript',
-        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
+        'antisense_lncRNA','antisense_RNA', 'lncRNA','lnc_RNA', 'primary_transcript', 'transcript_region',
+        'miRNA_primary_transcript', 'nc_primary_transcript', 'snRNA_primary_transcript', 'snoRNA_primary_transcript',
+        'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'SRP_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
     'parent_key_transcript':['transcript_id'],
     'parent_key_gene':'gene',
     'child_types':set(['exon','pseudogenic_exon']),
@@ -607,7 +649,11 @@ cdef class RNAseqDataset():
         
         if self.config.get('reference', None) is not None:
             self.reference_dict = self.import_annotation(self.config['reference'], 'reference')
-        
+            for k in self.reference_dict.keys():
+                for v in self.reference_dict[k]:
+                    v.is_reference = True
+                    v.weight = 0
+                                
         self.sj_set = self.make_sj_set(self.config.get('sj',None))
     
     cpdef make_sj_set(self, sj_file):
@@ -744,6 +790,27 @@ cdef class RNAseqDataset():
         
         return header_list
     
+    cpdef list merge_children(self, children):
+        """Checks if there is a distance of 0 between any adjacent children;
+        if so, treats them as one object."""
+        cdef AnnotationObject child, last_child
+        cdef list children_out
+        children_out = []
+        for child in sorted(children):
+            if len(children_out) == 0:
+                children_out.append(child)
+                last_child = child
+            else:
+                if child.span[0] == last_child.span[1]:
+                    last_child.span[1] = child.span[1]
+                else:
+                    if child != last_child: # Disallow duplicate exons
+                        children_out.append(child)
+                    
+                    last_child = child
+        
+        return children_out
+
     cpdef dict import_annotation(self, str filename, str name):
         """Given a file path to a valid GTF/GFF3/BED/ELR file,
         Converts the entire file to a dict of RNAseqMapping objects.
@@ -799,9 +866,9 @@ cdef class RNAseqDataset():
                         current_parent = current_object
                         children = []
                     else:
-                        if current_object.transcript_id and current_object.transcript_id == last_child.transcript_id or len(children) == 0:
+                        if current_object.transcript_id != '' and current_object.transcript_id == current_parent.transcript_id:
                             children.append(current_object)
-                        else: # New transcript from same parent
+                        elif current_object.gene_id != '' and current_object.gene_id == current_parent.gene_id: # New transcript from same parent
                             coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
                             total_coverage += coverage
                             total_s += s
@@ -1137,7 +1204,7 @@ cdef class AnnotationDataset(RNAseqDataset):
         self.counter = 0
         self.generator = self.generate_loci()
 
-    cpdef str get_transcript_fasta(self, RNAseqMapping transcript):
+    cpdef str get_transcript_fasta(self, RNAseqMapping transcript, str ends='consensus'):
         """Given a transcript model, return it's mature cDNA sequence."""
         cdef:
             str chrom, fasta
@@ -1148,22 +1215,40 @@ cdef class AnnotationDataset(RNAseqDataset):
         chrom = self.chrom_array[transcript.chrom]
         leftExtend = 0
         rightExtend = 0
-        if transcript.strand == 1:
-            if 'S.left' in transcript.attributes:
-                leftExtend = ranges[0][0] - int(transcript.attributes['S.left'])
-                ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
-            
-            if 'E.right' in transcript.attributes:
-                rightExtend = int(transcript.attributes['E.right']) - ranges[-1][1]
-                ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
-        elif transcript.strand == -1:
-            if 'E.left' in transcript.attributes:
-                leftExtend = ranges[0][0] - int(transcript.attributes['E.left'])
-                ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
-            
-            if 'S.right' in transcript.attributes:
-                rightExtend = int(transcript.attributes['S.right']) - ranges[-1][1]
-                ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+        if ends == 'inner':
+            if transcript.strand == 1:
+                if 'S.right' in transcript.attributes:
+                    leftExtend = ranges[0][0] - int(transcript.attributes['S.right']) + 1
+                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                
+                if 'E.left' in transcript.attributes:
+                    rightExtend = int(transcript.attributes['E.left']) + 1 - ranges[-1][1]
+                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+            elif transcript.strand == -1:
+                if 'E.right' in transcript.attributes:
+                    leftExtend = ranges[0][0] - int(transcript.attributes['E.right']) + 1
+                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                
+                if 'S.left' in transcript.attributes:
+                    rightExtend = int(transcript.attributes['S.left']) + 1 - ranges[-1][1]
+                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+        elif ends == 'outer':
+            if transcript.strand == 1:
+                if 'S.left' in transcript.attributes:
+                    leftExtend = ranges[0][0] - int(transcript.attributes['S.left'])
+                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                
+                if 'E.right' in transcript.attributes:
+                    rightExtend = int(transcript.attributes['E.right']) - ranges[-1][1]
+                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+            elif transcript.strand == -1:
+                if 'E.left' in transcript.attributes:
+                    leftExtend = ranges[0][0] - int(transcript.attributes['E.left'])
+                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                
+                if 'S.right' in transcript.attributes:
+                    rightExtend = int(transcript.attributes['S.right']) - ranges[-1][1]
+                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
         
         fasta = ''.join([self.genome[chrom][l:r] for l,r in ranges])
         if leftExtend>0:
@@ -1178,26 +1263,7 @@ cdef class AnnotationDataset(RNAseqDataset):
             fasta = fasta.lower()
         
         return fasta
-    
-    cpdef list merge_children(self, children):
-        """Checks if there is a distance of 0 between any adjacent children;
-        if so, treats them as one object."""
-        cdef AnnotationObject child, last_child
-        cdef list children_out
-        children_out = []
-        for child in sorted(children):
-            if len(children_out) == 0:
-                children_out.append(child)
-                last_child = child
-            else:
-                if child.span[0] == last_child.span[1]:
-                    last_child.span[1] = child.span[1]
-                else:
-                    children_out.append(child)
-                    last_child = child
         
-        return children_out
-    
     def generate_loci(self):
         """Yields a contiguous chunk of all annotation objects as a list
         by interleaving all sorted annotations together."""
@@ -1624,8 +1690,8 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
     bed_elements = bed_line.rstrip().split('\t')
     if len(bed_elements) == 15:
         chrom_string, chromStart, end, readname, score, bed_strand, mmnum, mmorder, rgb, blocknum, blockSizes, blockStarts, weight, source_string, label = bed_elements
-    elif len(bed_elements) == 12:
-        chrom_string, chromStart, end, readname, score, bed_strand, mmnum, mmorder, rgb, blocknum, blockSizes, blockStarts = bed_elements
+    elif 12 <= len(bed_elements) <= 14:
+        chrom_string, chromStart, end, readname, score, bed_strand, mmnum, mmorder, rgb, blocknum, blockSizes, blockStarts = bed_elements[:12] # columns 13 and 14 are ignored, if they exist
         try:
             weight = float(score)
         except:
@@ -1702,9 +1768,15 @@ cdef parse_BED_line(bed_line, chrom_dict, source_dict, source_string=None, s_tag
 cpdef RNAseqMapping elr_to_readobject(elr_line):
     """Converts an ELR line to an RNAseqMapping object
     """
-    cdef input_data = parse_ELR_line(elr_line)
-    cdef RNAseqMapping output_object = RNAseqMapping(input_data)
-    return output_object
+    cdef input_data
+    cdef RNAseqMapping output_object
+    try:
+        input_data= parse_ELR_line(elr_line)
+        output_object = RNAseqMapping(input_data)
+        return output_object
+    except:
+        print("\nERROR: cannot parse ELR line: {}".format(elr_line))
+        return None
 
 
 
@@ -2605,6 +2677,65 @@ def read_generator(fileconn, RNAseqDataset dataset, str file_type, int max_gap, 
     # Dump the remaining reads
     yield dataset.read_list
     fileconn.close()
+
+def read_iterator(read_list, RNAseqDataset dataset, int max_gap=100, float minimum_proportion=0, int max_intron=10^9):
+    """Yields a contiguous chunk of reads from the input file
+    separated on either side by a gaps > max_gap"""
+    cdef RNAseqMapping read, outread
+    cdef int l, r, old_chrom, old_l, old_r, rightmost, k
+    cdef (int, int) j
+    cdef float read_weight, span_weight, current_cov
+    cdef set covered_positions
+    cdef list passed_positions, current_chunk
+    end_positions = Counter() # Keep track of where reads end to maintain a tally of coverage depth
+    old_chrom, old_l, old_r, rightmost, span_start = -10^9, -10^9, -10^9, -10^9, -10^9
+    current_cov = 0
+    span_weight = 0
+    current_chunk = []
+    for read in read_list:
+        current_chunk.append(read)
+        l, r = read.span
+        read_weight = read.weight * (r-l)
+        current_cov += read.weight
+        if old_chrom == -1: # Uninitialized; add the read and make no other decisions
+            span_start = l
+            span_length = r - span_start
+            rightmost = r
+        elif read.chrom != old_chrom or l >= rightmost + max_gap: # The last locus is definitely finished; dump the read list
+            if read.chrom != old_chrom:
+                yield current_chunk[:-1]
+            else:
+                yield [outread for outread in current_chunk[:-1] if outread.span[1] < l]
+            
+            current_chunk = [read]
+            span_start = l
+            span_weight = 0
+            current_cov = read.weight
+            end_positions = Counter()
+            rightmost = r
+        elif l > old_l: # Read advanced, but not by enough to automatically cut
+            passed_positions = [k for k in end_positions.keys() if k <= l]
+            for k in passed_positions:
+                current_cov -= end_positions.pop(k)
+            
+            if current_cov * span_length < minimum_proportion * span_weight: # Current cov is sufficiently lower than mean cov to cause a break
+                yield [outread for outread in current_chunk[:-1] if outread.span[1] < l]
+                current_chunk = [read]
+                span_start = l
+                span_weight = 0
+                current_cov = read.weight
+                end_positions = Counter()
+                rightmost = r
+        
+        end_positions[r] += read.weight # Add the read's weight to the position where the read ends
+        span_weight += read_weight
+        if r > rightmost: rightmost = r
+        span_length = rightmost - span_start
+        old_chrom, old_l, old_r = read.chrom, l, r
+    
+    # Dump the remaining reads
+    yield current_chunk
+
 
 def generate_subchunks(list list_of_reads, list split_positions):
     cdef:
