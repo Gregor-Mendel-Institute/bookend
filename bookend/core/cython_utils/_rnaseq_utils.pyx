@@ -476,24 +476,37 @@ cdef class RNAseqMapping():
         else:
             return bed_line
     
-    def write_as_gtf(self, list chrom_array, str source):
+    def write_as_gtf(self, list chrom_array, str source, bint is_cds=False, attr_format='GTF'):
         """Returns a string representation of the ReadObject as a set
         of 'transcript' and 'exon' lines in a GTF, with attributes
         passed in the 'transcript' line."""
-        #TODO: Implement export as GTF
         cdef str gtf_txt = ''
         cdef str chrom = chrom_array[self.chrom]
         cdef str strand = {1:'+',-1:'-',0:'.'}[self.strand]
+        cdef list ranges
         if self.attributes is None: self.attributes = {}
-        frame = '.'
+        
         cdef str score = str(round(self.coverage,2))
-        gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'transcript', self.left()+1, self.right(), score, strand, frame, self.print_attributes('gtf',True))
-        for left,right in self.ranges:
-           gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'exon', left+1, right, score, strand, frame, self.print_attributes('gtf',False))
+        if is_cds:
+            frame = 0
+            if strand == -1:
+                ranges = self.ranges[::-1]
+            else:
+                ranges = self.ranges
+            
+            for left,right in ranges:
+                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'CDS', left+1, right, score, strand, frame, self.print_attributes(attr_format,False))
+                frame = (right-left) % 3
+        else:
+            frame = '.'
+            gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'transcript', self.left()+1, self.right(), score, strand, frame, self.print_attributes(attr_format,True))
+            for left,right in self.ranges:
+                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'exon', left+1, right, score, strand, frame, self.print_attributes(attr_format,False))
+            
         
         return gtf_txt[:-1]
 
-    def print_attributes(self, format='gtf', full=True):
+    def print_attributes(self, attr_format='GTF', full=True):
         """Outputs a text string of the key:value pairs in self.attributes,
         formatted as GTF or GTF."""
         if full:
@@ -501,9 +514,9 @@ cdef class RNAseqMapping():
         else:
             attributes = {k:self.attributes[k] for k in ('gene_id','transcript_id')}
         
-        if format == 'gtf':
+        if 'GTF' in attr_format.upper():
             return ' '.join(['{} "{}";'.format(k,v) for k,v in attributes.items()])
-        elif format == 'gff':
+        elif 'GFF' in attr_format.upper():
             return ' '.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
 
 

@@ -236,6 +236,7 @@ merge_parser.add_argument('--parent_attr_transcript', dest='PARENT_ATTR_TRANSCRI
 merge_parser.add_argument('--child_attr_transcript', dest='CHILD_ATTR_TRANSCRIPT', nargs='+', type=str, default=None, help="Transcript attribute(s) in Child objects")
 merge_parser.add_argument('--bed_gene_delim', dest='GENE_DELIM', type=str, default='.', help="(for BED12 references) String that splits gene name from transcript isoform.")
 merge_parser.add_argument('--allow_unstranded', dest='UNSTRANDED', default=False, action='store_true', help="Allow unstranded transcripts to match overlapping transcripts.")
+merge_parser.add_argument('--fusion_delim', dest='FUSION_DELIM', type=str, default=';', help="Character to use in fused transcript names.")
 merge_parser.add_argument('--refname', dest='REFNAME', help="Name of the reference source", type=str, default=None)
 merge_parser.add_argument('--min_len', dest='MIN_LEN', type=int, default=100, help="Minimum transcript length of merged assemblies.")
 merge_parser.add_argument('--min_start', dest='MIN_S', type=float, default=0, help="Minimum number of start reads to accept as a start site.")

@@ -13,7 +13,7 @@ if __name__ == '__main__':
 class AssemblyClassifier:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        # print(args)
+        print(args)
         self.match_data = namedtuple('match_data', 'matchtype transcript gene exonoverlap reflen tlen ref diff5p diff3p')
         self.args = args
         self.output = self.args['OUT']

@@ -80,7 +80,7 @@ class EndLabeler:
             if self.umi == 'E':
                 umi_start = -1
                 umi_end = -1
-                for i,n in enumerate(self.S5string.upper()):
+                for i,n in enumerate(self.E5string.upper()):
                     if n in 'MRWSYKVHDBN':
                         if umi_start == -1:
                             umi_start = i

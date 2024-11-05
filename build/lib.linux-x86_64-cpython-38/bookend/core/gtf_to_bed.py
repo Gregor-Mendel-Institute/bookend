@@ -9,7 +9,7 @@ import bookend.core.cython_utils._rnaseq_utils as ru
 class GTFconverter:
     def __init__(self, args):
         """Converts each transcript of GTF or GFF3 formatted input to BED12 or ELR"""
-        print(args)
+        # print(args)
         self.input = args['INPUT']
         self.output = args['OUT']
         self.score = args['SCORE']
