@@ -20,6 +20,9 @@ class ELRcombiner:
         self.input = args['INPUT']
         self.output = args['OUTPUT']
         self.temp = args['TEMPDIR']
+        self.source = args['SOURCE']
+        self.scale = args['SCALE']
+
         self.write_header = True
         if self.output == 'stdout':
             self.output_file = 'stdout'
@@ -29,6 +32,9 @@ class ELRcombiner:
         self.linecount = 0
         self.readcount = 0
         self.number_of_files = len(self.input)
+        if self.scale is None:
+            self.scale = [1.] * self.number_of_files
+        
         self.file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
         self.PQ = IndexMinPQ(self.number_of_files)
         self.dataset = None
@@ -50,7 +56,10 @@ class ELRcombiner:
             header_line = line.split(' ')
             num, char = header_line[-2:]
             if header_line[0] == '#S':
-                header['source'][num] = char
+                if self.source is not None:
+                    header['source'][num] = self.source
+                else:
+                    header['source'][num] = char
             elif header_line[0] == '#C':
                 header['chrom'][num] = char
             
@@ -69,7 +78,11 @@ class ELRcombiner:
         strand = self.strand_sort_values[split_line[3]]
         elcigar = split_line[4]
         source = int(self.dataset.source_dict[self.file_headers[index]['source'][split_line[5]]])
-        weight = split_line[6]
+        try:
+            weight = str(round(float(split_line[6])*self.scale[index],2))
+        except:
+            weight = str('|'.join([round(float(i)*self.scale[index],2) for i in split_line[6]]))
+        
         self.linecount += 1
         return (chrom, start, length, strand, elcigar, source, weight)
     

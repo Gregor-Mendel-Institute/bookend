@@ -141,6 +141,39 @@ cdef class RNAseqMapping():
             self.ranges[-1] = (self.ranges[-1][0], newright)
         
         self.span = (self.ranges[0][0], self.ranges[-1][1])
+    
+    cpdef shorten_to(self, int length):
+        """Offsets in-place the 3' end of the object to the final spliced length."""
+        cdef int i, l, r, current_length, increment, breakpoint, exon_length
+        cdef list ranges
+        current_length = 0
+        breakpoint = 0
+        ranges = self.ranges
+
+        if self.strand == -1:
+            i = len(ranges)-1
+            increment = -1
+        else:
+            i = 0
+            increment = 1
+        
+        while current_length < length and (0 <= i < len(ranges)):
+            l,r = ranges[i]
+            exon_length = r-l
+            current_length += exon_length
+            i += increment
+        
+        i -= increment
+        if self.strand == -1:
+            self.ranges = self.ranges[i:]
+            self.ranges[0] = (self.ranges[0][0]+(current_length - length), self.ranges[0][1])
+            self.splice = self.splice[i:]
+        else:
+            self.ranges = self.ranges[:(i+1)]
+            self.ranges[i] = (self.ranges[i][0], self.ranges[i][1]-(current_length - length))
+            self.splice = self.splice[:i]
+        
+        self.span = (self.ranges[0][0], self.ranges[-1][1])
 
     cpdef gaps(self):
         """Returns an array of 0-indexed (start, end) tuples of gaps between ranges"""
@@ -408,7 +441,7 @@ cdef class RNAseqMapping():
         else:
             return elr_line
      
-    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr=None, color=None, condense=False, longStart=None, longEnd=None):
+    cpdef write_as_bed(self, chrom_array, source_array, as_string=True, score_column='weight', record_artifacts=False, name_attr='ID', color=None, condense=False, longStart=None, longEnd=None):
         """Returns a string that represents the ReadObject
         in a 15-column BED format"""
         cdef int chromStart, chromEnd
@@ -476,7 +509,7 @@ cdef class RNAseqMapping():
         else:
             return bed_line
     
-    def write_as_gtf(self, list chrom_array, str source, bint is_cds=False, attr_format='GTF'):
+    def write_as_gtf(self, list chrom_array, str source, bint is_cds=False, bint is_gene=False, str attr_format='GTF'):
         """Returns a string representation of the ReadObject as a set
         of 'transcript' and 'exon' lines in a GTF, with attributes
         passed in the 'transcript' line."""
@@ -484,40 +517,63 @@ cdef class RNAseqMapping():
         cdef str chrom = chrom_array[self.chrom]
         cdef str strand = {1:'+',-1:'-',0:'.'}[self.strand]
         cdef list ranges
+        cdef int i = 0
         if self.attributes is None: self.attributes = {}
         
         cdef str score = str(round(self.coverage,2))
-        if is_cds:
-            frame = 0
-            if strand == -1:
-                ranges = self.ranges[::-1]
-            else:
-                ranges = self.ranges
-            
-            for left,right in ranges:
-                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'CDS', left+1, right, score, strand, frame, self.print_attributes(attr_format,False))
-                frame = (right-left) % 3
+        if strand == '-':
+            ranges = self.ranges[::-1]
         else:
-            frame = '.'
-            gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'transcript', self.left()+1, self.right(), score, strand, frame, self.print_attributes(attr_format,True))
-            for left,right in self.ranges:
-                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'exon', left+1, right, score, strand, frame, self.print_attributes(attr_format,False))
-            
+            ranges = self.ranges
+        
+        if is_cds:
+            frame = 0            
+            for left,right in ranges:
+                i += 1
+                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'CDS', left+1, right, score, strand, frame, self.print_attributes(attr_format,False,suffix=f':CDS:{i}'))
+                frame = -(right-left-frame) % 3
+        else:
+            if is_gene:
+                left,right = ranges[0]
+                frame = '.'
+                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'gene', self.left()+1, self.right(), score, strand, frame, self.print_gene_attributes(attr_format))
+            else:
+                frame = '.'
+                gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'transcript', self.left()+1, self.right(), score, strand, frame, self.print_attributes(attr_format,True))
+                for left,right in ranges:
+                    i += 1
+                    gtf_txt += '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(chrom, source, 'exon', left+1, right, score, strand, frame, self.print_attributes(attr_format,False,suffix=f':exon:{i}'))
         
         return gtf_txt[:-1]
 
-    def print_attributes(self, attr_format='GTF', full=True):
+    def print_gene_attributes(self, attr_format='GTF'):
+        """Outputs a text string of the key:value pairs in self.attributes,
+        formatted as GTF or GTF for gene objects."""
+        attributes = self.attributes
+        if 'GTF' in attr_format.upper():
+            return ' '.join(['{} "{}";'.format(k,v) for k,v in attributes.items()])
+        elif 'GFF' in attr_format.upper():
+            attributes['ID'] = attributes.get('ID',attributes['gene_id'])
+            return ''.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
+    
+    def print_attributes(self, attr_format='GTF', full=True, suffix=None):
         """Outputs a text string of the key:value pairs in self.attributes,
         formatted as GTF or GTF."""
         if full:
             attributes = self.attributes
+            attributes['ID'] = self.attributes['transcript_id']
         else:
-            attributes = {k:self.attributes[k] for k in ('gene_id','transcript_id')}
+            attributes = {k:self.attributes.get(k,'') for k in ('ID','Parent','gene_id','transcript_id') if k in self.attributes}
+            if attributes.get('Parent','') in ['',attributes.get('gene_id','')]:
+                attributes['Parent'] = attributes.get('ID',attributes['transcript_id'])
         
         if 'GTF' in attr_format.upper():
             return ' '.join(['{} "{}";'.format(k,v) for k,v in attributes.items()])
         elif 'GFF' in attr_format.upper():
-            return ' '.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
+            if suffix is not None:
+                attributes['ID'] = attributes.get('ID',attributes['transcript_id']) + suffix
+            
+            return ''.join(['{}={};'.format(k,v) for k,v in attributes.items()])[:-1]
 
 
 ############################################################
@@ -551,6 +607,7 @@ config_defaults = {
     'quality_filter':True,
     'reference':None,
     'sj':None,
+    'overwrite_source':True,
 }
 gtf_defaults = {
     'parent_types':set(['transcript']),
@@ -567,18 +624,18 @@ gff_defaults = {
         'antisense_lncRNA','antisense_RNA', 'lncRNA','lnc_RNA', 'primary_transcript', 'transcript_region',
         'miRNA_primary_transcript', 'nc_primary_transcript', 'snRNA_primary_transcript', 'snoRNA_primary_transcript',
         'guide_RNA', 'scRNA', 'RNase_MRP_RNA', 'Y_RNA', 'SRP_RNA', 'RNase_P_RNA', 'telomerase_RNA']),
-    'parent_key_transcript':['transcript_id'],
-    'parent_key_gene':'gene',
+    'parent_key_transcript':['ID','transcript_id'],
+    'parent_key_gene':'Parent',
     'child_types':set(['exon','pseudogenic_exon']),
-    'child_key_transcript':['transcript_id', 'Parent'],
-    'child_key_gene':'gene'
+    'child_key_transcript':['Parent', 'transcript_id'],
+    'child_key_gene':'gene_id'
 }
 cdef class RNAseqDataset():
     cdef public list read_list, chrom_array, source_array, chrom_lengths
     cdef public int chrom_index, source_index, sj_shift, max_headclip, max_intron
     cdef public dict chrom_dict, source_dict, reference_dict, gtf_config, gff_config
     cdef readonly dict config, genome, label_tally
-    cdef readonly bint s_tag, e_tag, capped, stranded, reverse, ignore_ends, remove_noncanonical, labels_are_trimmed, quality_filter, verbose, secondary, has_genome, remove_gapped_termini
+    cdef readonly bint s_tag, e_tag, capped, stranded, reverse, ignore_ends, remove_noncanonical, labels_are_trimmed, quality_filter, verbose, secondary, has_genome, remove_gapped_termini, overwrite_source
     cdef readonly str start_seq, end_seq, start_seq_rc, end_seq_rc, gene_delim
     cdef readonly int minlen, minlen_strict, minlen_loose
     cdef readonly float mismatch_rate, error_rate
@@ -617,6 +674,7 @@ cdef class RNAseqDataset():
         self.ignore_ends = self.config['ignore_ends']
         self.secondary = self.config['secondary']
         self.gene_delim = self.config['gene_delim']
+        self.overwrite_source = self.config.get('overwrite_source',True)
         self.verbose = self.config.get('verbose', False)
         if self.start_seq in ['None', 'False', '']:
             self.start_seq_rc = ''
@@ -830,10 +888,10 @@ cdef class RNAseqDataset():
         Each key:value pair is a chromosome:position-sorted list of objects."""
         cdef:
             RNAseqMapping item
-            AnnotationObject current_object, current_parent, last_child
+            AnnotationObject current_object
             str file_extension, format, chrom
-            dict object_dict, config_dict
             list children
+            dict object_dict, config_dict, transcripts
             int counter
             float total_coverage, total_s, total_e, coverage, s, e
         
@@ -860,41 +918,29 @@ cdef class RNAseqDataset():
             format = 'ELR'
         
         file = open(filename,'r')
+        transcripts = {}
         if format in ['GFF','GTF']: # Parse a GFF/GTF file
-            current_parent = AnnotationObject('', format, config_dict) # An empty annotation object
             current_object = AnnotationObject('', format, config_dict) # An empty annotation object
-            last_child = current_object
-            children = []
             for line in file:
                 if line[0] == '#':continue
                 current_object = AnnotationObject(line, format, config_dict)
                 if current_object.keep:
-                    if current_object.parent: # Add the old object to object_dict and start a new one
-                        if current_parent.parent: # Ignore the first empty annotation object
-                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
-                            total_coverage += coverage
-                            total_s += s
-                            total_e += e
-                        
-                        current_parent = current_object
-                        children = []
-                    else:
-                        if current_object.transcript_id != '' and current_object.transcript_id == current_parent.transcript_id:
-                            children.append(current_object)
-                        elif current_object.gene_id != '' and current_object.gene_id == current_parent.gene_id: # New transcript from same parent
-                            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
-                            total_coverage += coverage
-                            total_s += s
-                            total_e += e
-                            children = [current_object]
-                        
-                        last_child = current_object
+                    if current_object.parent:
+                        transcripts[current_object.transcript_id] = transcripts.get(current_object.transcript_id, [current_object,[]])
+                    
+                    if current_object.child:
+                        if current_object.transcript_id != '':
+                            if current_object.transcript_id in transcripts:
+                                transcripts[current_object.transcript_id][1] += [current_object]
+                            else:
+                                transcripts[current_object.transcript_id] = [None,[current_object]]
             
-            coverage, s, e = self.add_mapping_object(current_parent, children, name, int(name=='reference'), object_dict)
-            total_coverage += coverage
-            total_s += s
-            total_e += e
-
+            for current_object, children in transcripts.values():
+                coverage, s, e = self.add_mapping_object(current_object, children, name, int(name=='reference'), object_dict)
+                total_coverage += coverage
+                total_s += s
+                total_e += e
+        
         elif format == 'BED':
             for line in file:
                 if line[0] == '#':continue
@@ -940,9 +986,10 @@ cdef class RNAseqDataset():
         """Converts a GTF/GFF collection of AnnotationObjects to a single RNAseqMapping object"""
         cdef RNAseqMapping item
         cdef AnnotationObject child
-        cdef str transcript_id, chrom
+        cdef str transcript_id, chrom, attr
         if len(children) == 0:return (0., 0., 0.)
         if parent.keep == False:return (0., 0., 0.)
+        parent.attributes['child_names'] = set()
         transcript_id = children[0].transcript_id
         if not transcript_id:
             return (0., 0., 0.)
@@ -950,9 +997,17 @@ cdef class RNAseqDataset():
         for child in children:
             if len(child.gene_id)>0 and child.gene_id != parent.gene_id:return (0., 0., 0.)
             if child.transcript_id != transcript_id:return (0., 0., 0.)
+            for attr,val in child.attributes.items():
+                if attr not in parent.attributes:
+                    parent.attributes[attr] = val
+            
+            if 'Name' in child.attributes:
+                parent.attributes['child_names'].add(child.attributes['Name'])
         
         item = self.anno_to_mapping_object(parent, children, source)
-        item.attributes['source'] = name
+        if self.overwrite_source or 'source' not in item.attributes:
+            item.attributes['source'] = name
+        
         item.attributes['transcript_id'] = transcript_id
         chrom = self.chrom_array[item.chrom]
         if chrom not in object_dict.keys(): object_dict[chrom] = []
@@ -1095,7 +1150,7 @@ gtf_colorcode = {
 
 cdef class AnnotationObject:
     cdef public dict attributes
-    cdef public bint keep, parent
+    cdef public bint keep, parent, child
     cdef public str format, gene_id, transcript_id, chrom, source, anno_type
     cdef public int strand
     cdef public (int, int) span
@@ -1124,8 +1179,8 @@ cdef class AnnotationObject:
                 parent_types = config_dict['parent_types']
                 if self.anno_type in child_types:
                     self.keep = True
-                    self.parent = False
-                elif self.anno_type in parent_types:
+                    self.child = True
+                if self.anno_type in parent_types:
                     self.keep = True
                     self.parent = True
                 
@@ -1142,12 +1197,12 @@ cdef class AnnotationObject:
                         transcript_id_keys = config_dict['child_key_transcript']
                     
                     self.gene_id = self.attributes.get(gene_id_key,'')
-                    self.gene_id = self.gene_id.split(':')[-1]
+                    # self.gene_id = self.gene_id.split(':')[-1]
                     self.transcript_id = ''
                     for t_id in transcript_id_keys:
                         self.transcript_id = self.attributes.get(t_id,'')
                         if self.transcript_id != '':
-                            self.transcript_id = self.transcript_id.split(':')[-1]
+                            # self.transcript_id = self.transcript_id.split(':')[-1]
                             break
                     
                     self.attributes['gene_id'] = self.gene_id
@@ -2263,7 +2318,7 @@ cdef class BAMobject:
             
             # Generate a ReadObject with the parsed attributes above
             read_data = ELdata(chrom_id, 0, strand, ranges, canonical, s_tag, e_tag, capped, round(weight,2), False)
-            current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors})
+            current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors, 'ID':ID})
             if current_mapping.get_length() < self.dataset.minlen_strict:
                 continue
             

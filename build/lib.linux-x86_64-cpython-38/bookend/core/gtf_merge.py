@@ -140,12 +140,13 @@ class AnnotationMerger(AssemblyClassifier):
             transcript.attributes['class'] = self.match_types[ref_match.matchtype]
             transcript.attributes['gene_id'] = ref_match.gene
             transcript.attributes['overlap'] = ref_match.exonoverlap
-            transcript.attributes['ref_length'] = ref_match.reflen            
+            transcript.attributes['ref_length'] = ref_match.reflen
             transcript.attributes['diff5p'] = ref_match.diff5p
             transcript.attributes['diff3p'] = ref_match.diff3p
             if ref_match.matchtype >= 4:
                 try:
                     ref = [t for t in merged_annotations if t.attributes['transcript_id'] == ref_match.transcript][0]
+                    # ref.attributes['traceback'] = ref.attributes['transcript_id']
                 except:
                     ref = None
             
@@ -154,7 +155,8 @@ class AnnotationMerger(AssemblyClassifier):
                 ref.attributes['itemRgb'] = self.class_colors['full_match']
                 continue
             elif ref_match.matchtype == 7: # exon_match, merge with ref, use .i<num> if kept
-                gene_id = ref_match.gene
+                self.add_rep(ref, transcript)
+                continue
             elif ref_match.matchtype in [5,6]: # fragment, fusion, treat strictly, use .i<num> if kept
                 gene_id = ref_match.gene
             elif int(ref_match.matchtype) in [4,1]: # isoform, use .i<num> transcript id
@@ -280,6 +282,8 @@ class AnnotationMerger(AssemblyClassifier):
             output_line = transcript.write_as_bed(self.dataset.chrom_array, self.dataset.source_array, score_column='weight', name_attr='transcript_id')
         elif output_type == 'gtf':
             output_line = transcript.write_as_gtf(self.dataset.chrom_array, self.dataset.source_array[transcript.source])
+        elif 'gff' in output_type:
+            output_line = transcript.write_as_gtf(self.dataset.chrom_array, self.dataset.source_array[transcript.source],attr_format='GFF')
         
         self.output_file.write(output_line+'\n')
 
@@ -327,7 +331,7 @@ class AnnotationMerger(AssemblyClassifier):
                 self.removed_counter += 1
                 continue
             
-            if transcript.attributes.get('source','') == 'reference':
+            if transcript.attributes.get('soure','') == 'reference':
                 transcript.attributes['source'] = self.refname
                 transcript.attributes['itemRgb'] = self.class_colors['reference']
                 transcript.source = 0
@@ -461,7 +465,7 @@ class AnnotationMerger(AssemblyClassifier):
         '''Incorporate the information from a repeated RNAseqMapping
         object into one that already exists. Edits original in-place.'''
         operator = sum if self.attr_merge == 'sum' else max
-        if original.attributes['source'] == 'reference': # Validation of a reference transcript
+        if original.attributes.get('class','') == 'reference': # Validation of a reference transcript
             gene_id = original.attributes['gene_id']
             transcript_id = original.attributes['transcript_id']
             original.attributes.update(rep.attributes)
@@ -469,7 +473,11 @@ class AnnotationMerger(AssemblyClassifier):
             original.attributes['transcript_id'] = transcript_id
             original.attributes['source'] = 'reference;{}'.format(original.attributes['source'])
             original.attributes['robust'] = rep.attributes.get('robust',False)
-            original.attributes['traceback'] += ';'+rep.attributes['transcript_id']
+            if 'traceback' in original.attributes:
+                original.attributes['traceback'] += ';'+rep.attributes['transcript_id']
+            else:
+                original.attributes['traceback'] = original.attributes['transcript_id']+';'+rep.attributes['transcript_id']
+            
             original.ranges[0] = (rep.ranges[0][0], original.ranges[0][1])
             original.ranges[-1] = (original.ranges[-1][0], rep.ranges[-1][1])
             original.span = (original.ranges[0][0], original.ranges[-1][1])
@@ -483,13 +491,8 @@ class AnnotationMerger(AssemblyClassifier):
             if 'S.left' in rep.attributes: original.attributes['S.left'] = int(rep.attributes['S.left'])
             if 'S.right' in rep.attributes: original.attributes['S.right'] = int(rep.attributes['S.right'])
             if 'E.left' in rep.attributes: original.attributes['E.left'] = int(rep.attributes['E.left'])
-            if 'E.right' in rep.attributes: original.attributes['E.right'] = int(rep.attributes['E.right'])
-            
+            if 'E.right' in rep.attributes: original.attributes['E.right'] = int(rep.attributes['E.right'])            
         else:
-            reps = sorted(set(original.attributes['source'].split(';')+rep.attributes['source'].split(';')))
-            original.attributes['traceback'] += ';'+rep.attributes['transcript_id']
-            original.attributes['source']  =  ';'.join(reps)
-            original.attributes['reps'] = len(reps)
             original.attributes['robust'] = original.attributes.get('robust',False) or rep.attributes.get('robust',False)
             if 'samples' in original.attributes: original.attributes['samples'] = operator([int(original.attributes['samples']), int(rep.attributes.get('samples',1))])
             if 'cov' in original.attributes: original.attributes['cov'] = operator([float(original.attributes['cov']), float(rep.attributes.get('cov',0))])
@@ -499,6 +502,15 @@ class AnnotationMerger(AssemblyClassifier):
             if 'S.capped' in original.attributes: original.attributes['S.capped'] = operator([float(original.attributes['S.capped']), float(rep.attributes.get('S.capped',0))])
             if 'E.reads' in original.attributes: original.attributes['E.reads'] = operator([float(original.attributes['E.reads']), float(rep.attributes.get('E.reads',0))])            
             self.merge_ends(original, rep, operator)
+        
+        reps = sorted(set(original.attributes['source'].split(';')+rep.attributes['source'].split(';')))
+        if 'traceback' in original.attributes:
+            original.attributes['traceback'] += ';'+rep.attributes['transcript_id']
+        else:
+            original.attributes['traceback'] = original.attributes['transcript_id']+';'+rep.attributes['transcript_id']
+        
+        original.attributes['source']  =  ';'.join(reps)
+        original.attributes['reps'] = len(reps)
     
     def update_table(self, transcript):
         '''Writes a summary table like the output of bookend classify.''' 

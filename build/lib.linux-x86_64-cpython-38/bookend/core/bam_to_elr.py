@@ -223,13 +223,20 @@ class BAMtoELRconverter:
     def write_elr(self, output):
         out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list if not mapping.is_malformed()]
         self.output_lines(out_strings, output)
+    
+    def write_bed(self, output):
+        out_strings = [mapping.write_as_bed(self.dataset.chrom_array, self.dataset.source_array, record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list if not mapping.is_malformed()]
+        self.output_lines(out_strings, output)
 
     def process_entry(self, bam_lines):
         self.dataset.read_list = []
         # self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
         self.dataset.add_read_from_BAM(bam_lines)
         if len(self.dataset.read_list) > 0:
-            self.write_elr(self.tempout_file)
+            if self.output_format == 'bed':
+                self.write_bed(self.tempout_file)
+            else:
+                self.write_elr(self.tempout_file)
         else:
             self.failures += bam_lines
     
@@ -326,22 +333,14 @@ class BAMtoELRconverter:
             self.process_entry(entry)
         
         self.tempout_file.close()
-        Sorter = ELRsorter(self.sort_args)
-        Sorter.run()
-        os.remove(self.tempout)
-        if self.output_format == 'bed':
-            convert_args = {
-                'INPUT':self.sort_args['OUT'],
-                'HEADER':None,
-                'OUTPUT':self.output
-            }
-            Converter = ELRtoBEDconverter(convert_args)
-            print('Converting to BED...')
-            Converter.run()
-            os.remove(self.sort_args['OUT'])
+        if self.output_format == 'elr':
+            Sorter = ELRsorter(self.sort_args)
+            Sorter.run()
+            os.remove(self.tempout)
+        else:
+            os.rename(self.tempout, self.output)
         
         print(self.display_summary())
-
 
 
 if __name__ == '__main__':

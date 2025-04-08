@@ -1118,12 +1118,12 @@ def get_orfs(str sequence, bint startless=False, bint stopless=False, int min_aa
         ''.join([translate(sequence[i:(i+3)]) for i in range(2,len(sequence),3)])
     ]
     maxorf = int(len(sequence) * .33333)
-    firststart = [-2, -2, -2]
-    for i in range(maxorf):
+    firststart = [-2, -2, -2] if startless else [-1, -1, -1]
+    for i in range(maxorf+1):
         # Check for start codon in each frame
         for f in [0,1,2]:
             if len(frame[f]) > i:
-                if firststart[f] < 0 and frame[f][i] == 'M':
+                if firststart[f] == -1 and frame[f][i] == 'M':
                     firststart[f] = i
 
                 # Check for stop codon in each frame
@@ -1132,7 +1132,7 @@ def get_orfs(str sequence, bint startless=False, bint stopless=False, int min_aa
                         orf = frame[f][:i]
                         span = (f, f+(i+1)*3)
                         if len(orf) > min_aa:
-                            yield (orf,span,True,False)
+                            yield (orf,span,orf[0]!='M',False)
                     elif firststart[f] >= 0:
                         orf = frame[f][firststart[f]:i]
                         span = (f+firststart[f]*3, f+(i+1)*3)

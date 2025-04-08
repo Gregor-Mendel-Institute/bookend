@@ -60,7 +60,7 @@ class GTFconverter:
         # self.gtf_child = gtf_defaults['child_types']
         # self.gff_parent = gff_defaults['parent_types']
         # self.gff_child = gff_defaults['child_types']
-        print(gff_defaults)
+        print(args)
         self.dataset = ru.AnnotationDataset(
             annotation_files=[],
             reference=self.input, 

@@ -63,14 +63,14 @@ class FastaWriter:
         sequence = self.dataset.get_transcript_fasta(transcript,'outer')
         title = transcript.attributes['transcript_id']
         if self.orf:
-            orf, span, startless, stopless = fu.longest_orf(sequence)
+            orf, span, startless, stopless = fu.longest_orf(sequence, self.allow_partial_orf)
             if transcript.strand == 0:
-                rev_orf, rev_span, rev_startless, rev_stopless = fu.longest_orf(fu.rc(sequence))
+                rev_orf, rev_span, rev_startless, rev_stopless = fu.longest_orf(fu.rc(sequence), self.allow_partial_orf)
                 if len(rev_orf) > len(orf):
                     orf = rev_orf
                     stopless = rev_stopless
             
-            inner_orf, inner_span, inner_startless, inner_stopless = fu.longest_orf(self.dataset.get_transcript_fasta(transcript,'inner'))
+            inner_orf, inner_span, inner_startless, inner_stopless = fu.longest_orf(self.dataset.get_transcript_fasta(transcript,'inner'), self.allow_partial_orf)
             if inner_orf != orf:
                 if inner_orf in orf: # the shorter transcript encodes a truncated ORF
                     startsite = re.search(inner_orf,orf).span()[0]
@@ -80,7 +80,13 @@ class FastaWriter:
             
             sequence = orf # + ['*',''][int(stopless)]
             if span:
-                title += f'_{span[0]}-{span[1]}'
+                title += '  '
+                if startless:
+                    title += '*'
+                
+                title += f'{span[0]}-{span[1]}'
+                if stopless:
+                    title += '*'
         
         if len(sequence) == 0:
             return False

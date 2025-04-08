@@ -39,6 +39,7 @@ class AnnotationMerger(AssemblyClassifier):
         self.verbose = self.args['VERBOSE']
         self.attr_merge = self.args['ATTR_MERGE']
         self.keep_refs = self.args['KEEP_REFS']
+        self.fusion_delim = self.args['FUSION_DELIM']
         self.table = self.args['TABLE']
         self.match_unstranded = False
         if self.refname is None and self.reference is not None:
@@ -166,7 +167,9 @@ class AnnotationMerger(AssemblyClassifier):
                 self.new_gene_counter += 1
                 gene_id = 'BOOKEND-{}'.format(self.new_gene_counter)
             
-            gene_id = '_'.join(sorted(set(gene_id.split('_'))))
+            
+            gene_id = self.fusion_delim.join(sorted(set(gene_id.split(self.fusion_delim))))
+            
             counts_by_gene[gene_id] += 1
             transcript_count = counts_by_gene[gene_id]
             transcript_id = '{}.i{}'.format(gene_id, transcript_count)

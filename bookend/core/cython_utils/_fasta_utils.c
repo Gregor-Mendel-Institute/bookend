@@ -1762,8 +1762,8 @@ struct __pyx_obj_12_fasta_utils___pyx_scope_struct_1_get_orfs {
   PyObject *__pyx_t_0;
   Py_ssize_t __pyx_t_1;
   int __pyx_t_2;
-  int __pyx_t_3;
-  int __pyx_t_4;
+  long __pyx_t_3;
+  long __pyx_t_4;
 };
 
 
@@ -35348,11 +35348,12 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
   int __pyx_t_9;
   PyObject *__pyx_t_10 = NULL;
   PyObject *__pyx_t_11 = NULL;
-  int __pyx_t_12;
-  int __pyx_t_13;
+  long __pyx_t_12;
+  long __pyx_t_13;
   int __pyx_t_14;
   int __pyx_t_15;
   __pyx_ctuple_int__and_int __pyx_t_16;
+  Py_UCS4 __pyx_t_17;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -35577,8 +35578,8 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *         ''.join([translate(sequence[i:(i+3)]) for i in range(2,len(sequence),3)])
  *     ]
  *     maxorf = int(len(sequence) * .33333)             # <<<<<<<<<<<<<<
- *     firststart = [-2, -2, -2]
- *     for i in range(maxorf):
+ *     firststart = [-2, -2, -2] if startless else [-1, -1, -1]
+ *     for i in range(maxorf+1):
  */
   if (unlikely(__pyx_cur_scope->__pyx_v_sequence == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
@@ -35590,43 +35591,61 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
   /* "_fasta_utils.pyx":1121
  *     ]
  *     maxorf = int(len(sequence) * .33333)
- *     firststart = [-2, -2, -2]             # <<<<<<<<<<<<<<
- *     for i in range(maxorf):
+ *     firststart = [-2, -2, -2] if startless else [-1, -1, -1]             # <<<<<<<<<<<<<<
+ *     for i in range(maxorf+1):
  *         # Check for start codon in each frame
  */
-  __pyx_t_1 = PyList_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1121, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(__pyx_int_neg_2);
-  __Pyx_GIVEREF(__pyx_int_neg_2);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_int_neg_2);
-  __Pyx_INCREF(__pyx_int_neg_2);
-  __Pyx_GIVEREF(__pyx_int_neg_2);
-  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_int_neg_2);
-  __Pyx_INCREF(__pyx_int_neg_2);
-  __Pyx_GIVEREF(__pyx_int_neg_2);
-  PyList_SET_ITEM(__pyx_t_1, 2, __pyx_int_neg_2);
+  if (__pyx_cur_scope->__pyx_v_startless) {
+    __pyx_t_7 = PyList_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1121, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_INCREF(__pyx_int_neg_2);
+    __Pyx_GIVEREF(__pyx_int_neg_2);
+    PyList_SET_ITEM(__pyx_t_7, 0, __pyx_int_neg_2);
+    __Pyx_INCREF(__pyx_int_neg_2);
+    __Pyx_GIVEREF(__pyx_int_neg_2);
+    PyList_SET_ITEM(__pyx_t_7, 1, __pyx_int_neg_2);
+    __Pyx_INCREF(__pyx_int_neg_2);
+    __Pyx_GIVEREF(__pyx_int_neg_2);
+    PyList_SET_ITEM(__pyx_t_7, 2, __pyx_int_neg_2);
+    __pyx_t_1 = __pyx_t_7;
+    __pyx_t_7 = 0;
+  } else {
+    __pyx_t_7 = PyList_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1121, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_INCREF(__pyx_int_neg_1);
+    __Pyx_GIVEREF(__pyx_int_neg_1);
+    PyList_SET_ITEM(__pyx_t_7, 0, __pyx_int_neg_1);
+    __Pyx_INCREF(__pyx_int_neg_1);
+    __Pyx_GIVEREF(__pyx_int_neg_1);
+    PyList_SET_ITEM(__pyx_t_7, 1, __pyx_int_neg_1);
+    __Pyx_INCREF(__pyx_int_neg_1);
+    __Pyx_GIVEREF(__pyx_int_neg_1);
+    PyList_SET_ITEM(__pyx_t_7, 2, __pyx_int_neg_1);
+    __pyx_t_1 = __pyx_t_7;
+    __pyx_t_7 = 0;
+  }
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_firststart = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
   /* "_fasta_utils.pyx":1122
  *     maxorf = int(len(sequence) * .33333)
- *     firststart = [-2, -2, -2]
- *     for i in range(maxorf):             # <<<<<<<<<<<<<<
+ *     firststart = [-2, -2, -2] if startless else [-1, -1, -1]
+ *     for i in range(maxorf+1):             # <<<<<<<<<<<<<<
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:
  */
-  __pyx_t_4 = __pyx_cur_scope->__pyx_v_maxorf;
-  __pyx_t_9 = __pyx_t_4;
-  for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_9; __pyx_t_12+=1) {
-    __pyx_cur_scope->__pyx_v_i = __pyx_t_12;
+  __pyx_t_12 = (__pyx_cur_scope->__pyx_v_maxorf + 1);
+  __pyx_t_13 = __pyx_t_12;
+  for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_13; __pyx_t_4+=1) {
+    __pyx_cur_scope->__pyx_v_i = __pyx_t_4;
 
     /* "_fasta_utils.pyx":1124
- *     for i in range(maxorf):
+ *     for i in range(maxorf+1):
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:             # <<<<<<<<<<<<<<
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  */
     __pyx_t_1 = __pyx_tuple__20; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     for (;;) {
@@ -35637,15 +35656,15 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
       __pyx_t_7 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       #endif
-      __pyx_t_13 = __Pyx_PyInt_As_int(__pyx_t_7); if (unlikely((__pyx_t_13 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1124, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_7); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_cur_scope->__pyx_v_f = __pyx_t_13;
+      __pyx_cur_scope->__pyx_v_f = __pyx_t_9;
 
       /* "_fasta_utils.pyx":1125
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:
  *             if len(frame[f]) > i:             # <<<<<<<<<<<<<<
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  *                     firststart[f] = i
  */
       __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1125, __pyx_L1_error)
@@ -35658,48 +35677,54 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
         /* "_fasta_utils.pyx":1126
  *         for f in [0,1,2]:
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':             # <<<<<<<<<<<<<<
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':             # <<<<<<<<<<<<<<
  *                     firststart[f] = i
  * 
  */
+        if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 1126, __pyx_L1_error)
+        }
         __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1126, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_6 = PyObject_RichCompare(__pyx_t_7, __pyx_int_0, Py_LT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1126, __pyx_L1_error)
+        __pyx_t_15 = (__Pyx_PyInt_BoolEqObjC(__pyx_t_7, __pyx_int_neg_1, -1L, 0)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1126, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1126, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         if (__pyx_t_15) {
         } else {
           __pyx_t_14 = __pyx_t_15;
           goto __pyx_L16_bool_binop_done;
         }
-        __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1126, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_7 = __Pyx_GetItemInt(__pyx_t_6, __pyx_cur_scope->__pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1126, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1126, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_t_15 = (__Pyx_PyUnicode_Equals(__pyx_t_7, __pyx_n_u_M, Py_EQ)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1126, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_7, __pyx_cur_scope->__pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __pyx_t_15 = (__Pyx_PyUnicode_Equals(__pyx_t_6, __pyx_n_u_M, Py_EQ)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1126, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __pyx_t_14 = __pyx_t_15;
         __pyx_L16_bool_binop_done:;
         if (__pyx_t_14) {
 
           /* "_fasta_utils.pyx":1127
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  *                     firststart[f] = i             # <<<<<<<<<<<<<<
  * 
  *                 # Check for stop codon in each frame
  */
-          __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1127, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_7);
-          if (unlikely((__Pyx_SetItemInt(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, __pyx_t_7, int, 1, __Pyx_PyInt_From_int, 1, 1, 1) < 0))) __PYX_ERR(0, 1127, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+          __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1127, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_6);
+          if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+            __PYX_ERR(0, 1127, __pyx_L1_error)
+          }
+          if (unlikely((__Pyx_SetItemInt(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, __pyx_t_6, int, 1, __Pyx_PyInt_From_int, 1, 1, 1) < 0))) __PYX_ERR(0, 1127, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
           /* "_fasta_utils.pyx":1126
  *         for f in [0,1,2]:
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':             # <<<<<<<<<<<<<<
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':             # <<<<<<<<<<<<<<
  *                     firststart[f] = i
  * 
  */
@@ -35712,13 +35737,13 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                     if startless and firststart[f] == -2: # Allow startless ORF
  *                         orf = frame[f][:i]
  */
-        __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1130, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_7, __pyx_cur_scope->__pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1130, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1130, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_14 = (__Pyx_PyUnicode_Equals(__pyx_t_6, __pyx_kp_u__21, Py_EQ)); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 1130, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_GetItemInt(__pyx_t_6, __pyx_cur_scope->__pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1130, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_7);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_14 = (__Pyx_PyUnicode_Equals(__pyx_t_7, __pyx_kp_u__21, Py_EQ)); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 1130, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         if (__pyx_t_14) {
 
           /* "_fasta_utils.pyx":1131
@@ -35733,10 +35758,14 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
             __pyx_t_14 = __pyx_cur_scope->__pyx_v_startless;
             goto __pyx_L20_bool_binop_done;
           }
-          __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1131, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_15 = (__Pyx_PyInt_BoolEqObjC(__pyx_t_6, __pyx_int_neg_2, -2L, 0)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1131, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+            __PYX_ERR(0, 1131, __pyx_L1_error)
+          }
+          __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1131, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_7);
+          __pyx_t_15 = (__Pyx_PyInt_BoolEqObjC(__pyx_t_7, __pyx_int_neg_2, -2L, 0)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1131, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           __pyx_t_14 = __pyx_t_15;
           __pyx_L20_bool_binop_done:;
           if (__pyx_t_14) {
@@ -35748,23 +35777,23 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                         span = (f, f+(i+1)*3)
  *                         if len(orf) > min_aa:
  */
-            __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1132, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_6);
-            __pyx_t_7 = __Pyx_PyObject_GetSlice(__pyx_t_6, 0, __pyx_cur_scope->__pyx_v_i, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1132, __pyx_L1_error)
+            __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1132, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
-            __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-            if (!(likely(PyUnicode_CheckExact(__pyx_t_7))||((__pyx_t_7) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_7))) __PYX_ERR(0, 1132, __pyx_L1_error)
+            __pyx_t_6 = __Pyx_PyObject_GetSlice(__pyx_t_7, 0, __pyx_cur_scope->__pyx_v_i, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1132, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_6);
+            __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+            if (!(likely(PyUnicode_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_6))) __PYX_ERR(0, 1132, __pyx_L1_error)
             __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_orf);
-            __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_7));
-            __Pyx_GIVEREF(__pyx_t_7);
-            __pyx_t_7 = 0;
+            __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_6));
+            __Pyx_GIVEREF(__pyx_t_6);
+            __pyx_t_6 = 0;
 
             /* "_fasta_utils.pyx":1133
  *                     if startless and firststart[f] == -2: # Allow startless ORF
  *                         orf = frame[f][:i]
  *                         span = (f, f+(i+1)*3)             # <<<<<<<<<<<<<<
  *                         if len(orf) > min_aa:
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  */
             __pyx_t_16.f0 = __pyx_cur_scope->__pyx_v_f;
             __pyx_t_16.f1 = (__pyx_cur_scope->__pyx_v_f + ((__pyx_cur_scope->__pyx_v_i + 1) * 3));
@@ -35774,7 +35803,7 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                         orf = frame[f][:i]
  *                         span = (f, f+(i+1)*3)
  *                         if len(orf) > min_aa:             # <<<<<<<<<<<<<<
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  *                     elif firststart[f] >= 0:
  */
             if (unlikely(__pyx_cur_scope->__pyx_v_orf == Py_None)) {
@@ -35788,34 +35817,37 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
               /* "_fasta_utils.pyx":1135
  *                         span = (f, f+(i+1)*3)
  *                         if len(orf) > min_aa:
- *                             yield (orf,span,True,False)             # <<<<<<<<<<<<<<
+ *                             yield (orf,span,orf[0]!='M',False)             # <<<<<<<<<<<<<<
  *                     elif firststart[f] >= 0:
  *                         orf = frame[f][firststart[f]:i]
  */
-              __pyx_t_7 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1135, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_7);
-              __pyx_t_6 = PyTuple_New(4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1135, __pyx_L1_error)
+              __pyx_t_6 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1135, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_6);
+              __pyx_t_17 = __Pyx_GetItemInt_Unicode(__pyx_cur_scope->__pyx_v_orf, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_17 == (Py_UCS4)-1)) __PYX_ERR(0, 1135, __pyx_L1_error)
+              __pyx_t_7 = __Pyx_PyBool_FromLong((__pyx_t_17 != 77)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1135, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_7);
+              __pyx_t_5 = PyTuple_New(4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1135, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_5);
               __Pyx_INCREF(__pyx_cur_scope->__pyx_v_orf);
               __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_orf);
-              PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_cur_scope->__pyx_v_orf);
+              PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_cur_scope->__pyx_v_orf);
+              __Pyx_GIVEREF(__pyx_t_6);
+              PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_6);
               __Pyx_GIVEREF(__pyx_t_7);
-              PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_7);
-              __Pyx_INCREF(Py_True);
-              __Pyx_GIVEREF(Py_True);
-              PyTuple_SET_ITEM(__pyx_t_6, 2, Py_True);
+              PyTuple_SET_ITEM(__pyx_t_5, 2, __pyx_t_7);
               __Pyx_INCREF(Py_False);
               __Pyx_GIVEREF(Py_False);
-              PyTuple_SET_ITEM(__pyx_t_6, 3, Py_False);
-              __pyx_t_7 = 0;
-              __pyx_r = __pyx_t_6;
+              PyTuple_SET_ITEM(__pyx_t_5, 3, Py_False);
               __pyx_t_6 = 0;
+              __pyx_t_7 = 0;
+              __pyx_r = __pyx_t_5;
+              __pyx_t_5 = 0;
               __Pyx_XGIVEREF(__pyx_t_1);
               __pyx_cur_scope->__pyx_t_0 = __pyx_t_1;
               __pyx_cur_scope->__pyx_t_1 = __pyx_t_2;
               __pyx_cur_scope->__pyx_t_2 = __pyx_t_4;
-              __pyx_cur_scope->__pyx_t_3 = __pyx_t_9;
-              __pyx_cur_scope->__pyx_t_4 = __pyx_t_12;
+              __pyx_cur_scope->__pyx_t_3 = __pyx_t_12;
+              __pyx_cur_scope->__pyx_t_4 = __pyx_t_13;
               __Pyx_XGIVEREF(__pyx_r);
               __Pyx_RefNannyFinishContext();
               __Pyx_Coroutine_ResetAndClearException(__pyx_generator);
@@ -35828,15 +35860,15 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
               __Pyx_XGOTREF(__pyx_t_1);
               __pyx_t_2 = __pyx_cur_scope->__pyx_t_1;
               __pyx_t_4 = __pyx_cur_scope->__pyx_t_2;
-              __pyx_t_9 = __pyx_cur_scope->__pyx_t_3;
-              __pyx_t_12 = __pyx_cur_scope->__pyx_t_4;
+              __pyx_t_12 = __pyx_cur_scope->__pyx_t_3;
+              __pyx_t_13 = __pyx_cur_scope->__pyx_t_4;
               if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 1135, __pyx_L1_error)
 
               /* "_fasta_utils.pyx":1134
  *                         orf = frame[f][:i]
  *                         span = (f, f+(i+1)*3)
  *                         if len(orf) > min_aa:             # <<<<<<<<<<<<<<
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  *                     elif firststart[f] >= 0:
  */
             }
@@ -35853,21 +35885,25 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
 
           /* "_fasta_utils.pyx":1136
  *                         if len(orf) > min_aa:
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  *                     elif firststart[f] >= 0:             # <<<<<<<<<<<<<<
  *                         orf = frame[f][firststart[f]:i]
  *                         span = (f+firststart[f]*3, f+(i+1)*3)
  */
-          __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1136, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_7 = PyObject_RichCompare(__pyx_t_6, __pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1136, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+            __PYX_ERR(0, 1136, __pyx_L1_error)
+          }
+          __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1136, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __pyx_t_7 = PyObject_RichCompare(__pyx_t_5, __pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1136, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           __pyx_t_14 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 1136, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           if (__pyx_t_14) {
 
             /* "_fasta_utils.pyx":1137
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  *                     elif firststart[f] >= 0:
  *                         orf = frame[f][firststart[f]:i]             # <<<<<<<<<<<<<<
  *                         span = (f+firststart[f]*3, f+(i+1)*3)
@@ -35875,17 +35911,21 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  */
             __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1137, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
-            __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1137, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_6);
-            __pyx_t_5 = __Pyx_PyObject_GetSlice(__pyx_t_7, 0, __pyx_cur_scope->__pyx_v_i, &__pyx_t_6, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1137, __pyx_L1_error)
+            if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+              PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+              __PYX_ERR(0, 1137, __pyx_L1_error)
+            }
+            __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1137, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_5);
+            __pyx_t_6 = __Pyx_PyObject_GetSlice(__pyx_t_7, 0, __pyx_cur_scope->__pyx_v_i, &__pyx_t_5, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1137, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_6);
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-            __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-            if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_5))) __PYX_ERR(0, 1137, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+            if (!(likely(PyUnicode_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_6))) __PYX_ERR(0, 1137, __pyx_L1_error)
             __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_orf);
-            __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_5));
-            __Pyx_GIVEREF(__pyx_t_5);
-            __pyx_t_5 = 0;
+            __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_6));
+            __Pyx_GIVEREF(__pyx_t_6);
+            __pyx_t_6 = 0;
 
             /* "_fasta_utils.pyx":1138
  *                     elif firststart[f] >= 0:
@@ -35894,20 +35934,24 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                         if len(orf) > min_aa:
  *                             yield (orf,span,False,False)
  */
-            __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_f); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_6);
+            if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+              PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+              __PYX_ERR(0, 1138, __pyx_L1_error)
+            }
+            __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1138, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_5);
-            __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1138, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_6);
-            __pyx_t_7 = __Pyx_PyInt_MultiplyObjC(__pyx_t_6, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __pyx_t_7 = __Pyx_PyInt_MultiplyObjC(__pyx_t_5, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1138, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
-            __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-            __pyx_t_6 = PyNumber_Add(__pyx_t_5, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1138, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_6);
             __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-            __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-            __pyx_t_13 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_13 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __pyx_t_5 = PyNumber_Add(__pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_5);
             __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-            __pyx_t_16.f0 = __pyx_t_13;
+            __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+            __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1138, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+            __pyx_t_16.f0 = __pyx_t_9;
             __pyx_t_16.f1 = (__pyx_cur_scope->__pyx_v_f + ((__pyx_cur_scope->__pyx_v_i + 1) * 3));
             __pyx_cur_scope->__pyx_v_span = __pyx_t_16;
 
@@ -35933,30 +35977,30 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  * 
  *                     firststart[f] = -1
  */
-              __pyx_t_6 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1140, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_6);
+              __pyx_t_5 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1140, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_5);
               __pyx_t_7 = PyTuple_New(4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1140, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_7);
               __Pyx_INCREF(__pyx_cur_scope->__pyx_v_orf);
               __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_orf);
               PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_cur_scope->__pyx_v_orf);
-              __Pyx_GIVEREF(__pyx_t_6);
-              PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_6);
+              __Pyx_GIVEREF(__pyx_t_5);
+              PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_5);
               __Pyx_INCREF(Py_False);
               __Pyx_GIVEREF(Py_False);
               PyTuple_SET_ITEM(__pyx_t_7, 2, Py_False);
               __Pyx_INCREF(Py_False);
               __Pyx_GIVEREF(Py_False);
               PyTuple_SET_ITEM(__pyx_t_7, 3, Py_False);
-              __pyx_t_6 = 0;
+              __pyx_t_5 = 0;
               __pyx_r = __pyx_t_7;
               __pyx_t_7 = 0;
               __Pyx_XGIVEREF(__pyx_t_1);
               __pyx_cur_scope->__pyx_t_0 = __pyx_t_1;
               __pyx_cur_scope->__pyx_t_1 = __pyx_t_2;
               __pyx_cur_scope->__pyx_t_2 = __pyx_t_4;
-              __pyx_cur_scope->__pyx_t_3 = __pyx_t_9;
-              __pyx_cur_scope->__pyx_t_4 = __pyx_t_12;
+              __pyx_cur_scope->__pyx_t_3 = __pyx_t_12;
+              __pyx_cur_scope->__pyx_t_4 = __pyx_t_13;
               __Pyx_XGIVEREF(__pyx_r);
               __Pyx_RefNannyFinishContext();
               __Pyx_Coroutine_ResetAndClearException(__pyx_generator);
@@ -35969,8 +36013,8 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
               __Pyx_XGOTREF(__pyx_t_1);
               __pyx_t_2 = __pyx_cur_scope->__pyx_t_1;
               __pyx_t_4 = __pyx_cur_scope->__pyx_t_2;
-              __pyx_t_9 = __pyx_cur_scope->__pyx_t_3;
-              __pyx_t_12 = __pyx_cur_scope->__pyx_t_4;
+              __pyx_t_12 = __pyx_cur_scope->__pyx_t_3;
+              __pyx_t_13 = __pyx_cur_scope->__pyx_t_4;
               if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 1140, __pyx_L1_error)
 
               /* "_fasta_utils.pyx":1139
@@ -35984,7 +36028,7 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
 
             /* "_fasta_utils.pyx":1136
  *                         if len(orf) > min_aa:
- *                             yield (orf,span,True,False)
+ *                             yield (orf,span,orf[0]!='M',False)
  *                     elif firststart[f] >= 0:             # <<<<<<<<<<<<<<
  *                         orf = frame[f][firststart[f]:i]
  *                         span = (f+firststart[f]*3, f+(i+1)*3)
@@ -35999,6 +36043,10 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  * 
  *     # Return stopless codons
  */
+          if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+            PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+            __PYX_ERR(0, 1142, __pyx_L1_error)
+          }
           if (unlikely((__Pyx_SetItemInt(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, __pyx_int_neg_1, int, 1, __Pyx_PyInt_From_int, 1, 1, 1) < 0))) __PYX_ERR(0, 1142, __pyx_L1_error)
 
           /* "_fasta_utils.pyx":1130
@@ -36014,17 +36062,17 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:
  *             if len(frame[f]) > i:             # <<<<<<<<<<<<<<
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  *                     firststart[f] = i
  */
       }
 
       /* "_fasta_utils.pyx":1124
- *     for i in range(maxorf):
+ *     for i in range(maxorf+1):
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:             # <<<<<<<<<<<<<<
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  */
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -36070,6 +36118,10 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
       } else {
         __pyx_t_14 = __pyx_cur_scope->__pyx_v_startless;
         goto __pyx_L31_bool_binop_done;
+      }
+      if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+        __PYX_ERR(0, 1147, __pyx_L1_error)
       }
       __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
@@ -36129,22 +36181,22 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  */
           __pyx_t_7 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1151, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
-          __pyx_t_6 = PyTuple_New(4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1151, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_6);
+          __pyx_t_5 = PyTuple_New(4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1151, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
           __Pyx_INCREF(__pyx_cur_scope->__pyx_v_orf);
           __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_orf);
-          PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_cur_scope->__pyx_v_orf);
+          PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_cur_scope->__pyx_v_orf);
           __Pyx_GIVEREF(__pyx_t_7);
-          PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_7);
+          PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_7);
           __Pyx_INCREF(Py_True);
           __Pyx_GIVEREF(Py_True);
-          PyTuple_SET_ITEM(__pyx_t_6, 2, Py_True);
+          PyTuple_SET_ITEM(__pyx_t_5, 2, Py_True);
           __Pyx_INCREF(Py_True);
           __Pyx_GIVEREF(Py_True);
-          PyTuple_SET_ITEM(__pyx_t_6, 3, Py_True);
+          PyTuple_SET_ITEM(__pyx_t_5, 3, Py_True);
           __pyx_t_7 = 0;
-          __pyx_r = __pyx_t_6;
-          __pyx_t_6 = 0;
+          __pyx_r = __pyx_t_5;
+          __pyx_t_5 = 0;
           __Pyx_XGIVEREF(__pyx_t_1);
           __pyx_cur_scope->__pyx_t_0 = __pyx_t_1;
           __pyx_cur_scope->__pyx_t_1 = __pyx_t_2;
@@ -36187,10 +36239,14 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                 orf = frame[f][firststart[f]:]
  *                 span = (f+firststart[f]*3, f+(i+1)*3)
  */
-      __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1152, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = PyObject_RichCompare(__pyx_t_6, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1152, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+        PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+        __PYX_ERR(0, 1152, __pyx_L1_error)
+      }
+      __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1152, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_7 = PyObject_RichCompare(__pyx_t_5, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1152, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_14 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 1152, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (__pyx_t_14) {
@@ -36204,17 +36260,21 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  */
         __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_frame, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1153, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1153, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_5 = __Pyx_PyObject_GetSlice(__pyx_t_7, 0, 0, &__pyx_t_6, NULL, NULL, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1153, __pyx_L1_error)
+        if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 1153, __pyx_L1_error)
+        }
+        __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1153, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_6 = __Pyx_PyObject_GetSlice(__pyx_t_7, 0, 0, &__pyx_t_5, NULL, NULL, 0, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1153, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_5))) __PYX_ERR(0, 1153, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        if (!(likely(PyUnicode_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_6))) __PYX_ERR(0, 1153, __pyx_L1_error)
         __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_orf);
-        __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_5));
-        __Pyx_GIVEREF(__pyx_t_5);
-        __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_orf, ((PyObject*)__pyx_t_6));
+        __Pyx_GIVEREF(__pyx_t_6);
+        __pyx_t_6 = 0;
 
         /* "_fasta_utils.pyx":1154
  *             elif firststart[f] > 0:
@@ -36223,19 +36283,23 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  *                 if len(orf) > min_aa:
  *                     yield (orf,span,False,True)
  */
-        __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_f); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_cur_scope->__pyx_v_f); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        if (unlikely(__pyx_cur_scope->__pyx_v_firststart == Py_None)) {
+          PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+          __PYX_ERR(0, 1154, __pyx_L1_error)
+        }
+        __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1154, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_cur_scope->__pyx_v_firststart, __pyx_cur_scope->__pyx_v_f, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1154, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_7 = __Pyx_PyInt_MultiplyObjC(__pyx_t_6, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_PyInt_MultiplyObjC(__pyx_t_5, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1154, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_t_6 = PyNumber_Add(__pyx_t_5, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1154, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __pyx_t_5 = PyNumber_Add(__pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_t_5); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1154, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_t_16.f0 = __pyx_t_4;
         __pyx_t_16.f1 = (__pyx_cur_scope->__pyx_v_f + ((__pyx_cur_scope->__pyx_v_i + 1) * 3));
         __pyx_cur_scope->__pyx_v_span = __pyx_t_16;
@@ -36262,22 +36326,22 @@ static PyObject *__pyx_gb_12_fasta_utils_41generator1(__pyx_CoroutineObject *__p
  * 
  * 
  */
-          __pyx_t_6 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1156, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_6);
+          __pyx_t_5 = __pyx_convert__to_py___pyx_ctuple_int__and_int(__pyx_cur_scope->__pyx_v_span); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1156, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
           __pyx_t_7 = PyTuple_New(4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1156, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
           __Pyx_INCREF(__pyx_cur_scope->__pyx_v_orf);
           __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_orf);
           PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_cur_scope->__pyx_v_orf);
-          __Pyx_GIVEREF(__pyx_t_6);
-          PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_6);
+          __Pyx_GIVEREF(__pyx_t_5);
+          PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_5);
           __Pyx_INCREF(Py_False);
           __Pyx_GIVEREF(Py_False);
           PyTuple_SET_ITEM(__pyx_t_7, 2, Py_False);
           __Pyx_INCREF(Py_True);
           __Pyx_GIVEREF(Py_True);
           PyTuple_SET_ITEM(__pyx_t_7, 3, Py_True);
-          __pyx_t_6 = 0;
+          __pyx_t_5 = 0;
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           __Pyx_XGIVEREF(__pyx_t_1);
@@ -39190,11 +39254,11 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__13);
 
   /* "_fasta_utils.pyx":1124
- *     for i in range(maxorf):
+ *     for i in range(maxorf+1):
  *         # Check for start codon in each frame
  *         for f in [0,1,2]:             # <<<<<<<<<<<<<<
  *             if len(frame[f]) > i:
- *                 if firststart[f] < 0 and frame[f][i] == 'M':
+ *                 if firststart[f] == -1 and frame[f][i] == 'M':
  */
   __pyx_tuple__20 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_2); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 1124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__20);
