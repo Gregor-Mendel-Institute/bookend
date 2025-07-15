@@ -597,6 +597,7 @@ config_defaults = {
     'sj_shift':0,
     'max_headclip':4,
     'max_intron':100000,
+    'max_indel':10,
     'confidence_threshold':0.5,
     'gene_delim':'.',
     'remove_noncanonical':False,
@@ -632,7 +633,7 @@ gff_defaults = {
 }
 cdef class RNAseqDataset():
     cdef public list read_list, chrom_array, source_array, chrom_lengths
-    cdef public int chrom_index, source_index, sj_shift, max_headclip, max_intron
+    cdef public int chrom_index, source_index, sj_shift, max_headclip, max_intron, max_indel
     cdef public dict chrom_dict, source_dict, reference_dict, gtf_config, gff_config
     cdef readonly dict config, genome, label_tally
     cdef readonly bint s_tag, e_tag, capped, stranded, reverse, ignore_ends, remove_noncanonical, labels_are_trimmed, quality_filter, verbose, secondary, has_genome, remove_gapped_termini, overwrite_source
@@ -663,6 +664,7 @@ cdef class RNAseqDataset():
         self.minlen_loose = self.config['minlen_loose']
         self.minlen = self.minlen_strict
         self.max_intron = self.config['max_intron']
+        self.max_indel = self.config.get('max_indel', 10)
         self.mismatch_rate = self.config['mismatch_rate']
         self.error_rate = self.config['error_rate']
         self.sj_shift = self.config['sj_shift']
@@ -2131,7 +2133,7 @@ cdef class BAMobject:
     cdef readonly list input_lines
     cdef readonly float error_rate
     cdef readonly bint ignore_ends, secondary, remove_noncanonical, remove_gapped_termini, quality_filter
-    cdef readonly int max_headclip, sj_shift, max_intron
+    cdef readonly int max_headclip, sj_shift, max_intron, max_indel
     def __init__(self, RNAseqDataset dataset, list input_lines):
         """Convert a list of pysam.AlignedSegment objects into RNAseqMappings that can be added to an RNAseqDataset.
         Quality control of end labels:
@@ -2146,6 +2148,7 @@ cdef class BAMobject:
         self.ignore_ends = self.dataset.ignore_ends
         self.secondary = self.dataset.secondary
         self.max_intron = self.dataset.max_intron
+        self.max_indel = self.dataset.max_indel
         self.remove_noncanonical = self.dataset.remove_noncanonical
         self.remove_gapped_termini = self.dataset.remove_gapped_termini
         self.error_rate = self.dataset.error_rate
@@ -2158,7 +2161,7 @@ cdef class BAMobject:
             int s_len, s_tag_len, e_len, e_tag_len, Nmap, counter, input_len, map_number, mate, strand, number_of_blocks
             int i, gap_len, pos, map_strand, junction_strand, chrom_id, start_pos, end_pos, trim_pos, errors, sj_shift, longest_intron
             float weight
-            str ID, chrom, seq, aligned_seq, trimmed_nuc
+            str ID, chrom, seq, query_seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
             list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands, badgaps
@@ -2203,6 +2206,7 @@ cdef class BAMobject:
             if e_tag_len < e_len:
                 e_len = e_tag_len
         
+        query_seq = ''
         for i in range(input_len): 
             s_tag = self.dataset.s_tag or ID_tags[0]
             e_tag = self.dataset.e_tag or ID_tags[1]
@@ -2222,6 +2226,11 @@ cdef class BAMobject:
                 map_number = counter
             
             seq = line.query_sequence
+            if query_seq == '' and seq is not None: # Get the query sequence from the first line
+                query_seq = seq
+            elif seq is None: # If the sequence is None, use the query sequence from the first line
+                seq = query_seq
+            
             pos = line.reference_start
             chrom_id = line.reference_id
             try:
@@ -2232,20 +2241,27 @@ cdef class BAMobject:
             # Parse the SAM CIGAR string to get mapped positions, splice junction sites, and softclipped positions
             try:
                 errors = line.get_tag('nM')
-            except KeyError:
+            except:
                 try:
                     errors = line.get_tag('NM')
-                except KeyError:
+                except:
                     errors = 0
             
             try:
                 mdstring = line.get_tag('MD')
-            except KeyError:
-                mdstring = str(len(seq))
+            except:
+                mdstring = line.cigarstring
+                if mdstring is None:
+                    mdstring = str(len(seq))
+                    if mdstring is None:
+                        mdstring = f'{line.query_alignment_length}M'
             
-            ranges, introns, badgaps, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate, self.quality_filter)
+
+            ranges, introns, badgaps, head, tail = parse_SAM_CIGAR(pos, line.cigartuples, mdstring, self.error_rate, self.quality_filter, maxindel=self.max_indel)
             number_of_blocks = len(ranges)
             if number_of_blocks == 0: # No exons of passing quality were found
+                if self.dataset.verbose:
+                    print(f'WARNING: {line.query_name}[{i}] has no valid blocks after quality filtering.')
                 continue
             
             if tail <= 0:
@@ -2256,10 +2272,14 @@ cdef class BAMobject:
             match_length = len(aligned_seq) - errors
             if match_length < self.dataset.minlen_loose: # Read is short enought to require stringent filtering
                 if self.fails_stringent_filters(Nmap, match_length, head, tail, errors):
+                    if self.dataset.verbose:
+                        print(f'WARNING: {line.query_name} fails stringent filters: {match_length} bp, {errors} errors, head {head}, tail {tail}')
                     continue
             
             if match_length < 200: # Short read check: Not a homopolymer
                 if is_homopolymer(aligned_seq): # Aligned sequence >80% repeat of one nucleotide
+                    if self.dataset.verbose:
+                        print(f'WARNING: {line.query_name} is a homopolymer: {aligned_seq}')
                     continue
             
             # EVALUATE SOFTCLIPPED NUCLEOTIDES
@@ -2320,11 +2340,14 @@ cdef class BAMobject:
             read_data = ELdata(chrom_id, 0, strand, ranges, canonical, s_tag, e_tag, capped, round(weight,2), False)
             current_mapping = RNAseqMapping(read_data, attributes = {'errors':errors, 'ID':ID})
             if current_mapping.get_length() < self.dataset.minlen_strict:
+                if self.dataset.verbose:
+                    print(f'WARNING: {line.query_name} is too short after quality filtering: {current_mapping.get_length()} bp')
                 continue
             
             longest_intron = max([0]+[(j[1]-j[0]) for j in current_mapping.junctions()])
             if longest_intron > self.max_intron:
-                # print(f'REMOVING {current_mapping}: intron length {longest_intron}')
+                if self.dataset.verbose:
+                    print(f'WARNING: {line.query_name} has a long intron: {longest_intron} bp')
                 continue
 
             current_mapping.e_len = e_tag_len
@@ -2606,7 +2629,7 @@ cdef class BAMobject:
                 line = self.input_lines[0]
                 try:
                     Nmap = line.get_tag('NH')
-                except KeyError:
+                except:
                     if line.is_paired:
                         Nmap = int(num_lines*0.5)
                     else:

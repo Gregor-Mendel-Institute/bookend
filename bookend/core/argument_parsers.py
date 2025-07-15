@@ -111,6 +111,7 @@ bam_to_elr_parser.add_argument("--genome", dest='GENOME', default=None, type=str
 bam_to_elr_parser.add_argument('--reference', dest='REFERENCE', help="[GFF3/GTF] Path to reference annotation", type=str, default=None)
 bam_to_elr_parser.add_argument("--splice", dest='SPLICE', default=None, type=str, help="Reference splice junction file (STAR SJ.out.tab, intron BED6)")
 bam_to_elr_parser.add_argument('--max_intron', dest='MAX_INTRON', type=int, default=100000, help="Ignore reads with introns longer than this.")
+bam_to_elr_parser.add_argument('--max_indel', dest='MAX_INDEL', type=int, default=10, help="Ignore reads with indels longer than this.")
 bam_to_elr_parser.add_argument("--chrom_names", dest='CHROM_NAMES', default=None, type=str, help="2-column TSV of chromosome ID -> chromosome name.")
 bam_to_elr_parser.add_argument("--start_seq", dest='START_SEQ', default='ACATGGG', type=str, help="Sequence of the oligo that marks a 5' read (sense)")
 bam_to_elr_parser.add_argument("--end_seq", dest='END_SEQ', default='RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR', type=str, help="Sequence of the oligo that marks a 3' read (sense)")

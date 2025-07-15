@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from distutils import extension
 import sys
 import os
 if __name__ == '__main__':
@@ -43,7 +42,9 @@ class BAMtoELRconverter:
         self.input = args['INPUT']
         self.error_rate = args['ERROR_RATE']
         self.max_intron = args['MAX_INTRON']
+        self.max_indel = args['MAX_INDEL']
         self.allow_noncanonical = args['ALLOW_NONCANONICAL']
+        self.verbose = True
         if self.start or self.end or self.capped:
             self.stranded = True
         
@@ -93,15 +94,18 @@ class BAMtoELRconverter:
             'end_seq':self.end_seq,
             'minlen_strict':self.minlen_strict,
             'max_intron':self.max_intron,
+            'max_indel':self.max_indel,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
             'error_rate' : self.error_rate,
+            'secondary':self.secondary,
             'sj_shift':self.sj_shift,
             'remove_noncanonical':not self.allow_noncanonical,
             'labels_are_trimmed':not self.untrimmed,
             'quality_filter':True,
             'reference':self.reference,
             'sj':self.splice,
+            'verbose':self.verbose
         }
         if self.no_ends:
             self.config_dict['s_tag'] = False
