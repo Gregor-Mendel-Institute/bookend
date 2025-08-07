@@ -485,6 +485,8 @@ cdef class RNAseqMapping():
         
         chromStart = self.ranges[0][0]
         chromEnd = self.right()
+        thickStart = self.attributes.get('cds_start', chromStart)
+        thickEnd = self.attributes.get('cds_end', chromStart)
         if longStart is None:
             longStart = chromStart
         else:
@@ -495,10 +497,10 @@ cdef class RNAseqMapping():
         else:
             self.ranges[-1] = (self.ranges[-1][0], max(self.ranges[-1][1],longEnd))
         
-        longStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
+        chromStart, blockStarts, blockSizes = explode_block_ranges(self.ranges)
         bed_line = [
             chrom_array[self.chrom], longStart, longEnd,
-            name, score, bed_strand, chromStart, chromEnd, rgb,
+            name, score, bed_strand, thickStart, thickEnd, rgb,
             len(self.ranges),
             ','.join([str(i-1) for i in blockSizes]),
             ','.join([str(i) for i in blockStarts]),
@@ -616,7 +618,8 @@ gtf_defaults = {
     'parent_key_gene':'gene_id',
     'child_types':set(['exon']),
     'child_key_transcript':['transcript_id', 'Parent'],
-    'child_key_gene':'gene_id'
+    'child_key_gene':'gene_id',
+    'cds':False,
 }
 gff_defaults = {
     'parent_types':set([    
@@ -629,7 +632,8 @@ gff_defaults = {
     'parent_key_gene':'Parent',
     'child_types':set(['exon','pseudogenic_exon']),
     'child_key_transcript':['Parent', 'transcript_id'],
-    'child_key_gene':'gene_id'
+    'child_key_gene':'gene_id',
+    'cds':False,
 }
 cdef class RNAseqDataset():
     cdef public list read_list, chrom_array, source_array, chrom_lengths
@@ -874,13 +878,25 @@ cdef class RNAseqDataset():
                 children_out.append(child)
                 last_child = child
             else:
-                if child.span[0] == last_child.span[1]:
-                    last_child.span[1] = child.span[1]
+                # Merge adjacent spans, keep only the longest of overlapping spans
+                if child.span[0] <= last_child.span[1]:  # Overlapping or adjacent
+                    # Merge into one span covering both, keep the longest
+                    merged_start = min(last_child.span[0], child.span[0])
+                    merged_end = max(last_child.span[1], child.span[1])
+                    # Choose the child with the longest span
+                    if (child.span[1] - child.span[0]) > (last_child.span[1] - last_child.span[0]):
+                        last_child = child
+                        last_child.span = (merged_start, merged_end)
+                        children_out[-1] = last_child
+                    else:
+                        last_child.span = (merged_start, merged_end)
+                        children_out[-1] = last_child
                 else:
-                    if child != last_child: # Disallow duplicate exons
-                        children_out.append(child)
-                    
+                    children_out.append(child)
                     last_child = child
+        
+        if last_child != children_out[-1]: # If last_child is not the same as the last item in children_out
+            children_out.append(last_child)
         
         return children_out
 
@@ -1022,7 +1038,14 @@ cdef class RNAseqDataset():
         cdef AnnotationObject child
         cdef RNAseqMapping mapping_object
         cdef list ranges, splice
-        cdef int chrom, strand
+        cdef int chrom, strand, cds_start, cds_end        
+        # get start/end coords for cds
+        cds_start = -1
+        cds_end = -1
+        for child in children:
+            if child.cds:
+                cds_start = min(child.span[0], cds_start) if cds_start != -1 else child.span[0]
+                cds_end = max(child.span[1], cds_end) if cds_end != -1 else child.span[1]
         
         children = self.merge_children(children)
         strand = parent.strand
@@ -1039,6 +1062,10 @@ cdef class RNAseqDataset():
         input_data = ELdata(chrom, source, strand, ranges, splice, True, True, False, 1, False)
         mapping_object = RNAseqMapping(input_data, copy.copy(parent.attributes))
         mapping_object.attributes['transcript_id'] = child.transcript_id
+        if cds_start != -1 and cds_end != -1:
+            mapping_object.attributes['cds_start'] = cds_start
+            mapping_object.attributes['cds_end'] = cds_end
+        
         if 'cov' in mapping_object.attributes.keys():
             mapping_object.weight = float(mapping_object.attributes['cov'])
         
@@ -1152,7 +1179,7 @@ gtf_colorcode = {
 
 cdef class AnnotationObject:
     cdef public dict attributes
-    cdef public bint keep, parent, child
+    cdef public bint keep, parent, child, cds
     cdef public str format, gene_id, transcript_id, chrom, source, anno_type
     cdef public int strand
     cdef public (int, int) span
@@ -1179,6 +1206,7 @@ cdef class AnnotationObject:
                 self.anno_type = self.fields[2]
                 child_types = config_dict['child_types']
                 parent_types = config_dict['parent_types']
+                self.cds = self.anno_type == 'CDS'
                 if self.anno_type in child_types:
                     self.keep = True
                     self.child = True
@@ -1738,6 +1766,28 @@ cpdef str bedgraph(str chrom, int leftmost, np.ndarray depth_matrix, str seqtype
     
     return output
 
+def depth_to_bedgraph(str chrom, int leftmost, np.ndarray depth, int sig=1):
+    """Returns a list of bedgraph lines from an array of height values."""
+    cdef:
+        int p, lastp
+        float v, lastv
+        np.ndarray positions, values, covstranded, strandratio
+        bint contiguous
+    
+    contiguous = True
+    positions = np.where(np.append(depth[0],np.diff(depth)) != 0)[0]
+    values = depth[positions]
+    lastp, lastv = -1, 0
+    for p,v in zip(positions, values):
+        if lastp >= 0 and round(lastv, sig) != 0.0:
+            yield '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, p][contiguous]+leftmost, round(lastv, sig))
+        
+        lastp, lastv = p, v
+
+    if round(lastv, sig) != 0.0 and lastp >= 0:
+        yield '{}\t{}\t{}\t{}\n'.format(chrom, lastp+leftmost, [lastp+1, depth.shape[0]][contiguous]+leftmost, round(lastv, sig))
+
+
 cdef str span_to_string((int, int) span):
     """Converts a tuple of two ints to a string connected by ':'"""
     return '{}:{}'.format(span[0], span[1])
@@ -2164,7 +2214,7 @@ cdef class BAMobject:
             str ID, chrom, seq, query_seq, aligned_seq, trimmed_nuc
             (bint, bint, int, int) ID_tags = (False, False, 0, 0)
             dict mappings
-            list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands, badgaps
+            list canonical, gaps, ranges, mapping_list, introns, newranges, jstrands, badgaps, primary, secondary
             bint stranded, stranded_method, reverse, fiveprime, threeprime, junction_exists, c, b
             (int, int) g
             set intronset
@@ -2180,6 +2230,17 @@ cdef class BAMobject:
             reverse = False
         
         capped = self.dataset.capped
+        if self.secondary:
+            primary = []
+            secondary = []
+            for line in self.input_lines:
+                if line.is_supplementary or line.is_secondary:
+                    secondary.append(line)
+                else:
+                    primary.append(line)
+            
+            self.input_lines = primary + secondary
+        
         input_len = len(self.input_lines)
         weight = float(1)/input_len
         mappings = {} # Make an empty dict to store each mapping object
@@ -2226,10 +2287,10 @@ cdef class BAMobject:
                 map_number = counter
             
             seq = line.query_sequence
-            if query_seq == '' and seq is not None: # Get the query sequence from the first line
-                query_seq = seq
-            elif seq is None: # If the sequence is None, use the query sequence from the first line
+            if seq is None:
                 seq = query_seq
+            elif query_seq == '': # Get the query sequence from the first line
+                query_seq = seq
             
             pos = line.reference_start
             chrom_id = line.reference_id
