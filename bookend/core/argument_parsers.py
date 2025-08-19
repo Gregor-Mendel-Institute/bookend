@@ -215,6 +215,7 @@ end_label_parser.add_argument('--minlen', dest='MINLEN', type=int, default=18, h
 end_label_parser.add_argument('--mismatch_rate', dest='MM_RATE', type=float, default=.06, help="Highest allow proportion of mismatches.")
 end_label_parser.add_argument('--qualmask', dest='QUALMASK', type=float, default=16, help="Ignores any basecalls with phred score < this, treats base as N.")
 end_label_parser.add_argument('--minqual', dest='MINQUAL', type=float, default=25, help="Suppresses any trimmed sequences with lower than this mean phred quality score.")
+end_label_parser.add_argument('--allow_indels', dest='INDELS', action='store_true', help="Allow insertions and deletions in the alignment.")
 end_label_parser.add_argument('--discard_untrimmed', dest='DISCARD_UNTRIMMED', default=False, action='store_true', help="If no trimming occurred, do not write the read to output.")
 end_label_parser.add_argument(dest='FASTQ', type=str, nargs='+', help="Input FASTQ file(s). 1 for single-end, 2 for paired-end")
 end_label_parser.add_argument('--pseudomates', dest='PSEUDOMATES', default=False, action='store_true', help="Write single reads to --out1 with an artificial reverse complement mate pair in --out2 (overrides --single_out)")
@@ -351,6 +352,7 @@ gtf_to_bed_parser.add_argument('--child_attr_transcript', dest='CHILD_ATTR_TRANS
 gtf_to_bed_parser.add_argument('--color_key', dest='COLOR_KEY', type=str, default=None, help="Attribute name to lookup transcript type")
 gtf_to_bed_parser.add_argument('--color_code', dest='COLOR_CODE', type=str, default=None, help="Tab-separated file of transcript type R,G,B colors (e.g. 'type\t255,255,255')")
 gtf_to_bed_parser.add_argument("--extend", dest='EXTEND', help="Extend annotation to ends of Start and End clusters, if they exist.", default=False, action='store_true')
+gtf_to_bed_parser.add_argument("--cds", dest='CDS', help="Set thickStart and thickEnd to CDS borders, if they exist.", default=False, action='store_true')
 gtf_to_bed_parser.set_defaults(object='GTFconverter')
 
 ### gtf_ends.py ###

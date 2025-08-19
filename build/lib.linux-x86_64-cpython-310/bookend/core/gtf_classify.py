@@ -36,6 +36,7 @@ class AssemblyClassifier:
         self.refid_parent = self.args['PARENT_ATTR_TRANSCRIPT']
         self.refid_child = self.args['CHILD_ATTR_TRANSCRIPT']
         self.gene_delim = self.args['GENE_DELIM']
+        self.fusion_delim = self.args['FUSION_DELIM']
         if self.input_is_valid(self.output): # Check for valid file extension on output name
             self.output_type = self.file_extension(self.output)
             self.output_file = open(self.output,'w')
@@ -158,14 +159,14 @@ class AssemblyClassifier:
         elif new_match.matchtype == 8:
             return new_match
         elif new_match.gene != old_match.gene and old_match.gene != 'NA': # Evaluate if a fusion
-            if new_match.strand == old_match.strand:
+            if new_match.matchtype != 2 and old_match.matchtype != 2:
                 if new_match.exonoverlap >= .9*new_match.reflen or int(new_match.matchtype) in [4,6,7]:
                     if old_match.exonoverlap >= .9*old_match.reflen or int(old_match.matchtype) in [4,6,7]:
                         if old_match.ref.shared_bases(new_match.ref) < .9*min([old_match.reflen, new_match.reflen]):
                             fused_match = self.match_data(
                                 6, 
-                                '{}_{}'.format(old_match.transcript, new_match.transcript), 
-                                '{}_{}'.format(old_match.gene, new_match.gene),
+                                '{}{}{}'.format(old_match.transcript, self.fusion_delim, new_match.transcript), 
+                                '{}{}{}'.format(old_match.gene, self.fusion_delim, new_match.gene),
                                 max(old_match.exonoverlap, new_match.exonoverlap),
                                 max(old_match.reflen, new_match.reflen),
                                 old_match.tlen,

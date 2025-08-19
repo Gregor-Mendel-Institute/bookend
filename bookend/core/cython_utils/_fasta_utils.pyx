@@ -352,6 +352,105 @@ cpdef int IUPACham(array.array a, array.array b, int stop_at=-1):
     
     return ham
 
+cdef inline int hamming_iupac(int[:] a, int[:] b, int max_mismatch) except -2:
+    cdef Py_ssize_t j, l = a.shape[0]
+    cdef int ham = 0
+    for j in range(l):
+        if not (a[j] & b[j]):
+            ham += 1
+            if ham > max_mismatch:
+                break
+    return ham
+
+cdef int edit_distance_iupac_banded(int[:] A, int[:] B, int k):
+    # Banded Levenshtein distance with band half-width k.
+    # Match if (A[i-1] & B[j-1]) > 0.
+    # Returns k+1 if distance exceeds k (early abort).
+    cdef int[:] tmp, prev, curr
+    cdef int row_min, best, ins, delv, cost, sub, result
+    cdef Py_ssize_t n = A.shape[0]
+    cdef Py_ssize_t m = B.shape[0]
+    cdef Py_ssize_t i, j
+    cdef int INF = k + 1
+    if k < 0:
+        k = 0
+        INF = 1
+    if n == 0:
+        return m if m <= k else (k + 1)
+    if m == 0:
+        return n if n <= k else (k + 1)
+    if n - m > k or m - n > k:
+        return k + 1
+
+    cdef Py_ssize_t lo, hi, prev_lo, prev_hi
+    cdef Py_ssize_t width = 2*k + 1
+    prev = array.array('i', [0] * (width + 2))
+    curr = array.array('i', [0] * (width + 2))
+
+    # Initialize row i=0
+    prev_lo = 0
+    prev_hi = m if m < k else k
+    for j in range(0, prev_hi - prev_lo + 1):
+        prev[j] = j  # dp[0][j]
+
+    # Iterate rows
+    for i in range(1, n + 1):
+        lo = i - k
+        if lo < 0: lo = 0
+        hi = i + k
+        if hi > m: hi = m
+
+        # initialize curr row to INF
+        for j in range(0, (hi - lo + 1)):
+            curr[j] = INF
+
+        row_min = INF
+
+        for j in range(lo, hi + 1):
+            best = INF
+            # insertion: dp[i][j-1] + 1
+            if j - 1 >= lo:
+                ins = curr[(j - 1) - lo] + 1
+                best = ins
+            # deletion: dp[i-1][j] + 1
+            if j >= prev_lo and j <= prev_hi:
+                delv = prev[j - prev_lo] + 1
+                if delv < best: best = delv
+            # substitution/match
+            if j - 1 >= prev_lo and j - 1 <= prev_hi:
+                cost = 0 if (A[i - 1] & B[j - 1]) != 0 else 1
+                sub = prev[(j - 1) - prev_lo] + cost
+                if sub < best: best = sub
+
+            curr[j - lo] = best
+            if best < row_min:
+                row_min = best
+
+        # Early abort if row minimum already > k
+        if row_min > k:
+            del prev
+            del curr
+            return k + 1
+
+        # swap prev and curr for next iteration
+        tmp = prev
+        prev = curr
+        curr = tmp
+        prev_lo = lo
+        prev_hi = hi
+
+    # Result at dp[n][m] located in prev at index m - prev_lo
+    if m >= prev_lo and m <= prev_hi:
+        result = prev[m - prev_lo]
+    else:
+        result = k + 1
+
+    del prev
+    del curr
+    return result
+
+
+
 cpdef bint oligo_match(array.array a, array.array b, float mm_rate, int min_oligomer=8):
     """
     Returns a bool indicating if a sufficiently close match was found.
@@ -389,7 +488,7 @@ cpdef bint oligo_match(array.array a, array.array b, float mm_rate, int min_olig
 cpdef (int, int) best_sliding_fit(
         array.array query, array.array trim,
         int monomer=-1, int minmatch=5, double mm_rate=0.06,
-        int maxlen=120):
+        int maxlen=120, int metric=0):
     '''
     Slides trim along query and returns a double of
     (end_position, hamming_distance) for the longest possible match of trim in query.
@@ -425,14 +524,19 @@ cpdef (int, int) best_sliding_fit(
         l_a = len(a)
         l_b = len(b)
         if l_a == l_b:
-            ham = 0
-            for j in range(l_a):
-                x = a[j]
-                y = b[j]
-                if not x & y: # Bitwise-AND determines if two IUPAC characters match
-                    ham += 1
-                    if ham > max_mismatch: # Hamming distance has exceeded the maximum allowed
-                        break
+            if metric == 0:
+                ham = hamming_iupac(a, b, max_mismatch)
+            else:
+                # Anchor check first: if terminal bases cannot match, skip DP
+                if (a[l_a-1] & b[l_b-1]) == 0:
+                    ham = max_mismatch + 1
+                else:
+                    # Quick Hamming pretest: if within budget, Levenshtein == Hamming
+                    ham_tmp = hamming_iupac(a, b, max_mismatch)
+                    if ham_tmp <= max_mismatch:
+                        ham = ham_tmp
+                    else:
+                        ham = edit_distance_iupac_banded(a, b, max_mismatch)
         
         if ham == -1:
             print("WARNING: @{}: {} {} length mismatch".format(i, len(a),len(b)))
@@ -600,31 +704,32 @@ cpdef (int, int, int) complementary_trim(
         array.array S3array, int S3monomer,
         array.array E5array, int E5monomer, 
         array.array E3array, int E3monomer, 
-        int minstart, int minend, float mm_rate, int maxstart, int maxend):
+        int minstart, int minend, float mm_rate, int maxstart, int maxend, str distance="hamming"):
     """Checks whether the reverse complement of a trimtype
     exists in a numeric nucleotide array.
     Returns a triple of (pos, ham, trimtype)"""
     cdef:
-        int pos, ham
+        int pos, ham, _metric
         int comptype
         array.array nucarray_rev
-    
+
+    _metric = 0 if distance == "hamming" else 1
     pos = 0
     ham = -1
     comptype = -1
     if trimtype == 0:
         nucarray_rev = nucarray[::-1]
-        pos,ham = best_sliding_fit(nucarray_rev, S3array, S3monomer, minstart, mm_rate, maxstart)
+        pos,ham = best_sliding_fit(nucarray_rev, S3array, S3monomer, minstart, mm_rate, maxstart, _metric)
         comptype = 2
     elif trimtype == 2:
-        pos,ham = best_sliding_fit(nucarray, S5array, S5monomer, minstart, mm_rate, maxstart)
+        pos,ham = best_sliding_fit(nucarray, S5array, S5monomer, minstart, mm_rate, maxstart, _metric)
         comptype = 0
     elif trimtype == 1:
         nucarray_rev = nucarray[::-1]
-        pos,ham = best_sliding_fit(nucarray_rev, E3array, E3monomer, minend, mm_rate, maxend)
+        pos,ham = best_sliding_fit(nucarray_rev, E3array, E3monomer, minend, mm_rate, maxend, _metric)
         comptype = 3
     elif trimtype == 3:
-        pos,ham = best_sliding_fit(nucarray, E5array, E5monomer, minend, mm_rate, maxend)
+        pos,ham = best_sliding_fit(nucarray, E5array, E5monomer, minend, mm_rate, maxend, _metric)
         comptype = 1
 
     if ham == -1:
@@ -717,7 +822,7 @@ def terminal_trim(
         array.array E5array, int E5monomer, 
         array.array E3array, int E3monomer, 
         str strand, int minstart, int minend, int minlen, double minqual, int qualmask, float mm_rate,
-        str umi, (int,int) umi_range, int maxstart, int maxend):
+        str umi, (int,int) umi_range, int maxstart, int maxend, str distance="hamming"):
     '''
     Trims the most well-supported adapter sequence(s) at the end(s)
     of RNA seq reads, based on the expected structure of the double-stranded cDNA.
@@ -736,10 +841,12 @@ def terminal_trim(
     cdef:
         int pos1, pos2, ham1, ham2, trimtype1, trimtype2
         int E5pos1, E5ham1, E3pos1, E3ham1, S5pos1, S5ham1, S3pos1, S3ham1
+        int _metric
         array.array mate1array, mate2array, mate1array_rev
         str trim1, qtrm1, label1, trim2, qtrm2, label2, umilabel
         bint flipped1, flipped2, reverse
-    
+
+    _metric = 0 if distance == "hamming" else 1
     # Convert input strings to numeric IUPAC arrays
     mate1array = nuc_to_int(mate1, qual1, qualmask)
     mate2array = nuc_to_int(mate2, qual2, qualmask)
@@ -750,7 +857,7 @@ def terminal_trim(
     ham1 = len(mate1array)
     trimtype1 = -1
     if strand != 'reverse': # Check for 5P adapter (sense orientation)
-        S5pos1,S5ham1 = best_sliding_fit(mate1array, S5array, S5monomer, minstart, mm_rate, maxstart)
+        S5pos1,S5ham1 = best_sliding_fit(mate1array, S5array, S5monomer, minstart, mm_rate, maxstart, _metric)
         if S5ham1 != -1: # A match was found
             pos1 = S5pos1
             ham1 = S5ham1
@@ -758,7 +865,7 @@ def terminal_trim(
     
     if strand != 'forward': # Check for 3P adapter (antisense orientation)
         # (2) Check if E5 is a better match
-        E5pos1,E5ham1 = best_sliding_fit(mate1array, E5array, E5monomer, minend, mm_rate, maxend)
+        E5pos1,E5ham1 = best_sliding_fit(mate1array, E5array, E5monomer, minend, mm_rate, maxend, _metric)
         if E5ham1 != -1:
             if (E5ham1 < ham1) or (E5pos1 > pos1 and E5ham1 == ham1): # Improved match
                 pos1 = E5pos1
@@ -769,7 +876,7 @@ def terminal_trim(
         trimtype2 = -1
         mate1array_rev = mate1array[::-1]
         if strand != 'forward': # Check for RC of 5P adapter (antisense orientation)
-            S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate, maxstart)
+            S3pos1,S3ham1 = best_sliding_fit(mate1array_rev, S3array, S3monomer, minstart, mm_rate, maxstart, _metric)
             if S3ham1 != -1:
                 if (S3ham1 < ham1) or (S3pos1 > pos1 and S3ham1 == ham1) or trimtype1 == 1: # Improved match
                     if trimtype1 == 1: # Can be shared with first trim
@@ -784,7 +891,7 @@ def terminal_trim(
                         ham2 = -1
                         trimtype2 = -1
         if strand != 'reverse': # Check for RC of 3P adapter (sense orientation)
-            E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate, maxend)
+            E3pos1,E3ham1 = best_sliding_fit(mate1array_rev, E3array, E3monomer, minend, mm_rate, maxend, _metric)
             if E3ham1 != -1:
                 if (E3ham1 < ham1) or (E3pos1 > pos1 and E3ham1 == ham1) or trimtype1 == 0: # Improved match
                     if trimtype1 == 0: # Can be shared with first trim
@@ -829,14 +936,14 @@ def terminal_trim(
         ham2 = len(mate2array)
         trimtype2 = -1
         if strand != 'forward': # Check for mate2 5P adapter (antisense orientation of mate1)
-            S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate, maxstart)
+            S5pos2,S5ham2 = best_sliding_fit(mate2array, S5array, S5monomer, minstart, mm_rate, maxstart, _metric)
             if S5ham2 != -1: # A match was found
                 pos2 = S5pos2
                 ham2 = S5ham2
                 trimtype2 = 0
 
         if strand != 'reverse': # Check for mate2 3P adapter (sense orientation of mate1)
-            E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate, maxend)
+            E5pos2,E5ham2 = best_sliding_fit(mate2array, E5array, E5monomer, minend, mm_rate, maxend, _metric)
             if E5ham2 != -1:
                 if (E5ham2 == ham2) or (E5pos2 > pos2 and E5ham2 == ham2): # Improved match
                     pos2 = E5pos2

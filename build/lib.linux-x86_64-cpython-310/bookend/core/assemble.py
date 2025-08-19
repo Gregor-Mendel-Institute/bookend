@@ -17,7 +17,7 @@ if __name__ == '__main__':
 class Assembler:
     def __init__(self, args):
         """Parses input arguments for assembly"""
-        print(args)
+        # print(args)
         self.start_time = time.time()
         self.output = args['OUT']
         self.source = args['SOURCE']

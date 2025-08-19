@@ -9,7 +9,7 @@ import bookend.core.cython_utils._rnaseq_utils as ru
 class GTFconverter:
     def __init__(self, args):
         """Converts each transcript of GTF or GFF3 formatted input to BED12 or ELR"""
-        print(args)
+        # print(args)
         self.input = args['INPUT']
         self.output = args['OUT']
         self.score = args['SCORE']
@@ -26,6 +26,7 @@ class GTFconverter:
         self.name_attr = args['NAME_ATTR']
         self.extend = args['EXTEND']
         self.source = args['SOURCE']
+        self.cds = args['CDS']
         if self.source is None:
                 self.source = self.input
         
@@ -56,10 +57,11 @@ class GTFconverter:
                 sys.exit(1)
             
         config_defaults, gtf_defaults, gff_defaults = self.make_config_dicts()
-        self.gtf_parent = gtf_defaults['parent_types']
-        self.gtf_child = gtf_defaults['child_types']
-        self.gff_parent = gff_defaults['parent_types']
-        self.gff_child = gff_defaults['child_types']
+        # self.gtf_parent = gtf_defaults['parent_types']
+        # self.gtf_child = gtf_defaults['child_types']
+        # self.gff_parent = gff_defaults['parent_types']
+        # self.gff_child = gff_defaults['child_types']
+        print(args)
         self.dataset = ru.AnnotationDataset(
             annotation_files=[],
             reference=self.input, 
@@ -114,10 +116,15 @@ class GTFconverter:
         config_defaults['min_reps'] = 1
         config_defaults['cap_percent'] = 0
         config_defaults['verbose'] = False
-        if self.gtf_parent: gtf_defaults['parent_types'] = set(self.gtf_parent)
-        if self.gtf_child: gtf_defaults['child_types'] = set(self.gtf_child)
-        if self.gff_parent: gff_defaults['parent_types'] = set(self.gff_parent)
-        if self.gff_child: gff_defaults['child_types'] = set(self.gff_child)
+        
+        if self.gtf_parent is not None: gtf_defaults['parent_types'] = set(self.gtf_parent)
+        if self.gtf_child is not None: gtf_defaults['child_types'] = set(self.gtf_child)
+        if self.gff_parent is not None: gff_defaults['parent_types'] = set(self.gff_parent)
+        if self.gff_child is not None: gff_defaults['child_types'] = set(self.gff_child)
+        if self.cds:
+            gff_defaults['child_types'].add('CDS')
+            gtf_defaults['child_types'].add('CDS')
+        
         if self.parent_key_transcript is not None:
             gtf_defaults['parent_key_transcript'] += self.parent_key_transcript
             gff_defaults['parent_key_transcript'] += self.parent_key_transcript

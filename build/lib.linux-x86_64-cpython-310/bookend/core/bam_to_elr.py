@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from distutils import extension
 import sys
 import os
 if __name__ == '__main__':
@@ -43,7 +42,9 @@ class BAMtoELRconverter:
         self.input = args['INPUT']
         self.error_rate = args['ERROR_RATE']
         self.max_intron = args['MAX_INTRON']
+        self.max_indel = args['MAX_INDEL']
         self.allow_noncanonical = args['ALLOW_NONCANONICAL']
+        self.verbose = True
         if self.start or self.end or self.capped:
             self.stranded = True
         
@@ -70,7 +71,12 @@ class BAMtoELRconverter:
             sys.exit(1)
         
         self.output_dict = {}
-        self.tempout = '_unsorted.'+self.output
+        out_fields = self.output.split('/')
+        if len(out_fields) > 1:
+            self.tempout = '/'.join(out_fields[:-1] + ['_unsorted.' + out_fields[-1]])
+        else:
+            self.tempout = '_unsorted.'+self.output
+        
         self.tempout_file = open(self.tempout, 'w')
         if self.ext.lower() in ['bed','bed12']:
             self.output_format = 'bed'
@@ -88,15 +94,18 @@ class BAMtoELRconverter:
             'end_seq':self.end_seq,
             'minlen_strict':self.minlen_strict,
             'max_intron':self.max_intron,
+            'max_indel':self.max_indel,
             'minlen_loose':self.minlen_loose,
             'mismatch_rate':self.mismatch_rate,
             'error_rate' : self.error_rate,
+            'secondary':self.secondary,
             'sj_shift':self.sj_shift,
             'remove_noncanonical':not self.allow_noncanonical,
             'labels_are_trimmed':not self.untrimmed,
             'quality_filter':True,
             'reference':self.reference,
             'sj':self.splice,
+            'verbose':self.verbose
         }
         if self.no_ends:
             self.config_dict['s_tag'] = False
@@ -218,13 +227,20 @@ class BAMtoELRconverter:
     def write_elr(self, output):
         out_strings = [mapping.write_as_elr(record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list if not mapping.is_malformed()]
         self.output_lines(out_strings, output)
+    
+    def write_bed(self, output):
+        out_strings = [mapping.write_as_bed(self.dataset.chrom_array, self.dataset.source_array, record_artifacts=self.record_artifacts).rstrip() for mapping in self.dataset.read_list if not mapping.is_malformed()]
+        self.output_lines(out_strings, output)
 
     def process_entry(self, bam_lines):
         self.dataset.read_list = []
         # self.dataset.add_read_from_BAM(bam_lines, ignore_ends=self.no_ends, secondary=self.secondary, error_rate=self.error_rate)
         self.dataset.add_read_from_BAM(bam_lines)
         if len(self.dataset.read_list) > 0:
-            self.write_elr(self.tempout_file)
+            if self.output_format == 'bed':
+                self.write_bed(self.tempout_file)
+            else:
+                self.write_elr(self.tempout_file)
         else:
             self.failures += bam_lines
     
@@ -321,22 +337,14 @@ class BAMtoELRconverter:
             self.process_entry(entry)
         
         self.tempout_file.close()
-        Sorter = ELRsorter(self.sort_args)
-        Sorter.run()
-        os.remove(self.tempout)
-        if self.output_format == 'bed':
-            convert_args = {
-                'INPUT':self.sort_args['OUT'],
-                'HEADER':None,
-                'OUTPUT':self.output
-            }
-            Converter = ELRtoBEDconverter(convert_args)
-            print('Converting to BED...')
-            Converter.run()
-            os.remove(self.sort_args['OUT'])
+        if self.output_format == 'elr':
+            Sorter = ELRsorter(self.sort_args)
+            Sorter.run()
+            os.remove(self.tempout)
+        else:
+            os.rename(self.tempout, self.output)
         
         print(self.display_summary())
-
 
 
 if __name__ == '__main__':

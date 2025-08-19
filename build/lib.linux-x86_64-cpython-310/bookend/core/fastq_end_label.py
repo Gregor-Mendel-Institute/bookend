@@ -35,6 +35,7 @@ class EndLabeler:
         self.out2 = args['OUT2']
         self.pseudomates = args['PSEUDOMATES']
         self.umi = args['UMI']
+        self.metric = "edit" if args['INDELS'] else "hamming"
         self.umi_range = (0,0)
         self.umi_count = 0
         if self.pseudomates:
@@ -80,7 +81,7 @@ class EndLabeler:
             if self.umi == 'E':
                 umi_start = -1
                 umi_end = -1
-                for i,n in enumerate(self.S5string.upper()):
+                for i,n in enumerate(self.E5string.upper()):
                     if n in 'MRWSYKVHDBN':
                         if umi_start == -1:
                             umi_start = i
@@ -271,7 +272,8 @@ class EndLabeler:
                 file1_read[1], file1_read[3], file2_read[1], file2_read[3],
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask,
+                self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend, self.metric
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], file2_read[1], trim1, trim2, label))
@@ -314,7 +316,8 @@ class EndLabeler:
                 file1_read[1], file1_read[3], '', '',
                 self.S5array, self.S5monomer, self.S3array, self.S3monomer, 
                 self.E5array, self.E5monomer, self.E3array, self.E3monomer,
-                self.strand, self.minstart, self.minend, self.minlen, self.minqual, self.qualmask, self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend
+                self.strand, self.minstart, self.minend, self.minlen, self.minqual,
+                self.qualmask, self.mm_rate, self.umi, self.umi_range, self.maxstart, self.maxend, self.metric
             )
             if self.verbose:
                 print(self.display_trim(file1_read[1], '', trim1, '', label))
