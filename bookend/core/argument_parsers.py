@@ -229,6 +229,7 @@ merge_parser.add_argument("-o", "--output", dest='OUT', type=str, default='merge
 merge_parser.add_argument('--name', dest='NAME', help="Prefix for output transcripts.", type=str, default='BOOKEND')
 merge_parser.add_argument("--genome", dest='GENOME', default=None, type=str, help="Genome FASTA file. Required for checking splice motifs.")
 merge_parser.add_argument('--keep_refs', dest='KEEP_REFS', default=False, action='store_true', help="Output all reference transcripts, even if unsupported.")
+merge_parser.add_argument('--keep_best', dest='KEEP_BEST', default=False, action='store_true', help="Output the most-supported transcript per locus, even if it does not pass other filters.")
 merge_parser.add_argument("--table", dest='TABLE', type=str, default='merge_summary.tsv', help="Filepath to write summary TSV file")
 merge_parser.add_argument('--end_buffer', dest='END_BUFFER', type=int, default=100, help="Largest distance between ends to be considered the same (nucleotides).")
 merge_parser.add_argument('--ref_parent', dest='GFF_PARENT', type=str, nargs='+', default=None, help="Line type(s) in reference that define the Parent object")

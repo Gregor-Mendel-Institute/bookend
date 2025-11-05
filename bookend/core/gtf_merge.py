@@ -39,6 +39,7 @@ class AnnotationMerger(AssemblyClassifier):
         self.verbose = self.args['VERBOSE']
         self.attr_merge = self.args['ATTR_MERGE']
         self.keep_refs = self.args['KEEP_REFS']
+        self.keep_best = self.args['KEEP_BEST']
         self.fusion_delim = self.args['FUSION_DELIM']
         self.table = self.args['TABLE']
         self.match_unstranded = False
@@ -129,8 +130,7 @@ class AnnotationMerger(AssemblyClassifier):
         and update the reference by (1) replacement iff ORF is unchanged,
         (2) isoform if no containment or if ORF changes, (3) antisense, (4) intergenic.
         Updates the list of ref_reads in-place."""
-        # sort_order = argsort([-(t.right() - t.left()) for t in merged_assemblies])
-        sort_order = argsort([-float(t.weight) for t in merged_assemblies])
+        sort_order = self.make_sort_order(merged_assemblies, type='genomic')
         counts_by_gene = Counter([t.attributes['gene_id'] for t in ref_transcripts])
         merged_annotations = copy.copy(ref_transcripts)
         for i in sort_order:
@@ -196,16 +196,16 @@ class AnnotationMerger(AssemblyClassifier):
     def noncanonical_junctions(self, transcript):
         canonical = ''
         if transcript.strand == 1:
-            canonical = 'GTAG'
+            canonical = ['GTAG','GCAG']
         elif transcript.strand == -1:
-            canonical = 'CTAC'
+            canonical = ['CTAC', 'CTGC']
         
         for left,right in transcript.junctions():
             motif = (
                 ru.get_flank(self.dataset.genome, self.dataset.chrom_array[transcript.chrom], left-1, 1, 'E', 2) + 
                 ru.get_flank(self.dataset.genome, self.dataset.chrom_array[transcript.chrom], right, 1, 'S', 2)
             ).upper()
-            if motif != canonical:
+            if motif not in canonical:
                 return True
         
         return False
@@ -221,12 +221,16 @@ class AnnotationMerger(AssemblyClassifier):
         if stringent:
             multiplier = self.confidence
         else:
-            multiplier = 1.0        
+            multiplier = 1.0
 
         if self.keep_refs and transcript.is_reference:
             return True
 
         min_reps = 1 if robust else self.min_reps
+        if transcript.attributes['class'] in self.discard:
+            if self.verbose: print('Removed {} (discard class: {})'.format(transcript.attributes['transcript_id'], transcript.attributes['class']))
+            return False
+
         if int(transcript.attributes.get('reps',0)) < min_reps * multiplier:
             if self.verbose: print('Removed {} (min reps)'.format(transcript.attributes['transcript_id']))
             return False
@@ -243,20 +247,19 @@ class AnnotationMerger(AssemblyClassifier):
         if float(transcript.attributes.get('TPM',0)) < self.tpm_filter * multiplier:
             if self.verbose: print('Removed {} (TPM filter)'.format(transcript.attributes['transcript_id']))
             return False
-        if self.cap_percent > 0:
+        if transcript.attributes.get('class', 'reference') in ['fragment','alt_tss']:
             cap_percent = float(transcript.attributes.get('S.capped',0)) / float(transcript.attributes.get('S.reads',1))
             if cap_percent < self.cap_percent:
                 if self.verbose: print('Removed {} (cap percent)'.format(transcript.attributes['transcript_id']))
                 return False
-        
-        if transcript.attributes.get('class', 'reference') == 'alt_tss':
+
             if self.min_start * self.confidence > float(transcript.attributes.get('S.reads',self.min_start)):
                 if self.verbose: print('Removed {} (min start reads)'.format(transcript.attributes['transcript_id']))
                 return False
-        else:
-            if self.min_start > float(transcript.attributes.get('S.reads',self.min_start)):
-                if self.verbose: print('Removed {} (min start reads)'.format(transcript.attributes['transcript_id']))
-                return False
+
+        if self.min_start > float(transcript.attributes.get('S.reads',self.min_start)):
+            if self.verbose: print('Removed {} (min start reads)'.format(transcript.attributes['transcript_id']))
+            return False
 
         if transcript.attributes.get('class', 'reference') == 'alt_pas':
             if self.min_end * self.confidence > float(transcript.attributes.get('E.reads',self.min_end)):
@@ -266,10 +269,6 @@ class AnnotationMerger(AssemblyClassifier):
             if self.min_end > float(transcript.attributes.get('E.reads',self.min_end)):
                 if self.verbose: print('Removed {} (min end reads)'.format(transcript.attributes['transcript_id']))
                 return False
-
-        if transcript.attributes['class'] in self.discard:
-            if self.verbose: print('Removed {} (discard class: {})'.format(transcript.attributes['transcript_id'], transcript.attributes['class']))
-            return False
         
         return True
     
@@ -291,9 +290,7 @@ class AnnotationMerger(AssemblyClassifier):
         '''Given a list of assembled transcripts,
         return a consensus set of RNAseqMapping objects.'''
         merged_assemblies = []
-        # Process assemblies in order of decreasing length
-        # sort_order = argsort([-(t.right() - t.left()) for t in assemblies])
-        sort_order = argsort([-float(t.weight) for t in assemblies])
+        sort_order = self.make_sort_order(assemblies, type='genomic')
         for i in sort_order:
             transcript = assemblies[i]
             samples = int(transcript.attributes.get('samples',-1))
@@ -315,8 +312,25 @@ class AnnotationMerger(AssemblyClassifier):
             
         return merged_assemblies
     
+    def exon_count(self, transcript, min_size=1):
+        """Returns the number of exons in a transcript."""
+        return sum([r-l >= min_size for l,r in transcript.ranges])
+
+    def make_sort_order(self, transcripts, type='exonic'):
+        """Returns a sort order for the given list of transcripts
+        based on exonic length weighted by support."""
+        if type == 'exonic':
+            sort_order = argsort([-(float(t.get_length()) * float(t.weight) * float(self.exon_count(t, 20))) for t in transcripts])
+        else: # genomic
+            sort_order = argsort([-((t.ranges[-1][1] - t.ranges[0][0]) * float(t.weight) * float(self.exon_count(t, 20))) for t in transcripts])
+        
+        return sort_order
+
     def process_entry(self, chunk):
         self.locus_counter += 1
+        for transcript in chunk:
+            transcript.attributes['locus_size'] = len(chunk)
+        
         ref_transcripts = [read for read in chunk if read.is_reference]
         for ref in ref_transcripts:
             ref.attributes['class'] = 'reference'
@@ -326,10 +340,15 @@ class AnnotationMerger(AssemblyClassifier):
         self.ref_transcript_count += len(ref_transcripts)
         merged_assemblies = self.merge_assemblies(nonref_transcripts)
         merged_annotations = self.integrate_assemblies_with_reference(merged_assemblies, ref_transcripts)
-        for transcript in merged_annotations:
-            if not self.passes_filters(transcript):
-                self.removed_counter += 1
-                continue
+        sort_order = self.make_sort_order(merged_annotations, type='genomic')
+        for i in sort_order:
+            transcript = merged_annotations[i]
+            if self.keep_best and i == sort_order[0]:
+                pass
+            else:
+                if not self.passes_filters(transcript):
+                    self.removed_counter += 1
+                    continue                
             
             if transcript.attributes.get('soure','') == 'reference':
                 transcript.attributes['source'] = self.refname
