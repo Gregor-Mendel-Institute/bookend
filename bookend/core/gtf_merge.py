@@ -130,7 +130,7 @@ class AnnotationMerger(AssemblyClassifier):
         and update the reference by (1) replacement iff ORF is unchanged,
         (2) isoform if no containment or if ORF changes, (3) antisense, (4) intergenic.
         Updates the list of ref_reads in-place."""
-        sort_order = self.make_sort_order(merged_assemblies, type='genomic')
+        sort_order = self.make_sort_order(merged_assemblies)
         counts_by_gene = Counter([t.attributes['gene_id'] for t in ref_transcripts])
         merged_annotations = copy.copy(ref_transcripts)
         for i in sort_order:
@@ -247,7 +247,7 @@ class AnnotationMerger(AssemblyClassifier):
         if float(transcript.attributes.get('TPM',0)) < self.tpm_filter * multiplier:
             if self.verbose: print('Removed {} (TPM filter)'.format(transcript.attributes['transcript_id']))
             return False
-        if transcript.attributes.get('class', 'reference') in ['fragment','alt_tss']:
+        if transcript.attributes.get('class', 'reference') in ['fragment','alt_tss','antisense']:
             cap_percent = float(transcript.attributes.get('S.capped',0)) / float(transcript.attributes.get('S.reads',1))
             if cap_percent < self.cap_percent:
                 if self.verbose: print('Removed {} (cap percent)'.format(transcript.attributes['transcript_id']))
@@ -290,7 +290,7 @@ class AnnotationMerger(AssemblyClassifier):
         '''Given a list of assembled transcripts,
         return a consensus set of RNAseqMapping objects.'''
         merged_assemblies = []
-        sort_order = self.make_sort_order(assemblies, type='genomic')
+        sort_order = self.make_sort_order(assemblies)
         for i in sort_order:
             transcript = assemblies[i]
             samples = int(transcript.attributes.get('samples',-1))
@@ -340,7 +340,7 @@ class AnnotationMerger(AssemblyClassifier):
         self.ref_transcript_count += len(ref_transcripts)
         merged_assemblies = self.merge_assemblies(nonref_transcripts)
         merged_annotations = self.integrate_assemblies_with_reference(merged_assemblies, ref_transcripts)
-        sort_order = self.make_sort_order(merged_annotations, type='genomic')
+        sort_order = self.make_sort_order(merged_annotations)
         for i in sort_order:
             transcript = merged_annotations[i]
             if self.keep_best and i == sort_order[0]:

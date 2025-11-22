@@ -28,8 +28,8 @@ class FastaWriter:
         if self.file_extension(self.output) not in ['fa','fasta']: # Check for valid file extension on output name
             self.output_type = 'fasta'
             self.output = self.output + '.fasta'
-        else:
             self.output_file = open(self.output,'w')
+        else:
             self.output_type = self.file_extension(self.output)
             self.output_file = open(self.output,'w')
         
@@ -58,10 +58,10 @@ class FastaWriter:
         gff_defaults = copy.copy(ru.gff_defaults)
         return config_defaults, gtf_defaults, gff_defaults
     
-    def output_transcripts(self, transcript):
+    def output_transcripts(self, transcript, attribute='transcript_id'):
         """Writes the transcript FASTA entry corresponding to an RNAseqMapping object."""
         sequence = self.dataset.get_transcript_fasta(transcript,'outer')
-        title = transcript.attributes['transcript_id']
+        title = transcript.attributes[attribute]
         if self.orf:
             orf, span, startless, stopless = fu.longest_orf(sequence, self.allow_partial_orf)
             if transcript.strand == 0:
@@ -105,8 +105,8 @@ class FastaWriter:
         for transcript in chunk:
             if not self.allow_unstranded and transcript.strand == 0:
                 continue
-            
-            out = self.output_transcripts(transcript)
+
+            out = self.output_transcripts(transcript, attribute='transcript_id')
             self.transcript_counter += out
     
     def display_options(self):

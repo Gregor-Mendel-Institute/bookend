@@ -11,6 +11,7 @@ class ELRsorter:
         self.input = args['INPUT']
         self.output = args['OUT']
         self.force = args['FORCE']
+        self.source = args.get('SOURCE', 'elr')
         self.strand_sort_values = {'+':-1, '.':0, '-':1}
         self.strand_reverse_values = {-1:'+', 0:'.', 1:'-'}
         self.read_tuples = []
@@ -40,7 +41,8 @@ class ELRsorter:
             combine_args = {
                 'INPUT':['{}.tmp{}.elr'.format(self.input,i) for i in range(self.tmpcount)],
                 'OUTPUT':'stdout',
-                'TEMPDIR':'{}_combinetmp'.format(self.input)
+                'TEMPDIR':'{}_combinetmp'.format(self.input),
+                'SOURCE': self.source
             }
             combiner = ELRcombiner(combine_args)
             for c in combiner.combine_files(combiner.input, self.output_file):pass

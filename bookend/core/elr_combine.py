@@ -20,9 +20,9 @@ class ELRcombiner:
         self.input = args['INPUT']
         self.output = args['OUTPUT']
         self.temp = args['TEMPDIR']
-        self.source = args['SOURCE']
-        self.scale = args['SCALE']
-
+        self.source = args.get('SOURCE', 'elr')
+        self.scale = args.get('SCALE', None)
+    
         self.write_header = True
         if self.output == 'stdout':
             self.output_file = 'stdout'
