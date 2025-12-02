@@ -992,12 +992,15 @@ cdef class RNAseqDataset():
         for chrom in object_dict.keys():
             object_dict[chrom].sort()
             for item in object_dict[chrom]:
-                item.attributes['TPM'] = round(item.weight/total_coverage*1000000,2) if total_coverage>0 else 0
+                if name == 'reference':
+                    item.attributes['class'] = 'reference'
+                
+                item.attributes['TPM'] = item.attributes.get('TPM',round(item.weight/total_coverage*1000000,2) if total_coverage>0 else 0)
                 if format in ['ELR','BED']:
-                    item.attributes['S.reads'] = item.attributes['TPM'] if item.s_tag else 0
-                    item.attributes['S.capped'] = item.attributes['TPM'] if item.capped else 0
-                    item.attributes['E.reads'] = item.attributes['TPM'] if item.e_tag else 0
-        
+                    item.attributes['S.reads'] = item.attributes.get('S.reads',item.weight if item.s_tag else 0)
+                    item.attributes['S.capped'] = item.attributes.get('S.capped',item.weight if item.capped else 0)
+                    item.attributes['E.reads'] = item.attributes.get('E.reads',item.weight if item.e_tag else 0)
+
         return object_dict
     
     cpdef (float, float, float) add_mapping_object(self, AnnotationObject parent, list children, str name, int source, dict object_dict):
@@ -1088,6 +1091,8 @@ cdef class RNAseqDataset():
         new_read = RNAseqMapping(input_data)
         bed_elements = line.rstrip().split('\t')
         new_read.attributes['gene_id'] = '.'.join(bed_elements[3].split(self.gene_delim)[:-1])
+        if new_read.attributes['gene_id'] == '':
+            new_read.attributes['gene_id'] = bed_elements[3]
         new_read.attributes['transcript_id'] = bed_elements[3]
         new_read.attributes['S.reads'] = new_read.weight if new_read.s_tag else 0
         new_read.attributes['S.capped'] = new_read.weight if new_read.capped else 0
@@ -1311,42 +1316,74 @@ cdef class AnnotationDataset(RNAseqDataset):
         
         ranges = copy.deepcopy(transcript.ranges)
         chrom = self.chrom_array[transcript.chrom]
+        maxExtend = 1000
         leftExtend = 0
         rightExtend = 0
         if ends == 'inner':
             if transcript.strand == 1:
-                if 'S.right' in transcript.attributes:
-                    leftExtend = ranges[0][0] - int(transcript.attributes['S.right']) + 1
-                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                if 'S.right' in transcript.attributes and 'S.right' in transcript.attributes:
+                    if ranges[0][0] >= int(transcript.attributes['S.left']) and ranges[0][0] <= int(transcript.attributes['S.right']):
+                        leftExtend = ranges[0][0] - int(transcript.attributes['S.right']) + 1
+                        if leftExtend <= maxExtend:
+                            ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                        else:
+                            leftExtend = 0
                 
-                if 'E.left' in transcript.attributes:
-                    rightExtend = int(transcript.attributes['E.left']) + 1 - ranges[-1][1]
-                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                if 'E.left' in transcript.attributes and 'E.right' in transcript.attributes:
+                    if ranges[-1][1] >= int(transcript.attributes['E.left']) and ranges[-1][1] <= int(transcript.attributes['E.right']):
+                        rightExtend = int(transcript.attributes['E.left']) + 1 - ranges[-1][1]
+                        if rightExtend <= maxExtend:
+                            ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                        else:
+                            rightExtend = 0
             elif transcript.strand == -1:
-                if 'E.right' in transcript.attributes:
-                    leftExtend = ranges[0][0] - int(transcript.attributes['E.right']) + 1
-                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                if 'E.right' in transcript.attributes and 'E.left' in transcript.attributes:
+                    if ranges[0][0] >= int(transcript.attributes['E.left']) and ranges[0][0] <= int(transcript.attributes['E.right']):
+                        leftExtend = ranges[0][0] - int(transcript.attributes['E.right']) + 1
+                        if leftExtend <= maxExtend:
+                            ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                        else:
+                            leftExtend = 0
                 
-                if 'S.left' in transcript.attributes:
-                    rightExtend = int(transcript.attributes['S.left']) + 1 - ranges[-1][1]
-                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                if 'S.left' in transcript.attributes and 'S.right' in transcript.attributes:
+                    if ranges[-1][1] >= int(transcript.attributes['S.left']) and ranges[-1][1] <= int(transcript.attributes['S.right']):
+                        rightExtend = int(transcript.attributes['S.left']) + 1 - ranges[-1][1]
+                        if rightExtend <= maxExtend:
+                            ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                        else:
+                            rightExtend = 0
         elif ends == 'outer':
             if transcript.strand == 1:
-                if 'S.left' in transcript.attributes:
-                    leftExtend = ranges[0][0] - int(transcript.attributes['S.left'])
-                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                if 'S.left' in transcript.attributes and 'S.right' in transcript.attributes:
+                    if ranges[0][0] >= int(transcript.attributes['S.left']) and ranges[0][0] <= int(transcript.attributes['S.right']):
+                        leftExtend = ranges[0][0] - int(transcript.attributes['S.left'])
+                        if leftExtend <= maxExtend:
+                            ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                        else:
+                            leftExtend = 0
                 
-                if 'E.right' in transcript.attributes:
-                    rightExtend = int(transcript.attributes['E.right']) - ranges[-1][1]
-                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                if 'E.right' in transcript.attributes and 'E.left' in transcript.attributes:
+                    if ranges[-1][1] >= int(transcript.attributes['E.left']) and ranges[-1][1] <= int(transcript.attributes['E.right']):
+                        rightExtend = int(transcript.attributes['E.right']) - ranges[-1][1]
+                        if rightExtend <= maxExtend:
+                            ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                        else:
+                            rightExtend = 0
             elif transcript.strand == -1:
-                if 'E.left' in transcript.attributes:
-                    leftExtend = ranges[0][0] - int(transcript.attributes['E.left'])
-                    ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
-                
-                if 'S.right' in transcript.attributes:
-                    rightExtend = int(transcript.attributes['S.right']) - ranges[-1][1]
-                    ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                if 'E.left' in transcript.attributes and 'E.right' in transcript.attributes:
+                    if ranges[0][0] >= int(transcript.attributes['E.left']) and ranges[0][0] <= int(transcript.attributes['E.right']):
+                        leftExtend = ranges[0][0] - int(transcript.attributes['E.left'])
+                        if leftExtend <= maxExtend:
+                            ranges[0] = (ranges[0][0]-leftExtend, ranges[0][1])
+                        else:
+                            leftExtend = 0
+                if 'S.right' in transcript.attributes and 'S.left' in transcript.attributes:
+                    if ranges[-1][1] >= int(transcript.attributes['S.left']) and ranges[-1][1] <= int(transcript.attributes['S.right']):
+                        rightExtend = int(transcript.attributes['S.right']) - ranges[-1][1]
+                        if rightExtend <= maxExtend:
+                            ranges[-1] = (ranges[-1][0], ranges[-1][1]+rightExtend)
+                        else:
+                            rightExtend = 0
         
         fasta = ''.join([self.genome[chrom][l:r] for l,r in ranges])
         if leftExtend>0:
